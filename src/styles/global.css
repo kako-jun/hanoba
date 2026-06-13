@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* デザインシステム（ToHeart マルチ・全色確定）
+   緑＝葉（テーマ） / ピンク＝花（差し色） / 明るい部分＝余白（ベース）。
+   Tailwind v4 では --color-ha-green が bg-ha-green / text-ha-green 等のユーティリティになる。 */
+@theme {
+  --color-ha-green: #509120;
+  --color-ha-green-deep: #305713;
+  --color-ha-green-soft: #e3efcd;
+  --color-ha-pink: #ff5460;
+  --color-ha-pink-soft: #ffd3d6;
+  --color-ha-base: #f3e7e7;
+  --color-ha-white: #ffffff;
+  --color-ha-ink: #20301c;
+}
+
+/* 地はベース、文字はインクを既定にする。角丸やわらかめ・影控えめのトーン。 */
+body {
+  background-color: var(--color-ha-base);
+  color: var(--color-ha-ink);
+}
