@@ -112,6 +112,7 @@ export default function FeedGrid() {
               <button
                 type="button"
                 onClick={() => setSelectedId(post.id)}
+                // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
                 aria-label={post.caption === "" ? "投稿の詳細を開く" : post.caption}
                 className="block w-full h-full"
               >

@@ -55,6 +55,13 @@ describe("parsePost", () => {
     expect(post.caption).toBe("水やり");
   });
 
+  it("二重拡張子は最後の拡張子までを 1 URL として採る（貪欲）", () => {
+    const post = parsePost(makeEvent({ content: "二重\nhttps://h/x.jpg.png" }));
+    expect(post.imageUrl).toBe("https://h/x.jpg.png");
+    // caption に拡張子の断片（.png）が残らない。
+    expect(post.caption).toBe("二重");
+  });
+
   it("大文字拡張子・avif/gif も抽出する", () => {
     expect(parsePost(makeEvent({ content: "a https://h/x.AVIF" })).imageUrl).toBe("https://h/x.AVIF");
     expect(parsePost(makeEvent({ content: "b https://h/y.gif" })).imageUrl).toBe("https://h/y.gif");

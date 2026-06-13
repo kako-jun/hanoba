@@ -24,7 +24,9 @@ export interface FeedPost {
 
 // content 中のインライン画像 URL（クエリ文字列付きも許容）。
 // 拡張子: jpg/jpeg/png/gif/webp/avif。大小無視・グローバル。
-const IMAGE_URL_RE = /(https?:\/\/\S+?\.(?:jpe?g|png|gif|webp|avif))(?:\?\S*)?/gi;
+// 貪欲（\S+）にして、二重拡張子（x.jpg.png 等）では最後の拡張子までを 1 URL として採る
+// （非貪欲だと最初の拡張子で切れて壊れた src と caption のゴミになる）。
+const IMAGE_URL_RE = /(https?:\/\/\S+\.(?:jpe?g|png|gif|webp|avif))(?:\?\S*)?/gi;
 
 /**
  * Nostr イベント（kind:1）を表示用 FeedPost に変換する純粋関数。

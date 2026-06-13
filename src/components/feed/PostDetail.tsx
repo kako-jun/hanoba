@@ -1,5 +1,5 @@
 import { nip19 } from "nostr-tools";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
 
 /**
@@ -39,6 +39,8 @@ interface Props {
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
  */
 export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   // Esc で閉じる。
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -47,6 +49,16 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
+
+  // フォーカス管理（a11y）: 開いたら閉じるボタンへフォーカスを移し、
+  // 閉じたら開く前にフォーカスがあった要素（クリックしたセル）へ戻す。
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus();
+    return () => {
+      previouslyFocused?.focus();
+    };
+  }, []);
 
   return (
     <div
@@ -61,6 +73,7 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
           aria-label="閉じる"
