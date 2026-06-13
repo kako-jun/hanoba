@@ -19,9 +19,17 @@ const palette = [
 <MainLayout>
   <main class="mx-auto max-w-3xl px-5 py-10 flex flex-col gap-8">
     <header class="flex flex-col gap-3">
-      <h1 class="text-4xl font-bold text-ha-green-deep tracking-tight">
-        葉の場 <span class="text-ha-green">/ Hanoba</span>
-      </h1>
+      <div class="flex items-start justify-between gap-4">
+        <h1 class="text-4xl font-bold text-ha-green-deep tracking-tight">
+          葉の場 <span class="text-ha-green">/ Hanoba</span>
+        </h1>
+        <a
+          href="/compose"
+          class="shrink-0 rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
+        >
+          投稿する
+        </a>
+      </div>
       <p class="text-base text-ha-ink/80">
         植物専用の正方形写真SNS。1投稿 ＝ 正方形写真1枚 ＋ 一言（必須）。
       </p>

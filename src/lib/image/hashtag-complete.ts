@@ -1,0 +1,65 @@
+// 一言入力中の #ハッシュタグ補完（純粋関数）。
+//
+// DESIGN §3: 入力中の # を過去に使われたタグから補完し、同じ植物のタグへ投稿が自然に集積する
+// （emergent taxonomy）。pool（過去使用タグ）は client.fetchKnownHashtags から渡す。
+//
+// 文字種は extractHashtags（tags.ts）と一致させる:
+//   英数・`_`・ラテン拡張・ひらがな・カタカナ・CJK。
+
+/** キャレット直前の #語 を検出した結果。 */
+export interface HashtagQuery {
+  /** # の後ろの語（# は含まない） */
+  query: string;
+  /** # の位置（テキスト先頭からのインデックス。補完挿入の置換開始点） */
+  start: number;
+}
+
+// 1 文字分のタグ文字クラス（extractHashtags の語部分と同一）。
+const TAG_CHAR = "[a-zA-Z0-9_À-ſ぀-ゟ゠-ヿ一-龯]";
+// キャレット直前を末尾アンカーで見る: (先頭|空白|>) # (タグ文字 0 個以上) $
+const QUERY_RE = new RegExp(`(?:^|[\\s>])#(${TAG_CHAR}*)$`);
+
+/**
+ * キャレット直前の `#<語>` を検出する。
+ *
+ * - 先頭、または空白・引用記号(>)の直後の `#` のみを対象（語中の a#b は非該当）
+ * - 語はタグ文字（英数 _・ラテン拡張・かな・カナ・CJK）の連なり。空（# 直後）も query="" で検出
+ * - キャレット以降は無視（キャレット位置で入力中のトークンだけを見る）
+ *
+ * 該当しなければ null。
+ */
+export function detectHashtagQuery(text: string, caret: number): HashtagQuery | null {
+  const head = text.slice(0, caret);
+  const match = QUERY_RE.exec(head);
+  if (match === null) return null;
+  const query = match[1] ?? "";
+  // match.index は (先頭|空白|>) の開始位置。# はその後の 0〜1 文字後にある。
+  const hashIndex = head.indexOf("#", match.index);
+  if (hashIndex < 0) return null;
+  return { query, start: hashIndex };
+}
+
+/**
+ * pool（過去使用タグ）から query に前方一致する候補を返す。
+ *
+ * - 照合は大小無視、表示は pool 内の元の綴りのまま
+ * - 重複は除去（最初の綴りを採用）
+ * - 最大 limit 件
+ *
+ * query 自体（freeform）が候補に無くても、UI 側で「そのまま #query を使う」選択肢を
+ * 別途出す前提（このロジックは pool 由来の候補だけを返す）。
+ */
+export function filterHashtagCandidates(pool: string[], query: string, limit = 8): string[] {
+  const q = query.toLowerCase();
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const tag of pool) {
+    if (!tag.toLowerCase().startsWith(q)) continue;
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(tag);
+    if (result.length >= limit) break;
+  }
+  return result;
+}
