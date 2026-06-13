@@ -5,9 +5,12 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない）。
 const fetchHanobaFeed = vi.fn();
+// PostDetail がマウント時に呼ぶいいね数取得もモックで止める（#12）。
+const fetchReactionCount = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchHanobaFeed: (...args: unknown[]) => fetchHanobaFeed(...args),
+  fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
 }));
 
 import FeedGrid from "./FeedGrid.tsx";
@@ -26,6 +29,8 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 describe("FeedGrid", () => {
   beforeEach(() => {
     fetchHanobaFeed.mockReset();
+    fetchReactionCount.mockReset();
+    fetchReactionCount.mockResolvedValue(0);
   });
 
   afterEach(() => {
