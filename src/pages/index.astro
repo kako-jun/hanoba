@@ -15,12 +15,20 @@ import MainLayout from "../layouts/MainLayout.astro";
         <h1 class="text-4xl font-bold text-ha-green-deep tracking-tight">
           葉の場 <span class="text-ha-green">/ Hanoba</span>
         </h1>
-        <a
-          href="/compose"
-          class="shrink-0 rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
-        >
-          投稿する
-        </a>
+        <div class="shrink-0 flex items-center gap-4">
+          <a
+            href="/discover"
+            class="text-sm text-ha-green hover:text-ha-green-deep underline underline-offset-2"
+          >
+            みんなの植物（discover）
+          </a>
+          <a
+            href="/compose"
+            class="rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
+          >
+            投稿する
+          </a>
+        </div>
       </div>
       <p class="text-base text-ha-ink/80">
         植物専用の正方形写真SNS。1投稿 ＝ 正方形写真1枚 ＋ 一言（必須）。
