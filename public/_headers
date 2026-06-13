@@ -1,3 +1,5 @@
+# Permissions-Policy: 投稿フロー（#3 の写真撮影）で camera を同一オリジンに許可。
+# 位置情報(geolocation)は身バレ対策で常時無効、マイクも無効（動画非対応・DESIGN §1/§2）。
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
