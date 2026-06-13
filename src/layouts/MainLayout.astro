@@ -21,6 +21,9 @@ const {
     <meta name="theme-color" content="#509120" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- @vite-pwa/astro は manifest を生成するが <link rel="manifest"> は注入しないため明示する
+         （これが無いとブラウザが manifest を発見できず PWA として install できない）。 -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>{title}</title>
   </head>
   <body class="bg-ha-base text-ha-ink min-h-screen antialiased">
