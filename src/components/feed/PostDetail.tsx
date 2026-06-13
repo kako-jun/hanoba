@@ -1,5 +1,6 @@
 import { nip19 } from "nostr-tools";
 import { useEffect, useRef } from "react";
+import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
 
 /**
@@ -40,11 +41,24 @@ interface Props {
  */
 export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Esc で閉じる。
+  // Esc で閉じる／Tab はモーダル内に循環を閉じる（フォーカストラップ）。
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key === "Tab" && panelRef.current !== null) {
+        const focusables = getFocusableElements(panelRef.current);
+        const active = document.activeElement as HTMLElement | null;
+        const target = focusTrapTarget(focusables, active, e.shiftKey);
+        if (target !== null) {
+          target.focus();
+          e.preventDefault();
+        }
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -69,6 +83,7 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
       onClick={onClose}
     >
       <div
+        ref={panelRef}
         className="relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl bg-ha-white shadow-lg flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
