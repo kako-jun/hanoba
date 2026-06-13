@@ -116,6 +116,8 @@ export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
  */
 export async function fetchReactionCount(eventId: string, limit = 500): Promise<number> {
   try {
+    // limit はリレーから取る kind:7 の上限。超人気投稿（リアクション > limit）では概数になる。
+    // kind:7 の #e フィルタは通常リレーで足りる（NIP-50 検索リレーは本文全文検索用＝不要）。
     const reactions = await getPool().querySync([...GENERAL_RELAYS], {
       kinds: [7],
       "#e": [eventId],

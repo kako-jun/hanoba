@@ -145,7 +145,9 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           <div className="flex items-center justify-between gap-3 pt-1 text-xs text-ha-ink/60">
             <span className="font-mono">{shortNpub(post.pubkey)}</span>
             <span className="flex items-center gap-3">
-              <span aria-label="いいね数">♡ {likeCount === null ? "-" : likeCount}</span>
+              <span aria-label={`いいね数 ${likeCount === null ? "取得中" : likeCount}`}>
+                ♡ {likeCount === null ? "-" : likeCount}
+              </span>
               <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
             </span>
           </div>
