@@ -1,0 +1,77 @@
+import { describe, expect, it } from "vitest";
+import { buildNip98AuthEvent, buildNoteTemplate } from "./events.ts";
+
+describe("buildNoteTemplate", () => {
+  it("kind=1 で自動タグのみを付ける（本文 # は t タグ化しない）", () => {
+    const t = buildNoteTemplate({ caption: "開花した #アガベ", createdAt: 1700000000 });
+    expect(t.kind).toBe(1);
+    expect(t.tags).toEqual([
+      ["t", "mypace"],
+      ["t", "hanoba"],
+      ["client", "hanoba"],
+    ]);
+    // 本文の #アガベ は content に残るだけで、t タグには出ない
+    expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "アガベ")).toBe(false);
+  });
+
+  it("画像 URL をインラインのプレーン URL で content に連結する", () => {
+    const t = buildNoteTemplate({
+      caption: "開花した #アガベ",
+      imageUrls: ["https://image.nostr.build/xxx.jpg"],
+      createdAt: 1700000000,
+    });
+    expect(t.content).toBe("開花した #アガベ\nhttps://image.nostr.build/xxx.jpg");
+  });
+
+  it("複数の画像 URL を改行で連結する", () => {
+    const t = buildNoteTemplate({
+      caption: "成長記録",
+      imageUrls: ["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.jpg"],
+    });
+    expect(t.content).toBe("成長記録\nhttps://image.nostr.build/a.jpg\nhttps://image.nostr.build/b.jpg");
+  });
+
+  it("imageUrls 省略時は caption（trim 済み）のみ", () => {
+    const t = buildNoteTemplate({ caption: "  種まきした  " });
+    expect(t.content).toBe("種まきした");
+  });
+
+  it("imageUrls が空配列なら caption のみ", () => {
+    const t = buildNoteTemplate({ caption: "一言だけ", imageUrls: [] });
+    expect(t.content).toBe("一言だけ");
+  });
+
+  it("createdAt を反映する", () => {
+    const t = buildNoteTemplate({ caption: "x", createdAt: 1234567890 });
+    expect(t.created_at).toBe(1234567890);
+  });
+
+  it("createdAt 省略時は現在時刻（秒）を入れる", () => {
+    const before = Math.floor(Date.now() / 1000);
+    const t = buildNoteTemplate({ caption: "x" });
+    const after = Math.floor(Date.now() / 1000);
+    expect(t.created_at).toBeGreaterThanOrEqual(before);
+    expect(t.created_at).toBeLessThanOrEqual(after);
+  });
+
+  it("空の caption は throw する（一言必須）", () => {
+    expect(() => buildNoteTemplate({ caption: "" })).toThrow();
+  });
+
+  it("空白のみの caption は throw する", () => {
+    expect(() => buildNoteTemplate({ caption: "   \n\t " })).toThrow();
+  });
+});
+
+describe("buildNip98AuthEvent", () => {
+  it("kind=27235・u/method タグ・content 空で構築する", () => {
+    const t = buildNip98AuthEvent("https://nostr.build/api/v2/upload/files", "POST", 1700000000);
+    expect(t.kind).toBe(27235);
+    expect(t.tags).toEqual([
+      ["u", "https://nostr.build/api/v2/upload/files"],
+      ["method", "POST"],
+    ]);
+    expect(t.content).toBe("");
+    expect(t.created_at).toBe(1700000000);
+  });
+});
