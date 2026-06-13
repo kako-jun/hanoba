@@ -1,7 +1,8 @@
 import { nip19 } from "nostr-tools";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
+import { fetchReactionCount } from "../../lib/nostr/client.ts";
 
 /**
  * npub を短縮表示する（npub1abc…xyz）。
@@ -33,8 +34,9 @@ interface Props {
  * ＝静的サイト（CF Pages・SSR なし）を維持する。
  *
  * 内容: 1:1 画像 ＋ 一言（caption）＋ ハッシュタグ（クリックで絞り込み）
- *       ＋ 投稿者（npub 短縮）＋ 相対時刻。
- * 反応（リアクション/返信＝kind7・返信）はこの Issue では出さない（follow-up #5 申し送り）。
+ *       ＋ 投稿者（npub 短縮）＋ 相対時刻 ＋ いいね数（♡ N）。
+ * いいね数は NIP-25 の kind:7 リアクションの読み取り集計（表示のみ・#12）。
+ * いいねの書き込み（kind:7 publish）はこの Issue では作らない。
  * モーダルに反応領域を足せるよう、本文と meta を分けた構造にしてある。
  *
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
@@ -42,6 +44,9 @@ interface Props {
 export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
+  const [likeCount, setLikeCount] = useState<number | null>(null);
 
   // Esc で閉じる／Tab はモーダル内に循環を閉じる（フォーカストラップ）。
   useEffect(() => {
@@ -73,6 +78,19 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
       previouslyFocused?.focus();
     };
   }, []);
+
+  // いいね数を取得する（クライアントのみ・SSR では走らない）。
+  // アンマウント後・post 切替後の setState を alive フラグで防ぐ。
+  useEffect(() => {
+    let alive = true;
+    setLikeCount(null);
+    fetchReactionCount(post.id).then((count) => {
+      if (alive) setLikeCount(count);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [post.id]);
 
   return (
     <div
@@ -126,7 +144,10 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
 
           <div className="flex items-center justify-between gap-3 pt-1 text-xs text-ha-ink/60">
             <span className="font-mono">{shortNpub(post.pubkey)}</span>
-            <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
+            <span className="flex items-center gap-3">
+              <span aria-label="いいね数">♡ {likeCount === null ? "-" : likeCount}</span>
+              <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
+            </span>
           </div>
         </div>
       </div>
