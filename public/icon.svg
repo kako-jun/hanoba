@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="葉の場">
+  <!-- ha-green 背景。maskable 想定でモチーフは中央寄せ・周囲に十分な余白（セーフゾーン）を確保。 -->
+  <rect width="512" height="512" rx="96" fill="#509120" />
+  <!-- 葉のシルエット（白抜き）。約 128〜384 の中央 50% 内に収める。 -->
+  <path
+    fill="#ffffff"
+    d="M360 132c-104 0-176 70-176 158 0 18 4 34 12 48 8-44 32-84 72-116-28 40-44 84-48 130 96-4 168-72 168-160 0-20 0-40-28-60z"
+  />
+  <!-- 葉脈（淡い緑） -->
+  <path
+    fill="none"
+    stroke="#e3efcd"
+    stroke-width="12"
+    stroke-linecap="round"
+    d="M336 156c-56 40-104 104-116 192"
+  />
+</svg>
