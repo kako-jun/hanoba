@@ -99,6 +99,7 @@ export function renderSquareImage(
     return Promise.reject(new Error("2D コンテキストを取得できませんでした"));
   }
 
+  // canvas は呼び出しごとに新規生成するため、filter のリセット（"none" へ戻す）は不要。
   ctx.filter = filterCss ?? "none";
   ctx.drawImage(image, sx, sy, size, size, 0, 0, size, size);
 

@@ -29,31 +29,5 @@ export interface FilterPreset {
   color: string;
 }
 
-/**
- * アップロード下書きの状態。投稿コンポーザーが編集中に保持する。
- * #3（Composer）で使う。ここでは型のみ確定。
- *
- * - imageFile: 選択された元画像
- * - cropState: 正方形クロップの位置（ドラッグで決めるオフセット・ズーム）
- * - selectedFilter: 選択中のレトロ加工フィルタ（未選択は null）
- * - caption: 一言（必須。空での投稿は events 側で弾く）
- */
-export interface UploadDraft {
-  imageFile: File | null;
-  cropState: CropState;
-  selectedFilter: FilterPreset | null;
-  caption: string;
-}
-
-/**
- * 正方形クロップの位置情報。ドラッグで位置決め・スケールで拡縮。
- * #3 で詳細を詰める。ここでは最小の形だけ確定。
- */
-export interface CropState {
-  /** クロップ枠に対する画像の x オフセット（px または 0..1 の比率。#3 で確定） */
-  offsetX: number;
-  /** クロップ枠に対する画像の y オフセット */
-  offsetY: number;
-  /** ズーム倍率（1 = 等倍） */
-  scale: number;
-}
+// クロップ位置は react-image-crop の PixelCrop をそのまま使う（独自の CropState は持たない）。
+// アップロード下書きは Composer 島の個別 state（file / crop / filter / caption）で保持する。
