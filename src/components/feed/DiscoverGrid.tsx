@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchDiscoverByTag } from "../../lib/nostr/client.ts";
 import { normalizeTag } from "../../lib/feed/discover.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
@@ -55,8 +55,13 @@ export default function DiscoverGrid() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [query, setQuery] = useState("");
 
+  // 直近の検索リクエストのトークン。連続検索で古い応答が新しい結果を上書きしないよう、
+  // await 後にトークンが最新でなければ反映を捨てる（stale-response レース対策）。
+  const latestRef = useRef(0);
+
   async function search(rawTag: string) {
     const tag = normalizeTag(rawTag);
+    const token = ++latestRef.current;
     setInput(tag);
     setQuery(tag);
     writeTagToUrl(tag);
@@ -68,9 +73,11 @@ export default function DiscoverGrid() {
     setStatus("loading");
     try {
       const result = await fetchDiscoverByTag(tag);
+      if (token !== latestRef.current) return; // 新しい検索が走っていたら古い応答は捨てる
       setPosts(result);
       setStatus("loaded");
     } catch {
+      if (token !== latestRef.current) return;
       // fetchDiscoverByTag は基本フォールバックするが、念のため error 状態も持つ。
       setStatus("error");
     }
