@@ -17,11 +17,16 @@ export type NostrEvent = NostrToolsEvent;
 
 /**
  * CSS フィルタのプリセット。`filter` は CSS の filter 文字列。
- * #3（Composer）でレトロ加工の選択式 UI に使う。ここでは型のみ確定。
+ * #3（Composer）でレトロ加工の選択式 UI に使う。値の一覧は src/lib/image/presets.ts。
+ *
+ * - name: チップに表示する名前
+ * - filter: プレビューの style={{filter}} と canvas 焼き込みで共用する CSS filter
+ * - color: チップに添えるスウォッチ色（雰囲気の視覚ヒント）
  */
 export interface FilterPreset {
   name: string;
   filter: string;
+  color: string;
 }
 
 /**
