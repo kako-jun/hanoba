@@ -1,0 +1,51 @@
+---
+import DisclaimerNotice from "../components/DisclaimerNotice.tsx";
+import MainLayout from "../layouts/MainLayout.astro";
+
+// DESIGN.md §5 のパレット（全色確定）。
+// 完了条件「トップが §5 のパレットで表示される」を満たすスウォッチの源。
+const palette = [
+  { name: "ha-green", hex: "#509120", role: "テーマ・葉", bg: "bg-ha-green", ink: "text-ha-white" },
+  { name: "ha-green-deep", hex: "#305713", role: "見出し・濃い緑", bg: "bg-ha-green-deep", ink: "text-ha-white" },
+  { name: "ha-green-soft", hex: "#E3EFCD", role: "面・カード地", bg: "bg-ha-green-soft", ink: "text-ha-ink" },
+  { name: "ha-pink", hex: "#FF5460", role: "アクセント・花", bg: "bg-ha-pink", ink: "text-ha-white" },
+  { name: "ha-pink-soft", hex: "#FFD3D6", role: "淡いピンク面", bg: "bg-ha-pink-soft", ink: "text-ha-ink" },
+  { name: "ha-base", hex: "#F3E7E7", role: "ベース・余白", bg: "bg-ha-base", ink: "text-ha-ink" },
+  { name: "ha-white", hex: "#FFFFFF", role: "純白・抜き", bg: "bg-ha-white", ink: "text-ha-ink" },
+  { name: "ha-ink", hex: "#20301C", role: "文字・深緑の黒", bg: "bg-ha-ink", ink: "text-ha-white" },
+] as const;
+---
+
+<MainLayout>
+  <main class="mx-auto max-w-3xl px-5 py-10 flex flex-col gap-8">
+    <header class="flex flex-col gap-3">
+      <h1 class="text-4xl font-bold text-ha-green-deep tracking-tight">
+        葉の場 <span class="text-ha-green">/ Hanoba</span>
+      </h1>
+      <p class="text-base text-ha-ink/80">
+        植物専用の正方形写真SNS。1投稿 ＝ 正方形写真1枚 ＋ 一言（必須）。
+      </p>
+    </header>
+
+    <DisclaimerNotice client:load />
+
+    <section class="flex flex-col gap-4">
+      <h2 class="text-lg font-semibold text-ha-green-deep">パレット（ToHeart マルチ）</h2>
+      <ul class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {
+          palette.map((c) => (
+            <li class="rounded-2xl overflow-hidden bg-ha-white border border-ha-ink/10">
+              <div class={`${c.bg} ${c.ink} h-20 flex items-end p-2`}>
+                <span class="text-xs font-mono">{c.hex}</span>
+              </div>
+              <div class="p-2 flex flex-col gap-0.5">
+                <span class="text-sm font-medium text-ha-ink">{c.name}</span>
+                <span class="text-xs text-ha-ink/60">{c.role}</span>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </main>
+</MainLayout>
