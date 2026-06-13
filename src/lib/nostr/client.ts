@@ -3,6 +3,7 @@
 
 import { SimplePool } from "nostr-tools/pool";
 import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
+import { countLikes } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, TAG_HANOBA } from "./constants.ts";
 import { buildNoteTemplate } from "./events.ts";
 import { signTemplate } from "./keys.ts";
@@ -100,5 +101,28 @@ export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
     return posts.filter((post) => post.imageUrl !== null);
   } catch {
     return [];
+  }
+}
+
+/**
+ * 投稿（kind:1）に対するいいね数を取得する。NIP-25 の kind:7 リアクションを
+ * `#e` で対象投稿に絞って集計する（表示のみ・書き込みはこの Issue では作らない）。
+ *
+ * - `{kinds:[7], "#e":[eventId]}` で対象投稿宛のリアクションを取得
+ * - countLikes で dislike を除外し、同一 pubkey は 1 票に畳む（1 人 1 いいね）
+ * - 失敗（オフライン等）は throw せず 0 にフォールバックする
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchReactionCount(eventId: string, limit = 500): Promise<number> {
+  try {
+    const reactions = await getPool().querySync([...GENERAL_RELAYS], {
+      kinds: [7],
+      "#e": [eventId],
+      limit,
+    });
+    return countLikes(reactions);
+  } catch {
+    return 0;
   }
 }
