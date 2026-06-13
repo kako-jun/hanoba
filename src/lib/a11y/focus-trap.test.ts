@@ -38,8 +38,10 @@ describe("focusTrapTarget", () => {
     expect(focusTrapTarget(["only"], "only", true)).toBe("only");
   });
 
-  it("active が列に無い（null/外部）なら null", () => {
-    expect(focusTrapTarget(items, null, false)).toBeNull();
-    expect(focusTrapTarget(items, "x", true)).toBeNull();
+  it("active が列に無い（null/外部）なら端へ引き込む（外へ逃がさない＝完全トラップ）", () => {
+    expect(focusTrapTarget(items, null, false)).toBe("a"); // 外/未設定で Tab → 先頭
+    expect(focusTrapTarget(items, null, true)).toBe("c"); // 外/未設定で Shift+Tab → 末尾
+    expect(focusTrapTarget(items, "x", false)).toBe("a"); // 列に無い要素で Tab → 先頭
+    expect(focusTrapTarget(items, "x", true)).toBe("c"); // 列に無い要素で Shift+Tab → 末尾
   });
 });
