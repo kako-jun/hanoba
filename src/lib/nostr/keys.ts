@@ -22,6 +22,11 @@ declare global {
 const SK_KEY = "hanoba:sk";
 const USE_NIP07_KEY = "hanoba:useNip07";
 
+/** SSR 安全に localStorage を取得する（サーバ評価時は null）。鍵関連の読み書きは全てこれ経由にする。 */
+function getLS(): Storage | null {
+  return typeof localStorage === "undefined" ? null : localStorage;
+}
+
 // ---- localStorage ベースの鍵管理 -------------------------------------------
 //
 // MVP は秘密鍵を localStorage に平文保存する。
@@ -31,15 +36,14 @@ const USE_NIP07_KEY = "hanoba:useNip07";
 /** 新しい秘密鍵を生成し、hex 文字列で localStorage に保存して返す。 */
 export function generateAndStoreSecretKey(): Uint8Array {
   const sk = generateSecretKey();
-  localStorage.setItem(SK_KEY, bytesToHex(sk));
+  getLS()?.setItem(SK_KEY, bytesToHex(sk));
   return sk;
 }
 
 /** 保存済みの秘密鍵を返す。無ければ null。 */
 export function getStoredSecretKey(): Uint8Array | null {
-  if (typeof localStorage === "undefined") return null;
-  const hex = localStorage.getItem(SK_KEY);
-  if (hex === null) return null;
+  const hex = getLS()?.getItem(SK_KEY);
+  if (hex === null || hex === undefined) return null;
   return hexToBytes(hex);
 }
 
@@ -64,15 +68,17 @@ export function hasNip07(): boolean {
 
 /** NIP-07 を使う設定が有効か（拡張があり、かつユーザーが選択済み）。 */
 export function isNip07Enabled(): boolean {
-  return hasNip07() && localStorage.getItem(USE_NIP07_KEY) === "1";
+  return hasNip07() && getLS()?.getItem(USE_NIP07_KEY) === "1";
 }
 
 /** NIP-07 を使うかどうかを設定する。 */
 export function setUseNip07(use: boolean): void {
+  const ls = getLS();
+  if (ls === null) return;
   if (use) {
-    localStorage.setItem(USE_NIP07_KEY, "1");
+    ls.setItem(USE_NIP07_KEY, "1");
   } else {
-    localStorage.removeItem(USE_NIP07_KEY);
+    ls.removeItem(USE_NIP07_KEY);
   }
 }
 
@@ -107,9 +113,9 @@ export function exportNsec(): string {
 
 /** nsec をインポートして hex で localStorage に保存する。 */
 export function importNsec(nsec: string): void {
-  const decoded = nip19.decode(nsec as `nsec1${string}`);
+  const decoded = nip19.decode(nsec);
   if (decoded.type !== "nsec") {
     throw new Error("nsec ではありません");
   }
-  localStorage.setItem(SK_KEY, bytesToHex(decoded.data));
+  getLS()?.setItem(SK_KEY, bytesToHex(decoded.data));
 }
