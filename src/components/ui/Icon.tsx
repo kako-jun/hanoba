@@ -5,7 +5,7 @@
 // 使い方: <Icon name="close" className="w-5 h-5" />
 // 装飾用途は aria-hidden（既定）。意味を持たせる場合は呼び出し側で aria-label を付ける。
 
-type IconName = "close" | "heart" | "search" | "chevron" | "trash" | "camera" | "image";
+type IconName = "close" | "heart" | "search" | "chevron" | "trash" | "camera" | "image" | "sprout";
 
 interface IconProps {
   name: IconName;
@@ -68,6 +68,15 @@ export default function Icon({ name, className }: IconProps) {
           <rect x="3" y="5" width="18" height="14" rx="2" />
           <circle cx="8.5" cy="10" r="1.6" />
           <path d="m4 18 5-5 4 4 3-3 4 4" />
+        </svg>
+      );
+    case "sprout":
+      // 発芽したての双葉（投稿＝種まき・育てる）。中央の茎＋左右の子葉。
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
+          <path d="M12 21v-8" />
+          <path d="M12 14c0-3.3-2.7-6-6-6 0 3.3 2.7 6 6 6Z" />
+          <path d="M12 14c0-3.3 2.7-6 6-6 0 3.3-2.7 6-6 6Z" />
         </svg>
       );
   }
