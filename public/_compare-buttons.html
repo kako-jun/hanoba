@@ -56,6 +56,12 @@
       .b { background: var(--ha-green-deep-bg); color: var(--ha-white); }
       /* 現行（参考・読みにくい例）: 明るい葉緑 + 白文字 */
       .now { background: var(--ha-green); color: var(--ha-white); }
+      /* 採用案: 明るい葉緑 + 白文字 + 濃い緑の影（鮮やかさを保ちつつ可読性） */
+      .shadow {
+        background: var(--ha-green);
+        color: var(--ha-white);
+        text-shadow: 0 1px 1.5px rgba(8,30,4,0.7), 0 0 2px rgba(8,30,4,0.55);
+      }
       svg { width: 18px; height: 18px; }
     </style>
   </head>
@@ -65,7 +71,22 @@
       <p class="note">同じ暗いガラス背景の上で見比べてください。スマホで開くのが本番に近いです。</p>
 
       <div class="card">
-        <p class="label">A案：明るい葉緑のまま、文字を濃く（推奨）</p>
+        <p class="label">採用案：明るい葉緑＋白文字＋濃い緑の影</p>
+        <p class="sub">背景 #6cba38 ＋ 白文字 ＋ text-shadow（濃緑）。鮮やかさを保ちつつ縁取りで読みやすく。</p>
+        <div class="row">
+          <button class="btn shadow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            探す
+          </button>
+          <button class="btn shadow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8"/><path d="M12 14c0-3.3-2.7-6-6-6 0 3.3 2.7 6 6 6Z"/><path d="M12 14c0-3.3 2.7-6 6-6 0 3.3-2.7 6-6 6Z"/></svg>
+            投稿する
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="label">A案：明るい葉緑のまま、文字を濃く</p>
         <p class="sub">背景 #6cba38 ＋ 文字 #14120d（コントラスト ≈ 8.5）</p>
         <div class="row">
           <button class="btn a">
