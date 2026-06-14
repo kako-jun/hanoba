@@ -102,7 +102,10 @@ describe("DiscoverGrid", () => {
     expect(screen.queryByRole("button", { name: "検索文字を消す" })).not.toBeInTheDocument();
     await user.type(box, "アガベ");
     expect(box.value).toBe("アガベ");
-    await user.click(screen.getByRole("button", { name: "検索文字を消す" }));
+    const clearBtn = screen.getByRole("button", { name: "検索文字を消す" });
+    // submit を暴発させない（再検索でなく text を消すだけ）。
+    expect(clearBtn).toHaveAttribute("type", "button");
+    await user.click(clearBtn);
     expect(box.value).toBe("");
     // 消えたら × も消える。
     expect(screen.queryByRole("button", { name: "検索文字を消す" })).not.toBeInTheDocument();
