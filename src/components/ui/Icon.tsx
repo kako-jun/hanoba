@@ -128,7 +128,8 @@ export default function Icon({ name, className }: IconProps) {
       return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
           <rect x="3" y="6" width="18" height="12" rx="3" />
-          <path d="m11 9.5 4 2.5-4 2.5z" />
+          {/* 再生三角は塗り（小サイズでも「再生」と即読できるよう輪郭でなく塗りに）。 */}
+          <path d="m11 9.5 4 2.5-4 2.5z" fill="currentColor" stroke="none" />
         </svg>
       );
     case "instagram":

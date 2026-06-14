@@ -28,6 +28,28 @@ describe("detectServiceLabel", () => {
     expect(detectServiceLabel("https://llll-ll.com")).toBe("Website");
     expect(detectServiceLabel("https://example.org/blog")).toBe("Website");
   });
+
+  it("ホスト名照合で誤爆しない（部分一致の穴を塞ぐ）", () => {
+    // x.com を末尾に含む別ドメイン / クエリ・パスに紛れた文字列は X にしない。
+    expect(detectServiceLabel("https://maxx.com/foo")).toBe("Website");
+    expect(detectServiceLabel("https://example.com/?ref=x.com")).toBe("Website");
+    // t.me / line.me / blog.jp を別ドメインのサブドメインに含んでも誤爆しない。
+    expect(detectServiceLabel("https://foo.t.me.evil.com")).toBe("Website");
+    expect(detectServiceLabel("https://notion.so/foo")).toBe("Notion"); // note.com と衝突しない
+    expect(detectServiceLabel("https://note.com/foo")).toBe("note");
+  });
+
+  it("サブドメインは正しく拾う", () => {
+    expect(detectServiceLabel("https://gist.github.com/foo")).toBe("GitHub");
+    expect(detectServiceLabel("https://open.spotify.com/foo")).toBe("Spotify");
+    expect(detectServiceLabel("https://foo.itch.io")).toBe("itch.io");
+    expect(detectServiceLabel("https://store.steampowered.com/app/1")).toBe("Steam");
+  });
+
+  it("URL としてパースできなければ Website", () => {
+    expect(detectServiceLabel("not a url")).toBe("Website");
+    expect(detectServiceLabel("")).toBe("Website");
+  });
 });
 
 describe("serviceIconName", () => {

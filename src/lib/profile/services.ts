@@ -6,91 +6,104 @@
 import type { IconName } from "../../components/ui/Icon.tsx";
 
 /**
- * URL から表示用のサービス名を判定する純粋関数（mypace 移植）。
- * 該当しなければ `Website`。判定は小文字化した部分一致（ドメイン含有）。
+ * URL から表示用のサービス名を判定する純粋関数（mypace 移植・ホスト名照合に強化）。
+ * 部分一致ではなくホスト名（`new URL().hostname`）で照合し、`x.com` が `maxx.com`
+ * やクエリ文字列に紛れ込んで誤爆するのを防ぐ（#77 レビュー指摘）。
+ * URL としてパースできない/ホストが無いものは `Website`。
  */
 export function detectServiceLabel(url: string): string {
-  const lowered = url.toLowerCase();
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return "Website";
+  }
+  if (host === "") return "Website";
+
+  // ドメイン完全一致 or サブドメイン（`.domain` 終端）。`x.com` 等の単短ドメインの誤爆を防ぐ。
+  const isHost = (domain: string): boolean => host === domain || host.endsWith(`.${domain}`);
+  // ホスト名に文字列を含む（インスタンスが多数あるサービス＝mastodon.*・steam* 等のみ）。
+  const hostHas = (s: string): boolean => host.includes(s);
 
   // グローバル
-  if (lowered.includes("github.com")) return "GitHub";
-  if (lowered.includes("twitter.com") || lowered.includes("x.com")) return "X";
-  if (lowered.includes("youtube.com") || lowered.includes("youtu.be")) return "YouTube";
-  if (lowered.includes("instagram.com")) return "Instagram";
-  if (lowered.includes("linkedin.com")) return "LinkedIn";
-  if (lowered.includes("facebook.com")) return "Facebook";
-  if (lowered.includes("bsky.app")) return "Bluesky";
-  if (lowered.includes("twitch.tv")) return "Twitch";
-  if (lowered.includes("discord.gg") || lowered.includes("discord.com")) return "Discord";
-  if (lowered.includes("reddit.com")) return "Reddit";
-  if (lowered.includes("medium.com")) return "Medium";
-  if (lowered.includes("substack.com")) return "Substack";
-  if (lowered.includes("tiktok.com")) return "TikTok";
-  if (lowered.includes("threads.net")) return "Threads";
-  if (lowered.includes("mastodon.") || lowered.includes("mstdn.")) return "Mastodon";
-  if (lowered.includes("gitlab.com")) return "GitLab";
-  if (lowered.includes("bitbucket.org")) return "Bitbucket";
-  if (lowered.includes("stackoverflow.com")) return "Stack Overflow";
-  if (lowered.includes("dev.to")) return "DEV";
-  if (lowered.includes("hashnode.")) return "Hashnode";
-  if (lowered.includes("patreon.com")) return "Patreon";
-  if (lowered.includes("ko-fi.com")) return "Ko-fi";
-  if (lowered.includes("buymeacoffee.com")) return "Buy Me a Coffee";
-  if (lowered.includes("paypal.me") || lowered.includes("paypal.com")) return "PayPal";
-  if (lowered.includes("spotify.com")) return "Spotify";
-  if (lowered.includes("soundcloud.com")) return "SoundCloud";
-  if (lowered.includes("bandcamp.com")) return "Bandcamp";
-  if (lowered.includes("music.apple.com") || lowered.includes("apple.com/music")) return "Apple Music";
-  if (lowered.includes("dribbble.com")) return "Dribbble";
-  if (lowered.includes("behance.net")) return "Behance";
-  if (lowered.includes("figma.com")) return "Figma";
-  if (lowered.includes("codepen.io")) return "CodePen";
-  if (lowered.includes("producthunt.com")) return "Product Hunt";
-  if (lowered.includes("pinterest.")) return "Pinterest";
-  if (lowered.includes("tumblr.com")) return "Tumblr";
-  if (lowered.includes("vimeo.com")) return "Vimeo";
-  if (lowered.includes("dailymotion.com")) return "Dailymotion";
-  if (lowered.includes("telegram.me") || lowered.includes("t.me")) return "Telegram";
-  if (lowered.includes("signal.org")) return "Signal";
-  if (lowered.includes("whatsapp.com")) return "WhatsApp";
-  if (lowered.includes("line.me")) return "LINE";
-  if (lowered.includes("steam")) return "Steam";
-  if (lowered.includes("itch.io")) return "itch.io";
-  if (lowered.includes("playstation.com")) return "PlayStation";
-  if (lowered.includes("xbox.com")) return "Xbox";
-  if (lowered.includes("nintendo.")) return "Nintendo";
-  if (lowered.includes("gumroad.com")) return "Gumroad";
-  if (lowered.includes("notion.so") || lowered.includes("notion.site")) return "Notion";
-  if (lowered.includes("amazon.")) return "Amazon";
-  if (lowered.includes("etsy.com")) return "Etsy";
+  if (isHost("github.com")) return "GitHub";
+  if (isHost("x.com") || isHost("twitter.com")) return "X";
+  if (isHost("youtube.com") || isHost("youtu.be")) return "YouTube";
+  if (isHost("instagram.com")) return "Instagram";
+  if (isHost("linkedin.com")) return "LinkedIn";
+  if (isHost("facebook.com")) return "Facebook";
+  if (isHost("bsky.app")) return "Bluesky";
+  if (isHost("twitch.tv")) return "Twitch";
+  if (isHost("discord.gg") || isHost("discord.com")) return "Discord";
+  if (isHost("reddit.com")) return "Reddit";
+  if (isHost("medium.com")) return "Medium";
+  if (isHost("substack.com")) return "Substack";
+  if (isHost("tiktok.com")) return "TikTok";
+  if (isHost("threads.net")) return "Threads";
+  if (hostHas("mastodon.") || hostHas("mstdn.")) return "Mastodon";
+  if (isHost("gitlab.com")) return "GitLab";
+  if (isHost("bitbucket.org")) return "Bitbucket";
+  if (isHost("stackoverflow.com")) return "Stack Overflow";
+  if (isHost("dev.to")) return "DEV";
+  if (hostHas("hashnode.")) return "Hashnode";
+  if (isHost("patreon.com")) return "Patreon";
+  if (isHost("ko-fi.com")) return "Ko-fi";
+  if (isHost("buymeacoffee.com")) return "Buy Me a Coffee";
+  if (isHost("paypal.me") || isHost("paypal.com")) return "PayPal";
+  if (isHost("spotify.com")) return "Spotify";
+  if (isHost("soundcloud.com")) return "SoundCloud";
+  if (isHost("bandcamp.com")) return "Bandcamp";
+  if (isHost("music.apple.com")) return "Apple Music";
+  if (isHost("dribbble.com")) return "Dribbble";
+  if (isHost("behance.net")) return "Behance";
+  if (isHost("figma.com")) return "Figma";
+  if (isHost("codepen.io")) return "CodePen";
+  if (isHost("producthunt.com")) return "Product Hunt";
+  if (hostHas("pinterest.")) return "Pinterest";
+  if (isHost("tumblr.com")) return "Tumblr";
+  if (isHost("vimeo.com")) return "Vimeo";
+  if (isHost("dailymotion.com")) return "Dailymotion";
+  if (isHost("telegram.me") || isHost("t.me")) return "Telegram";
+  if (isHost("signal.org")) return "Signal";
+  if (isHost("whatsapp.com")) return "WhatsApp";
+  if (isHost("line.me")) return "LINE";
+  if (hostHas("steam")) return "Steam";
+  if (isHost("itch.io")) return "itch.io";
+  if (isHost("playstation.com")) return "PlayStation";
+  if (isHost("xbox.com")) return "Xbox";
+  if (hostHas("nintendo.")) return "Nintendo";
+  if (isHost("gumroad.com")) return "Gumroad";
+  if (isHost("notion.so") || isHost("notion.site")) return "Notion";
+  if (hostHas("amazon.")) return "Amazon";
+  if (isHost("etsy.com")) return "Etsy";
 
   // 日本のサービス（植物・園芸・同人ユーザーが使いやすい）
-  if (lowered.includes("qiita.com")) return "Qiita";
-  if (lowered.includes("zenn.dev")) return "Zenn";
-  if (lowered.includes("note.com")) return "note";
-  if (lowered.includes("hatenablog.com") || lowered.includes("hatenadiary.")) return "はてなブログ";
-  if (lowered.includes("b.hatena.ne.jp")) return "はてブ";
-  if (lowered.includes("hatena.ne.jp")) return "はてな";
-  if (lowered.includes("pixiv.net")) return "Pixiv";
-  if (lowered.includes("fanbox.cc")) return "FANBOX";
-  if (lowered.includes("booth.pm")) return "BOOTH";
-  if (lowered.includes("nicovideo.jp") || lowered.includes("nico.ms")) return "ニコニコ";
-  if (lowered.includes("ameblo.jp") || lowered.includes("ameba.jp")) return "Ameba";
-  if (lowered.includes("fc2.com")) return "FC2";
-  if (lowered.includes("livedoor.jp") || lowered.includes("blog.jp")) return "livedoor";
-  if (lowered.includes("speakerdeck.com")) return "Speaker Deck";
-  if (lowered.includes("slideshare.net")) return "SlideShare";
-  if (lowered.includes("lit.link")) return "lit.link";
-  if (lowered.includes("linktr.ee")) return "Linktree";
-  if (lowered.includes("potofu.me")) return "POTOFU";
-  if (lowered.includes("suzuri.jp")) return "SUZURI";
-  if (lowered.includes("minne.com")) return "minne";
-  if (lowered.includes("creema.jp")) return "Creema";
-  if (lowered.includes("stores.jp")) return "STORES";
-  if (lowered.includes("base.shop") || lowered.includes("thebase.in")) return "BASE";
-  if (lowered.includes("mercari.com")) return "メルカリ";
-  if (lowered.includes("rakuten.co.jp")) return "楽天";
-  if (lowered.includes("bilibili.com")) return "bilibili";
+  if (isHost("qiita.com")) return "Qiita";
+  if (isHost("zenn.dev")) return "Zenn";
+  if (isHost("note.com")) return "note";
+  if (isHost("hatenablog.com") || hostHas("hatenadiary.")) return "はてなブログ";
+  if (isHost("b.hatena.ne.jp")) return "はてブ";
+  if (isHost("hatena.ne.jp")) return "はてな";
+  if (isHost("pixiv.net")) return "Pixiv";
+  if (isHost("fanbox.cc")) return "FANBOX";
+  if (isHost("booth.pm")) return "BOOTH";
+  if (isHost("nicovideo.jp") || isHost("nico.ms")) return "ニコニコ";
+  if (isHost("ameblo.jp") || isHost("ameba.jp")) return "Ameba";
+  if (isHost("fc2.com")) return "FC2";
+  if (isHost("livedoor.jp") || isHost("blog.jp")) return "livedoor";
+  if (isHost("speakerdeck.com")) return "Speaker Deck";
+  if (isHost("slideshare.net")) return "SlideShare";
+  if (isHost("lit.link")) return "lit.link";
+  if (isHost("linktr.ee")) return "Linktree";
+  if (isHost("potofu.me")) return "POTOFU";
+  if (isHost("suzuri.jp")) return "SUZURI";
+  if (isHost("minne.com")) return "minne";
+  if (isHost("creema.jp")) return "Creema";
+  if (isHost("stores.jp")) return "STORES";
+  if (isHost("base.shop") || isHost("thebase.in")) return "BASE";
+  if (isHost("mercari.com")) return "メルカリ";
+  if (isHost("rakuten.co.jp")) return "楽天";
+  if (isHost("bilibili.com")) return "bilibili";
 
   return "Website";
 }
