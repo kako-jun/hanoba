@@ -85,6 +85,12 @@ export default function Composer() {
   const hasName = name !== null && name.trim() !== "";
   const canSubmit = caption.trim() !== "" && hasImage && hasName && !posting;
 
+  // 投稿ボタンが押せない理由（不足条件）。ボタン近くに出して「なぜ押せない？」を消す。
+  const missing: string[] = [];
+  if (!hasName) missing.push("ユーザー名");
+  if (!hasImage) missing.push("写真");
+  if (caption.trim() === "") missing.push("ひとこと");
+
   async function handleSubmit() {
     if (!canSubmit) return;
     const image = imgRef.current;
@@ -135,6 +141,14 @@ export default function Composer() {
 
           {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。 */}
           <TagPicker popular={popular} onPick={(tag) => setCaption((c) => insertTag(c, tag))} />
+
+          {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
+          {!posting && missing.length > 0 && (
+            <p className="text-right text-xs text-ha-ink/55">
+              あと <span className="text-ha-pink font-medium">{missing.join("・")}</span>{" "}
+              を入れると投稿できます
+            </p>
+          )}
 
           {/* 主アクション（投稿する）を右端に・グループは右寄せ（基本動線）。
               副アクション（選び直す）は左、主アクションは右。 */}

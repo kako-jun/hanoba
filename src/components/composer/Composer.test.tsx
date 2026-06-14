@@ -71,10 +71,13 @@ describe("Composer", () => {
     // 画像ありでも一言が空 → disabled（両条件のうち一言条件）。
     const submit = await screen.findByRole("button", { name: /投稿する/ });
     expect(submit).toBeDisabled();
+    // なぜ押せないかをボタン近くに明示する。
+    expect(screen.getByText(/ひとこと.*を入れると投稿できます/)).toBeInTheDocument();
 
-    // 一言を入力 → enabled。
+    // 一言を入力 → enabled、不足理由は消える。
     await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
     expect(submit).toBeEnabled();
+    expect(screen.queryByText(/を入れると投稿できます/)).not.toBeInTheDocument();
   });
 
   it("一言だけで画像が無ければ送信できない（画像条件）", async () => {
