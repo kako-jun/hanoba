@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   filterByHashtag,
   mergePostsById,
+  parseProfile,
   parseProfileName,
   parsePost,
   relativeTime,
+  shortNpub,
   type FeedPost,
 } from "./parse.ts";
 import type { NostrEvent } from "../nostr/types.ts";
@@ -20,6 +22,45 @@ describe("parseProfileName", () => {
     expect(parseProfileName('{"about":"x"}')).toBeNull();
     expect(parseProfileName('{"name":"   "}')).toBeNull();
     expect(parseProfileName("not json")).toBeNull();
+  });
+});
+
+describe("parseProfile (#35)", () => {
+  it("name / picture / about / websites を取り出す", () => {
+    const p = parseProfile(
+      '{"name":"カコ","picture":"https://x/a.jpg","about":"育てる","website":"https://kako.example"}',
+    );
+    expect(p.name).toBe("カコ");
+    expect(p.picture).toBe("https://x/a.jpg");
+    expect(p.about).toBe("育てる");
+    expect(p.websites).toEqual(["https://kako.example"]);
+  });
+
+  it("mypace 拡張 websites:[{url}] を複数拾い、website とマージ・重複除去", () => {
+    const p = parseProfile(
+      '{"name":"x","websites":[{"url":"https://a.example"},{"url":"https://b.example"}],"website":"https://a.example"}',
+    );
+    expect(p.websites).toEqual(["https://a.example", "https://b.example"]);
+  });
+
+  it("name 無しは display_name にフォールバック", () => {
+    expect(parseProfile('{"display_name":"葉子"}').name).toBe("葉子");
+  });
+
+  it("不正 JSON は空 Profile", () => {
+    expect(parseProfile("nope")).toEqual({ name: null, picture: null, about: null, websites: [] });
+  });
+});
+
+describe("shortNpub (#35)", () => {
+  it("hex pubkey を npub1…短縮にする", () => {
+    const s = shortNpub("a".repeat(64));
+    expect(s.startsWith("npub1")).toBe(true);
+    expect(s).toContain("…");
+  });
+
+  it("不正 pubkey でも壊れず文字列を返す", () => {
+    expect(typeof shortNpub("zzz")).toBe("string");
   });
 });
 

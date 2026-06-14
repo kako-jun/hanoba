@@ -1,6 +1,7 @@
 import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
-import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
+import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
+import Avatar from "./Avatar.tsx";
 
 interface Props {
   post: FeedPost;
@@ -12,6 +13,8 @@ interface Props {
   onOpen: () => void;
   /** タグクリック（クライアント側絞り込み/再検索）。 */
   onSelectHashtag: (tag: string) => void;
+  /** 著者プロフィール（#35・未取得なら null＝npub フォールバック表示）。 */
+  profile?: Profile | null;
 }
 
 /**
@@ -26,8 +29,10 @@ interface Props {
  *
  * 本文テキストからは #タグ を除去（stripHashtags）し、タグは本文の右の縦列に出す。
  */
-export default function PostCard({ post, index, now, onOpen, onSelectHashtag }: Props) {
+export default function PostCard({ post, index, now, onOpen, onSelectHashtag, profile }: Props) {
   const captionText = stripHashtags(post.caption);
+  // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
+  const authorName = profile?.name ?? shortNpub(post.pubkey);
   const [expanded, setExpanded] = useState(false);
   const [clipped, setClipped] = useState(false);
   const captionRef = useRef<HTMLParagraphElement>(null);
@@ -79,14 +84,18 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag }: 
               {captionText}
             </p>
           )}
-          <div className="mt-auto flex items-center gap-3 pt-2 shrink-0">
-            <time className="text-xs text-ha-ink/55">{relativeTime(post.createdAt, now)}</time>
+          {/* 著者（アイコン＋名前）と時刻（#35）。リンクは拡大モーダル側に出す。 */}
+          <div className="mt-auto flex items-center gap-2 pt-2 shrink-0 text-xs text-ha-ink/55">
+            <Avatar src={profile?.picture ?? null} name={authorName} className="w-5 h-5" />
+            <span className="min-w-0 truncate font-medium text-ha-ink/75">{authorName}</span>
+            <span className="text-ha-ink/30">·</span>
+            <time className="shrink-0">{relativeTime(post.createdAt, now)}</time>
             {(clipped || expanded) && (
               <button
                 type="button"
                 onClick={() => setExpanded((v) => !v)}
                 aria-expanded={expanded}
-                className="text-sm font-medium text-ha-green hover:text-ha-green-deep transition-colors"
+                className="ml-auto shrink-0 text-sm font-medium text-ha-green hover:text-ha-green-deep transition-colors"
               >
                 {expanded ? "閉じる" : "続きを読む"}
               </button>

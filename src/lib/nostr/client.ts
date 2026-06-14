@@ -7,7 +7,14 @@ import {
   discoverKeywordFilters,
   discoverTagFilters,
 } from "../feed/discover.ts";
-import { mergePostsById, parseProfileName, parsePost, type FeedPost } from "../feed/parse.ts";
+import {
+  mergePostsById,
+  parseProfile,
+  parseProfileName,
+  parsePost,
+  type FeedPost,
+  type Profile,
+} from "../feed/parse.ts";
 import { rankHashtags, type RankedTag } from "../feed/popular.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
@@ -270,6 +277,36 @@ export async function fetchProfileName(pubkey: string): Promise<string | null> {
     return parseProfileName(latest.content);
   } catch {
     return null;
+  }
+}
+
+/**
+ * 複数 pubkey のプロフィール（kind:0）を一括取得する（#35・著者ヘッダ）。
+ * pubkey ごとに最新の kind:0 を採用し Map で返す。取得できない著者は Map に入らない。
+ * フィードの著者アイコン/名前・サイトリンクの解決に使う。失敗時は空 Map。
+ */
+export async function fetchProfiles(pubkeys: string[]): Promise<Map<string, Profile>> {
+  const authors = [...new Set(pubkeys)].filter((p) => p !== "");
+  const result = new Map<string, Profile>();
+  if (authors.length === 0) return result;
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      // kind:0 は replaceable（著者ごと最新1件）。limit は著者数に余裕を持たせ、
+      // 多人数フィードで relay の既定 limit に取りこぼされないようにする（#35 レビュー）。
+      { kinds: [0], authors, limit: authors.length * 2 },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    // pubkey ごとに最新の kind:0 だけ採用する。
+    const latest = new Map<string, NostrEvent>();
+    for (const ev of events) {
+      const cur = latest.get(ev.pubkey);
+      if (cur === undefined || ev.created_at > cur.created_at) latest.set(ev.pubkey, ev);
+    }
+    for (const [pubkey, ev] of latest) result.set(pubkey, parseProfile(ev.content));
+    return result;
+  } catch {
+    return result;
   }
 }
 

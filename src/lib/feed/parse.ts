@@ -2,6 +2,7 @@
 // Nostr イベント → 表示用の FeedPost への変換と、id マージ・タグ絞り込み・相対時刻。
 // relay 呼び出しはしない（取得は client.ts の責務）。
 
+import { nip19 } from "nostr-tools";
 import { extractHashtags } from "../nostr/tags.ts";
 import type { NostrEvent } from "../nostr/types.ts";
 
@@ -105,17 +106,69 @@ export function relativeTime(createdAt: number, now: number): string {
 }
 
 /**
- * プロフィール（kind:0）の content（JSON）から表示名を取り出す（#28・nsec インポート時）。
- * `{"name":"..."}` の name を返す。JSON 不正・name 無し・空は null。
+ * 著者プロフィール（kind:0 の content JSON）。#35。
+ * - name: 表示名（name → display_name の順で拾う）。
+ * - picture: アバター画像 URL。
+ * - about: 自己紹介。
+ * - websites: 複数サイト URL（mypace 拡張 `websites:[{url}]` ＋ 標準 `website`）。
+ *   モーダルのサイトリンク（#35 Piece 2）に使う。
+ */
+export interface Profile {
+  name: string | null;
+  picture: string | null;
+  about: string | null;
+  websites: string[];
+}
+
+/** kind:0 content（JSON）を Profile に変換する純粋関数。JSON 不正は空 Profile。 */
+export function parseProfile(content: string): Profile {
+  const empty: Profile = { name: null, picture: null, about: null, websites: [] };
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(content) as Record<string, unknown>;
+  } catch {
+    return empty;
+  }
+  const str = (v: unknown): string | null =>
+    typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+
+  const name = str(data.name) ?? str(data.display_name);
+  const websites: string[] = [];
+  const push = (u: string | null) => {
+    if (u !== null && !websites.includes(u)) websites.push(u);
+  };
+  // mypace 拡張: websites は {url,label?} の配列（label は表示時に再判定するので無視）。
+  if (Array.isArray(data.websites)) {
+    for (const w of data.websites) {
+      if (typeof w === "string") push(str(w));
+      else if (w !== null && typeof w === "object") push(str((w as { url?: unknown }).url));
+    }
+  }
+  // 標準フィールド website（単一 URL）も拾う（他クライアント互換）。
+  push(str(data.website));
+
+  return { name, picture: str(data.picture), about: str(data.about), websites };
+}
+
+/**
+ * プロフィール（kind:0）の content から表示名だけを取り出す（#28・nsec インポート時）。
+ * name → display_name の順。無ければ null。
  */
 export function parseProfileName(content: string): string | null {
+  return parseProfile(content).name;
+}
+
+/**
+ * pubkey（hex）を短い npub 表示にする（npub1abc…wxyz）。#35。
+ * プロフィール名が取れないときのフォールバック表示に使う。nip19 は純粋。
+ */
+export function shortNpub(pubkey: string): string {
+  let npub: string;
   try {
-    const data = JSON.parse(content) as { name?: unknown };
-    if (typeof data.name === "string" && data.name.trim() !== "") {
-      return data.name.trim();
-    }
-    return null;
+    npub = nip19.npubEncode(pubkey);
   } catch {
-    return null;
+    npub = pubkey; // 万一失敗しても表示を壊さない
   }
+  if (npub.length <= 16) return npub;
+  return `${npub.slice(0, 10)}…${npub.slice(-4)}`;
 }
