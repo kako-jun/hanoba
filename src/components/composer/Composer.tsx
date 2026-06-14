@@ -106,6 +106,8 @@ export default function Composer() {
       await signAndPublishNote({ caption, imageUrls: [url] });
       resetAll();
       setStatus({ kind: "done" });
+      // 投稿直後は「自分の植物」へ遷移し、増えた1枚を一番上に見せる（時系列降順）。
+      if (typeof window !== "undefined") window.location.href = "/me";
     } catch (err) {
       const message = err instanceof Error ? err.message : "投稿に失敗しました。";
       setStatus({ kind: "error", message });
@@ -174,18 +176,12 @@ export default function Composer() {
       )}
 
       {status.kind === "done" && (
-        <p
-          role="status"
-          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-green text-ha-ink px-4 py-3 text-sm"
-        >
-          投稿しました。mypace でも見られます。
+        <p role="status" className="glass rounded-2xl text-ha-ink px-4 py-3 text-sm">
+          投稿しました。自分の植物へ移動します…
         </p>
       )}
       {status.kind === "error" && (
-        <p
-          role="alert"
-          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-pink text-ha-ink px-4 py-3 text-sm"
-        >
+        <p role="alert" className="glass rounded-2xl text-ha-pink px-4 py-3 text-sm">
           {status.message}
         </p>
       )}
