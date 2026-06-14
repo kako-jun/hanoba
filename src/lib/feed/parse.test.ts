@@ -43,6 +43,13 @@ describe("parseProfile (#35)", () => {
     expect(p.websites).toEqual(["https://a.example", "https://b.example"]);
   });
 
+  it("websites は http(s) の絶対 URL だけ通す（危険スキーム・相対を弾く・#77）", () => {
+    const p = parseProfile(
+      '{"websites":["https://ok.example","javascript:alert(1)","/relative","data:text/html,x","http://plain.example"]}',
+    );
+    expect(p.websites).toEqual(["https://ok.example", "http://plain.example"]);
+  });
+
   it("name 無しは display_name にフォールバック", () => {
     expect(parseProfile('{"display_name":"葉子"}').name).toBe("葉子");
   });

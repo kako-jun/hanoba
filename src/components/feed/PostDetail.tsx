@@ -4,6 +4,7 @@ import { detectPlants } from "../../lib/plants/detect.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
+import { toSiteLinks } from "../../lib/profile/services.ts";
 import Avatar from "./Avatar.tsx";
 
 interface Props {
@@ -32,6 +33,8 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const authorName = profile?.name ?? shortNpub(post.pubkey);
+  // 著者の複数サイトリンク（#35 Piece 2）。kind:0 拡張 websites[] をアイコン列で出す。
+  const siteLinks = toSiteLinks(profile?.websites ?? []);
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
@@ -165,24 +168,47 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
             </ul>
           )}
 
-          <div className="flex items-center justify-between gap-3 pt-1 text-xs text-ha-ink/60">
-            {/* 著者（アイコン＋名前）。サイトリンクは #35 Piece 2 でここに足す。 */}
-            <span className="flex min-w-0 items-center gap-2">
-              <Avatar src={profile?.picture ?? null} name={authorName} className="w-6 h-6" />
-              <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-3">
-              <span
-                className="inline-flex items-center gap-1.5"
-                aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
-              >
-                <Icon name="heart" className="w-4 h-4 text-ha-pink" />
-                <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
-                  {likeCount === null ? "-" : likeCount}
-                </span>
+          <div className="flex flex-col gap-2 pt-1 text-xs text-ha-ink/60">
+            <div className="flex items-center justify-between gap-3">
+              {/* 著者（アイコン＋名前）。 */}
+              <span className="flex min-w-0 items-center gap-2">
+                <Avatar src={profile?.picture ?? null} name={authorName} className="w-6 h-6" />
+                <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
               </span>
-              <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
-            </span>
+              <span className="flex shrink-0 items-center gap-3">
+                <span
+                  className="inline-flex items-center gap-1.5"
+                  aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
+                >
+                  <Icon name="heart" className="w-4 h-4 text-ha-pink" />
+                  <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
+                    {likeCount === null ? "-" : likeCount}
+                  </span>
+                </span>
+                <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
+              </span>
+            </div>
+
+            {/* 著者の複数サイトリンク（#35 Piece 2）。各人が自分のサイトへ誘導する核。
+                フィードカードには出さない（Piece 1 の方針）。サービス判定は services.ts。 */}
+            {siteLinks.length > 0 && (
+              <ul className="flex flex-wrap items-center gap-2">
+                {siteLinks.map((link) => (
+                  <li key={link.url}>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`${link.label}: ${link.url}`}
+                      aria-label={link.label}
+                      className="glass grid place-items-center w-8 h-8 rounded-full text-ha-ink/70 hover:text-ha-green-deep hover:border-ha-green/50 transition-colors"
+                    >
+                      <Icon name={link.icon} className="w-4 h-4" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

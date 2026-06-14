@@ -134,8 +134,18 @@ export function parseProfile(content: string): Profile {
 
   const name = str(data.name) ?? str(data.display_name);
   const websites: string[] = [];
+  // kind:0 は他人が自由に書ける入力なので、サイトリンクは http(s) の絶対 URL だけ通す。
+  // javascript:/data:/相対 URL 等を弾く（モーダルで href に出すため・#77 セキュリティ）。
   const push = (u: string | null) => {
-    if (u !== null && !websites.includes(u)) websites.push(u);
+    if (u === null || websites.includes(u)) return;
+    let ok = false;
+    try {
+      const proto = new URL(u).protocol;
+      ok = proto === "http:" || proto === "https:";
+    } catch {
+      ok = false;
+    }
+    if (ok) websites.push(u);
   };
   // mypace 拡張: websites は {url,label?} の配列（label は表示時に再判定するので無視）。
   if (Array.isArray(data.websites)) {
