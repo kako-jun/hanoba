@@ -18,6 +18,7 @@ import CaptionInput from "./CaptionInput.tsx";
 import CropFrame from "./CropFrame.tsx";
 import FilterChips from "./FilterChips.tsx";
 import ImagePicker from "./ImagePicker.tsx";
+import PlantSuggest from "./PlantSuggest.tsx";
 import TagPicker from "./TagPicker.tsx";
 
 type Status = { kind: "idle" } | { kind: "posting" } | { kind: "done" } | { kind: "error"; message: string };
@@ -128,6 +129,9 @@ export default function Composer() {
           </section>
 
           <CaptionInput value={caption} onChange={setCaption} pool={pool} />
+
+          {/* 書いた俗称/略を正規形タグで揃える（#23 Phase2）。 */}
+          <PlantSuggest caption={caption} onAddTag={(tag) => setCaption((c) => insertTag(c, tag))} />
 
           {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。 */}
           <TagPicker popular={popular} onPick={(tag) => setCaption((c) => insertTag(c, tag))} />
