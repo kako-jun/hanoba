@@ -10,7 +10,11 @@ interface Props {
   className?: string;
 }
 
-// 直立体にする接続語/ランク略号（小文字で比較）。交配の × と ASCII の x（単独トークン）も含む。
+// 直立体にする接続語/ランク略号（小文字で比較）。交配の × も含む。
+// 判定はトークンの「値」だけで行い「位置」（属の直後か接頭辞位置か）は見ない。
+// 学名は辞書で人が正しい形で管理する前提なのでこの単純さで足りる。
+// ASCII の "x" は単独トークンの小種名・一般語と衝突して誤って直立化しうるので含めない
+// （交配は正式記号 × を使う）。
 const UPRIGHT = new Set([
   "var.",
   "subsp.",
@@ -23,7 +27,6 @@ const UPRIGHT = new Set([
   "nothovar.",
   "nothosubsp.",
   "×",
-  "x",
 ]);
 
 /** トークンが直立体にすべき接続語か。 */
@@ -37,9 +40,10 @@ export default function SciName({ sci, className }: Props) {
   return (
     <span className={className}>
       {parts.map((part, i) => {
-        if (part === "" || /^\s+$/.test(part)) return part;
+        // 空白（区切り）は素の文字列で出して原文の見た目を保つ。
+        if (/^\s*$/.test(part)) return part;
         return (
-          <span key={i} className={isUpright(part) ? "not-italic" : "italic"}>
+          <span key={`${i}-${part}`} className={isUpright(part) ? "not-italic" : "italic"}>
             {part}
           </span>
         );

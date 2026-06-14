@@ -57,6 +57,35 @@ describe("PostDetail いいね数表示", () => {
     });
   });
 
+  it("本文 <p> から #タグ を除き、タグはチップにだけ出す（二重表示解消・#43）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const { container } = render(
+      <PostDetail
+        post={makePost({ id: "t1", caption: "きれいに咲いた #アガベ", hashtags: ["アガベ"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const body = container.querySelector("p.whitespace-pre-wrap");
+    expect(body?.textContent).toBe("きれいに咲いた");
+    expect(body?.textContent).not.toContain("#");
+    // タグは下のチップ（ボタン）にだけ出る。
+    expect(screen.getByRole("button", { name: "#アガベ" })).toBeInTheDocument();
+  });
+
+  it("タグだけの投稿は本文 <p> を出さない（空段落の余白を作らない・#43）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const { container } = render(
+      <PostDetail
+        post={makePost({ id: "t2", caption: "#アガベ #多肉", hashtags: ["アガベ", "多肉"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    expect(container.querySelector("p.whitespace-pre-wrap")).toBeNull();
+    expect(screen.getByRole("button", { name: "#アガベ" })).toBeInTheDocument();
+  });
+
   it("本文から植物を認識し 学名＋著名表記を並べ discover 検索へリンクする（#23）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(
