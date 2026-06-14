@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
-import { fetchDiscover } from "../../lib/nostr/client.ts";
-import type { FeedPost } from "../../lib/feed/parse.ts";
+import { fetchDiscover, fetchHanobaFeed } from "../../lib/nostr/client.ts";
+import { mergePostsById, type FeedPost } from "../../lib/feed/parse.ts";
 import PostGrid from "./PostGrid.tsx";
 
 type Status = "idle" | "loading" | "error" | "loaded";
@@ -45,8 +45,10 @@ function writeQueryToUrl(query: string) {
 /**
  * クロスクライアント discover の島（client:load・DESIGN §6 二段構え）。
  *
- * hanoba フィード（#4・FeedGrid・t:hanoba 限定）とは別物。本文 #タグで mypace 等
- * 他クライアントの植物投稿も集約する別ビュー。hanoba フィードには混ぜない。
+ * トップ（#4・FeedGrid・t:hanoba 限定＝葉の場）とは住み分ける（#52）。
+ * 既定表示（みんなの植物）は **#plantstr（Nostr 全体の植物界隈）∪ t:hanoba（葉の場）**
+ * のマージ。hanoba 投稿は #plantstr を強制せずとも t:hanoba 経由で「みんな」に出る。
+ * 個別検索は本文 #タグ/キーワードで他クライアント横断（混ぜ込みは既定表示のみ）。
  *
  * - タグ入力＋検索ボタン。初期タグは URL の ?tag= から（クライアントのみ）。
  * - 検索確定 → fetchDiscoverByTag(tag)（client.ts に集約・二段構え＋画像ありのみ）。
@@ -86,7 +88,14 @@ export default function DiscoverGrid() {
     }
     setStatus("loading");
     try {
-      const result = await fetchDiscover(q);
+      // 既定表示（みんなの植物）＝ #plantstr（Nostr 全体の植物界隈）∪ t:hanoba（葉の場）の
+      // マージ（#52）。hanoba は #plantstr を強制しないが、t:hanoba 経由で自分の投稿も
+      // 「みんな」に必ず出るようにする。個別検索（fromDefault=false）は横断検索のみ。
+      const result = fromDefault
+        ? mergePostsById(
+            ...(await Promise.all([fetchDiscover(q).catch(() => []), fetchHanobaFeed().catch(() => [])])),
+          )
+        : await fetchDiscover(q);
       if (token !== latestRef.current) return; // 新しい検索が走っていたら古い応答は捨てる
       // 既定検索が空振りなら、空グリッドでなく idle 案内（温室）に戻す。
       if (fromDefault && result.length === 0) {
