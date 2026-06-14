@@ -90,7 +90,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
         />
         {importError !== null && <p className="text-xs text-ha-pink">{importError}</p>}
         <p className="text-xs text-ha-ink/55">
-          mypace 等で使っている鍵で続けられます。鍵はこの端末にだけ保存されます。
+          mypace 等で使っているアカウントで続けられます。情報はこの端末にだけ保存されます。
         </p>
         <div className="flex items-center gap-2">
           <button
@@ -191,7 +191,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
           }}
           className="text-ha-ink/55 hover:text-ha-ink transition-colors"
         >
-          鍵で切替
+          アカウントを変更
         </button>
       </div>
     </div>
