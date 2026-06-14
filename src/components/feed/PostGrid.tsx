@@ -1,5 +1,6 @@
 import { type CSSProperties, useMemo, useState } from "react";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
+import PostCaption from "./PostCaption.tsx";
 import PostDetail from "./PostDetail.tsx";
 
 interface Props {
@@ -74,12 +75,8 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
               )}
 
               <div className="flex flex-col gap-2.5 p-4 sm:p-5 min-w-0 flex-1">
-                {post.caption !== "" && (
-                  // 全文・切らない（whitespace-pre-wrap）。長い本文・URL も折り返す（break-words）。
-                  <p className="text-[15px] leading-relaxed text-ha-ink whitespace-pre-wrap break-words [word-break:auto-phrase]">
-                    {post.caption}
-                  </p>
-                )}
+                {/* 全文表示（1クリック不要）。極端な長文だけソフト上限で畳む（#40）。 */}
+                {post.caption !== "" && <PostCaption caption={post.caption} />}
 
                 {post.hashtags.length > 0 && (
                   <ul className="flex flex-wrap gap-2">
