@@ -10,6 +10,21 @@ interface Props {
   onAddTag: (tag: string) => void;
 }
 
+/** 1個の正規タグ候補チップ（タップで name タグを本文へ）。 */
+function Chip({ entry, onAdd }: { entry: PlantEntry; onAdd: (tag: string) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onAdd(entry.name)}
+      title={`${entry.sci}（${entry.name}）のタグを足す`}
+      className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 transition-colors"
+    >
+      <span className="text-ha-green-deep font-semibold">＋ #{entry.name}</span>
+      <span className="font-display italic text-ha-ink/55">{entry.sci}</span>
+    </button>
+  );
+}
+
 /**
  * 正規形ピッカー＋多段ドリルダウン（#23 Phase 2 / #63）。
  *
@@ -17,6 +32,10 @@ interface Props {
  * （`name`）のタグをワンタップで足せる。学名も併記して迷いを消す。
  * さらに、属（例: パキポディウム）には「**もっと具体的に**」として子（種/品種＝
  * グラキリス等）を出し、辿って具体化できる（属タグと具体タグは併存可）。
+ *
+ * **ドリルダウンは1段ずつ**: 子チップをタップ→本文にその名が入る→再認識されて
+ * その子（孫）が出る、という連鎖で深い階層へ。1回の描画で2段下までは見せない
+ * （起点は常に本文から `detectPlants` した植物）。
  *
  * 既に付いているタグは出さない（insertTag が変化させない＝既存と判定）。
  */
@@ -29,20 +48,6 @@ export default function PlantSuggest({ caption, onAddTag }: Props) {
     .filter((g) => g.self || g.children.length > 0);
   if (groups.length === 0) return null;
 
-  function Chip({ entry }: { entry: PlantEntry }) {
-    return (
-      <button
-        type="button"
-        onClick={() => onAddTag(entry.name)}
-        title={`${entry.sci}（${entry.name}）のタグを足す`}
-        className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 transition-colors"
-      >
-        <span className="text-ha-green-deep font-semibold">＋ #{entry.name}</span>
-        <span className="font-display italic text-ha-ink/55">{entry.sci}</span>
-      </button>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-2">
       <span className="text-xs text-ha-ink/45">植物のタグを正規形でそろえる</span>
@@ -51,14 +56,14 @@ export default function PlantSuggest({ caption, onAddTag }: Props) {
           <div key={g.plant.id} className="flex flex-col gap-1.5">
             {g.self && (
               <div className="flex flex-wrap gap-1.5">
-                <Chip entry={g.plant} />
+                <Chip entry={g.plant} onAdd={onAddTag} />
               </div>
             )}
             {g.children.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-ha-ink/45">もっと具体的に</span>
                 {g.children.map((c) => (
-                  <Chip key={c.id} entry={c} />
+                  <Chip key={c.id} entry={c} onAdd={onAddTag} />
                 ))}
               </div>
             )}
