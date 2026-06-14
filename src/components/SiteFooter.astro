@@ -1,12 +1,10 @@
 ---
 // 共通フッタ（#26）。kako-jun の他サイト（llll-ll）のリンク構成を踏襲しつつ、
 // 暗色グラスの世界観（§5）に合わせる。全ページに MainLayout 経由で出る。
-const social = [
+// Hanoba 自身に関係するリンクだけ（kako-jun の個人メディアは載せない）。
+// mypace＝同じ投稿が見える先、GitHub＝この OSS のリポジトリ。
+const external = [
   { label: "mypace", href: "https://mypace.llll-ll.com" },
-  { label: "X", href: "https://x.com/kako_jun_42" },
-  { label: "Instagram", href: "https://www.instagram.com/kako_jun_42" },
-  { label: "Note", href: "https://note.com/kako_jun" },
-  { label: "Zenn", href: "https://zenn.dev/kako_jun" },
   { label: "GitHub", href: "https://github.com/kako-jun/hanoba" },
 ];
 ---
@@ -27,7 +25,7 @@ const social = [
       </nav>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-ha-ink/55">
         {
-          social.map((s) => (
+          external.map((s) => (
             <a
               href={s.href}
               target="_blank"
