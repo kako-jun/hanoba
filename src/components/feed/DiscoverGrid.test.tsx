@@ -7,11 +7,14 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 // クエリ語をキーに応答を引く mockImplementation で、初回の既定検索（#plantstr・#22）と
 // ユーザー検索の両方を順序非依存に扱う。
 const fetchDiscover = vi.fn();
+// 既定表示は #plantstr ∪ t:hanoba のマージ（#52）。t:hanoba 取得もモックで止める。
+const fetchHanobaFeed = vi.fn();
 // PostDetail がマウント時に呼ぶいいね数取得もモックで止める（#12）。
 const fetchReactionCount = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchDiscover: (...args: unknown[]) => fetchDiscover(...args),
+  fetchHanobaFeed: (...args: unknown[]) => fetchHanobaFeed(...args),
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
 }));
 
@@ -42,6 +45,8 @@ describe("DiscoverGrid", () => {
     responses.clear();
     fetchDiscover.mockReset();
     fetchDiscover.mockImplementation((q: string) => Promise.resolve(responses.get(q) ?? []));
+    fetchHanobaFeed.mockReset();
+    fetchHanobaFeed.mockResolvedValue([]); // 既定表示のマージ相手（t:hanoba）。既定は空。
     fetchReactionCount.mockReset();
     fetchReactionCount.mockResolvedValue(0);
     // 各テストで URL のクエリを空に戻す（既定検索の経路を通す）。
@@ -61,6 +66,23 @@ describe("DiscoverGrid", () => {
 
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
     expect(fetchDiscover).toHaveBeenCalledWith("#plantstr");
+  });
+
+  it("既定表示は #plantstr と t:hanoba をマージして並べる（#52・重複は除去）", async () => {
+    setResponse("#plantstr", [
+      makePost({ id: "shared", caption: "共有", createdAt: 1000 }),
+      makePost({ id: "community", caption: "世界の植物", createdAt: 1500 }),
+    ]);
+    fetchHanobaFeed.mockResolvedValue([
+      makePost({ id: "shared", caption: "共有", createdAt: 1000 }), // #plantstr と重複（id 一致）→ 1 つに畳む
+      makePost({ id: "local", caption: "葉の場の植物", createdAt: 2000 }),
+    ]);
+    render(<DiscoverGrid />);
+
+    // shared(重複) + community + local = 3 枚（重複除去後）。
+    await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(3));
+    expect(fetchDiscover).toHaveBeenCalledWith("#plantstr");
+    expect(fetchHanobaFeed).toHaveBeenCalled();
   });
 
   it("既定検索が 0 件なら案内（idle プロンプト）に戻す", async () => {
