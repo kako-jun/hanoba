@@ -11,9 +11,11 @@ const renderSquareImage = vi.fn();
 vi.mock("../../lib/nostr/upload.ts", () => ({
   uploadImage: (...args: unknown[]) => uploadImage(...args),
 }));
+const publishProfile = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   signAndPublishNote: (...args: unknown[]) => signAndPublishNote(...args),
   fetchKnownHashtags: (...args: unknown[]) => fetchKnownHashtags(...args),
+  publishProfile: (...args: unknown[]) => publishProfile(...args),
 }));
 vi.mock("../../lib/image/crop.ts", () => ({
   renderSquareImage: (...args: unknown[]) => renderSquareImage(...args),
@@ -34,7 +36,10 @@ describe("Composer", () => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
+    publishProfile.mockReset().mockResolvedValue({ id: "prof1" });
     renderSquareImage.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
+    localStorage.setItem("hanoba:name", "テスト栽培家");
   });
 
   afterEach(() => {

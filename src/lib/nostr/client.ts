@@ -10,9 +10,10 @@ import {
 import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
-import { buildNoteTemplate } from "./events.ts";
+import { buildDeletionEvent, buildNoteTemplate, buildProfileEvent } from "./events.ts";
 import { signTemplate } from "./keys.ts";
 import { extractHashtags } from "./tags.ts";
+import { deleteImage } from "./upload.ts";
 import type { NostrEvent } from "./types.ts";
 
 // リレー取得の最大待ち時間（ms）。EOSE を返さない・接続が滞るリレーがあっても
@@ -200,4 +201,60 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
 
   const posts = mergePostsById(events.map(parsePost));
   return posts.filter((post) => post.imageUrl !== null);
+}
+
+/**
+ * プロフィール（kind:0・表示名）を publish する（#28）。
+ * 「ユーザー名を入れたら投稿できる」ためのアカウント確立。name 空は events 側で throw。
+ */
+export async function publishProfile(name: string): Promise<NostrEvent> {
+  const signed = await signTemplate(buildProfileEvent(name));
+  await publishEvent(signed);
+  return signed;
+}
+
+/**
+ * 自分の植物（#28）＝自分の pubkey ＋ t:hanoba の投稿だけを取得する。
+ * fetchHanobaFeed と同様に画像ありのみ・createdAt 降順。失敗は空配列。
+ */
+export async function fetchMyPosts(pubkey: string, limit = 100): Promise<FeedPost[]> {
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      { kinds: [1], "#t": [TAG_HANOBA], authors: [pubkey], limit },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    const posts = mergePostsById(events.map(parsePost));
+    return posts.filter((post) => post.imageUrl !== null);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 投稿を削除する（#28・写真と一蓮托生）。
+ * ① NIP-09 kind:5 を publish して投稿を隠す（mypace/Nostr 上で不可視に）。
+ * ② 投稿に含まれる画像を nostr.build から実体削除する（本人の鍵で NIP-96 DELETE）。
+ *
+ * どちらも本人の鍵で行う。画像削除は nostr.build URL のときのみ走る。
+ * 戻り値で各結果を返す（UI が部分失敗を伝えられるように）。kind:5 publish が
+ * 失敗（全 relay 落ち）したら throw（投稿が消えないのに画像だけ消すのを避ける）。
+ */
+export async function deletePost(
+  post: FeedPost,
+): Promise<{ noteDeleted: true; imageDeleted: boolean }> {
+  // ① 投稿の削除依頼を先に publish（これが本体）。失敗時は throw して画像を消さない。
+  const signed = await signTemplate(buildDeletionEvent([post.id]));
+  await publishEvent(signed);
+
+  // ② 画像の実体削除（任意・失敗しても投稿は隠れている）。
+  let imageDeleted = false;
+  if (post.imageUrl !== null) {
+    try {
+      imageDeleted = await deleteImage(post.imageUrl);
+    } catch {
+      imageDeleted = false;
+    }
+  }
+  return { noteDeleted: true, imageDeleted };
 }
