@@ -11,6 +11,8 @@ const fetchReactionCount = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchHanobaFeed: (...args: unknown[]) => fetchHanobaFeed(...args),
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  // 著者プロフィール一括取得（#35）。テストでは空 Map（npub フォールバック表示）。
+  fetchProfiles: () => Promise.resolve(new Map()),
 }));
 
 import FeedGrid from "./FeedGrid.tsx";

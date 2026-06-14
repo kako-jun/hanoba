@@ -16,6 +16,8 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchDiscover: (...args: unknown[]) => fetchDiscover(...args),
   fetchHanobaFeed: (...args: unknown[]) => fetchHanobaFeed(...args),
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  // 著者プロフィール一括取得（#35）。テストでは空 Map（npub フォールバック表示）。
+  fetchProfiles: () => Promise.resolve(new Map()),
 }));
 
 import DiscoverGrid from "./DiscoverGrid.tsx";

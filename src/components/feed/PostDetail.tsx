@@ -1,30 +1,15 @@
-import { nip19 } from "nostr-tools";
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import { detectPlants } from "../../lib/plants/detect.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
-import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
+import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
-
-/**
- * npub を短縮表示する（npub1abc…xyz）。
- * nip19.npubEncode は純粋（副作用なし）なので SSR でも安全だが、
- * この島は client:load で描画されるためいずれにせよクライアント実行。
- */
-function shortNpub(pubkey: string): string {
-  let npub: string;
-  try {
-    npub = nip19.npubEncode(pubkey);
-  } catch {
-    // 万一エンコードに失敗しても表示は壊さない（生 pubkey の頭を出す）。
-    npub = pubkey;
-  }
-  if (npub.length <= 16) return npub;
-  return `${npub.slice(0, 10)}…${npub.slice(-4)}`;
-}
+import Avatar from "./Avatar.tsx";
 
 interface Props {
   post: FeedPost;
+  /** 著者プロフィール（#35・アイコン/名前/サイトリンク。未取得なら null）。 */
+  profile?: Profile | null;
   /** 背景・×・Esc いずれかで閉じる。 */
   onClose: () => void;
   /** ハッシュタグをクリックしたとき（クライアント側絞り込み）。閉じてから絞り込む。 */
@@ -43,9 +28,10 @@ interface Props {
  *
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
  */
-export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
+export default function PostDetail({ post, profile, onClose, onSelectHashtag }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const authorName = profile?.name ?? shortNpub(post.pubkey);
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
@@ -179,8 +165,12 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           )}
 
           <div className="flex items-center justify-between gap-3 pt-1 text-xs text-ha-ink/60">
-            <span className="font-mono">{shortNpub(post.pubkey)}</span>
-            <span className="flex items-center gap-3">
+            {/* 著者（アイコン＋名前）。サイトリンクは #35 Piece 2 でここに足す。 */}
+            <span className="flex min-w-0 items-center gap-2">
+              <Avatar src={profile?.picture ?? null} name={authorName} className="w-6 h-6" />
+              <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
+            </span>
+            <span className="flex shrink-0 items-center gap-3">
               <span
                 className="inline-flex items-center gap-1.5"
                 aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}

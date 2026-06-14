@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import PostCard from "./PostCard.tsx";
 import PostDetail from "./PostDetail.tsx";
+import { useProfiles } from "./useProfiles.ts";
 
 interface Props {
   /** 表示する投稿（すべて画像あり想定・呼び出し側で取得・絞り込み済み）。 */
@@ -35,6 +36,9 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   // 相対時刻の基準。描画時点でよい（1秒未満のズレは表示に影響しない）。
   const now = Math.floor(Date.now() / 1000);
 
+  // 著者プロフィール（アイコン/名前/サイト）を一括取得（#35・キャッシュ付き）。
+  const profiles = useProfiles(posts.map((p) => p.pubkey));
+
   function selectHashtag(tag: string) {
     setSelectedId(null); // モーダルが開いていたら閉じてから絞り込む/再検索する。
     onSelectHashtag(tag);
@@ -51,6 +55,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             now={now}
             onOpen={() => setSelectedId(post.id)}
             onSelectHashtag={selectHashtag}
+            profile={profiles.get(post.pubkey) ?? null}
           />
         ))}
       </ul>
@@ -58,6 +63,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
       {selected !== null && (
         <PostDetail
           post={selected}
+          profile={profiles.get(selected.pubkey) ?? null}
           onClose={() => setSelectedId(null)}
           onSelectHashtag={selectHashtag}
         />
