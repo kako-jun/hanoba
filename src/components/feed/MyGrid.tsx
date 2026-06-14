@@ -105,7 +105,7 @@ export default function MyGrid() {
               href="/compose"
               className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
             >
-              最初の一枚を置く
+              最初の1枚を置く
             </a>
           </div>
         ) : (

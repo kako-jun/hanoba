@@ -111,7 +111,7 @@ export default function Composer() {
       <AccountName onChange={setName} promptLabel="はじめまして。お名前は？" />
 
       {!hasImage ? (
-        <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 backdrop-blur-md py-10">
+        <div className="py-6">
           <ImagePicker onSelect={handleSelectImage} />
         </div>
       ) : (

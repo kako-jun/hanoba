@@ -95,7 +95,7 @@ export default function FeedGrid() {
               <p className="font-display text-2xl font-extrabold text-ha-white">
                 まだ、なにも灯っていない棚。
               </p>
-              <p className="text-ha-ink/80 max-w-sm">最初の一枚を置いて、この場所に灯りを。</p>
+              <p className="text-ha-ink/80 max-w-sm">最初の1枚を置いて、この場所に灯りを。</p>
               <a
                 href="/compose"
                 className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"

@@ -145,15 +145,12 @@ export default function DiscoverGrid() {
         </button>
       </form>
 
-      {/* クロスクライアントの断り書き（常設・hanoba 断り書きとは別文面）。 */}
-      <aside role="note" className="glass rounded-2xl text-ha-ink px-4 py-3">
-
-        <p className="text-sm leading-relaxed">
-          <span className="font-semibold">#タグ</span> でも{" "}
-          <span className="font-semibold">本文のことば</span>{" "}
-          でも探せます（Nostr 全体の集約・hanoba 以外のクライアントの投稿も含みます）。
-        </p>
-      </aside>
+      {/* クロスクライアントの断り書き（枠なしの控えめな注記）。 */}
+      <p role="note" className="text-sm leading-relaxed text-ha-ink/60 [word-break:auto-phrase]">
+        <span className="font-medium text-ha-ink/80">#タグ</span> でも{" "}
+        <span className="font-medium text-ha-ink/80">本文のことば</span>{" "}
+        でも探せます（Nostr 全体の集約・hanoba 以外のクライアントの投稿も含みます）。
+      </p>
 
       {status === "idle" && (
         <div className="relative overflow-hidden rounded-2xl border border-white/10">
