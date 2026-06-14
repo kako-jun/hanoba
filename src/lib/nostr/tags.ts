@@ -57,8 +57,9 @@ export function stripHashtags(content: string): string {
   const re = /(^|[\s>])#([a-zA-Z0-9_À-ſ぀-ゟ゠-ヿ一-龯]+)/g;
   return content
     .replace(re, (_full, lead: string) => lead)
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    // 除去で生じた連続スペース（全角 U+3000 含む）を 1 つに、行頭行末の空白も除く。
+    .replace(/[ \t　]{2,}/g, " ")
+    .replace(/[ \t　]*\n[ \t　]*/g, "\n")
     .replace(/\n{2,}/g, "\n")
     .trim();
 }

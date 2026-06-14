@@ -77,6 +77,10 @@ describe("stripHashtags", () => {
     expect(stripHashtags("#アガベ #パキポ")).toBe("");
   });
 
+  it("全角空白区切りのタグを除去し、残った連続空白を畳む", () => {
+    expect(stripHashtags("開花　#アガベ　最高")).toBe("開花 最高");
+  });
+
   it("タグが無ければそのまま（trim のみ）", () => {
     expect(stripHashtags("  ただの一言です  ")).toBe("ただの一言です");
   });

@@ -21,7 +21,7 @@ describe("PostCaption", () => {
   afterEach(() => cleanup());
 
   it("上限内の本文は全文表示し「続きを読む」を出さない（1クリック不要）", () => {
-    const restore = mockScrollHeight(100); // 上限(288)未満
+    const restore = mockScrollHeight(100); // 上限(224)未満
     try {
       render(<PostCaption caption="開花した。今朝の一枚。" />);
       expect(screen.getByText("開花した。今朝の一枚。")).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("PostCaption", () => {
   });
 
   it("上限超過の長文は畳んで「続きを読む」を出し、クリックで展開・再クリックで畳む", async () => {
-    const restore = mockScrollHeight(1000); // 上限(288)超過
+    const restore = mockScrollHeight(1000); // 上限(224)超過
     try {
       const user = userEvent.setup();
       render(<PostCaption caption={"とても長い栽培ログ。".repeat(80)} />);
