@@ -48,7 +48,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
         const active = document.activeElement as HTMLElement | null;
         const target = focusTrapTarget(focusables, active, e.shiftKey);
         if (target !== null) {
-          target.focus();
+          target.focus({ preventScroll: true });
           e.preventDefault();
         }
       }
@@ -61,9 +61,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   // 閉じたら開く前にフォーカスがあった要素（クリックしたセル）へ戻す。
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    closeButtonRef.current?.focus();
+    // preventScroll: focus による背面スクロール飛びを防ぐ（開＝閉じるボタン／閉＝元セル・#79）。
+    closeButtonRef.current?.focus({ preventScroll: true });
     return () => {
-      previouslyFocused?.focus();
+      previouslyFocused?.focus({ preventScroll: true });
     };
   }, []);
 
