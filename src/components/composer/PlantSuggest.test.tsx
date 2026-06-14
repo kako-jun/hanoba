@@ -20,11 +20,34 @@ describe("PlantSuggest", () => {
     expect(onAddTag).toHaveBeenCalledWith("パキポディウム");
   });
 
-  it("既に正規タグが付いていれば候補に出さない", () => {
-    const { container } = render(
-      <PlantSuggest caption="パキポ #パキポディウム" onAddTag={() => {}} />,
-    );
+  it("属タグが付いていれば本体は出さず、子で具体化できる（多段・#63）", () => {
+    render(<PlantSuggest caption="パキポ #パキポディウム" onAddTag={() => {}} />);
+    // 属本体（＋ #パキポディウム）はもう出さない。
     expect(screen.queryByText(/＋ #パキポディウム/)).not.toBeInTheDocument();
+    // が、「もっと具体的に」で子（グラキリス）を出す。
+    expect(screen.getByText("もっと具体的に")).toBeInTheDocument();
+    expect(screen.getByText("＋ #グラキリス")).toBeInTheDocument();
+  });
+
+  it("属を認識したら子（もっと具体的に）も提示する（#63）", () => {
+    render(<PlantSuggest caption="パキポ かわいい" onAddTag={() => {}} />);
+    expect(screen.getByText("＋ #パキポディウム")).toBeInTheDocument();
+    expect(screen.getByText("もっと具体的に")).toBeInTheDocument();
+    expect(screen.getByText("＋ #グラキリス")).toBeInTheDocument();
+  });
+
+  it("子タップで具体タグ（グラキリス）を渡す（#63）", async () => {
+    const user = userEvent.setup();
+    const onAddTag = vi.fn();
+    render(<PlantSuggest caption="パキポ #パキポディウム" onAddTag={onAddTag} />);
+    await user.click(screen.getByRole("button", { name: /グラキリス/ }));
+    expect(onAddTag).toHaveBeenCalledWith("グラキリス");
+  });
+
+  it("属も子もすべて付いていれば何も出さない", () => {
+    const { container } = render(
+      <PlantSuggest caption="パキポ #パキポディウム #グラキリス" onAddTag={() => {}} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 

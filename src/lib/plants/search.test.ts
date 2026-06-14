@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findPlantByTerm, plantTagValues } from "./search.ts";
+import { childrenOf, findPlantByTerm, plantTagValues } from "./search.ts";
 
 describe("findPlantByTerm", () => {
   it("俗称・略でも植物に解決する（パキポ → Pachypodium）", () => {
@@ -14,6 +14,18 @@ describe("findPlantByTerm", () => {
   it("辞書に無い語は null", () => {
     expect(findPlantByTerm("サボテン")).toBeNull();
     expect(findPlantByTerm("")).toBeNull();
+  });
+});
+
+describe("childrenOf", () => {
+  it("属の直接の子（種/品種）を返す（pachypodium → グラキリス）", () => {
+    const kids = childrenOf("pachypodium");
+    expect(kids.map((p) => p.id)).toContain("pachypodium-gracilius");
+  });
+
+  it("子（具体）には子が無い／親子は parent で繋がる", () => {
+    expect(childrenOf("pachypodium-gracilius")).toEqual([]);
+    expect(findPlantByTerm("グラキリス")?.parent).toBe("pachypodium");
   });
 });
 
