@@ -14,9 +14,14 @@ import Icon from "./ui/Icon.tsx";
 interface Props {
   /** 現在ページ。該当リンクを強調する（任意）。 */
   current?: "home" | "discover" | "me" | "compose" | "about";
+  /** フィード系ページ（大画面でカードを広げる）はヘッダ幅も揃える（#56）。 */
+  wide?: boolean;
 }
 
-const { current } = Astro.props;
+const { current, wide = false } = Astro.props;
+
+// 大画面で広げる幅（フィード）と、文章/フォーム向けの標準幅（compose/about）。
+const maxW = wide ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl";
 
 // compose は塗りボタン（主アクション）なので nav 配列とは別扱い。
 const links = [
@@ -29,7 +34,7 @@ const links = [
 <header
   class="sticky top-0 z-40 border-b border-ha-green/10 bg-ha-base/70 backdrop-blur-md supports-[backdrop-filter]:bg-ha-base/55"
 >
-  <div class="mx-auto max-w-3xl px-5 h-16 flex items-center justify-between gap-4">
+  <div class:list={["mx-auto px-5 h-16 flex items-center justify-between gap-4", maxW]}>
     <a href="/" class="flex items-center gap-2.5 group" aria-label="葉の場 Hanoba トップへ">
       <svg viewBox="0 0 64 64" class="w-9 h-9 shrink-0" role="img" aria-hidden="true">
         <defs>
@@ -89,7 +94,7 @@ const links = [
     id="ha-menu"
     class="sm:hidden hidden border-t border-ha-green/10 bg-ha-base/95 backdrop-blur-md"
   >
-    <div class="mx-auto max-w-3xl px-5 py-3 flex flex-col gap-1 text-sm">
+    <div class:list={["mx-auto px-5 py-3 flex flex-col gap-1 text-sm", maxW]}>
       {
         links.map((l) => (
           <a
