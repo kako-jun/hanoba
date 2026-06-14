@@ -292,7 +292,9 @@ export async function fetchProfiles(pubkeys: string[]): Promise<Map<string, Prof
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
-      { kinds: [0], authors },
+      // kind:0 は replaceable（著者ごと最新1件）。limit は著者数に余裕を持たせ、
+      // 多人数フィードで relay の既定 limit に取りこぼされないようにする（#35 レビュー）。
+      { kinds: [0], authors, limit: authors.length * 2 },
       { maxWait: QUERY_MAXWAIT },
     );
     // pubkey ごとに最新の kind:0 だけ採用する。

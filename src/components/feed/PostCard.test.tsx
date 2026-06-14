@@ -96,4 +96,42 @@ describe("PostCard", () => {
       restore();
     }
   });
+
+  it("profile があれば著者名を出す（#35）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <PostCard
+          post={makePost()}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+          profile={{ name: "カコ栽培家", picture: null, about: null, websites: [] }}
+        />,
+      );
+      expect(screen.getByText("カコ栽培家")).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("profile 未取得なら npub 短縮にフォールバック（#35）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <PostCard
+          post={makePost({ pubkey: "a".repeat(64) })}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+          profile={null}
+        />,
+      );
+      expect(screen.getByText(/^npub1.*…/)).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
 });
