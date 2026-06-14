@@ -118,6 +118,10 @@ export function importNsec(nsec: string): void {
     throw new Error("nsec ではありません");
   }
   getLS()?.setItem(SK_KEY, bytesToHex(decoded.data));
+  // 鍵＝アカウントが変わったので、旧鍵のプロフィール控え（picture/about/websites）を捨てる。
+  // 残すと別人のアバター/サイトが新アカウントの kind:0 に混入・上書きされる（#78 レビュー M1）。
+  // 新アカウントの値は呼び出し側が relay から再シードする（client.fetchMyProfile）。
+  getLS()?.removeItem(PROFILE_EXTRA_KEY);
 }
 
 // ---- 表示名（ユーザー名） ---------------------------------------------------
@@ -138,4 +142,55 @@ export function setDisplayName(name: string): void {
   const trimmed = name.trim();
   if (trimmed === "") throw new Error("ユーザー名を入力してください");
   getLS()?.setItem(NAME_KEY, trimmed);
+}
+
+// ---- プロフィールの付加項目（picture / about / websites・#35 Piece3） ----------
+//
+// kind:0 は replaceable なので publish のたびに全項目を載せ直す必要がある。name 以外の
+// 項目をローカルにも控え、name だけ変えたときも全体を publish できるようにする（clobber 防止）。
+// 取得は client.fetchMyProfile（relay）が一次ソースだが、編集中の控えとしてここに保存する。
+
+const PROFILE_EXTRA_KEY = "hanoba:profileExtra";
+
+/** プロフィールの name 以外の編集項目。 */
+export interface ProfileExtra {
+  picture: string | null;
+  about: string | null;
+  websites: string[];
+}
+
+/** 保存済みのプロフィール付加項目を返す（未設定/壊れは空）。 */
+export function getProfileExtra(): ProfileExtra {
+  const empty: ProfileExtra = { picture: null, about: null, websites: [] };
+  const raw = getLS()?.getItem(PROFILE_EXTRA_KEY);
+  if (raw === null || raw === undefined || raw === "") return empty;
+  try {
+    const d = JSON.parse(raw) as Partial<ProfileExtra>;
+    return {
+      picture: typeof d.picture === "string" && d.picture !== "" ? d.picture : null,
+      about: typeof d.about === "string" && d.about !== "" ? d.about : null,
+      websites: Array.isArray(d.websites) ? d.websites.filter((w): w is string => typeof w === "string") : [],
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/** プロフィール付加項目をローカルに保存する。 */
+export function setProfileExtra(extra: ProfileExtra): void {
+  getLS()?.setItem(PROFILE_EXTRA_KEY, JSON.stringify(extra));
+}
+
+/**
+ * ローカル控えと relay 実体をマージする純粋関数（#78 レビュー M2）。
+ * ローカルに値があればそれを優先し、空のフィールドだけ relay 値で補う。
+ * kind:0 は replaceable なので、名前だけの変更でも relay にしか無い項目を消さないために使う。
+ */
+export function mergeProfileExtra(local: ProfileExtra, remote: ProfileExtra | null): ProfileExtra {
+  if (remote === null) return local;
+  return {
+    picture: local.picture ?? remote.picture,
+    about: local.about ?? remote.about,
+    websites: local.websites.length > 0 ? local.websites : remote.websites,
+  };
 }

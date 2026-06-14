@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchProfileName, saveDisplayName } from "../../lib/nostr/client.ts";
-import { getDisplayName, getPublicKeyHex, importNsec, setDisplayName } from "../../lib/nostr/keys.ts";
+import { fetchMyProfile, saveDisplayName } from "../../lib/nostr/client.ts";
+import {
+  getDisplayName,
+  getPublicKeyHex,
+  importNsec,
+  setDisplayName,
+  setProfileExtra,
+} from "../../lib/nostr/keys.ts";
 
 interface Props {
   /** 名前が変わるたび（マウント時含む）に呼ぶ。投稿ゲート等が現在名を知るため。 */
@@ -58,10 +64,19 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
     }
     try {
       const pubkey = await getPublicKeyHex();
-      const existing = await fetchProfileName(pubkey);
-      if (existing !== null) setDisplayName(existing);
+      // 新アカウントの kind:0 全体を引き継ぐ（名前だけでなく picture/about/websites も）。
+      // importNsec で旧鍵の控えは消えているので、ここで新鍵の値を再シードする（#78 レビュー M1）。
+      const existing = await fetchMyProfile(pubkey);
+      if (existing !== null) {
+        if (existing.name !== null) setDisplayName(existing.name);
+        setProfileExtra({
+          picture: existing.picture,
+          about: existing.about,
+          websites: existing.websites,
+        });
+      }
     } catch {
-      // プロフィール取得失敗は無視（名前は後で設定できる）。
+      // プロフィール取得失敗は無視（名前・プロフィールは後で設定できる）。
     }
     if (typeof window !== "undefined") window.location.reload();
   }

@@ -19,8 +19,15 @@ import { rankHashtags, type RankedTag } from "../feed/popular.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
-import { buildDeletionEvent, buildNoteTemplate, buildProfileEvent } from "./events.ts";
-import { setDisplayName, signTemplate } from "./keys.ts";
+import { buildDeletionEvent, buildNoteTemplate, buildProfileEvent, type ProfileFields } from "./events.ts";
+import {
+  getProfileExtra,
+  getPublicKeyHex,
+  mergeProfileExtra,
+  setDisplayName,
+  setProfileExtra,
+  signTemplate,
+} from "./keys.ts";
 import { extractHashtags } from "./tags.ts";
 import { deleteImage } from "./upload.ts";
 import type { NostrEvent } from "./types.ts";
@@ -252,13 +259,38 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
 }
 
 /**
- * プロフィール（kind:0・表示名）を publish する（#28）。
- * 「ユーザー名を入れたら投稿できる」ためのアカウント確立。name 空は events 側で throw。
+ * プロフィール（kind:0）を publish する（#28/#35）。
+ * kind:0 は replaceable なので、呼び出し側は常に全フィールド（name＋picture＋about＋websites）を
+ * マージして渡す（部分更新で他項目を消さない）。name 空は events 側で throw。
  */
-export async function publishProfile(name: string): Promise<NostrEvent> {
-  const signed = await signTemplate(buildProfileEvent(name));
+export async function publishProfile(fields: ProfileFields): Promise<NostrEvent> {
+  const signed = await signTemplate(buildProfileEvent(fields));
   await publishEvent(signed);
   return signed;
+}
+
+/**
+ * プロフィール全体を保存する（#35 Piece3・ProfileEditor から）。
+ * ローカル（name＋付加項目）に控えてから kind:0 を publish する。publish 失敗は throw
+ * （UI が配信失敗を伝えられるように。ローカルには保存済みなので次回再 publish できる）。
+ */
+export async function saveProfile(fields: ProfileFields): Promise<NostrEvent> {
+  setDisplayName(fields.name); // 空なら throw（呼び出し側で trim 済みを渡す）
+  setProfileExtra({
+    picture: fields.picture?.trim() || null,
+    about: fields.about?.trim() || null,
+    websites: (fields.websites ?? []).map((w) => w.trim()).filter((w) => w !== ""),
+  });
+  return publishProfile(fields);
+}
+
+/**
+ * 自分のプロフィール（kind:0）を relay から取得する（#35 Piece3・編集の初期値）。
+ * 他デバイス/他クライアントで設定済みの picture/about/websites を編集 UI に引き継ぐ。失敗は null。
+ */
+export async function fetchMyProfile(pubkey: string): Promise<Profile | null> {
+  const map = await fetchProfiles([pubkey]);
+  return map.get(pubkey) ?? null;
 }
 
 /**
@@ -317,11 +349,27 @@ export async function fetchProfiles(pubkeys: string[]): Promise<Map<string, Prof
  */
 export async function saveDisplayName(name: string): Promise<void> {
   setDisplayName(name); // 空なら throw（呼び出し側で trim 済みを渡す）
+  // kind:0 は replaceable なので、名前だけの変更でも付加項目（picture/about/websites）を
+  // 載せ直して publish する（さもないと名前変更で著者ヘッダのアイコン/リンクが消える）。
+  // ローカル控えが空でも relay に実体があれば消さないよう、relay 値とマージする（#78 レビュー M2）。
+  let extra = getProfileExtra();
   try {
-    await publishProfile(name);
+    const remote = await fetchMyProfile(await getPublicKeyHex());
+    extra = mergeProfileExtra(extra, remote === null ? null : profileToExtra(remote));
+    setProfileExtra(extra); // 次回以降のためローカルにも反映。
+  } catch {
+    // relay 取得失敗はローカル控えだけで進む。
+  }
+  try {
+    await publishProfile({ name, ...extra });
   } catch {
     // publish 失敗はローカル名を保持して握り潰す。
   }
+}
+
+/** Profile（kind:0 全体）から付加項目（ProfileExtra）を取り出す。 */
+function profileToExtra(p: Profile): { picture: string | null; about: string | null; websites: string[] } {
+  return { picture: p.picture, about: p.about, websites: p.websites };
 }
 
 /**

@@ -24,14 +24,46 @@ describe("buildDeletionEvent", () => {
 
 describe("buildProfileEvent", () => {
   it("kind=0 で content に name の JSON を入れる", () => {
-    const t = buildProfileEvent("  カコ栽培家  ", 1700000000);
+    const t = buildProfileEvent({ name: "  カコ栽培家  " }, 1700000000);
     expect(t.kind).toBe(0);
     expect(JSON.parse(t.content)).toEqual({ name: "カコ栽培家" });
     expect(t.tags).toEqual([]);
   });
 
+  it("picture/about/websites を載せる（websites は [{url}] 形式）", () => {
+    const t = buildProfileEvent(
+      {
+        name: "カコ",
+        picture: "  https://img.example/a.png  ",
+        about: "  植物すき  ",
+        websites: ["https://github.com/kako-jun", "  ", "https://llll-ll.com"],
+      },
+      1700000000,
+    );
+    expect(JSON.parse(t.content)).toEqual({
+      name: "カコ",
+      picture: "https://img.example/a.png",
+      about: "植物すき",
+      websites: [{ url: "https://github.com/kako-jun" }, { url: "https://llll-ll.com" }],
+    });
+  });
+
+  it("空（trim後）の付加項目は JSON に入れない", () => {
+    const t = buildProfileEvent({ name: "カコ", picture: "  ", about: "", websites: ["", "  "] });
+    expect(JSON.parse(t.content)).toEqual({ name: "カコ" });
+  });
+
+  it("http(s) でない picture/websites は落とす（危険スキーム・壊れURL防止）", () => {
+    const t = buildProfileEvent({
+      name: "カコ",
+      picture: "javascript:alert(1)",
+      websites: ["data:text/html,x", "ftp://foo", "/relative", "https://ok.example"],
+    });
+    expect(JSON.parse(t.content)).toEqual({ name: "カコ", websites: [{ url: "https://ok.example" }] });
+  });
+
   it("空名は throw", () => {
-    expect(() => buildProfileEvent("   ")).toThrow();
+    expect(() => buildProfileEvent({ name: "   " })).toThrow();
   });
 });
 

@@ -2,7 +2,14 @@ import { finalizeEvent } from "nostr-tools/pure";
 import { bytesToHex } from "nostr-tools/utils";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildNoteTemplate } from "./events.ts";
-import { exportNsec, getStoredSecretKey, importNsec } from "./keys.ts";
+import {
+  exportNsec,
+  getProfileExtra,
+  getStoredSecretKey,
+  importNsec,
+  mergeProfileExtra,
+  setProfileExtra,
+} from "./keys.ts";
 
 // 固定 sk = 0x01,0x02,...,0x20（32 bytes）。決定性の検証に使う。
 const FIXED_SK = new Uint8Array(Array.from({ length: 32 }, (_, i) => i + 1));
@@ -58,5 +65,38 @@ describe("keys: nsec ラウンドトリップ", () => {
 
   it("nsec でない文字列を importNsec すると throw する", () => {
     expect(() => importNsec("npub1invalidvalue")).toThrow();
+  });
+
+  it("importNsec はプロフィール控え（profileExtra）を消す（鍵交換で他人の値を残さない・#78 M1）", () => {
+    window.localStorage.setItem(SK_KEY, bytesToHex(FIXED_SK));
+    setProfileExtra({ picture: "https://old", about: "前の鍵の自己紹介", websites: ["https://old"] });
+    const nsec = exportNsec();
+    importNsec(nsec);
+    expect(getProfileExtra()).toEqual({ picture: null, about: null, websites: [] });
+  });
+});
+
+describe("mergeProfileExtra（ローカル優先・空欄だけ relay 補完）", () => {
+  it("ローカルが空の項目だけ relay 値で埋める", () => {
+    expect(
+      mergeProfileExtra(
+        { picture: null, about: null, websites: [] },
+        { picture: "https://p", about: "a", websites: ["https://w"] },
+      ),
+    ).toEqual({ picture: "https://p", about: "a", websites: ["https://w"] });
+  });
+
+  it("ローカルに値があれば relay で上書きしない", () => {
+    expect(
+      mergeProfileExtra(
+        { picture: "https://local", about: "ローカル", websites: ["https://lw"] },
+        { picture: "https://remote", about: "リモート", websites: ["https://rw"] },
+      ),
+    ).toEqual({ picture: "https://local", about: "ローカル", websites: ["https://lw"] });
+  });
+
+  it("remote が null ならローカルそのまま", () => {
+    const local = { picture: "https://x", about: null, websites: [] };
+    expect(mergeProfileExtra(local, null)).toEqual(local);
   });
 });
