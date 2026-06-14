@@ -71,6 +71,7 @@
 - **モーション**: ページロードの staggered reveal（`.ha-rise` ＋ `--i`）。CSS-only・`prefers-reduced-motion` で無効化。
 - **ワードマーク／ロゴ（#20/#21）**: 架空都市**ハノーヴァ(Hanoba)の市章（civic seal）**。葉そのもの（マンネリ）は使わず、緑地＋生成りの紋章円＋市旗の縁＋ピンクの三花弁（花）＋深緑の茎・小枝で抽象化。favicon / PWA / apple-touch / ヘッダーで同型に統一。和欧は「葉の場」主・`HANOBA` を civic kicker（大文字・字間広め）に。スラッシュ併記は廃止。
 - **アイコン（#21）**: 寄せ集めの Unicode 記号（♡/×/↑↓/→）を廃し、単一出自・統一線幅の SVG セット（`src/components/ui/Icon.tsx`）に寄せる。いいねの heart は花＝ピンク。
+- **ヒーロー画像**: AI 生成（`/image` スキル＝codex/gpt-image-2）の温室内観イラスト。文字なし・モダン温室パレット。`public/og/greenhouse-hero.webp`（空フィード/discover idle の背景）と `public/og/og-image.jpg`（OGP/Twitter カード・1200×630）。ソース PNG はリポに残さず、プロンプトで再生成する。
 
 ## 6. データ（Nostr）— 検証済み契約
 

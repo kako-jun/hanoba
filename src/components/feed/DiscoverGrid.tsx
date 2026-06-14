@@ -135,9 +135,18 @@ export default function DiscoverGrid() {
       </aside>
 
       {status === "idle" && (
-        <p className="py-12 text-center text-ha-ink/60">
-          タグを入れて「探す」を押すと、みんなの植物が並びます。
-        </p>
+        <div className="relative overflow-hidden rounded-3xl ring-1 ring-ha-green/15 shadow-sm">
+          <img
+            src="/og/greenhouse-hero.webp"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ha-base/90 via-ha-base/55 to-transparent"></div>
+          <p className="relative px-6 py-16 sm:py-20 text-center font-display text-lg font-semibold text-ha-green-deep">
+            タグを入れて「探す」を押すと、みんなの植物が並びます。
+          </p>
+        </div>
       )}
 
       {status === "loading" && (

@@ -79,21 +79,32 @@ export default function FeedGrid() {
       )}
 
       {visible.length === 0 ? (
-        <div className="py-12 flex flex-col items-center gap-4 text-center">
-          {activeTag !== null ? (
-            <p className="text-ha-ink/70">「#{activeTag}」の投稿はまだありません。</p>
-          ) : (
-            <>
-              <p className="text-ha-ink/70">まだ投稿がありません。最初の一枚を投稿しましょう。</p>
+        activeTag !== null ? (
+          <p className="py-12 text-center text-ha-ink/70">「#{activeTag}」の投稿はまだありません。</p>
+        ) : (
+          // 空フィードは「温室の入口」として見せる（AI生成の温室ヒーロー・/image）。
+          <div className="relative overflow-hidden rounded-3xl ring-1 ring-ha-green/15 shadow-sm">
+            <img
+              src="/og/greenhouse-hero.webp"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-ha-base/90 via-ha-base/55 to-transparent"></div>
+            <div className="relative flex flex-col items-center gap-4 text-center px-6 py-16 sm:py-24">
+              <p className="font-display text-2xl font-extrabold text-ha-green-deep">
+                まだ、だれもいない温室。
+              </p>
+              <p className="text-ha-ink/75 max-w-sm">最初の一枚を置いて、ここを賑やかにしましょう。</p>
               <a
                 href="/compose"
                 className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
               >
                 投稿する
               </a>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )
       ) : (
         <PostGrid posts={visible} onSelectHashtag={setActiveTag} />
       )}
