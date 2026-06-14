@@ -9,6 +9,7 @@ import {
 } from "../feed/discover.ts";
 import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
 import { countLikes } from "../feed/reactions.ts";
+import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
 import { buildDeletionEvent, buildNoteTemplate, buildProfileEvent } from "./events.ts";
 import { setDisplayName, signTemplate } from "./keys.ts";
@@ -177,9 +178,28 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
 
   const pool = getPool();
 
-  // モードごとに (relays, filter) のペアを組む。
-  const jobs: Promise<NostrEvent[]>[] =
-    mode === "tag"
+  // 既知の植物なら別名 OR 検索（#23 Phase 2）。「パキポ」でも Pachypodium/グラキリス 等の
+  // 全表記を横断して拾う。#t は配列で OR できるので 1 クエリで別名タグをまとめて取得し、
+  // 本文は著名表記で NIP-50 全文検索する。
+  const plant = findPlantByTerm(term);
+
+  const jobs: Promise<NostrEvent[]>[] = plant
+    ? (() => {
+        const tags = plantTagValues(plant);
+        return [
+          pool.querySync(
+            [...GENERAL_RELAYS],
+            { kinds: [1], "#t": tags, limit },
+            { maxWait: QUERY_MAXWAIT },
+          ),
+          pool.querySync(
+            [...SEARCH_RELAYS],
+            { kinds: [1], search: plant.name, limit },
+            { maxWait: QUERY_MAXWAIT },
+          ),
+        ];
+      })()
+    : mode === "tag"
       ? (() => {
           const { tagFilter, searchFilter } = discoverTagFilters(term, limit);
           return [
