@@ -139,3 +139,40 @@ export function setDisplayName(name: string): void {
   if (trimmed === "") throw new Error("ユーザー名を入力してください");
   getLS()?.setItem(NAME_KEY, trimmed);
 }
+
+// ---- プロフィールの付加項目（picture / about / websites・#35 Piece3） ----------
+//
+// kind:0 は replaceable なので publish のたびに全項目を載せ直す必要がある。name 以外の
+// 項目をローカルにも控え、name だけ変えたときも全体を publish できるようにする（clobber 防止）。
+// 取得は client.fetchMyProfile（relay）が一次ソースだが、編集中の控えとしてここに保存する。
+
+const PROFILE_EXTRA_KEY = "hanoba:profileExtra";
+
+/** プロフィールの name 以外の編集項目。 */
+export interface ProfileExtra {
+  picture: string | null;
+  about: string | null;
+  websites: string[];
+}
+
+/** 保存済みのプロフィール付加項目を返す（未設定/壊れは空）。 */
+export function getProfileExtra(): ProfileExtra {
+  const empty: ProfileExtra = { picture: null, about: null, websites: [] };
+  const raw = getLS()?.getItem(PROFILE_EXTRA_KEY);
+  if (raw === null || raw === undefined || raw === "") return empty;
+  try {
+    const d = JSON.parse(raw) as Partial<ProfileExtra>;
+    return {
+      picture: typeof d.picture === "string" && d.picture !== "" ? d.picture : null,
+      about: typeof d.about === "string" && d.about !== "" ? d.about : null,
+      websites: Array.isArray(d.websites) ? d.websites.filter((w): w is string => typeof w === "string") : [],
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/** プロフィール付加項目をローカルに保存する。 */
+export function setProfileExtra(extra: ProfileExtra): void {
+  getLS()?.setItem(PROFILE_EXTRA_KEY, JSON.stringify(extra));
+}

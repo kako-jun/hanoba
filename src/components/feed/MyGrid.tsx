@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
+import ProfileEditor from "../account/ProfileEditor.tsx";
 import { deletePost, fetchMyPosts } from "../../lib/nostr/client.ts";
 import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
@@ -72,6 +73,9 @@ export default function MyGrid() {
     <section className="flex flex-col gap-5">
       {/* 表示名（compose と同一の共通コンポーネント）。 */}
       <AccountName />
+
+      {/* プロフィール編集（アイコン・自己紹介・複数サイト・#35 Piece3）。著者ヘッダに反映される。 */}
+      <ProfileEditor />
 
       {notice !== null && (
         <p

@@ -78,20 +78,50 @@ export function buildDeletionEvent(eventIds: string[], reason = "", createdAt?: 
   };
 }
 
+/** プロフィール（kind:0）の編集可能フィールド（#28/#35 Piece3）。 */
+export interface ProfileFields {
+  /** 表示名。必須（空は throw）。 */
+  name: string;
+  /** アバター画像 URL。 */
+  picture?: string | null;
+  /** 自己紹介。 */
+  about?: string | null;
+  /** 複数サイト URL（モーダルのサイトリンクに出る）。 */
+  websites?: string[];
+}
+
 /**
  * プロフィール（NIP-01・kind:0 metadata）のテンプレートを構築する。
  * ユーザー名（表示名）を持たせて「見るだけでなく投稿できる」アカウントにする（#28）。
- * name.trim() が空なら throw。
+ * picture/about/websites も載せられる（著者ヘッダ #35）。
+ *
+ * **kind:0 は replaceable**＝publish すると過去の kind:0 を丸ごと置き換える。よって
+ * 呼び出し側は常に「全フィールドをマージした全体」を渡すこと（部分更新で他項目を消さない）。
+ *
+ * - name.trim() が空なら throw。
+ * - 空（trim 後）の picture/about/websites は JSON に入れない（mypace と round-trip）。
+ * - websites は mypace 互換の `[{url}]` 形式で出す（parseProfile が解釈できる）。
  */
-export function buildProfileEvent(name: string, createdAt?: number): EventTemplate {
-  const trimmed = name.trim();
-  if (trimmed === "") {
+export function buildProfileEvent(fields: ProfileFields, createdAt?: number): EventTemplate {
+  const name = fields.name.trim();
+  if (name === "") {
     throw new Error("ユーザー名を入力してください");
   }
+  const content: Record<string, unknown> = { name };
+
+  const picture = fields.picture?.trim();
+  if (picture !== undefined && picture !== "") content.picture = picture;
+
+  const about = fields.about?.trim();
+  if (about !== undefined && about !== "") content.about = about;
+
+  const websites = (fields.websites ?? []).map((w) => w.trim()).filter((w) => w !== "");
+  if (websites.length > 0) content.websites = websites.map((url) => ({ url }));
+
   return {
     kind: 0,
     created_at: createdAt ?? nowSec(),
     tags: [],
-    content: JSON.stringify({ name: trimmed }),
+    content: JSON.stringify(content),
   };
 }
