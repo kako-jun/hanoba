@@ -56,4 +56,21 @@ describe("PostDetail いいね数表示", () => {
       expect(like).toHaveTextContent("-");
     });
   });
+
+  it("本文から植物を認識し 学名＋著名表記を並べ discover 検索へリンクする（#23）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({ id: "p4", caption: "うちのパキポ、いい形" })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // 学名（フォーマル）と著名表記を両方表示。
+    expect(await screen.findByText("Pachypodium")).toBeInTheDocument();
+    expect(screen.getByText("パキポディウム")).toBeInTheDocument();
+    // クリックでその植物の discover 検索へ。
+    const link = screen.getByRole("link", { name: /Pachypodium/ });
+    expect(link).toHaveAttribute("href", "/discover?q=%E3%83%91%E3%82%AD%E3%83%9D%E3%83%87%E3%82%A3%E3%82%A6%E3%83%A0");
+  });
 });

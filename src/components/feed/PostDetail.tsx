@@ -1,6 +1,7 @@
 import { nip19 } from "nostr-tools";
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
+import { detectPlants } from "../../lib/plants/detect.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
@@ -93,6 +94,9 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
     };
   }, [post.id]);
 
+  // 本文＋タグから植物を認識（#23）。純粋・軽量なので描画ごとに計算してよい。
+  const plants = detectPlants(`${post.caption} ${post.hashtags.join(" ")}`);
+
   return (
     <div
       role="dialog"
@@ -125,6 +129,30 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
         <div className="flex flex-col gap-3 p-5">
           {post.caption !== "" && (
             <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{post.caption}</p>
+          )}
+
+          {/* 認識した植物を「学名 / 著名表記」で並列表示（#23）。本文・タグ どちらの語にも反応。
+              クリックでその植物の discover 検索へ。投稿は不変なので辞書を育てて精度を上げる。 */}
+          {plants.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-ha-ink/45">
+                この投稿の植物
+              </span>
+              <ul className="flex flex-wrap gap-2">
+                {plants.map((p) => (
+                  <li key={p.id}>
+                    <a
+                      href={`/discover?q=${encodeURIComponent(p.name)}`}
+                      className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm hover:border-ha-green/50 transition-colors"
+                      title={`${p.sci}（${p.name}）で探す`}
+                    >
+                      <span className="font-display italic text-ha-green-deep">{p.sci}</span>
+                      <span className="text-ha-ink/70">{p.name}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {post.hashtags.length > 0 && (
