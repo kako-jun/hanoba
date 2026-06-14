@@ -65,6 +65,14 @@ summary {
   cursor: pointer;
 }
 
+/* 明るい葉緑（#6cba38）の塗りボタンは白文字だとコントラスト不足で読みにくい（#71）。
+   緑の鮮やかさは保ちたいので、文字に濃い緑の影を足して可読性を上げる。 */
+.bg-ha-green {
+  text-shadow:
+    0 1px 1.5px rgba(8, 30, 4, 0.7),
+    0 0 2px rgba(8, 30, 4, 0.55);
+}
+
 /* 見出しは display 書体。 */
 .font-display {
   font-family: var(--font-display);
