@@ -48,7 +48,7 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag }: 
       className="ha-rise glass rounded-2xl overflow-hidden"
       style={{ "--i": Math.min(index, 11) } as CSSProperties}
     >
-      <article className={`flex flex-col sm:flex-row ${expanded ? "" : "sm:h-56"}`}>
+      <article className={`flex flex-col sm:flex-row ${expanded ? "" : "sm:h-56 lg:h-72"}`}>
         {post.imageUrl !== null && (
           <button
             type="button"
@@ -56,7 +56,7 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag }: 
             // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
             aria-label={post.caption === "" ? "写真を拡大" : post.caption}
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
-            className="group block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            className="group block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
             <img
               src={post.imageUrl}
