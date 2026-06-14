@@ -9,7 +9,9 @@ describe("PlantSuggest", () => {
   it("俗称を書くと正規形タグの候補（学名つき）を出す", () => {
     render(<PlantSuggest caption="うちのパキポ かわいい" onAddTag={() => {}} />);
     expect(screen.getByText("＋ #パキポディウム")).toBeInTheDocument();
-    expect(screen.getByText("Pachypodium")).toBeInTheDocument();
+    // 学名を表示（SciName で属名/種小名はイタリック・接続語は直立。単一トークンは
+    // 外側 wrapper と内側 span の両方に同テキストが載るので getAllByText で見る・#70）。
+    expect(screen.getAllByText("Pachypodium").length).toBeGreaterThan(0);
   });
 
   it("タップで正規形（最も有名な表記）を渡す", async () => {

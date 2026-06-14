@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import { detectPlants } from "../../lib/plants/detect.ts";
+import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
+import SciName from "../ui/SciName.tsx";
 import Avatar from "./Avatar.tsx";
 
 interface Props {
@@ -85,7 +87,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   }, [post.id]);
 
   // 本文＋タグから植物を認識（#23）。純粋・軽量なので描画ごとに計算してよい。
+  // 認識はタグ語も拾えるよう生の caption＋hashtags を渡す（表示は別途 strip する）。
   const plants = detectPlants(`${post.caption} ${post.hashtags.join(" ")}`);
+
+  // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
+  const captionText = stripHashtags(post.caption);
 
   return (
     <div
@@ -124,8 +130,8 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
         )}
 
         <div className="flex flex-col gap-3 p-5">
-          {post.caption !== "" && (
-            <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{post.caption}</p>
+          {captionText !== "" && (
+            <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{captionText}</p>
           )}
 
           {/* 認識した植物を「学名 / 著名表記」で並列表示（#23）。本文・タグ どちらの語にも反応。
@@ -143,7 +149,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                       className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm hover:border-ha-green/50 transition-colors"
                       title={`${p.sci}（${p.name}）で探す`}
                     >
-                      <span className="font-display italic text-ha-green-deep">{p.sci}</span>
+                      <SciName sci={p.sci} className="font-display text-ha-green-deep" />
                       <span className="text-ha-ink/70">{p.name}</span>
                     </a>
                   </li>
