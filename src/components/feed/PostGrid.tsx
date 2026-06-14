@@ -1,5 +1,6 @@
 import { type CSSProperties, useMemo, useState } from "react";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
+import { stripHashtags } from "../../lib/nostr/tags.ts";
 import PostCaption from "./PostCaption.tsx";
 import PostDetail from "./PostDetail.tsx";
 
@@ -49,7 +50,10 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   return (
     <>
       <ul className="flex flex-col gap-4">
-        {posts.map((post, i) => (
+        {posts.map((post, i) => {
+          // 表示本文＝タグを除いた「読む本文」（タグは右の縦列に出す・#34 iteration）。
+          const captionText = stripHashtags(post.caption);
+          return (
           <li
             key={post.id}
             // ロード時の staggered reveal（--i）。先頭の遅延だけ付け、深部は頭打ちにする。
@@ -63,7 +67,8 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
                   onClick={() => setSelectedId(post.id)}
                   // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
                   aria-label={post.caption === "" ? "写真を拡大" : post.caption}
-                  className="group block shrink-0 w-full sm:w-56 aspect-square overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+                  // self-start で flex の stretch を切り、本文が高くても写真を正方形のまま保つ（#34 退行修正）。
+                  className="group block self-start shrink-0 w-full sm:w-56 aspect-square overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                 >
                   <img
                     src={post.imageUrl}
@@ -74,33 +79,34 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
                 </button>
               )}
 
+              {/* 本文＝タグを除いた「読む本文」。固定行数で折りたたみ、カード高さを写真の正方形に寄せる。 */}
               <div className="flex flex-col gap-2.5 p-4 sm:p-5 min-w-0 flex-1">
-                {/* 全文表示（1クリック不要）。極端な長文だけソフト上限で畳む（#40）。 */}
-                {post.caption !== "" && <PostCaption caption={post.caption} />}
-
-                {post.hashtags.length > 0 && (
-                  <ul className="flex flex-wrap gap-2">
-                    {post.hashtags.map((tag) => (
-                      <li key={tag}>
-                        <button
-                          type="button"
-                          onClick={() => selectHashtag(tag)}
-                          className="rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
-                        >
-                          #{tag}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
+                {captionText !== "" && <PostCaption caption={captionText} />}
                 <time className="mt-auto pt-1 text-xs text-ha-ink/55">
                   {relativeTime(post.createdAt, now)}
                 </time>
               </div>
+
+              {/* タグは本文の右の空きスペースに縦並び（高さを新たに使わない）。モバイルは本文下に横wrap。 */}
+              {post.hashtags.length > 0 && (
+                <ul className="flex flex-wrap sm:flex-col items-start content-start gap-2 px-4 pb-4 sm:p-5 sm:pl-0 shrink-0 sm:max-w-[11rem]">
+                  {post.hashtags.map((tag) => (
+                    <li key={tag} className="min-w-0 max-w-full">
+                      <button
+                        type="button"
+                        onClick={() => selectHashtag(tag)}
+                        className="block max-w-full truncate rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
+                      >
+                        #{tag}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </article>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       {selected !== null && (
