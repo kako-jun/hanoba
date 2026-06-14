@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -104,5 +104,33 @@ describe("Composer", () => {
   it("マウント時に過去タグを取得する", async () => {
     render(<Composer />);
     await waitFor(() => expect(fetchKnownHashtags).toHaveBeenCalled());
+  });
+
+  it("投稿成功で公開し、自分の植物（/me）へ遷移する（#32）", async () => {
+    const user = userEvent.setup();
+    // 遷移先を捕まえるため window.location を差し替える（このテスト内のみ・finally で復元）。
+    const orig = Object.getOwnPropertyDescriptor(window, "location");
+    const stub = { href: "" } as Location;
+    Object.defineProperty(window, "location", { configurable: true, value: stub });
+    try {
+      render(<Composer />);
+      // 画像選択 → クロップ画像の load で初期正方形クロップが親に確定する。
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      await user.upload(input, makeImageFile());
+      const img = document.querySelector("img");
+      expect(img).not.toBeNull();
+      fireEvent.load(img!);
+      // 一言を入れて投稿。
+      await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
+      await user.click(await screen.findByRole("button", { name: /投稿する/ }));
+
+      await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
+      expect(uploadImage).toHaveBeenCalled();
+      // 成功メッセージ＋ /me へ遷移。
+      expect(await screen.findByText(/自分の植物へ移動します/)).toBeInTheDocument();
+      expect(stub.href).toBe("/me");
+    } finally {
+      if (orig) Object.defineProperty(window, "location", orig);
+    }
   });
 });
