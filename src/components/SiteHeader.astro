@@ -9,6 +9,8 @@
 // 旧来は index だけが slot でナビを差し込み、しかも一部 hidden sm:inline でスマホ時に
 // 主要動線へ辿れなかった。ナビをここに一本化して解消する。
 
+import Icon from "./ui/Icon.tsx";
+
 interface Props {
   /** 現在ページ。該当リンクを強調する（任意）。 */
   current?: "home" | "discover" | "me" | "compose" | "about";
@@ -60,8 +62,9 @@ const links = [
       }
       <a
         href="/compose"
-        class="rounded-full bg-ha-green text-ha-white px-5 py-2 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+        class="inline-flex items-center gap-1.5 rounded-full bg-ha-green text-ha-white px-5 py-2 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
       >
+        <Icon name="sprout" className="w-4 h-4" />
         投稿する
       </a>
     </nav>
@@ -102,8 +105,9 @@ const links = [
       }
       <a
         href="/compose"
-        class="mt-1 rounded-xl bg-ha-green text-ha-white px-3 py-3 font-semibold text-center hover:brightness-110 transition-all"
+        class="mt-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-ha-green text-ha-white px-3 py-3 font-semibold hover:brightness-110 transition-all"
       >
+        <Icon name="sprout" className="w-4 h-4" />
         投稿する
       </a>
     </div>
