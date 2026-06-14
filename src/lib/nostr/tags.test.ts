@@ -84,4 +84,8 @@ describe("stripHashtags", () => {
   it("タグが無ければそのまま（trim のみ）", () => {
     expect(stripHashtags("  ただの一言です  ")).toBe("ただの一言です");
   });
+
+  it("空行（段落区切り）は残す（#65）", () => {
+    expect(stripHashtags("一段目\n\n二段目 #タグ")).toBe("一段目\n\n二段目");
+  });
 });
