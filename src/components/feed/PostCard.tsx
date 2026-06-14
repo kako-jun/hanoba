@@ -98,7 +98,9 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag }: 
         {post.hashtags.length > 0 && (
           <ul
             ref={tagsRef}
-            className={`flex flex-wrap sm:flex-col items-start content-start gap-2 px-4 pb-4 sm:p-5 sm:pl-0 shrink-0 sm:max-w-[11rem] ${
+            // モバイルは横に wrap、デスクトップは1列の縦並び（flex-nowrap）で、
+            // 多すぎる時は2列に折り返さず下を見切る（#54）。clip 時は「続きを読む」で展開。
+            className={`flex flex-wrap sm:flex-col sm:flex-nowrap items-start gap-2 px-4 pb-4 sm:p-5 sm:pl-0 shrink-0 sm:max-w-[11rem] ${
               expanded ? "" : "overflow-hidden"
             }`}
           >
