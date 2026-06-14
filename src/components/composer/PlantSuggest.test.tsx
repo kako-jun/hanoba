@@ -9,7 +9,10 @@ describe("PlantSuggest", () => {
   it("俗称を書くと正規形タグの候補（学名つき）を出す", () => {
     render(<PlantSuggest caption="うちのパキポ かわいい" onAddTag={() => {}} />);
     expect(screen.getByText("＋ #パキポディウム")).toBeInTheDocument();
-    expect(screen.getByText("Pachypodium")).toBeInTheDocument();
+    // 学名を表示（SciName で属名/種小名はイタリック・接続語は直立・#70）。
+    // 属チップ（sci=Pachypodium）と子チップ（グラキリス sci=Pachypodium rosulatum …）の
+    // 両方が先頭トークン "Pachypodium" を leaf span に持つため getAllByText で見る。
+    expect(screen.getAllByText("Pachypodium").length).toBeGreaterThan(0);
   });
 
   it("タップで正規形（最も有名な表記）を渡す", async () => {

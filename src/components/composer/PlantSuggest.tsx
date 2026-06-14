@@ -2,6 +2,7 @@ import { insertTag } from "../../lib/image/hashtag-complete.ts";
 import type { PlantEntry } from "../../lib/plants/dictionary.ts";
 import { detectPlants } from "../../lib/plants/detect.ts";
 import { childrenOf } from "../../lib/plants/search.ts";
+import SciName from "../ui/SciName.tsx";
 
 interface Props {
   /** 現在の一言（本文）。ここから植物を認識する。 */
@@ -20,7 +21,7 @@ function Chip({ entry, onAdd }: { entry: PlantEntry; onAdd: (tag: string) => voi
       className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 transition-colors"
     >
       <span className="text-ha-green-deep font-semibold">＋ #{entry.name}</span>
-      <span className="font-display italic text-ha-ink/55">{entry.sci}</span>
+      <SciName sci={entry.sci} className="font-display text-ha-ink/55" />
     </button>
   );
 }
