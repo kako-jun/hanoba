@@ -53,6 +53,15 @@ describe("buildProfileEvent", () => {
     expect(JSON.parse(t.content)).toEqual({ name: "カコ" });
   });
 
+  it("http(s) でない picture/websites は落とす（危険スキーム・壊れURL防止）", () => {
+    const t = buildProfileEvent({
+      name: "カコ",
+      picture: "javascript:alert(1)",
+      websites: ["data:text/html,x", "ftp://foo", "/relative", "https://ok.example"],
+    });
+    expect(JSON.parse(t.content)).toEqual({ name: "カコ", websites: [{ url: "https://ok.example" }] });
+  });
+
   it("空名は throw", () => {
     expect(() => buildProfileEvent({ name: "   " })).toThrow();
   });

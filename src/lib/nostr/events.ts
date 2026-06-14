@@ -7,6 +7,16 @@ function nowSec(): number {
   return Math.floor(Date.now() / 1000);
 }
 
+/** http(s) の絶対 URL か（プロフィールの picture/websites の安全確認・#78）。 */
+function isHttpUrl(u: string): boolean {
+  try {
+    const proto = new URL(u).protocol;
+    return proto === "http:" || proto === "https:";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * 投稿（kind:1 テキストノート）のテンプレートを構築する。
  *
@@ -109,13 +119,14 @@ export function buildProfileEvent(fields: ProfileFields, createdAt?: number): Ev
   }
   const content: Record<string, unknown> = { name };
 
+  // picture/websites は他所で href/src に出るので http(s) の絶対 URL だけ載せる（#78 レビュー S1）。
   const picture = fields.picture?.trim();
-  if (picture !== undefined && picture !== "") content.picture = picture;
+  if (picture !== undefined && picture !== "" && isHttpUrl(picture)) content.picture = picture;
 
   const about = fields.about?.trim();
   if (about !== undefined && about !== "") content.about = about;
 
-  const websites = (fields.websites ?? []).map((w) => w.trim()).filter((w) => w !== "");
+  const websites = (fields.websites ?? []).map((w) => w.trim()).filter((w) => isHttpUrl(w));
   if (websites.length > 0) content.websites = websites.map((url) => ({ url }));
 
   return {

@@ -118,6 +118,10 @@ export function importNsec(nsec: string): void {
     throw new Error("nsec ではありません");
   }
   getLS()?.setItem(SK_KEY, bytesToHex(decoded.data));
+  // 鍵＝アカウントが変わったので、旧鍵のプロフィール控え（picture/about/websites）を捨てる。
+  // 残すと別人のアバター/サイトが新アカウントの kind:0 に混入・上書きされる（#78 レビュー M1）。
+  // 新アカウントの値は呼び出し側が relay から再シードする（client.fetchMyProfile）。
+  getLS()?.removeItem(PROFILE_EXTRA_KEY);
 }
 
 // ---- 表示名（ユーザー名） ---------------------------------------------------
@@ -175,4 +179,18 @@ export function getProfileExtra(): ProfileExtra {
 /** プロフィール付加項目をローカルに保存する。 */
 export function setProfileExtra(extra: ProfileExtra): void {
   getLS()?.setItem(PROFILE_EXTRA_KEY, JSON.stringify(extra));
+}
+
+/**
+ * ローカル控えと relay 実体をマージする純粋関数（#78 レビュー M2）。
+ * ローカルに値があればそれを優先し、空のフィールドだけ relay 値で補う。
+ * kind:0 は replaceable なので、名前だけの変更でも relay にしか無い項目を消さないために使う。
+ */
+export function mergeProfileExtra(local: ProfileExtra, remote: ProfileExtra | null): ProfileExtra {
+  if (remote === null) return local;
+  return {
+    picture: local.picture ?? remote.picture,
+    about: local.about ?? remote.about,
+    websites: local.websites.length > 0 ? local.websites : remote.websites,
+  };
 }

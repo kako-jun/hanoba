@@ -21,12 +21,15 @@ export default function ProfileEditor() {
   const [name, setName] = useState<string | null>(null);
   const [picture, setPicture] = useState<string | null>(null);
   const [about, setAbout] = useState("");
-  const [websites, setWebsites] = useState<string[]>([]);
+  // サイト行は安定 id で持つ（index key だと並べ替え/中間削除でフォーカス・IME が飛ぶ・レビュー S2）。
+  const [sites, setSites] = useState<{ id: number; url: string }[]>([]);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const aliveRef = useRef(true);
+  const uidRef = useRef(0);
+  const nextId = () => ++uidRef.current;
 
   useEffect(() => {
     aliveRef.current = true;
@@ -43,7 +46,7 @@ export default function ProfileEditor() {
     setName(localName);
     setPicture(extra.picture);
     setAbout(extra.about ?? "");
-    setWebsites(extra.websites);
+    setSites(extra.websites.map((url) => ({ id: nextId(), url })));
 
     void (async () => {
       try {
@@ -52,7 +55,7 @@ export default function ProfileEditor() {
         if (!aliveRef.current || remote === null) return;
         setPicture((cur) => cur ?? remote.picture);
         setAbout((cur) => (cur === "" ? (remote.about ?? "") : cur));
-        setWebsites((cur) => (cur.length === 0 ? remote.websites : cur));
+        setSites((cur) => (cur.length === 0 ? remote.websites.map((url) => ({ id: nextId(), url })) : cur));
         if (localName === null && remote.name !== null) setName(remote.name);
       } catch {
         // relay 取得失敗は無視（ローカル値で編集できる）。
@@ -82,23 +85,23 @@ export default function ProfileEditor() {
     }
   }
 
-  function updateSite(i: number, value: string) {
-    setWebsites((ws) => ws.map((w, j) => (j === i ? value : w)));
+  function updateSite(id: number, value: string) {
+    setSites((ss) => ss.map((s) => (s.id === id ? { ...s, url: value } : s)));
     touch();
   }
   function addSite() {
-    setWebsites((ws) => [...ws, ""]);
+    setSites((ss) => [...ss, { id: nextId(), url: "" }]);
     touch();
   }
-  function removeSite(i: number) {
-    setWebsites((ws) => ws.filter((_, j) => j !== i));
+  function removeSite(id: number) {
+    setSites((ss) => ss.filter((s) => s.id !== id));
     touch();
   }
   function moveSite(i: number, dir: -1 | 1) {
-    setWebsites((ws) => {
+    setSites((ss) => {
       const j = i + dir;
-      if (j < 0 || j >= ws.length) return ws;
-      const next = [...ws];
+      if (j < 0 || j >= ss.length) return ss;
+      const next = [...ss];
       [next[i], next[j]] = [next[j]!, next[i]!];
       return next;
     });
@@ -106,11 +109,16 @@ export default function ProfileEditor() {
   }
 
   async function save() {
-    if (name === null || name.trim() === "") return;
+    // 名前は AccountName 側で変わりうるので保存直前に読み直す（古い名前で上書きしない・レビュー S3）。
+    const currentName = getDisplayName() ?? name;
+    if (currentName === null || currentName.trim() === "") return;
     setStatus("saving");
     try {
-      await saveProfile({ name, picture, about, websites });
-      if (aliveRef.current) setStatus("saved");
+      await saveProfile({ name: currentName, picture, about, websites: sites.map((s) => s.url) });
+      if (aliveRef.current) {
+        setName(currentName);
+        setStatus("saved");
+      }
     } catch {
       if (aliveRef.current) setStatus("error");
     }
@@ -221,15 +229,15 @@ export default function ProfileEditor() {
               拡大写真の著者欄にアイコンで並びます。各人が自分のサイトへ誘導できます。
             </p>
             <ul className="flex flex-col gap-2">
-              {websites.map((url, i) => {
-                const label = url.trim() === "" ? null : detectServiceLabel(url);
+              {sites.map((site, i) => {
+                const label = site.url.trim() === "" ? null : detectServiceLabel(site.url);
                 return (
-                  <li key={i} className="flex items-center gap-1.5">
+                  <li key={site.id} className="flex items-center gap-1.5">
                     <div className="flex-1 flex flex-col gap-0.5">
                       <input
                         type="url"
-                        value={url}
-                        onChange={(e) => updateSite(i, e.target.value)}
+                        value={site.url}
+                        onChange={(e) => updateSite(site.id, e.target.value)}
                         placeholder="https://…"
                         aria-label={`サイト ${i + 1} の URL`}
                         className="w-full rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
@@ -251,7 +259,7 @@ export default function ProfileEditor() {
                       <button
                         type="button"
                         onClick={() => moveSite(i, 1)}
-                        disabled={i === websites.length - 1}
+                        disabled={i === sites.length - 1}
                         aria-label={`サイト ${i + 1} を下へ`}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 disabled:opacity-30 transition"
                       >
@@ -259,7 +267,7 @@ export default function ProfileEditor() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => removeSite(i)}
+                        onClick={() => removeSite(site.id)}
                         aria-label={`サイト ${i + 1} を削除`}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-pink hover:bg-white/10 transition"
                       >
