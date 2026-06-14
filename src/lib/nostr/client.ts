@@ -15,6 +15,11 @@ import { signTemplate } from "./keys.ts";
 import { extractHashtags } from "./tags.ts";
 import type { NostrEvent } from "./types.ts";
 
+// リレー取得の最大待ち時間（ms）。EOSE を返さない・接続が滞るリレーがあっても
+// querySync をここで打ち切り、UI が「読み込み中…」で固まらないようにする（session640 バグ）。
+// 期限内に届いたイベントだけで解決する（部分結果でも空でも UI は前へ進む）。
+const QUERY_MAXWAIT = 4000;
+
 // SimplePool はシングルトンとして遅延生成する（最初の publish 時に WebSocket 接続）。
 let pool: SimplePool | null = null;
 
@@ -61,11 +66,15 @@ export async function signAndPublishNote(input: {
  */
 export async function fetchKnownHashtags(limit = 200): Promise<string[]> {
   try {
-    const events = await getPool().querySync([...GENERAL_RELAYS], {
-      kinds: [1],
-      "#t": [TAG_HANOBA],
-      limit,
-    });
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [1],
+        "#t": [TAG_HANOBA],
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
     const seen = new Set<string>();
     const result: string[] = [];
     for (const event of events) {
@@ -97,11 +106,15 @@ export async function fetchKnownHashtags(limit = 200): Promise<string[]> {
  */
 export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
   try {
-    const events = await getPool().querySync([...GENERAL_RELAYS], {
-      kinds: [1],
-      "#t": [TAG_HANOBA],
-      limit,
-    });
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [1],
+        "#t": [TAG_HANOBA],
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
     const posts = mergePostsById(events.map(parsePost));
     return posts.filter((post) => post.imageUrl !== null);
   } catch {
@@ -123,11 +136,15 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
   try {
     // limit はリレーから取る kind:7 の上限。超人気投稿（リアクション > limit）では概数になる。
     // kind:7 の #e フィルタは通常リレーで足りる（NIP-50 検索リレーは本文全文検索用＝不要）。
-    const reactions = await getPool().querySync([...GENERAL_RELAYS], {
-      kinds: [7],
-      "#e": [eventId],
-      limit,
-    });
+    const reactions = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [7],
+        "#e": [eventId],
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
     return countLikes(reactions);
   } catch {
     return 0;
@@ -165,15 +182,15 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
       ? (() => {
           const { tagFilter, searchFilter } = discoverTagFilters(term, limit);
           return [
-            pool.querySync([...GENERAL_RELAYS], tagFilter),
-            pool.querySync([...SEARCH_RELAYS], searchFilter),
+            pool.querySync([...GENERAL_RELAYS], tagFilter, { maxWait: QUERY_MAXWAIT }),
+            pool.querySync([...SEARCH_RELAYS], searchFilter, { maxWait: QUERY_MAXWAIT }),
           ];
         })()
       : (() => {
           const { keywordFilter, tagFilter } = discoverKeywordFilters(term, limit);
           return [
-            pool.querySync([...SEARCH_RELAYS], keywordFilter),
-            pool.querySync([...GENERAL_RELAYS], tagFilter),
+            pool.querySync([...SEARCH_RELAYS], keywordFilter, { maxWait: QUERY_MAXWAIT }),
+            pool.querySync([...GENERAL_RELAYS], tagFilter, { maxWait: QUERY_MAXWAIT }),
           ];
         })();
 

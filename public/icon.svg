@@ -1,24 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーヴァ市章（葉の場）">
-  <!-- 架空都市ハノーヴァの市章（civic seal）。葉そのものは使わず紋章で見せる。
-       緑＝地（テーマ）／生成り＝紋章円・市旗の縁（抜き）／ピンク＝花（差し色）。
-       上向きの花＋茎＋小枝の縦構図（顔に見えないよう水平の弧は使わない）。 -->
-  <rect width="512" height="512" rx="104" fill="#509120" />
-  <!-- 市旗の縁（生成りの内枠） -->
-  <rect x="38" y="38" width="436" height="436" rx="78" fill="none" stroke="#f3e7e7" stroke-width="9" stroke-opacity="0.85" />
-  <!-- 紋章円（seal） -->
-  <circle cx="256" cy="256" r="150" fill="#f7f1e7" />
-  <!-- 茎＋小枝（深緑） -->
-  <g fill="none" stroke="#305713" stroke-width="16" stroke-linecap="round">
-    <path d="M256 372 V206" />
-    <path d="M256 300 L214 274" />
-    <path d="M256 300 L298 274" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーヴァ市旗">
+  <!-- 架空都市ハノーヴァの市旗（civic flag）。三色旗＝緑（地・主）/生成り（帯）/ピンク（細い差し色）。
+       葉モチーフは使わず、抽象的な国旗/市旗の構成で見せる。緑が主・ピンクは accent（細帯）。 -->
+  <defs>
+    <clipPath id="r"><rect width="512" height="512" rx="104" /></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <!-- 横三色帯（不等分・緑が支配的） -->
+    <rect width="512" height="512" fill="#509120" />
+    <rect y="316" width="512" height="196" fill="#f3e7e7" />
+    <rect y="452" width="512" height="60" fill="#ff5460" />
+    <!-- 市の徽（生成りの円＋ピンクの芯＝種）。緑の地に抜きで載せる civic charge。 -->
+    <circle cx="256" cy="168" r="74" fill="#f7f1e7" />
+    <circle cx="256" cy="168" r="30" fill="#ff5460" />
   </g>
-  <!-- 花＝ピンクの三花弁（heraldic trefoil・上向き） -->
-  <g fill="#ff5460">
-    <circle cx="256" cy="166" r="36" />
-    <circle cx="214" cy="204" r="31" />
-    <circle cx="298" cy="204" r="31" />
-  </g>
-  <!-- 花芯（生成りの抜き） -->
-  <circle cx="256" cy="197" r="14" fill="#f7f1e7" />
 </svg>

@@ -6,6 +6,10 @@ import PostGrid from "./PostGrid.tsx";
 
 type Status = "idle" | "loading" | "error" | "loaded";
 
+// 初回（?q= 無し）に自動で流す既定検索。開いた瞬間から写真が並ぶようにする（Instagram の explore 流・#22）。
+// Nostr の植物界隈で最も広く使われるタグ。結果ゼロのときだけ案内（温室）を出す。
+const DEFAULT_DISCOVER_QUERY = "#plantstr";
+
 /**
  * 現在の URL の検索語を読む（クライアントのみ）。SSR では呼ばない。
  * `?q=`（#24・タグ/キーワード両対応）を優先し、旧 `?tag=` リンクも後方互換で拾う。
@@ -64,12 +68,17 @@ export default function DiscoverGrid() {
   const latestRef = useRef(0);
 
   // raw はタグ（`#アガベ`）でもキーワード（`葉焼け`）でもよい。モード分岐は fetchDiscover 側（#24）。
-  async function search(raw: string) {
+  // fromDefault=true は初回の自動既定検索（入力欄・URL を汚さない・0件は idle に戻す）。
+  async function search(raw: string, fromDefault = false) {
     const q = raw.trim();
     const token = ++latestRef.current;
-    setInput(q);
-    setQuery(q);
-    writeQueryToUrl(q);
+    if (!fromDefault) {
+      setInput(q);
+      setQuery(q);
+      writeQueryToUrl(q);
+    } else {
+      setQuery(q);
+    }
     if (q === "") {
       setStatus("idle");
       setPosts([]);
@@ -79,21 +88,31 @@ export default function DiscoverGrid() {
     try {
       const result = await fetchDiscover(q);
       if (token !== latestRef.current) return; // 新しい検索が走っていたら古い応答は捨てる
+      // 既定検索が空振りなら、空グリッドでなく idle 案内（温室）に戻す。
+      if (fromDefault && result.length === 0) {
+        setStatus("idle");
+        setPosts([]);
+        return;
+      }
       setPosts(result);
       setStatus("loaded");
     } catch {
       if (token !== latestRef.current) return;
       // fetchDiscover は基本フォールバックするが、念のため error 状態も持つ。
-      setStatus("error");
+      // 既定検索の失敗は idle に戻す（エラー画面を出さない）。
+      setStatus(fromDefault ? "idle" : "error");
     }
   }
 
-  // マウント時に URL の ?q=（旧 ?tag=）があれば初期検索する（クライアントのみ・1回だけ）。
+  // マウント時: URL の ?q=（旧 ?tag=）があればそれを、無ければ既定検索を自動で流す
+  // （開いた瞬間に写真が並ぶ＝Instagram explore 流・#22）。クライアントのみ・初回だけ。
   // search は安定参照ではないが、依存は意図的に空（初回マウントのみ実行）。
   useEffect(() => {
     const initial = readQueryFromUrl();
     if (initial !== "") {
       void search(initial);
+    } else {
+      void search(DEFAULT_DISCOVER_QUERY, true);
     }
   }, []);
 

@@ -1,16 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="ハノーヴァ市章">
-  <!-- ハノーヴァ市章の小サイズ版（favicon）。細部は省き、緑地＋紋章円＋ピンク三花弁で識別。 -->
-  <rect width="64" height="64" rx="14" fill="#509120" />
-  <circle cx="32" cy="32" r="20" fill="#f7f1e7" />
-  <g fill="none" stroke="#305713" stroke-width="3" stroke-linecap="round">
-    <path d="M32 46 V28" />
-    <path d="M32 37 L25 32.5" />
-    <path d="M32 37 L39 32.5" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="ハノーヴァ市旗">
+  <!-- ハノーヴァ市旗の小サイズ版（favicon）。三色帯＋徽（生成りの円＋ピンクの芯）。 -->
+  <defs>
+    <clipPath id="rf"><rect width="64" height="64" rx="14" /></clipPath>
+  </defs>
+  <g clip-path="url(#rf)">
+    <rect width="64" height="64" fill="#509120" />
+    <rect y="40" width="64" height="24" fill="#f3e7e7" />
+    <rect y="56" width="64" height="8" fill="#ff5460" />
+    <circle cx="32" cy="21" r="9.6" fill="#f7f1e7" />
+    <circle cx="32" cy="21" r="3.9" fill="#ff5460" />
   </g>
-  <g fill="#ff5460">
-    <circle cx="32" cy="22" r="6.4" />
-    <circle cx="24.6" cy="28.4" r="5.4" />
-    <circle cx="39.4" cy="28.4" r="5.4" />
-  </g>
-  <circle cx="32" cy="26.6" r="2.4" fill="#f7f1e7" />
 </svg>

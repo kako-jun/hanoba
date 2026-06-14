@@ -17,19 +17,16 @@
         role="img"
         aria-hidden="true"
       >
-        <rect width="64" height="64" rx="14" fill="#509120"></rect>
-        <circle cx="32" cy="32" r="20" fill="#f7f1e7"></circle>
-        <g fill="none" stroke="#305713" stroke-width="3" stroke-linecap="round">
-          <path d="M32 46 V28"></path>
-          <path d="M32 37 L25 32.5"></path>
-          <path d="M32 37 L39 32.5"></path>
+        <defs>
+          <clipPath id="ha-flag"><rect width="64" height="64" rx="14"></rect></clipPath>
+        </defs>
+        <g clip-path="url(#ha-flag)">
+          <rect width="64" height="64" fill="#509120"></rect>
+          <rect y="40" width="64" height="24" fill="#f3e7e7"></rect>
+          <rect y="56" width="64" height="8" fill="#ff5460"></rect>
+          <circle cx="32" cy="21" r="9.6" fill="#f7f1e7"></circle>
+          <circle cx="32" cy="21" r="3.9" fill="#ff5460"></circle>
         </g>
-        <g fill="#ff5460">
-          <circle cx="32" cy="22" r="6.4"></circle>
-          <circle cx="24.6" cy="28.4" r="5.4"></circle>
-          <circle cx="39.4" cy="28.4" r="5.4"></circle>
-        </g>
-        <circle cx="32" cy="26.6" r="2.4" fill="#f7f1e7"></circle>
       </svg>
       <span class="flex flex-col leading-none">
         <span class="text-xl font-bold tracking-tight text-ha-green-deep">葉の場</span>

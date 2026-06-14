@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない）。
+// クエリ語をキーに応答を引く mockImplementation で、初回の既定検索（#plantstr・#22）と
+// ユーザー検索の両方を順序非依存に扱う。
 const fetchDiscover = vi.fn();
 // PostDetail がマウント時に呼ぶいいね数取得もモックで止める（#12）。
 const fetchReactionCount = vi.fn();
@@ -18,6 +20,12 @@ import DiscoverGrid from "./DiscoverGrid.tsx";
 // 検索ボックスの aria-label（タグ/キーワード両対応・#24）。
 const SEARCH_BOX = "植物のタグ または 本文キーワード";
 
+// クエリ語 → 応答投稿。未登録は空配列（既定検索 #plantstr も既定で空＝idle に戻る）。
+const responses = new Map<string, FeedPost[]>();
+function setResponse(query: string, posts: FeedPost[]) {
+  responses.set(query, posts);
+}
+
 function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
   return {
     id: overrides.id,
@@ -31,10 +39,12 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 
 describe("DiscoverGrid", () => {
   beforeEach(() => {
+    responses.clear();
     fetchDiscover.mockReset();
+    fetchDiscover.mockImplementation((q: string) => Promise.resolve(responses.get(q) ?? []));
     fetchReactionCount.mockReset();
     fetchReactionCount.mockResolvedValue(0);
-    // 各テストで URL のクエリを空に戻す（初期検索が走らないように）。
+    // 各テストで URL のクエリを空に戻す（既定検索の経路を通す）。
     window.history.replaceState(null, "", "/discover");
   });
 
@@ -42,16 +52,28 @@ describe("DiscoverGrid", () => {
     cleanup();
   });
 
-  it("未検索（idle）では集約の断り書きと案内文を出す", () => {
+  it("初回（?q= 無し）は既定検索を自動で流して写真を並べる（#22）", async () => {
+    setResponse("#plantstr", [
+      makePost({ id: "x", caption: "観葉1" }),
+      makePost({ id: "y", caption: "観葉2" }),
+    ]);
     render(<DiscoverGrid />);
+
+    await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
+    expect(fetchDiscover).toHaveBeenCalledWith("#plantstr");
+  });
+
+  it("既定検索が 0 件なら案内（idle プロンプト）に戻す", async () => {
+    render(<DiscoverGrid />); // #plantstr は未登録＝[]
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
+    expect(await screen.findByText(/「探す」を押すと/)).toBeInTheDocument();
     expect(screen.getByText(/hanoba 以外のクライアントの投稿も含みます/)).toBeInTheDocument();
-    expect(screen.getByText(/「探す」を押すと/)).toBeInTheDocument();
-    expect(fetchDiscover).not.toHaveBeenCalled();
   });
 
   it("キーワード（# 無し）で検索すると fetchDiscover に素の語を渡す（本文検索・#24）", async () => {
     const user = userEvent.setup();
-    fetchDiscover.mockResolvedValue([
+    setResponse("葉焼け", [
       makePost({ id: "a", caption: "葉焼けした" }),
       makePost({ id: "b", caption: "また葉焼け" }),
     ]);
@@ -61,13 +83,12 @@ describe("DiscoverGrid", () => {
     await user.click(screen.getByRole("button", { name: "探す" }));
 
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
-    // 正規化せず raw を渡す（モード分岐は fetchDiscover 側）。
+    // 正規化せず raw を渡す（モード分岐は fetchDiscover 側）。fromDefault は付かない。
     expect(fetchDiscover).toHaveBeenCalledWith("葉焼け");
   });
 
   it("先頭 # 付きはそのまま fetchDiscover に渡す（タグモードは内部で分岐）", async () => {
     const user = userEvent.setup();
-    fetchDiscover.mockResolvedValue([]);
     render(<DiscoverGrid />);
 
     await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "#パキポ");
@@ -78,8 +99,7 @@ describe("DiscoverGrid", () => {
 
   it("0 件なら見つからない文言を出す", async () => {
     const user = userEvent.setup();
-    fetchDiscover.mockResolvedValue([]);
-    render(<DiscoverGrid />);
+    render(<DiscoverGrid />); // サボテンは未登録＝[]
 
     await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "サボテン");
     await user.click(screen.getByRole("button", { name: "探す" }));
@@ -89,7 +109,7 @@ describe("DiscoverGrid", () => {
 
   it("セルクリックで PostDetail（dialog）を開く", async () => {
     const user = userEvent.setup();
-    fetchDiscover.mockResolvedValue([makePost({ id: "a", caption: "開花した" })]);
+    setResponse("アガベ", [makePost({ id: "a", caption: "開花した" })]);
     render(<DiscoverGrid />);
 
     await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "アガベ");
@@ -102,9 +122,8 @@ describe("DiscoverGrid", () => {
 
   it("詳細内のタグクリックでそのタグを # 付き（タグモード）で再検索する", async () => {
     const user = userEvent.setup();
-    fetchDiscover
-      .mockResolvedValueOnce([makePost({ id: "a", caption: "開花 #パキポ", hashtags: ["パキポ"] })])
-      .mockResolvedValueOnce([makePost({ id: "z", caption: "別のパキポ" })]);
+    setResponse("アガベ", [makePost({ id: "a", caption: "開花 #パキポ", hashtags: ["パキポ"] })]);
+    setResponse("#パキポ", [makePost({ id: "z", caption: "別のパキポ" })]);
     render(<DiscoverGrid />);
 
     await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "アガベ");
@@ -120,17 +139,18 @@ describe("DiscoverGrid", () => {
     expect(fetchDiscover).toHaveBeenLastCalledWith("#パキポ");
   });
 
-  it("URL の ?q= があればマウント時に初期検索する", async () => {
-    fetchDiscover.mockResolvedValue([makePost({ id: "a", caption: "アガベ" })]);
+  it("URL の ?q= があればマウント時に初期検索する（既定検索は流さない）", async () => {
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
     window.history.replaceState(null, "", "/discover?q=アガベ");
     render(<DiscoverGrid />);
 
     await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
     expect(await screen.findAllByRole("img")).toHaveLength(1);
+    expect(fetchDiscover).not.toHaveBeenCalledWith("#plantstr");
   });
 
   it("旧 ?tag= リンクも後方互換で初期検索する", async () => {
-    fetchDiscover.mockResolvedValue([makePost({ id: "a", caption: "アガベ" })]);
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
     window.history.replaceState(null, "", "/discover?tag=アガベ");
     render(<DiscoverGrid />);
 
