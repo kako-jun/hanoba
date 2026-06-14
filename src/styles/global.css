@@ -55,6 +55,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Tailwind v4 は <button> の既定カーソルを default に変えたため、
+   操作可能要素にポインタを戻す（#45・全ボタンでホバー時に指マークが出ない問題）。 */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary {
+  cursor: pointer;
+}
+
 /* 見出しは display 書体。 */
 .font-display {
   font-family: var(--font-display);

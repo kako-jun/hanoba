@@ -21,7 +21,7 @@ describe("PostCaption", () => {
   afterEach(() => cleanup());
 
   it("上限内の本文は全文表示し「続きを読む」を出さない（1クリック不要）", () => {
-    const restore = mockScrollHeight(100); // 上限(224)未満
+    const restore = mockScrollHeight(100); // 上限(156)未満
     try {
       render(<PostCaption caption="開花した。今朝の一枚。" />);
       expect(screen.getByText("開花した。今朝の一枚。")).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe("PostCaption", () => {
   });
 
   it("上限を僅かに超えただけ（ヒステリシス内）は畳まない", () => {
-    const restore = mockScrollHeight(250); // 224 < 250 < 224+48。隠れ量が小さい
+    const restore = mockScrollHeight(180); // 156 < 180 < 156+48。隠れ量が小さい
     try {
       render(<PostCaption caption="ほどほどの長さの本文。" />);
       expect(screen.queryByRole("button", { name: "続きを読む" })).not.toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("PostCaption", () => {
   });
 
   it("上限超過の長文は畳んで「続きを読む」を出し、クリックで展開・再クリックで畳む", async () => {
-    const restore = mockScrollHeight(1000); // 上限(224)超過
+    const restore = mockScrollHeight(1000); // 上限(156)超過
     try {
       const user = userEvent.setup();
       render(<PostCaption caption={"とても長い栽培ログ。".repeat(80)} />);
