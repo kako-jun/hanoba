@@ -4,6 +4,9 @@ import { useLayoutEffect, useRef, useState } from "react";
 // 普通の投稿（ひとこと〜十数行）は全文表示＝1クリック不要を維持し、
 // これを超える「ものすごい長文」だけ畳む（#40）。
 const CLAMP_MAX_PX = 288;
+// ヒステリシス。上限を僅かに超えただけ（隠れ量が小さい）なら畳まず全文を出す。
+// 展開してもほぼ変わらない長さで「続きを読む」を出すとノイズになるため。
+const OVERFLOW_SLACK_PX = 48;
 
 interface Props {
   caption: string;
@@ -29,7 +32,7 @@ export default function PostCaption({ caption }: Props) {
     if (el === null) return;
     // clamp を一旦外した自然高で判定したいが、clamp は overflowing 由来なので
     // 初回は未 clamp（overflowing=false）。以降は scrollHeight が自然高を返す。
-    setOverflowing(el.scrollHeight > CLAMP_MAX_PX + 1);
+    setOverflowing(el.scrollHeight > CLAMP_MAX_PX + OVERFLOW_SLACK_PX);
   }, [caption]);
 
   const clamped = overflowing && !expanded;

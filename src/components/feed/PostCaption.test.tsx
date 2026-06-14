@@ -31,6 +31,16 @@ describe("PostCaption", () => {
     }
   });
 
+  it("上限を僅かに超えただけ（ヒステリシス内）は畳まない", () => {
+    const restore = mockScrollHeight(320); // 288 < 320 < 288+48。隠れ量が小さい
+    try {
+      render(<PostCaption caption="ほどほどの長さの本文。" />);
+      expect(screen.queryByRole("button", { name: "続きを読む" })).not.toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
   it("上限超過の長文は畳んで「続きを読む」を出し、クリックで展開・再クリックで畳む", async () => {
     const restore = mockScrollHeight(1000); // 上限(288)超過
     try {
