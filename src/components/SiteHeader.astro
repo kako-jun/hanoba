@@ -1,0 +1,45 @@
+---
+// 共通ヘッダー＆ワードマーク（#20）。
+// ロゴ＝架空都市ハノーヴァの市章（#21・favicon と同型）。
+// 和欧の見せ方: 主＝「葉の場」、従＝civic kicker "HANOBA"（大文字・字間広め）。
+// スラッシュ併記は廃止。右側のナビは <slot name="nav" /> で各ページが差し込む。
+// sticky＋backdrop-blur で「温室のガラス越し」の空気感を出す。
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-ha-green/10 bg-ha-base/70 backdrop-blur-md supports-[backdrop-filter]:bg-ha-base/55"
+>
+  <div class="mx-auto max-w-3xl px-5 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2.5 group" aria-label="葉の場 Hanoba トップへ">
+      <svg
+        viewBox="0 0 64 64"
+        class="w-9 h-9 shrink-0 drop-shadow-sm transition-transform group-hover:-rotate-3"
+        role="img"
+        aria-hidden="true"
+      >
+        <rect width="64" height="64" rx="14" fill="#509120"></rect>
+        <circle cx="32" cy="32" r="20" fill="#f7f1e7"></circle>
+        <g fill="none" stroke="#305713" stroke-width="3" stroke-linecap="round">
+          <path d="M32 46 V28"></path>
+          <path d="M32 37 L25 32.5"></path>
+          <path d="M32 37 L39 32.5"></path>
+        </g>
+        <g fill="#ff5460">
+          <circle cx="32" cy="22" r="6.4"></circle>
+          <circle cx="24.6" cy="28.4" r="5.4"></circle>
+          <circle cx="39.4" cy="28.4" r="5.4"></circle>
+        </g>
+        <circle cx="32" cy="26.6" r="2.4" fill="#f7f1e7"></circle>
+      </svg>
+      <span class="flex flex-col leading-none">
+        <span class="text-xl font-bold tracking-tight text-ha-green-deep">葉の場</span>
+        <span class="font-display text-[10px] font-semibold uppercase tracking-[0.34em] text-ha-green"
+          >Hanoba</span
+        >
+      </span>
+    </a>
+    <nav class="flex items-center gap-3 sm:gap-5 text-sm">
+      <slot name="nav" />
+    </nav>
+  </div>
+</header>

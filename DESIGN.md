@@ -61,6 +61,17 @@
 
 緑が主、ピンクは差し色（CTA・通知・ハイライトに限定）、白で抜く。**制服の赤は使わない**。角丸はやわらかめ、影は控えめ。
 
+### 5.1 execution＝「モダン温室」（#19/#20/#21・確定）
+
+確定パレットは**色を一切変えず**、組み方（execution）だけ底上げする。AI slop の指紋（汎用フォント・フラット単色・均一角丸/影・無モーション）を避ける（Anthropic frontend aesthetics 準拠）。
+
+- **タイポ**: 見出し＝`Outfit`（geometric sans・欧/数字）×日本語は`Zen Kaku Gothic New`。本文＝Zen Kaku。ウェイトは本文400↔見出し800/900で飛躍。汎用フォント（Inter/Roboto/system 等）禁止。CSS 変数 `--font-display` / `--font-sans`。
+- **面（温室の光）**: ベタ単色をやめ、緑→生成りの斜めグラデに緑の採光ハイライト＋ピンクの淡い差しを薄く重ねる（`background-attachment: fixed`）。
+- **階層**: 地はフラット、カードは角丸＋影＋ring で持ち上げる。モーダルは最前面（shadow-2xl）。
+- **モーション**: ページロードの staggered reveal（`.ha-rise` ＋ `--i`）。CSS-only・`prefers-reduced-motion` で無効化。
+- **ワードマーク／ロゴ（#20/#21）**: 架空都市**ハノーヴァ(Hanoba)の市章（civic seal）**。葉そのもの（マンネリ）は使わず、緑地＋生成りの紋章円＋市旗の縁＋ピンクの三花弁（花）＋深緑の茎・小枝で抽象化。favicon / PWA / apple-touch / ヘッダーで同型に統一。和欧は「葉の場」主・`HANOBA` を civic kicker（大文字・字間広め）に。スラッシュ併記は廃止。
+- **アイコン（#21）**: 寄せ集めの Unicode 記号（♡/×/↑↓/→）を廃し、単一出自・統一線幅の SVG セット（`src/components/ui/Icon.tsx`）に寄せる。いいねの heart は花＝ピンク。
+
 ## 6. データ（Nostr）— 検証済み契約
 
 mypace と同じ Nostr 空間・同じタグ規約に準拠する（独自化しない＝mypace から見える要件）。

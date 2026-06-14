@@ -121,13 +121,13 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
         onBlur={() => setPopup(null)}
         rows={3}
         placeholder="この子のこと、ひとこと。#アガベ のようにタグも付けられます。"
-        className="rounded-2xl border border-ha-ink/15 bg-ha-white px-3 py-2 text-ha-ink resize-y focus:border-ha-green focus:outline-none"
+        className="rounded-2xl border border-ha-ink/15 bg-ha-white/80 shadow-sm px-3.5 py-2.5 text-ha-ink resize-y focus:border-ha-green focus:outline-none focus:ring-2 focus:ring-ha-green/20"
       />
       {popup !== null && (
         <ul
           role="listbox"
           aria-label="ハッシュタグ候補"
-          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-56 overflow-auto rounded-xl border border-ha-ink/15 bg-ha-white shadow-md"
+          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-56 overflow-auto rounded-2xl border border-ha-ink/10 bg-ha-white shadow-xl ring-1 ring-ha-ink/5"
         >
           {popup.items.map((item, i) => (
             <li key={item} role="option" aria-selected={i === popup.active}>

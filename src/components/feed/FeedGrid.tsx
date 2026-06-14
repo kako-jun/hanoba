@@ -53,7 +53,7 @@ export default function FeedGrid() {
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
+          className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
         >
           再試行
         </button>
@@ -87,7 +87,7 @@ export default function FeedGrid() {
               <p className="text-ha-ink/70">まだ投稿がありません。最初の一枚を投稿しましょう。</p>
               <a
                 href="/compose"
-                className="rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
+                className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
               >
                 投稿する
               </a>

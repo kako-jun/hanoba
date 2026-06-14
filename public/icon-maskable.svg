@@ -1,10 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="葉の場">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーヴァ市章（葉の場）">
   <!-- maskable 用＝全面塗り（角丸なし）。OS が任意形状にマスクするため、
-       葉は中央 80% のセーフゾーン内に収める。 -->
+       市章は中央 82% のセーフゾーン内に収める。 -->
   <rect width="512" height="512" fill="#509120" />
-  <g transform="rotate(-12 256 256)">
-    <path fill="#ffffff" d="M256 96C356 168 356 344 256 416 156 344 156 168 256 96Z" />
-    <path fill="none" stroke="#509120" stroke-width="12" stroke-linecap="round"
-      d="M256 132V384M256 212 312 180M256 212 200 180M256 280 318 248M256 280 194 248" />
+  <g transform="translate(256 256) scale(0.82) translate(-256 -256)">
+    <rect x="38" y="38" width="436" height="436" rx="78" fill="none" stroke="#f3e7e7" stroke-width="9" stroke-opacity="0.85" />
+    <circle cx="256" cy="256" r="150" fill="#f7f1e7" />
+    <g fill="none" stroke="#305713" stroke-width="16" stroke-linecap="round">
+      <path d="M256 372 V206" />
+      <path d="M256 300 L214 274" />
+      <path d="M256 300 L298 274" />
+    </g>
+    <g fill="#ff5460">
+      <circle cx="256" cy="166" r="36" />
+      <circle cx="214" cy="204" r="31" />
+      <circle cx="298" cy="204" r="31" />
+    </g>
+    <circle cx="256" cy="197" r="14" fill="#f7f1e7" />
   </g>
 </svg>

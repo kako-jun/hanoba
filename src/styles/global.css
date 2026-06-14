@@ -2,7 +2,10 @@
 
 /* デザインシステム（ToHeart マルチ・全色確定）
    緑＝葉（テーマ） / ピンク＝花（差し色） / 明るい部分＝余白（ベース）。
-   Tailwind v4 では --color-ha-green が bg-ha-green / text-ha-green 等のユーティリティになる。 */
+   Tailwind v4 では --color-ha-green が bg-ha-green / text-ha-green 等のユーティリティになる。
+
+   方向＝「モダン温室」（#19/#20/#21・session640）。確定パレットは維持し、
+   タイポ・面の空気感・モーションで execution を底上げする。 */
 @theme {
   --color-ha-green: #509120;
   --color-ha-green-deep: #305713;
@@ -12,10 +15,61 @@
   --color-ha-base: #f3e7e7;
   --color-ha-white: #ffffff;
   --color-ha-ink: #20301c;
+
+  /* タイポ（cookbook: 汎用フォント禁止・高コントラスト組み）。
+     見出し＝Outfit（geometric sans・欧/数字）×日本語はクリーンゴシック。
+     本文＝日本語ゴシック。和欧が自然に混ざり、ウェイト 400↔800 で飛躍を付ける。 */
+  --font-sans:
+    "Zen Kaku Gothic New", "Outfit", ui-sans-serif, system-ui, "Hiragino Kaku Gothic ProN",
+    "Noto Sans JP", sans-serif;
+  --font-display:
+    "Outfit", "Zen Kaku Gothic New", ui-sans-serif, system-ui, "Hiragino Kaku Gothic ProN",
+    sans-serif;
 }
 
-/* 地はベース、文字はインクを既定にする。角丸やわらかめ・影控えめのトーン。 */
+/* 地は「温室の光」。ベタ単色をやめ、緑→生成りの斜めグラデに
+   緑の採光ハイライトとピンクの淡い差しを薄く重ねて atmosphere/depth を出す。
+   固定背景でスクロールしても光が動かない（ガラス越しの採光のように）。 */
 body {
-  background-color: var(--color-ha-base);
+  font-family: var(--font-sans);
   color: var(--color-ha-ink);
+  background-color: var(--color-ha-base);
+  background-image:
+    radial-gradient(115% 80% at 100% -10%, rgba(80, 145, 32, 0.16), transparent 58%),
+    radial-gradient(90% 70% at -10% 110%, rgba(255, 84, 96, 0.07), transparent 55%),
+    linear-gradient(158deg, #f7f1e7 0%, var(--color-ha-base) 46%, #edf3e1 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 見出しは display 書体。和欧混在で Outfit→Zen Kaku の順に解決される。 */
+.font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "palt" 1;
+  letter-spacing: -0.01em;
+}
+
+/* ページロードの staggered reveal（cookbook: 散発 micro-interaction より
+   1回の良いロード演出）。CSS-only。--i にインデックスを渡し順に立ち上げる。
+   prefers-reduced-motion では無効化してアクセシビリティを守る。 */
+@keyframes ha-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ha-rise {
+  animation: ha-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ha-rise {
+    animation: none;
+  }
 }

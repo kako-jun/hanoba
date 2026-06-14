@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Icon from "../ui/Icon.tsx";
 import { fetchDiscoverByTag } from "../../lib/nostr/client.ts";
 import { normalizeTag } from "../../lib/feed/discover.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
@@ -100,19 +101,24 @@ export default function DiscoverGrid() {
   return (
     <section className="flex flex-col gap-4">
       <form onSubmit={onSubmit} className="flex items-center gap-2">
-        <span className="text-ha-green-deep font-semibold text-lg select-none">#</span>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="アガベ / パキポ / ビカクシダ …"
-          aria-label="探したい植物のタグ"
-          className="flex-1 rounded-2xl border border-ha-green/30 bg-ha-white px-4 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:border-ha-green"
-        />
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-display font-semibold text-ha-green-deep select-none">
+            #
+          </span>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="アガベ / パキポ / ビカクシダ …"
+            aria-label="探したい植物のタグ"
+            className="w-full rounded-full border border-ha-green/25 bg-ha-white/80 pl-9 pr-4 py-2.5 text-ha-ink shadow-sm placeholder:text-ha-ink/40 focus:outline-none focus:border-ha-green focus:ring-2 focus:ring-ha-green/20"
+          />
+        </div>
         <button
           type="submit"
-          className="shrink-0 rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ha-green text-ha-white px-5 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
         >
+          <Icon name="search" className="w-4 h-4" />
           探す
         </button>
       </form>
@@ -144,7 +150,7 @@ export default function DiscoverGrid() {
           <button
             type="button"
             onClick={() => void search(query)}
-            className="rounded-2xl bg-ha-green text-ha-white px-5 py-2.5 font-semibold hover:bg-ha-green-deep transition-colors"
+            className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
           >
             再試行
           </button>

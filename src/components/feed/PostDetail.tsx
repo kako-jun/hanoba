@@ -1,5 +1,6 @@
 import { nip19 } from "nostr-tools";
 import { useEffect, useRef, useState } from "react";
+import Icon from "../ui/Icon.tsx";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
@@ -97,12 +98,12 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label="投稿の詳細"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ha-ink/40"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ha-ink/40 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl bg-ha-white shadow-lg flex flex-col"
+        className="relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl bg-ha-white shadow-2xl ring-1 ring-ha-ink/5 flex flex-col ha-rise"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -110,9 +111,9 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           type="button"
           onClick={onClose}
           aria-label="閉じる"
-          className="absolute top-3 right-3 z-10 rounded-full bg-ha-white/90 text-ha-green-deep w-8 h-8 leading-none text-lg font-bold shadow-sm hover:bg-ha-green hover:text-ha-white transition-colors"
+          className="absolute top-3 right-3 z-10 grid place-items-center rounded-full bg-ha-white/90 text-ha-green-deep w-8 h-8 shadow-sm hover:bg-ha-green hover:text-ha-white transition-colors"
         >
-          ×
+          <Icon name="close" className="w-4 h-4" />
         </button>
 
         {post.imageUrl !== null && (
@@ -145,8 +146,14 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           <div className="flex items-center justify-between gap-3 pt-1 text-xs text-ha-ink/60">
             <span className="font-mono">{shortNpub(post.pubkey)}</span>
             <span className="flex items-center gap-3">
-              <span aria-label={`いいね数 ${likeCount === null ? "取得中" : likeCount}`}>
-                ♡ {likeCount === null ? "-" : likeCount}
+              <span
+                className="inline-flex items-center gap-1.5"
+                aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
+              >
+                <Icon name="heart" className="w-4 h-4 text-ha-pink" />
+                <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
+                  {likeCount === null ? "-" : likeCount}
+                </span>
               </span>
               <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
             </span>

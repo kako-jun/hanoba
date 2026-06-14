@@ -1,5 +1,6 @@
 ---
 import Composer from "../components/composer/Composer.tsx";
+import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
 
 // Composer は canvas / File / react-image-crop（ブラウザ専用）を使うため client:only。
@@ -7,14 +8,23 @@ import MainLayout from "../layouts/MainLayout.astro";
 ---
 
 <MainLayout title="投稿する — 葉の場 (Hanoba)">
-  <main class="mx-auto max-w-xl px-5 py-10 flex flex-col gap-8">
-    <header class="flex items-center justify-between gap-3">
-      <h1 class="text-2xl font-bold text-ha-green-deep tracking-tight">投稿する</h1>
-      <a href="/" class="text-sm text-ha-green hover:text-ha-green-deep underline underline-offset-2">
-        トップへ
-      </a>
-    </header>
+  <SiteHeader>
+    <a
+      slot="nav"
+      href="/"
+      class="font-medium text-ha-green-deep/80 hover:text-ha-green-deep transition-colors"
+    >
+      トップへ
+    </a>
+  </SiteHeader>
 
-    <Composer client:only="react" />
+  <main class="mx-auto max-w-xl px-5 py-9 flex flex-col gap-8">
+    <h1 class="ha-rise font-display text-3xl font-extrabold tracking-tight text-ha-green-deep">
+      投稿する
+    </h1>
+
+    <div class="ha-rise" style="--i:1">
+      <Composer client:only="react" />
+    </div>
   </main>
 </MainLayout>

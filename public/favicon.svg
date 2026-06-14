@@ -1,15 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="葉">
-  <!-- ha-green の葉。手書きベクター。 -->
-  <path
-    fill="#509120"
-    d="M52 8C30 8 12 24 12 46c0 4 0 7 1 10 1-9 6-18 14-25-5 9-7 18-7 25 18 0 32-14 32-32 0-5-0-10 0-16z"
-  />
-  <!-- 葉脈（濃い緑） -->
-  <path
-    fill="none"
-    stroke="#305713"
-    stroke-width="2"
-    stroke-linecap="round"
-    d="M48 14C36 22 26 34 16 54"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="ハノーヴァ市章">
+  <!-- ハノーヴァ市章の小サイズ版（favicon）。細部は省き、緑地＋紋章円＋ピンク三花弁で識別。 -->
+  <rect width="64" height="64" rx="14" fill="#509120" />
+  <circle cx="32" cy="32" r="20" fill="#f7f1e7" />
+  <g fill="none" stroke="#305713" stroke-width="3" stroke-linecap="round">
+    <path d="M32 46 V28" />
+    <path d="M32 37 L25 32.5" />
+    <path d="M32 37 L39 32.5" />
+  </g>
+  <g fill="#ff5460">
+    <circle cx="32" cy="22" r="6.4" />
+    <circle cx="24.6" cy="28.4" r="5.4" />
+    <circle cx="39.4" cy="28.4" r="5.4" />
+  </g>
+  <circle cx="32" cy="26.6" r="2.4" fill="#f7f1e7" />
 </svg>
