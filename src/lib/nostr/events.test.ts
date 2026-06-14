@@ -1,5 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { buildNip98AuthEvent, buildNoteTemplate } from "./events.ts";
+import {
+  buildDeletionEvent,
+  buildNip98AuthEvent,
+  buildNoteTemplate,
+  buildProfileEvent,
+} from "./events.ts";
+
+describe("buildDeletionEvent", () => {
+  it("kind=5 で対象イベントを e タグに列挙する", () => {
+    const t = buildDeletionEvent(["aaa", "bbb"], "", 1700000000);
+    expect(t.kind).toBe(5);
+    expect(t.tags).toEqual([
+      ["e", "aaa"],
+      ["e", "bbb"],
+    ]);
+    expect(t.content).toBe("");
+  });
+
+  it("対象が空なら throw", () => {
+    expect(() => buildDeletionEvent([])).toThrow();
+  });
+});
+
+describe("buildProfileEvent", () => {
+  it("kind=0 で content に name の JSON を入れる", () => {
+    const t = buildProfileEvent("  カコ栽培家  ", 1700000000);
+    expect(t.kind).toBe(0);
+    expect(JSON.parse(t.content)).toEqual({ name: "カコ栽培家" });
+    expect(t.tags).toEqual([]);
+  });
+
+  it("空名は throw", () => {
+    expect(() => buildProfileEvent("   ")).toThrow();
+  });
+});
 
 describe("buildNoteTemplate", () => {
   it("kind=1 で自動タグのみを付ける（本文 # は t タグ化しない）", () => {

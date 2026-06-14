@@ -63,3 +63,26 @@ export function filterHashtagCandidates(pool: string[], query: string, limit = 8
   }
   return result;
 }
+
+/**
+ * 一言（caption）にタグを1つ挿入する（#22・ピッカーから選んだとき）。
+ * - tag を正規化: 前後 trim・先頭 `#` 除去・**内部の空白は `_`**（タグのスペース→アンダースコア）。
+ * - 既に同じタグがあれば二重に足さない（大小無視・語境界）。
+ * - 末尾に `#tag ` を足す（直前が空白/改行/空でなければ空白を1つ入れて区切る）。
+ * 空タグ（正規化後 ""）は caption をそのまま返す。
+ */
+export function insertTag(caption: string, tag: string): string {
+  const norm = tag
+    .trim()
+    .replace(/^#+/, "")
+    .trim()
+    .replace(/\s+/g, "_");
+  if (norm === "") return caption;
+
+  const escaped = norm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const already = new RegExp(`(?:^|\\s)#${escaped}(?:\\s|$)`, "i");
+  if (already.test(caption)) return caption;
+
+  const needsSpace = caption !== "" && !/\s$/.test(caption);
+  return `${caption}${needsSpace ? " " : ""}#${norm} `;
+}

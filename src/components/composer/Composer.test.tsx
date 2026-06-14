@@ -11,9 +11,15 @@ const renderSquareImage = vi.fn();
 vi.mock("../../lib/nostr/upload.ts", () => ({
   uploadImage: (...args: unknown[]) => uploadImage(...args),
 }));
+const saveDisplayName = vi.fn();
+const fetchPopularHashtags = vi.fn();
+const fetchProfileName = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   signAndPublishNote: (...args: unknown[]) => signAndPublishNote(...args),
   fetchKnownHashtags: (...args: unknown[]) => fetchKnownHashtags(...args),
+  fetchPopularHashtags: (...args: unknown[]) => fetchPopularHashtags(...args),
+  saveDisplayName: (...args: unknown[]) => saveDisplayName(...args),
+  fetchProfileName: (...args: unknown[]) => fetchProfileName(...args),
 }));
 vi.mock("../../lib/image/crop.ts", () => ({
   renderSquareImage: (...args: unknown[]) => renderSquareImage(...args),
@@ -34,7 +40,12 @@ describe("Composer", () => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
+    fetchPopularHashtags.mockReset().mockResolvedValue([]);
+    fetchProfileName.mockReset().mockResolvedValue(null);
+    saveDisplayName.mockReset().mockResolvedValue(undefined);
     renderSquareImage.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
+    localStorage.setItem("hanoba:name", "テスト栽培家");
   });
 
   afterEach(() => {
@@ -60,10 +71,13 @@ describe("Composer", () => {
     // 画像ありでも一言が空 → disabled（両条件のうち一言条件）。
     const submit = await screen.findByRole("button", { name: /投稿する/ });
     expect(submit).toBeDisabled();
+    // なぜ押せないかをボタン近くに明示する（文言は span 分割なので末尾ノードで確認）。
+    expect(screen.getByText(/を入れると投稿できます/)).toBeInTheDocument();
 
-    // 一言を入力 → enabled。
-    await user.type(screen.getByLabelText("一言（必須）"), "開花した");
+    // 一言を入力 → enabled、不足理由は消える。
+    await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
     expect(submit).toBeEnabled();
+    expect(screen.queryByText(/を入れると投稿できます/)).not.toBeInTheDocument();
   });
 
   it("一言だけで画像が無ければ送信できない（画像条件）", async () => {

@@ -1,0 +1,53 @@
+---
+// 共通フッタ（#26）。kako-jun の他サイト（llll-ll）のリンク構成を踏襲しつつ、
+// 暗色グラスの世界観（§5）に合わせる。全ページに MainLayout 経由で出る。
+// Hanoba 自身に関係するリンクだけ（kako-jun の個人メディアは載せない）。
+// mypace＝同じ投稿が見える先、GitHub＝この OSS のリポジトリ。
+const external = [
+  { label: "mypace", href: "https://mypace.llll-ll.com" },
+  { label: "GitHub", href: "https://github.com/kako-jun/hanoba" },
+];
+---
+
+<footer class="mt-16 border-t border-white/10">
+  <div class="mx-auto max-w-3xl px-5 py-10 flex flex-col gap-6 text-sm">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <a href="/about" class="text-ha-ink/80 hover:text-ha-green transition-colors">Hanōba とは</a>
+        <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors">みんなの植物</a>
+        <a href="/me" class="text-ha-ink/80 hover:text-ha-green transition-colors">自分の植物</a>
+        <a href="/compose" class="text-ha-ink/80 hover:text-ha-green transition-colors">投稿する</a>
+      </nav>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-ha-ink/55">
+        {
+          external.map((s) => (
+            <a
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-ha-green transition-colors"
+            >
+              {s.label}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+
+    <p class="text-xs leading-relaxed text-ha-ink/45 [word-break:auto-phrase]">
+      架空の植物好き都市ハノーバ（葉の場）を、みんなで育てています。
+    </p>
+
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-ha-ink/55 text-xs">
+      <span class="font-display text-sm font-extrabold tracking-tight text-ha-green-deep">Hanōba</span>
+      <span>© kako-jun</span>
+      <span class="text-ha-ink/35">—</span>
+      <a
+        href="https://llll-ll.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-ha-green transition-colors">part of llll-ll</a
+      >
+    </div>
+  </div>
+</footer>

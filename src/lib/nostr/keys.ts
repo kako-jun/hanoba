@@ -119,3 +119,23 @@ export function importNsec(nsec: string): void {
   }
   getLS()?.setItem(SK_KEY, bytesToHex(decoded.data));
 }
+
+// ---- 表示名（ユーザー名） ---------------------------------------------------
+//
+// 「ユーザー名を入れたら投稿できる」（#28）。表示名はローカルにも控え、kind:0 でも publish する
+// （publish は client.publishProfile の責務）。ここは localStorage の読み書きだけ。
+
+const NAME_KEY = "hanoba:name";
+
+/** 保存済みの表示名を返す（未設定は null）。 */
+export function getDisplayName(): string | null {
+  const name = getLS()?.getItem(NAME_KEY);
+  return name === null || name === undefined || name === "" ? null : name;
+}
+
+/** 表示名をローカルに保存する（空はエラー）。kind:0 publish は別途（client.saveDisplayName）。 */
+export function setDisplayName(name: string): void {
+  const trimmed = name.trim();
+  if (trimmed === "") throw new Error("ユーザー名を入力してください");
+  getLS()?.setItem(NAME_KEY, trimmed);
+}

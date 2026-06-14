@@ -12,9 +12,9 @@ export default defineConfig({
     AstroPWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "葉の場 (Hanoba)",
-        short_name: "葉の場",
-        description: "植物専用の正方形写真SNS。1投稿 = 正方形写真1枚 + 一言。",
+        name: "Hanōba",
+        short_name: "Hanōba",
+        description: "植物写真のSNS。Instagram より、はやく・かんたんに、ひとこと添えて。",
         id: "/",
         start_url: "/",
         scope: "/",

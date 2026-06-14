@@ -1,5 +1,7 @@
 import { nip19 } from "nostr-tools";
 import { useEffect, useRef, useState } from "react";
+import Icon from "../ui/Icon.tsx";
+import { detectPlants } from "../../lib/plants/detect.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
@@ -92,17 +94,20 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
     };
   }, [post.id]);
 
+  // 本文＋タグから植物を認識（#23）。純粋・軽量なので描画ごとに計算してよい。
+  const plants = detectPlants(`${post.caption} ${post.hashtags.join(" ")}`);
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="投稿の詳細"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ha-ink/40"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl bg-ha-white shadow-lg flex flex-col"
+        className="glass-strong relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl shadow-2xl flex flex-col ha-rise"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -110,9 +115,9 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           type="button"
           onClick={onClose}
           aria-label="閉じる"
-          className="absolute top-3 right-3 z-10 rounded-full bg-ha-white/90 text-ha-green-deep w-8 h-8 leading-none text-lg font-bold shadow-sm hover:bg-ha-green hover:text-ha-white transition-colors"
+          className="absolute top-3 right-3 z-10 grid place-items-center rounded-full bg-black/40 backdrop-blur-md text-ha-white w-8 h-8 hover:bg-ha-green transition-colors"
         >
-          ×
+          <Icon name="close" className="w-4 h-4" />
         </button>
 
         {post.imageUrl !== null && (
@@ -124,6 +129,30 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
         <div className="flex flex-col gap-3 p-5">
           {post.caption !== "" && (
             <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{post.caption}</p>
+          )}
+
+          {/* 認識した植物を「学名 / 著名表記」で並列表示（#23）。本文・タグ どちらの語にも反応。
+              クリックでその植物の discover 検索へ。投稿は不変なので辞書を育てて精度を上げる。 */}
+          {plants.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-ha-ink/45">
+                この投稿の植物
+              </span>
+              <ul className="flex flex-wrap gap-2">
+                {plants.map((p) => (
+                  <li key={p.id}>
+                    <a
+                      href={`/discover?q=${encodeURIComponent(`#${p.name}`)}`}
+                      className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm hover:border-ha-green/50 transition-colors"
+                      title={`${p.sci}（${p.name}）で探す`}
+                    >
+                      <span className="font-display italic text-ha-green-deep">{p.sci}</span>
+                      <span className="text-ha-ink/70">{p.name}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {post.hashtags.length > 0 && (
@@ -145,8 +174,14 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           <div className="flex items-center justify-between gap-3 pt-1 text-xs text-ha-ink/60">
             <span className="font-mono">{shortNpub(post.pubkey)}</span>
             <span className="flex items-center gap-3">
-              <span aria-label={`いいね数 ${likeCount === null ? "取得中" : likeCount}`}>
-                ♡ {likeCount === null ? "-" : likeCount}
+              <span
+                className="inline-flex items-center gap-1.5"
+                aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
+              >
+                <Icon name="heart" className="w-4 h-4 text-ha-pink" />
+                <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
+                  {likeCount === null ? "-" : likeCount}
+                </span>
               </span>
               <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
             </span>

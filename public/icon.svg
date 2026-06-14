@@ -1,11 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="葉の場">
-  <!-- ha-green 背景・角丸（purpose=any 用の見栄え）。葉は中央寄せ。 -->
-  <rect width="512" height="512" rx="96" fill="#509120" />
-  <g transform="rotate(-12 256 256)">
-    <!-- 白い葉（中央のアーモンド形・上下に尖り） -->
-    <path fill="#ffffff" d="M256 96C356 168 356 344 256 416 156 344 156 168 256 96Z" />
-    <!-- 葉脈（中肋＋側脈）。緑で白葉に映える。 -->
-    <path fill="none" stroke="#509120" stroke-width="12" stroke-linecap="round"
-      d="M256 132V384M256 212 312 180M256 212 200 180M256 280 318 248M256 280 194 248" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーバ市旗（H）">
+  <!-- 架空都市ハノーバの市旗。4色に塗り分けて H（Hanoba）に見せる。
+       生成り＝地／緑＝左柱／深緑＝右柱／ピンク＝横棒（差し色）。丸は使わない。 -->
+  <defs>
+    <clipPath id="r"><rect width="512" height="512" rx="104" /></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="512" height="512" fill="#f3e7e7" />
+    <rect x="110" y="104" width="92" height="304" fill="#509120" />
+    <rect x="310" y="104" width="92" height="304" fill="#305713" />
+    <rect x="110" y="210" width="292" height="92" fill="#ff5460" />
   </g>
 </svg>

@@ -1,0 +1,31 @@
+---
+// 共通ヘッダー＆ワードマーク（#20）。
+// ロゴ＝架空都市ハノーバの市旗（#21・H 字・favicon と同型）。
+// ワードマークは「Hanoba」のみ（国際的な印象・font-display）。漢字はロゴ下に置かない。
+// スラッシュ併記は廃止。右側のナビは <slot name="nav" /> で各ページが差し込む。
+// sticky＋backdrop-blur でガラス越しの空気感を出す。
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-ha-green/10 bg-ha-base/70 backdrop-blur-md supports-[backdrop-filter]:bg-ha-base/55"
+>
+  <div class="mx-auto max-w-3xl px-5 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2.5 group" aria-label="葉の場 Hanoba トップへ">
+      <svg viewBox="0 0 64 64" class="w-9 h-9 shrink-0" role="img" aria-hidden="true">
+        <defs>
+          <clipPath id="ha-flag"><rect width="64" height="64" rx="12"></rect></clipPath>
+        </defs>
+        <g clip-path="url(#ha-flag)">
+          <rect width="64" height="64" fill="#f3e7e7"></rect>
+          <rect x="14" y="13" width="11.5" height="38" fill="#509120"></rect>
+          <rect x="38.5" y="13" width="11.5" height="38" fill="#305713"></rect>
+          <rect x="14" y="26.2" width="36" height="11.5" fill="#ff5460"></rect>
+        </g>
+      </svg>
+      <span class="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep">Hanōba</span>
+    </a>
+    <nav class="flex items-center gap-3 sm:gap-5 text-sm">
+      <slot name="nav" />
+    </nav>
+  </div>
+</header>

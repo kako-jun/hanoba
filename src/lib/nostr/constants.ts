@@ -20,3 +20,6 @@ export const CLIENT_NAME = "hanoba";
 
 /** nostr.build の画像アップロードエンドポイント（NIP-98 認証）。EXIF はサーバ側で自動削除。 */
 export const NOSTR_BUILD_UPLOAD_URL = "https://nostr.build/api/v2/upload/files";
+
+/** nostr.build の画像削除（NIP-96）ベース。`<base>/<sha256>` を DELETE する（#28）。 */
+export const NOSTR_BUILD_DELETE_BASE = "https://nostr.build/api/v2/nip96/upload";

@@ -57,3 +57,41 @@ export function buildNip98AuthEvent(url: string, method: string, createdAt?: num
     content: "",
   };
 }
+
+/**
+ * 削除イベント（NIP-09・kind:5）のテンプレートを構築する。
+ * 対象イベント id を `e` タグで列挙する。relay/クライアント（mypace 含む）はこれを見て
+ * 対象投稿を隠す。eventIds が空なら throw（消す対象が無い）。
+ *
+ * 注意: Nostr の削除は「依頼」であり物理消去の保証はない。写真の実体削除は別途
+ * nostr.build NIP-96 で行う（投稿と写真を一蓮托生で消す・#28）。
+ */
+export function buildDeletionEvent(eventIds: string[], reason = "", createdAt?: number): EventTemplate {
+  if (eventIds.length === 0) {
+    throw new Error("削除対象のイベントがありません");
+  }
+  return {
+    kind: 5,
+    created_at: createdAt ?? nowSec(),
+    tags: eventIds.map((id) => ["e", id]),
+    content: reason,
+  };
+}
+
+/**
+ * プロフィール（NIP-01・kind:0 metadata）のテンプレートを構築する。
+ * ユーザー名（表示名）を持たせて「見るだけでなく投稿できる」アカウントにする（#28）。
+ * name.trim() が空なら throw。
+ */
+export function buildProfileEvent(name: string, createdAt?: number): EventTemplate {
+  const trimmed = name.trim();
+  if (trimmed === "") {
+    throw new Error("ユーザー名を入力してください");
+  }
+  return {
+    kind: 0,
+    created_at: createdAt ?? nowSec(),
+    tags: [],
+    content: JSON.stringify({ name: trimmed }),
+  };
+}

@@ -103,3 +103,19 @@ export function relativeTime(createdAt: number, now: number): string {
   if (diff < DAY) return `${Math.floor(diff / HOUR)}時間前`;
   return `${Math.floor(diff / DAY)}日前`;
 }
+
+/**
+ * プロフィール（kind:0）の content（JSON）から表示名を取り出す（#28・nsec インポート時）。
+ * `{"name":"..."}` の name を返す。JSON 不正・name 無し・空は null。
+ */
+export function parseProfileName(content: string): string | null {
+  try {
+    const data = JSON.parse(content) as { name?: unknown };
+    if (typeof data.name === "string" && data.name.trim() !== "") {
+      return data.name.trim();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

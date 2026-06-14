@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import SiteFooter from "../components/SiteFooter.astro";
 
 interface Props {
   title?: string;
@@ -7,8 +8,8 @@ interface Props {
 }
 
 const {
-  title = "葉の場 (Hanoba)",
-  description = "植物専用の正方形写真SNS。1投稿 = 正方形写真1枚 + 一言。",
+  title = "Hanōba",
+  description = "植物写真のSNS。Instagram より、はやく・かんたんに、ひとこと添えて。",
 } = Astro.props;
 ---
 
@@ -19,14 +20,38 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#509120" />
+    <!-- タイポ（cookbook: 汎用フォント禁止）。見出し＝Outfit（geometric sans）、
+         日本語＝Zen Kaku Gothic New。preconnect でフォント取得を前倒しする。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap"
+    />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <!-- @vite-pwa/astro は manifest を生成するが <link rel="manifest"> は注入しないため明示する
          （これが無いとブラウザが manifest を発見できず PWA として install できない）。 -->
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- OGP / Twitter カード（共有時のサムネ）。画像は AI 生成の温室ヒーロー（/image スキル）。
+         og:image は絶対 URL が要るので本番ドメインで固定する。 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hanōba" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="https://hanoba.llll-ll.com/og/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="https://hanoba.llll-ll.com/og/og-image.jpg" />
     <title>{title}</title>
   </head>
-  <body class="bg-ha-base text-ha-ink min-h-screen antialiased">
-    <slot />
+  <body class="text-ha-ink min-h-screen antialiased flex flex-col">
+    <div class="flex-1">
+      <slot />
+    </div>
+    <SiteFooter />
   </body>
 </html>

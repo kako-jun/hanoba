@@ -1,15 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="葉">
-  <!-- ha-green の葉。手書きベクター。 -->
-  <path
-    fill="#509120"
-    d="M52 8C30 8 12 24 12 46c0 4 0 7 1 10 1-9 6-18 14-25-5 9-7 18-7 25 18 0 32-14 32-32 0-5-0-10 0-16z"
-  />
-  <!-- 葉脈（濃い緑） -->
-  <path
-    fill="none"
-    stroke="#305713"
-    stroke-width="2"
-    stroke-linecap="round"
-    d="M48 14C36 22 26 34 16 54"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="ハノーバ市旗（H）">
+  <!-- ハノーバ市旗の小サイズ版（favicon）。4色で H。丸は使わない。 -->
+  <defs>
+    <clipPath id="rf"><rect width="64" height="64" rx="12" /></clipPath>
+  </defs>
+  <g clip-path="url(#rf)">
+    <rect width="64" height="64" fill="#f3e7e7" />
+    <rect x="14" y="13" width="11.5" height="38" fill="#509120" />
+    <rect x="38.5" y="13" width="11.5" height="38" fill="#305713" />
+    <rect x="14" y="26.2" width="36" height="11.5" fill="#ff5460" />
+  </g>
 </svg>

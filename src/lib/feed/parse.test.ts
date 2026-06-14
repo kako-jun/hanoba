@@ -1,6 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { filterByHashtag, mergePostsById, parsePost, relativeTime, type FeedPost } from "./parse.ts";
+import {
+  filterByHashtag,
+  mergePostsById,
+  parseProfileName,
+  parsePost,
+  relativeTime,
+  type FeedPost,
+} from "./parse.ts";
 import type { NostrEvent } from "../nostr/types.ts";
+
+describe("parseProfileName", () => {
+  it("kind:0 content の name を返す", () => {
+    expect(parseProfileName('{"name":"カコ栽培家","about":"x"}')).toBe("カコ栽培家");
+  });
+  it("前後空白は trim する", () => {
+    expect(parseProfileName('{"name":"  葉子  "}')).toBe("葉子");
+  });
+  it("name 無し・空・不正 JSON は null", () => {
+    expect(parseProfileName('{"about":"x"}')).toBeNull();
+    expect(parseProfileName('{"name":"   "}')).toBeNull();
+    expect(parseProfileName("not json")).toBeNull();
+  });
+});
 
 // テスト用の最小イベント。署名等は parsePost で参照しないので未設定で良い。
 function makeEvent(overrides: Partial<NostrEvent> & { content: string }): NostrEvent {
