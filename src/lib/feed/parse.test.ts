@@ -59,6 +59,16 @@ describe("parsePost", () => {
     expect(post.hashtags).toEqual(["植物"]);
   });
 
+  it("空行（段落区切り）は残す（#65）", () => {
+    const post = parsePost(makeEvent({ content: "一段目\n\n二段目\nhttps://image.nostr.build/a.jpg" }));
+    expect(post.caption).toBe("一段目\n\n二段目");
+  });
+
+  it("過剰な連続改行（3つ以上）は空行1つに抑える", () => {
+    const post = parsePost(makeEvent({ content: "a\n\n\n\nb" }));
+    expect(post.caption).toBe("a\n\nb");
+  });
+
   it("複数画像 URL は先頭を imageUrl にする", () => {
     const post = parsePost(
       makeEvent({

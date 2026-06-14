@@ -60,6 +60,7 @@ export function stripHashtags(content: string): string {
     // 除去で生じた連続スペース（全角 U+3000 含む）を 1 つに、行頭行末の空白も除く。
     .replace(/[ \t　]{2,}/g, " ")
     .replace(/[ \t　]*\n[ \t　]*/g, "\n")
-    .replace(/\n{2,}/g, "\n")
+    // 空行（段落区切り）は残す。過剰な連続改行（3つ以上）だけ空行1つに抑える。
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

@@ -45,8 +45,8 @@ export function parsePost(event: NostrEvent): FeedPost {
   // content から画像 URL を取り除く（replace は別途新しい RegExp で。グローバルフラグの lastIndex 汚染を避ける）。
   const withoutImages = content.replace(new RegExp(IMAGE_URL_RE.source, "gi"), "");
 
-  // 連続改行を 1 つに畳み、前後の空白を除去する。
-  const caption = withoutImages.replace(/\n{2,}/g, "\n").trim();
+  // 空行（段落区切り）は残す。過剰な連続改行（3つ以上）だけ空行1つ（\n\n）に抑え、前後を trim。
+  const caption = withoutImages.replace(/\n{3,}/g, "\n\n").trim();
 
   return {
     id: event.id,
