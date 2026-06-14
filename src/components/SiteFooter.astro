@@ -1,0 +1,54 @@
+---
+// 共通フッタ（#26）。kako-jun の他サイト（llll-ll）のリンク構成を踏襲しつつ、
+// 暗色グラスの世界観（§5）に合わせる。全ページに MainLayout 経由で出る。
+const social = [
+  { label: "mypace", href: "https://mypace.llll-ll.com" },
+  { label: "X", href: "https://x.com/kako_jun_42" },
+  { label: "Instagram", href: "https://www.instagram.com/kako_jun_42" },
+  { label: "Note", href: "https://note.com/kako_jun" },
+  { label: "Zenn", href: "https://zenn.dev/kako_jun" },
+  { label: "GitHub", href: "https://github.com/kako-jun/hanoba" },
+];
+---
+
+<footer class="mt-16 border-t border-white/10">
+  <div class="mx-auto max-w-3xl px-5 py-10 flex flex-col gap-6 text-sm">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <a href="/about" class="text-ha-ink/80 hover:text-ha-green transition-colors">Hanoba とは</a>
+        <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors">みんなの植物</a>
+        <a href="/compose" class="text-ha-ink/80 hover:text-ha-green transition-colors">投稿する</a>
+        <a
+          href="https://llll-ll.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-ha-ink/80 hover:text-ha-green transition-colors">llll-ll</a
+        >
+      </nav>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-ha-ink/55">
+        {
+          social.map((s) => (
+            <a
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-ha-green transition-colors"
+            >
+              {s.label}
+            </a>
+          ))
+        }
+      </div>
+    </div>
+
+    <p class="text-xs leading-relaxed text-ha-ink/45 [word-break:auto-phrase]">
+      Hanoba は Nostr 上の公開投稿を表示しているだけのフロントエンドです。同じ投稿は mypace でも見られます。
+      架空の植物好き都市ハノーヴァを、みんなで育てています。
+    </p>
+
+    <div class="flex items-center gap-2 text-ha-ink/55">
+      <span class="font-display font-extrabold tracking-tight text-ha-green-deep">Hanoba</span>
+      <span class="text-xs">© kako-jun</span>
+    </div>
+  </div>
+</footer>

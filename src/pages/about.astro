@@ -1,0 +1,92 @@
+---
+import SiteHeader from "../components/SiteHeader.astro";
+import MainLayout from "../layouts/MainLayout.astro";
+
+// Hanoba のコンセプト説明（#26）。世界観＝架空の植物好き都市ハノーヴァをみんなで作る。
+// 「なぜ既存 SNS で物足りないか」は端的に。詳細は llll-ll のブログ記事へ誘導する。
+// 静的ページ（島なし）。トーンは暗色グラス（DESIGN §5）。
+const BLOG_URL = "https://llll-ll.com";
+---
+
+<MainLayout
+  title="Hanoba とは — 架空の植物都市"
+  description="Hanoba は植物写真の SNS。架空の植物好き都市ハノーヴァを、みんなで育てる場所です。"
+>
+  <SiteHeader />
+
+  <main class="mx-auto max-w-2xl px-5 py-9 flex flex-col gap-8">
+    <section class="ha-rise flex flex-col gap-3">
+      <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-ha-green-deep">
+        Hanoba とは
+      </h1>
+      <p class="text-lg leading-relaxed text-ha-ink/85 [word-break:auto-phrase]">
+        植物写真の SNS。みんなの一枚が集まって、<strong class="text-ha-ink">架空の植物好き都市ハノーヴァ</strong
+        >ができていきます。育てて、見せる。それだけの、静かで濃い場所。
+      </p>
+    </section>
+
+    <section class="glass ha-rise rounded-2xl p-6 flex flex-col gap-3" style="--i:1">
+      <h2 class="font-display text-xl font-bold text-ha-green-deep">この街のかたち</h2>
+      <ul class="flex flex-col gap-2 text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
+        <li>・<strong class="text-ha-ink">正方形の写真1枚＋ひとこと</strong>。説明は短く、株が主役。</li>
+        <li>・<strong class="text-ha-ink">植物だけ</strong>。畑・ビカク・実生・塊根、その枠の中なら何でも。</li>
+        <li>・動画は無し。背景や反射からの<strong class="text-ha-ink">身バレを避ける</strong>ための静止画専用。</li>
+        <li>
+          ・俗称で書いても、<strong class="text-ha-ink">学名と有名な呼び名を並べて</strong>表示。タップでその植物を辿れます。
+        </li>
+      </ul>
+    </section>
+
+    <section class="glass ha-rise rounded-2xl p-6 flex flex-col gap-3" style="--i:2">
+      <h2 class="font-display text-xl font-bold text-ha-green-deep">なぜ、既存の SNS では物足りないのか</h2>
+      <ul class="flex flex-col gap-2 text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
+        <li>・植物以外のノイズに埋もれ、同じ品種の投稿が散らばってしまう。</li>
+        <li>・俗称・カナ・英・略がバラバラで、同じ植物がひとつに集まらない。</li>
+        <li>・投稿までの手数が多く、ひとことのメモを添えにくい。</li>
+      </ul>
+      <p class="text-sm text-ha-ink/70 leading-relaxed [word-break:auto-phrase]">
+        Hanoba はこの三つを、植物特化・表記の自動正規化・最短の投稿動線で解こうとしています。
+        <a
+          href={BLOG_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-ha-green hover:text-ha-green-deep underline underline-offset-2"
+          >考え方の詳細は llll-ll のブログへ →</a
+        >
+      </p>
+    </section>
+
+    <section class="glass ha-rise rounded-2xl p-6 flex flex-col gap-3" style="--i:3">
+      <h2 class="font-display text-xl font-bold text-ha-green-deep">mypace（Nostr）の上に建っています</h2>
+      <p class="text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
+        Hanoba は自前のサーバを持たず、分散 SNS プロトコル Nostr の公開投稿を表示する皮（スキン）です。
+        ここでの投稿は mypace でもそのまま見られ、二重投稿でもコピーでもありません。アカウントは
+        ブラウザの中だけで完結します。
+      </p>
+    </section>
+
+    <section class="glass ha-rise rounded-2xl p-6 flex flex-col gap-3" style="--i:4">
+      <h2 class="font-display text-xl font-bold text-ha-green-deep">表記の誤り・別名を教えてください</h2>
+      <p class="text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
+        学名や呼び名の対応表は、みんなで育てていきます（投稿は後から直せないので、表示側を賢くしていく仕組みです）。
+        「この俗称はこの学名」「この別名が抜けている」といった指摘は、SNS を使っていない方でも
+        <a
+          href={BLOG_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-ha-green hover:text-ha-green-deep underline underline-offset-2"
+          >llll-ll のブログのコメント欄</a
+        >から送れます。kako-jun の SNS でも受け付けています。
+      </p>
+    </section>
+
+    <div class="ha-rise flex justify-center pt-2" style="--i:5">
+      <a
+        href="/compose"
+        class="rounded-full bg-ha-green text-ha-white px-7 py-3 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+      >
+        最初の一枚を置く
+      </a>
+    </div>
+  </main>
+</MainLayout>

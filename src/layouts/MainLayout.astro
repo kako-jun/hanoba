@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import SiteFooter from "../components/SiteFooter.astro";
 
 interface Props {
   title?: string;
@@ -47,7 +48,10 @@ const {
     <meta name="twitter:image" content="https://hanoba.llll-ll.com/og/og-image.jpg" />
     <title>{title}</title>
   </head>
-  <body class="text-ha-ink min-h-screen antialiased">
-    <slot />
+  <body class="text-ha-ink min-h-screen antialiased flex flex-col">
+    <div class="flex-1">
+      <slot />
+    </div>
+    <SiteFooter />
   </body>
 </html>
