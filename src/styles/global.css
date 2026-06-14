@@ -74,6 +74,12 @@ summary {
     0 0 6px rgba(8, 30, 4, 0.55);
 }
 
+/* アイコン（SVG）は text-shadow が効かないので drop-shadow で同じ濃緑ハローを当てる。 */
+.bg-ha-green svg {
+  filter:
+    drop-shadow(0 0 2px rgba(8, 30, 4, 0.75)) drop-shadow(0 0 3px rgba(8, 30, 4, 0.5));
+}
+
 /* 見出しは display 書体。 */
 .font-display {
   font-family: var(--font-display);
