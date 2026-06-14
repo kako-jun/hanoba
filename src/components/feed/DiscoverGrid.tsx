@@ -68,6 +68,8 @@ export default function DiscoverGrid() {
   // 直近の検索リクエストのトークン。連続検索で古い応答が新しい結果を上書きしないよう、
   // await 後にトークンが最新でなければ反映を捨てる（stale-response レース対策）。
   const latestRef = useRef(0);
+  // クリア（×）後にフォーカスを戻すための入力参照。
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // raw はタグ（`#アガベ`）でもキーワード（`葉焼け`）でもよい。モード分岐は fetchDiscover 側（#24）。
   // fromDefault=true は初回の自動既定検索（入力欄・URL を汚さない・0件は idle に戻す）。
@@ -138,13 +140,27 @@ export default function DiscoverGrid() {
             <Icon name="search" className="w-4 h-4" />
           </span>
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="#アガベ や 葉焼け で探す"
             aria-label="植物のタグ または 本文キーワード"
-            className="glass w-full rounded-full pl-10 pr-4 py-2.5 text-ha-ink placeholder:text-ha-ink/45 focus:outline-none focus:border-ha-green/60 focus:ring-2 focus:ring-ha-green/30"
+            className="glass w-full rounded-full pl-10 pr-10 py-2.5 text-ha-ink placeholder:text-ha-ink/45 focus:outline-none focus:border-ha-green/60 focus:ring-2 focus:ring-ha-green/30"
           />
+          {input !== "" && (
+            <button
+              type="button"
+              onClick={() => {
+                setInput("");
+                inputRef.current?.focus();
+              }}
+              aria-label="検索文字を消す"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full text-ha-ink/60 hover:text-ha-ink hover:bg-white/10 transition-colors"
+            >
+              <Icon name="close" className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <button
           type="submit"

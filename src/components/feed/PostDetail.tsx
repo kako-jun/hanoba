@@ -121,8 +121,15 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
         </button>
 
         {post.imageUrl !== null && (
-          <div className="aspect-square w-full overflow-hidden rounded-t-3xl bg-ha-green-soft">
-            <img src={post.imageUrl} alt={post.caption} className="w-full h-full object-cover" />
+          // 拡大は元の縦横比のまま（object-contain）。他クライアント＝他人の写真を 1:1 に
+          // トリミングすると著作の改変になるため、モーダルではクロップしない（#61）。
+          // サムネイル（フィードカード）は一覧の見た目を揃えるため正方形のまま。
+          <div className="w-full overflow-hidden rounded-t-3xl bg-ha-green-soft flex items-center justify-center">
+            <img
+              src={post.imageUrl}
+              alt={post.caption}
+              className="max-w-full max-h-[70vh] object-contain"
+            />
           </div>
         )}
 
