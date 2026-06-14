@@ -33,7 +33,7 @@ export default function ImagePicker({ onSelect }: ImagePickerProps) {
     <div className="flex flex-col items-center gap-3">
       <label
         htmlFor={inputId}
-        className="cursor-pointer rounded-2xl bg-ha-green text-ha-white px-6 py-3 font-semibold hover:bg-ha-green-deep transition-colors"
+        className="cursor-pointer rounded-2xl bg-ha-green text-ha-white px-6 py-3 font-semibold hover:brightness-110 transition-colors"
       >
         写真を選ぶ
       </label>

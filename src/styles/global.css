@@ -1,24 +1,38 @@
 @import "tailwindcss";
 
-/* デザインシステム（ToHeart マルチ・全色確定）
-   緑＝葉（テーマ） / ピンク＝花（差し色） / 明るい部分＝余白（ベース）。
-   Tailwind v4 では --color-ha-green が bg-ha-green / text-ha-green 等のユーティリティになる。
+/* =========================================================================
+   Hanoba デザインシステム ── 「夜の温室・大人のコレクター部屋」（session640 確定）
 
-   方向＝「モダン温室」（#19/#20/#21・session640）。確定パレットは維持し、
-   タイポ・面の空気感・モーションで execution を底上げする。 */
+   方向（kako-jun）: 明るい量販 SNS ではなく、焦げ茶の木目棚・オレンジの照明・
+   ガラスと葉の水滴のある、暗くシックで高級感のある空間。
+   - 背景はベタ塗りでなく **ぼやけた高級写真**（AI 生成・public/og/bg-blur.webp）。
+   - 面（パネル）は **半透明のグラス**（backdrop-blur）。
+   - **ボタンだけは塗りでくっきり**（可読性最優先）。
+   アクセントは ToHeart 由来を継承: 緑＝葉、ピンク＝花（差し色のみ・ヘッダ/地には使わない）。
+   暖色のオレンジ＝照明のハイライト。
+   ========================================================================= */
 @theme {
-  --color-ha-green: #509120;
-  --color-ha-green-deep: #305713;
-  --color-ha-green-soft: #e3efcd;
-  --color-ha-pink: #ff5460;
-  --color-ha-pink-soft: #ffd3d6;
-  --color-ha-base: #f3e7e7;
-  --color-ha-white: #ffffff;
-  --color-ha-ink: #20301c;
+  /* 葉＝緑（CTA・リンク・選択）。暗地で映える明るめ。 */
+  --color-ha-green: #6cba38;
+  /* 暗地での見出し・強調＝明るい葉色。 */
+  --color-ha-green-deep: #aee07f;
+  /* 暗い葉色の面（写真プレースホルダ・チップ地）。 */
+  --color-ha-green-soft: #20301c;
+  /* 花＝ピンク。差し色のみ（通知・ハイライト）。地やヘッダには使わない。 */
+  --color-ha-pink: #ff5d6a;
+  /* 暗いピンク面（エラー通知の地）。 */
+  --color-ha-pink-soft: #3e2024;
+  /* 照明＝暖色オレンジ（グロウ・ハイライト）。 */
+  --color-ha-orange: #e89a4c;
+  /* ベース＝焦げ茶〜黒（背景写真の下地・グラスの奥）。 */
+  --color-ha-base: #14120d;
+  /* 抜き＝暖かい白（ボタン上の文字・最明部）。 */
+  --color-ha-white: #f6f0e6;
+  /* 本文＝暖かいオフホワイト（暗地に乗る）。 */
+  --color-ha-ink: #ece6da;
 
   /* タイポ（cookbook: 汎用フォント禁止・高コントラスト組み）。
-     見出し＝Outfit（geometric sans・欧/数字）×日本語はクリーンゴシック。
-     本文＝日本語ゴシック。和欧が自然に混ざり、ウェイト 400↔800 で飛躍を付ける。 */
+     見出し＝Outfit（geometric sans・欧/数字）×日本語はクリーンゴシック。 */
   --font-sans:
     "Zen Kaku Gothic New", "Outfit", ui-sans-serif, system-ui, "Hiragino Kaku Gothic ProN",
     "Noto Sans JP", sans-serif;
@@ -27,35 +41,49 @@
     sans-serif;
 }
 
-/* 地は「温室の光」。ベタ単色をやめ、緑→生成りの斜めグラデに
-   緑の採光ハイライトとピンクの淡い差しを薄く重ねて atmosphere/depth を出す。
-   固定背景でスクロールしても光が動かない（ガラス越しの採光のように）。 */
+/* 地＝ぼやけた高級写真（固定）＋暗いオーバーレイで可読性を確保。ベタ塗りにしない。 */
 body {
   font-family: var(--font-sans);
   color: var(--color-ha-ink);
   background-color: var(--color-ha-base);
   background-image:
-    radial-gradient(115% 80% at 100% -10%, rgba(80, 145, 32, 0.16), transparent 58%),
-    radial-gradient(90% 70% at -10% 110%, rgba(255, 84, 96, 0.07), transparent 55%),
-    linear-gradient(158deg, #f7f1e7 0%, var(--color-ha-base) 46%, #edf3e1 100%);
+    linear-gradient(180deg, rgba(9, 8, 6, 0.84) 0%, rgba(13, 11, 8, 0.68) 42%, rgba(9, 8, 6, 0.9) 100%),
+    url("/og/bg-blur.webp");
+  background-size: cover;
+  background-position: center;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
 }
 
-/* 見出しは display 書体。和欧混在で Outfit→Zen Kaku の順に解決される。 */
+/* 見出しは display 書体。 */
 .font-display {
   font-family: var(--font-display);
   font-feature-settings: "palt" 1;
   letter-spacing: -0.01em;
 }
 
-/* ページロードの staggered reveal（cookbook: 散発 micro-interaction より
-   1回の良いロード演出）。CSS-only。--i にインデックスを渡し順に立ち上げる。
-   prefers-reduced-motion では無効化してアクセシビリティを守る。 */
+/* グラス（半透明パネル）。ガラス越しの空気＝水滴/反射の世界観。
+   面はこれで統一し、ボタンだけは塗り（下の .btn 系・各 CTA）でくっきり見せる。 */
+.glass {
+  background-color: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* モーダル/ポップアップ等、文字を載せる前面パネルは濃いめのグラスで可読性を上げる。 */
+.glass-strong {
+  background-color: rgba(20, 18, 13, 0.72);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ページロードの staggered reveal（CSS-only・reduced-motion で無効）。 */
 @keyframes ha-rise {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.99);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;

@@ -109,7 +109,7 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
   return (
     <div className="relative flex flex-col gap-1">
       <label htmlFor="hanoba-caption" className="text-sm font-medium text-ha-green-deep">
-        一言（必須）
+        ひとこと・必須
       </label>
       <textarea
         ref={textareaRef}
@@ -121,13 +121,13 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
         onBlur={() => setPopup(null)}
         rows={3}
         placeholder="この子のこと、ひとこと。#アガベ のようにタグも付けられます。"
-        className="rounded-2xl border border-ha-ink/15 bg-ha-white/80 shadow-sm px-3.5 py-2.5 text-ha-ink resize-y focus:border-ha-green focus:outline-none focus:ring-2 focus:ring-ha-green/20"
+        className="glass rounded-2xl px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/45 resize-y focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
       />
       {popup !== null && (
         <ul
           role="listbox"
           aria-label="ハッシュタグ候補"
-          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-56 overflow-auto rounded-2xl border border-ha-ink/10 bg-ha-white shadow-xl ring-1 ring-ha-ink/5"
+          className="glass-strong absolute z-10 left-0 right-0 top-full mt-1 max-h-56 overflow-auto rounded-2xl shadow-2xl"
         >
           {popup.items.map((item, i) => (
             <li key={item} role="option" aria-selected={i === popup.active}>
@@ -139,7 +139,9 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
                   applyCandidate(item);
                 }}
                 className={`block w-full text-left px-3 py-1.5 text-sm ${
-                  i === popup.active ? "bg-ha-green-soft text-ha-green-deep" : "text-ha-ink hover:bg-ha-base"
+                  i === popup.active
+                    ? "bg-ha-green/20 text-ha-green-deep"
+                    : "text-ha-ink hover:bg-white/10"
                 }`}
               >
                 {item}

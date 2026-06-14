@@ -38,11 +38,8 @@ export default function DisclaimerNotice() {
   }
 
   return (
-    <aside
-      role="note"
-      className="rounded-2xl bg-ha-green-soft/80 text-ha-ink px-4 py-3 flex items-start gap-3 border border-ha-green/15 ring-1 ring-inset ring-ha-white/40"
-    >
-      <p className="text-sm leading-relaxed flex-1">
+    <aside role="note" className="glass rounded-2xl text-ha-ink px-4 py-3 flex items-start gap-3">
+      <p className="text-sm leading-relaxed flex-1 text-ha-ink/85">
         Nostr のフィードを表示しているだけです。二重投稿でもコピーでもありません。同じ投稿は
         mypace でも見られます。
       </p>
@@ -50,7 +47,7 @@ export default function DisclaimerNotice() {
         type="button"
         onClick={dismiss}
         aria-label="この案内を閉じる"
-        className="shrink-0 grid place-items-center rounded-full bg-ha-white text-ha-green-deep w-7 h-7 hover:bg-ha-green hover:text-ha-white transition-colors"
+        className="shrink-0 grid place-items-center rounded-full bg-white/10 text-ha-ink w-7 h-7 hover:bg-ha-green hover:text-ha-white transition-colors"
       >
         <Icon name="close" className="w-4 h-4" />
       </button>

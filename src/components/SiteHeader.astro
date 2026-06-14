@@ -1,9 +1,9 @@
 ---
 // 共通ヘッダー＆ワードマーク（#20）。
-// ロゴ＝架空都市ハノーヴァの市章（#21・favicon と同型）。
-// 和欧の見せ方: 主＝「葉の場」、従＝civic kicker "HANOBA"（大文字・字間広め）。
+// ロゴ＝架空都市ハノーヴァの市旗（#21・H 字・favicon と同型）。
+// ワードマークは「Hanoba」のみ（国際的な印象・font-display）。漢字はロゴ下に置かない。
 // スラッシュ併記は廃止。右側のナビは <slot name="nav" /> で各ページが差し込む。
-// sticky＋backdrop-blur で「温室のガラス越し」の空気感を出す。
+// sticky＋backdrop-blur でガラス越しの空気感を出す。
 ---
 
 <header
@@ -11,29 +11,18 @@
 >
   <div class="mx-auto max-w-3xl px-5 h-16 flex items-center justify-between gap-4">
     <a href="/" class="flex items-center gap-2.5 group" aria-label="葉の場 Hanoba トップへ">
-      <svg
-        viewBox="0 0 64 64"
-        class="w-9 h-9 shrink-0 drop-shadow-sm transition-transform group-hover:-rotate-3"
-        role="img"
-        aria-hidden="true"
-      >
+      <svg viewBox="0 0 64 64" class="w-9 h-9 shrink-0" role="img" aria-hidden="true">
         <defs>
-          <clipPath id="ha-flag"><rect width="64" height="64" rx="14"></rect></clipPath>
+          <clipPath id="ha-flag"><rect width="64" height="64" rx="12"></rect></clipPath>
         </defs>
         <g clip-path="url(#ha-flag)">
-          <rect width="64" height="64" fill="#509120"></rect>
-          <rect y="40" width="64" height="24" fill="#f3e7e7"></rect>
-          <rect y="56" width="64" height="8" fill="#ff5460"></rect>
-          <circle cx="32" cy="21" r="9.6" fill="#f7f1e7"></circle>
-          <circle cx="32" cy="21" r="3.9" fill="#ff5460"></circle>
+          <rect width="64" height="64" fill="#f3e7e7"></rect>
+          <rect x="14" y="13" width="11.5" height="38" fill="#509120"></rect>
+          <rect x="38.5" y="13" width="11.5" height="38" fill="#305713"></rect>
+          <rect x="14" y="26.2" width="36" height="11.5" fill="#ff5460"></rect>
         </g>
       </svg>
-      <span class="flex flex-col leading-none">
-        <span class="text-xl font-bold tracking-tight text-ha-green-deep">葉の場</span>
-        <span class="font-display text-[10px] font-semibold uppercase tracking-[0.34em] text-ha-green"
-          >Hanoba</span
-        >
-      </span>
+      <span class="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep">Hanoba</span>
     </a>
     <nav class="flex items-center gap-3 sm:gap-5 text-sm">
       <slot name="nav" />

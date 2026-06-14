@@ -62,7 +62,7 @@ describe("Composer", () => {
     expect(submit).toBeDisabled();
 
     // 一言を入力 → enabled。
-    await user.type(screen.getByLabelText("一言（必須）"), "開花した");
+    await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
     expect(submit).toBeEnabled();
   });
 

@@ -1,8 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーヴァ市旗">
-  <!-- maskable 用＝全面塗り（角丸なし）。三色帯は端まで塗り、徽（円）はセーフゾーン内に置く。 -->
-  <rect width="512" height="512" fill="#509120" />
-  <rect y="316" width="512" height="196" fill="#f3e7e7" />
-  <rect y="452" width="512" height="60" fill="#ff5460" />
-  <circle cx="256" cy="176" r="72" fill="#f7f1e7" />
-  <circle cx="256" cy="176" r="29" fill="#ff5460" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーヴァ市旗（H）">
+  <!-- maskable 用＝全面塗り（角丸なし）。H はセーフゾーン内（中央 80%）に収める。 -->
+  <rect width="512" height="512" fill="#f3e7e7" />
+  <g transform="translate(256 256) scale(0.8) translate(-256 -256)">
+    <rect x="110" y="104" width="92" height="304" fill="#509120" />
+    <rect x="310" y="104" width="92" height="304" fill="#305713" />
+    <rect x="110" y="210" width="292" height="92" fill="#ff5460" />
+  </g>
 </svg>

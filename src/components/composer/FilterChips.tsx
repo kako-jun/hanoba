@@ -17,13 +17,11 @@ export default function FilterChips({ selected, onSelect }: FilterChipsProps) {
         type="button"
         onClick={() => onSelect(null)}
         aria-pressed={selected === null}
-        className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm border transition-colors ${
-          selected === null
-            ? "bg-ha-green text-ha-white border-ha-green"
-            : "bg-ha-white text-ha-ink border-ha-ink/15 hover:border-ha-green"
+        className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+          selected === null ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"
         }`}
       >
-        <span className="inline-block w-3 h-3 rounded-full border border-ha-ink/20 bg-ha-base" aria-hidden="true" />
+        <span className="inline-block w-3 h-3 rounded-full border border-white/25 bg-white/10" aria-hidden="true" />
         なし
       </button>
       {FILTER_PRESETS.map((preset) => {
@@ -34,14 +32,12 @@ export default function FilterChips({ selected, onSelect }: FilterChipsProps) {
             type="button"
             onClick={() => onSelect(preset)}
             aria-pressed={isActive}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm border transition-colors ${
-              isActive
-                ? "bg-ha-green text-ha-white border-ha-green"
-                : "bg-ha-white text-ha-ink border-ha-ink/15 hover:border-ha-green"
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+              isActive ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"
             }`}
           >
             <span
-              className="inline-block w-3 h-3 rounded-full border border-ha-ink/20"
+              className="inline-block w-3 h-3 rounded-full border border-white/25"
               style={{ backgroundColor: preset.color }}
               aria-hidden="true"
             />

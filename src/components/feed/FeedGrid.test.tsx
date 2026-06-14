@@ -40,7 +40,7 @@ describe("FeedGrid", () => {
   it("投稿が無ければ空状態の文言と投稿リンクを出す", async () => {
     fetchHanobaFeed.mockResolvedValue([]);
     render(<FeedGrid />);
-    expect(await screen.findByText(/だれもいない温室/)).toBeInTheDocument();
+    expect(await screen.findByText(/なにも灯っていない棚/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "投稿する" })).toHaveAttribute("href", "/compose");
   });
 

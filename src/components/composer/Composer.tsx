@@ -96,7 +96,7 @@ export default function Composer() {
   return (
     <div className="flex flex-col gap-6">
       {!hasImage ? (
-        <div className="rounded-2xl border border-dashed border-ha-green/40 bg-ha-green-soft/40 py-10">
+        <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 backdrop-blur-md py-10">
           <ImagePicker onSelect={handleSelectImage} />
         </div>
       ) : (
@@ -122,7 +122,7 @@ export default function Composer() {
               type="button"
               onClick={resetAll}
               disabled={posting}
-              className="rounded-full bg-ha-white text-ha-ink border border-ha-ink/15 px-4 py-3 hover:border-ha-green disabled:opacity-40 transition-colors"
+              className="glass rounded-full text-ha-ink px-4 py-3 hover:border-ha-green/50 disabled:opacity-40 transition-colors"
             >
               写真を選び直す
             </button>
@@ -139,12 +139,18 @@ export default function Composer() {
       )}
 
       {status.kind === "done" && (
-        <p role="status" className="rounded-2xl bg-ha-green-soft text-ha-green-deep px-4 py-3 text-sm">
+        <p
+          role="status"
+          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-green text-ha-ink px-4 py-3 text-sm"
+        >
           投稿しました。mypace でも見られます。
         </p>
       )}
       {status.kind === "error" && (
-        <p role="alert" className="rounded-2xl bg-ha-pink-soft text-ha-ink px-4 py-3 text-sm">
+        <p
+          role="alert"
+          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-pink text-ha-ink px-4 py-3 text-sm"
+        >
           {status.message}
         </p>
       )}

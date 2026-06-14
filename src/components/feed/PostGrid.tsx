@@ -39,13 +39,13 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
 
   return (
     <>
-      <ul className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-2.5">
+      <ul className="grid grid-cols-3 sm:grid-cols-4 gap-0.5">
         {posts.map((post, i) => (
           <li
             key={post.id}
-            // 角丸・影で「浮くカード」に（地はフラット・カードは持ち上げる＝階層）。
+            // Instagram のグリッド流＝隙間は狭く・角丸は小さく・フラット（浮かせない）。
             // ロード時の staggered reveal（--i）。先頭の遅延だけ付け、深部は頭打ちにする。
-            className="ha-rise group aspect-square overflow-hidden rounded-2xl bg-ha-green-soft shadow-sm ring-1 ring-ha-green/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-ha-green/25"
+            className="ha-rise group aspect-square overflow-hidden rounded-md bg-ha-green-soft"
             style={{ "--i": Math.min(i, 11) } as CSSProperties}
           >
             <button
@@ -53,14 +53,14 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
               onClick={() => setSelectedId(post.id)}
               // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
               aria-label={post.caption === "" ? "投稿の詳細を開く" : post.caption}
-              className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green focus-visible:ring-offset-1"
+              className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
             >
               {post.imageUrl !== null && (
                 <img
                   src={post.imageUrl}
                   alt={post.caption}
                   loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+                  className="w-full h-full object-cover transition duration-300 group-hover:opacity-90"
                 />
               )}
             </button>

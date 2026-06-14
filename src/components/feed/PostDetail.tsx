@@ -98,12 +98,12 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label="投稿の詳細"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ha-ink/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl bg-ha-white shadow-2xl ring-1 ring-ha-ink/5 flex flex-col ha-rise"
+        className="glass-strong relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl shadow-2xl flex flex-col ha-rise"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -111,7 +111,7 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
           type="button"
           onClick={onClose}
           aria-label="閉じる"
-          className="absolute top-3 right-3 z-10 grid place-items-center rounded-full bg-ha-white/90 text-ha-green-deep w-8 h-8 shadow-sm hover:bg-ha-green hover:text-ha-white transition-colors"
+          className="absolute top-3 right-3 z-10 grid place-items-center rounded-full bg-black/40 backdrop-blur-md text-ha-white w-8 h-8 hover:bg-ha-green transition-colors"
         >
           <Icon name="close" className="w-4 h-4" />
         </button>

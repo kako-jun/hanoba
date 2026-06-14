@@ -134,22 +134,20 @@ export default function DiscoverGrid() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="#アガベ や 葉焼け で探す"
             aria-label="植物のタグ または 本文キーワード"
-            className="w-full rounded-full border border-ha-green/25 bg-ha-white/80 pl-10 pr-4 py-2.5 text-ha-ink shadow-sm placeholder:text-ha-ink/40 focus:outline-none focus:border-ha-green focus:ring-2 focus:ring-ha-green/20"
+            className="glass w-full rounded-full pl-10 pr-4 py-2.5 text-ha-ink placeholder:text-ha-ink/45 focus:outline-none focus:border-ha-green/60 focus:ring-2 focus:ring-ha-green/30"
           />
         </div>
         <button
           type="submit"
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ha-green text-ha-white px-5 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ha-green text-ha-white px-5 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
         >
           探す
         </button>
       </form>
 
       {/* クロスクライアントの断り書き（常設・hanoba 断り書きとは別文面）。 */}
-      <aside
-        role="note"
-        className="rounded-2xl bg-ha-green-soft text-ha-ink px-4 py-3 border border-ha-green/20"
-      >
+      <aside role="note" className="glass rounded-2xl text-ha-ink px-4 py-3">
+
         <p className="text-sm leading-relaxed">
           <span className="font-semibold">#タグ</span> でも{" "}
           <span className="font-semibold">本文のことば</span>{" "}
@@ -158,15 +156,15 @@ export default function DiscoverGrid() {
       </aside>
 
       {status === "idle" && (
-        <div className="relative overflow-hidden rounded-3xl ring-1 ring-ha-green/15 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10">
           <img
-            src="/og/greenhouse-hero.webp"
+            src="/og/room-dark.webp"
             alt=""
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-ha-base/90 via-ha-base/55 to-transparent"></div>
-          <p className="relative px-6 py-16 sm:py-20 text-center font-display text-lg font-semibold text-ha-green-deep">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30"></div>
+          <p className="relative px-6 py-16 sm:py-20 text-center font-display text-lg font-semibold text-ha-white">
             #タグ や ことば を入れて「探す」を押すと、みんなの植物が並びます。
           </p>
         </div>
@@ -182,7 +180,7 @@ export default function DiscoverGrid() {
           <button
             type="button"
             onClick={() => void search(query)}
-            className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:bg-ha-green-deep hover:shadow-md transition-all"
+            className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
           >
             再試行
           </button>

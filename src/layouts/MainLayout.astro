@@ -7,7 +7,7 @@ interface Props {
 }
 
 const {
-  title = "葉の場 (Hanoba)",
+  title = "Hanoba",
   description = "植物写真のSNS。Instagram より、はやく・かんたんに、ひとこと添えて。",
 } = Astro.props;
 ---
@@ -35,7 +35,7 @@ const {
     <!-- OGP / Twitter カード（共有時のサムネ）。画像は AI 生成の温室ヒーロー（/image スキル）。
          og:image は絶対 URL が要るので本番ドメインで固定する。 -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="葉の場 (Hanoba)" />
+    <meta property="og:site_name" content="Hanoba" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content="https://hanoba.llll-ll.com/og/og-image.jpg" />
