@@ -2,7 +2,11 @@
 // 他モジュールや React 島から relay 呼び出しをばら撒かない（guidelines §3）。
 
 import { SimplePool } from "nostr-tools/pool";
-import { discoverTagFilters, normalizeTag } from "../feed/discover.ts";
+import {
+  classifyDiscoverQuery,
+  discoverKeywordFilters,
+  discoverTagFilters,
+} from "../feed/discover.ts";
 import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
@@ -131,37 +135,52 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
 }
 
 /**
- * クロスクライアント discover（DESIGN §6 二段構え）。本文 #タグで mypace 等
- * 他クライアントの植物投稿も集約する。hanoba フィード（#4・t:hanoba 限定）とは
- * 別物で、ここは hanoba 投稿だけに絞らない（DiscoverGrid・別ページ/別島から呼ぶ）。
+ * クロスクライアント discover（DESIGN §6＋#24）。mypace 等 他クライアントの植物投稿も
+ * 集約する。hanoba フィード（#4・t:hanoba 限定）とは別物で、hanoba 投稿だけに絞らない
+ * （DiscoverGrid・別ページ/別島から呼ぶ）。
  *
- * - normalizeTag で正規化（trim・先頭 # 除去）。空なら即 []（リレーを叩かない）。
- * - 二段構えを両方走らせる:
- *     ① {"#t":[tag], kinds:[1]}     を GENERAL_RELAYS で（t タグ持ち）
- *     ② NIP-50 {search:"#tag", kinds:[1]} を SEARCH_RELAYS で（本文 #タグ全文検索）
- *   片方のリレーが落ちても他方を活かすため Promise.allSettled で待つ。
- * - 両結果を parsePost → mergePostsById（id dedup・createdAt 降順）。
- * - hanoba は写真 SNS のため画像ありのみ（imageUrl !== null）に絞る。
- * - 全滅・失敗は throw せず空配列にフォールバックする。
+ * 入力は classifyDiscoverQuery でモード分岐する:
+ * - **tag モード**（`#アガベ`）= 二段構え（DESIGN §6）:
+ *     ① {"#t":[tag]}        を GENERAL_RELAYS（t タグ持ち）
+ *     ② NIP-50 search:"#tag" を SEARCH_RELAYS（本文 #タグ全文検索）
+ * - **keyword モード**（`葉焼け` 等・#24）= 本文キーワード全文検索:
+ *     ① NIP-50 search:"葉焼け" を SEARCH_RELAYS（本文中の素の語・# 無しも拾う）
+ *     ② {"#t":[葉焼け]}        を GENERAL_RELAYS（同語の t タグ持ちも一応拾う）
+ *
+ * いずれも片方のリレー群が落ちても他方を活かすため Promise.allSettled で待ち、
+ * parsePost → mergePostsById（id dedup・createdAt 降順）、画像ありのみに絞る。
+ * 空入力・全滅・失敗は throw せず空配列にフォールバックする。
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
-export async function fetchDiscoverByTag(tag: string, limit = 100): Promise<FeedPost[]> {
-  const normalized = normalizeTag(tag);
-  if (normalized === "") return [];
+export async function fetchDiscover(query: string, limit = 100): Promise<FeedPost[]> {
+  const { mode, term } = classifyDiscoverQuery(query);
+  if (term === "") return [];
 
-  const { tagFilter, searchFilter } = discoverTagFilters(normalized, limit);
   const pool = getPool();
 
+  // モードごとに (relays, filter) のペアを組む。
+  const jobs: Promise<NostrEvent[]>[] =
+    mode === "tag"
+      ? (() => {
+          const { tagFilter, searchFilter } = discoverTagFilters(term, limit);
+          return [
+            pool.querySync([...GENERAL_RELAYS], tagFilter),
+            pool.querySync([...SEARCH_RELAYS], searchFilter),
+          ];
+        })()
+      : (() => {
+          const { keywordFilter, tagFilter } = discoverKeywordFilters(term, limit);
+          return [
+            pool.querySync([...SEARCH_RELAYS], keywordFilter),
+            pool.querySync([...GENERAL_RELAYS], tagFilter),
+          ];
+        })();
+
   // 片方のリレー群が失敗しても他方の結果を活かす（allSettled）。
-  const [tagResult, searchResult] = await Promise.allSettled([
-    pool.querySync([...GENERAL_RELAYS], tagFilter),
-    pool.querySync([...SEARCH_RELAYS], searchFilter),
-  ]);
+  const settled = await Promise.allSettled(jobs);
+  const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 
-  const tagEvents: NostrEvent[] = tagResult.status === "fulfilled" ? tagResult.value : [];
-  const searchEvents: NostrEvent[] = searchResult.status === "fulfilled" ? searchResult.value : [];
-
-  const posts = mergePostsById(tagEvents.map(parsePost), searchEvents.map(parsePost));
+  const posts = mergePostsById(events.map(parsePost));
   return posts.filter((post) => post.imageUrl !== null);
 }

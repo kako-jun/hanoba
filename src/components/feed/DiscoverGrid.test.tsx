@@ -4,16 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない）。
-const fetchDiscoverByTag = vi.fn();
+const fetchDiscover = vi.fn();
 // PostDetail がマウント時に呼ぶいいね数取得もモックで止める（#12）。
 const fetchReactionCount = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
-  fetchDiscoverByTag: (...args: unknown[]) => fetchDiscoverByTag(...args),
+  fetchDiscover: (...args: unknown[]) => fetchDiscover(...args),
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
 }));
 
 import DiscoverGrid from "./DiscoverGrid.tsx";
+
+// 検索ボックスの aria-label（タグ/キーワード両対応・#24）。
+const SEARCH_BOX = "植物のタグ または 本文キーワード";
 
 function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
   return {
@@ -28,10 +31,10 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 
 describe("DiscoverGrid", () => {
   beforeEach(() => {
-    fetchDiscoverByTag.mockReset();
+    fetchDiscover.mockReset();
     fetchReactionCount.mockReset();
     fetchReactionCount.mockResolvedValue(0);
-    // 各テストで URL の ?tag= を空に戻す（初期検索が走らないように）。
+    // 各テストで URL のクエリを空に戻す（初期検索が走らないように）。
     window.history.replaceState(null, "", "/discover");
   });
 
@@ -43,52 +46,53 @@ describe("DiscoverGrid", () => {
     render(<DiscoverGrid />);
     expect(screen.getByText(/hanoba 以外のクライアントの投稿も含みます/)).toBeInTheDocument();
     expect(screen.getByText(/「探す」を押すと/)).toBeInTheDocument();
-    expect(fetchDiscoverByTag).not.toHaveBeenCalled();
+    expect(fetchDiscover).not.toHaveBeenCalled();
   });
 
-  it("検索で fetchDiscoverByTag が呼ばれグリッドに件数が並ぶ", async () => {
+  it("キーワード（# 無し）で検索すると fetchDiscover に素の語を渡す（本文検索・#24）", async () => {
     const user = userEvent.setup();
-    fetchDiscoverByTag.mockResolvedValue([
-      makePost({ id: "a", caption: "アガベ自慢" }),
-      makePost({ id: "b", caption: "別のアガベ" }),
+    fetchDiscover.mockResolvedValue([
+      makePost({ id: "a", caption: "葉焼けした" }),
+      makePost({ id: "b", caption: "また葉焼け" }),
     ]);
     render(<DiscoverGrid />);
 
-    await user.type(screen.getByRole("textbox", { name: "探したい植物のタグ" }), "アガベ");
+    await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "葉焼け");
     await user.click(screen.getByRole("button", { name: "探す" }));
 
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
-    expect(fetchDiscoverByTag).toHaveBeenCalledWith("アガベ");
+    // 正規化せず raw を渡す（モード分岐は fetchDiscover 側）。
+    expect(fetchDiscover).toHaveBeenCalledWith("葉焼け");
   });
 
-  it("先頭 # 付きで入力しても normalize して検索する", async () => {
+  it("先頭 # 付きはそのまま fetchDiscover に渡す（タグモードは内部で分岐）", async () => {
     const user = userEvent.setup();
-    fetchDiscoverByTag.mockResolvedValue([]);
+    fetchDiscover.mockResolvedValue([]);
     render(<DiscoverGrid />);
 
-    await user.type(screen.getByRole("textbox", { name: "探したい植物のタグ" }), "#パキポ");
+    await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "#パキポ");
     await user.click(screen.getByRole("button", { name: "探す" }));
 
-    await waitFor(() => expect(fetchDiscoverByTag).toHaveBeenCalledWith("パキポ"));
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#パキポ"));
   });
 
   it("0 件なら見つからない文言を出す", async () => {
     const user = userEvent.setup();
-    fetchDiscoverByTag.mockResolvedValue([]);
+    fetchDiscover.mockResolvedValue([]);
     render(<DiscoverGrid />);
 
-    await user.type(screen.getByRole("textbox", { name: "探したい植物のタグ" }), "サボテン");
+    await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "サボテン");
     await user.click(screen.getByRole("button", { name: "探す" }));
 
-    expect(await screen.findByText(/「#サボテン」の投稿は見つかりませんでした/)).toBeInTheDocument();
+    expect(await screen.findByText(/「サボテン」の投稿は見つかりませんでした/)).toBeInTheDocument();
   });
 
   it("セルクリックで PostDetail（dialog）を開く", async () => {
     const user = userEvent.setup();
-    fetchDiscoverByTag.mockResolvedValue([makePost({ id: "a", caption: "開花した" })]);
+    fetchDiscover.mockResolvedValue([makePost({ id: "a", caption: "開花した" })]);
     render(<DiscoverGrid />);
 
-    await user.type(screen.getByRole("textbox", { name: "探したい植物のタグ" }), "アガベ");
+    await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "アガベ");
     await user.click(screen.getByRole("button", { name: "探す" }));
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
 
@@ -96,14 +100,14 @@ describe("DiscoverGrid", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
-  it("詳細内のタグクリックでそのタグを再検索する", async () => {
+  it("詳細内のタグクリックでそのタグを # 付き（タグモード）で再検索する", async () => {
     const user = userEvent.setup();
-    fetchDiscoverByTag
+    fetchDiscover
       .mockResolvedValueOnce([makePost({ id: "a", caption: "開花 #パキポ", hashtags: ["パキポ"] })])
       .mockResolvedValueOnce([makePost({ id: "z", caption: "別のパキポ" })]);
     render(<DiscoverGrid />);
 
-    await user.type(screen.getByRole("textbox", { name: "探したい植物のタグ" }), "アガベ");
+    await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "アガベ");
     await user.click(screen.getByRole("button", { name: "探す" }));
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
 
@@ -111,17 +115,25 @@ describe("DiscoverGrid", () => {
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "#パキポ" }));
 
-    // モーダルは閉じ、パキポで再検索される。
+    // モーダルは閉じ、#パキポ（タグモード）で再検索される。
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(fetchDiscoverByTag).toHaveBeenLastCalledWith("パキポ");
+    expect(fetchDiscover).toHaveBeenLastCalledWith("#パキポ");
   });
 
-  it("URL の ?tag= があればマウント時に初期検索する", async () => {
-    fetchDiscoverByTag.mockResolvedValue([makePost({ id: "a", caption: "アガベ" })]);
+  it("URL の ?q= があればマウント時に初期検索する", async () => {
+    fetchDiscover.mockResolvedValue([makePost({ id: "a", caption: "アガベ" })]);
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+    expect(await screen.findAllByRole("img")).toHaveLength(1);
+  });
+
+  it("旧 ?tag= リンクも後方互換で初期検索する", async () => {
+    fetchDiscover.mockResolvedValue([makePost({ id: "a", caption: "アガベ" })]);
     window.history.replaceState(null, "", "/discover?tag=アガベ");
     render(<DiscoverGrid />);
 
-    await waitFor(() => expect(fetchDiscoverByTag).toHaveBeenCalledWith("アガベ"));
-    expect(await screen.findAllByRole("img")).toHaveLength(1);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
   });
 });
