@@ -71,8 +71,8 @@ describe("Composer", () => {
     // 画像ありでも一言が空 → disabled（両条件のうち一言条件）。
     const submit = await screen.findByRole("button", { name: /投稿する/ });
     expect(submit).toBeDisabled();
-    // なぜ押せないかをボタン近くに明示する。
-    expect(screen.getByText(/ひとこと.*を入れると投稿できます/)).toBeInTheDocument();
+    // なぜ押せないかをボタン近くに明示する（文言は span 分割なので末尾ノードで確認）。
+    expect(screen.getByText(/を入れると投稿できます/)).toBeInTheDocument();
 
     // 一言を入力 → enabled、不足理由は消える。
     await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
