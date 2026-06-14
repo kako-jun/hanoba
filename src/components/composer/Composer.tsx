@@ -115,22 +115,24 @@ export default function Composer() {
 
           <CaptionInput value={caption} onChange={setCaption} pool={pool} />
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              className="rounded-2xl bg-ha-pink text-ha-white px-6 py-3 font-semibold enabled:hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {posting ? "投稿中…" : "投稿する"}
-            </button>
+          {/* 主アクション（投稿する）を右端に・グループは右寄せ（基本動線）。
+              副アクション（選び直す）は左、主アクションは右。 */}
+          <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={resetAll}
               disabled={posting}
-              className="rounded-2xl bg-ha-white text-ha-ink border border-ha-ink/15 px-4 py-3 hover:border-ha-green disabled:opacity-40"
+              className="rounded-full bg-ha-white text-ha-ink border border-ha-ink/15 px-4 py-3 hover:border-ha-green disabled:opacity-40 transition-colors"
             >
               写真を選び直す
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="rounded-full bg-ha-pink text-ha-white px-6 py-3 font-semibold shadow-sm shadow-ha-pink/30 enabled:hover:opacity-90 enabled:hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {posting ? "投稿中…" : "投稿する"}
             </button>
           </div>
         </>
