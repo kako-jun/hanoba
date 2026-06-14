@@ -11,7 +11,7 @@ import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
 import { buildDeletionEvent, buildNoteTemplate, buildProfileEvent } from "./events.ts";
-import { signTemplate } from "./keys.ts";
+import { setDisplayName, signTemplate } from "./keys.ts";
 import { extractHashtags } from "./tags.ts";
 import { deleteImage } from "./upload.ts";
 import type { NostrEvent } from "./types.ts";
@@ -211,6 +211,20 @@ export async function publishProfile(name: string): Promise<NostrEvent> {
   const signed = await signTemplate(buildProfileEvent(name));
   await publishEvent(signed);
   return signed;
+}
+
+/**
+ * 表示名を確定する（#28・Composer / MyGrid 共通）。
+ * ローカル保存は**必ず**通し、kind:0 publish は best-effort（全 relay 落ち等で失敗しても
+ * 投稿フローを止めない＝名前は次回以降の publish に乗る）。重複ロジックをここに集約。
+ */
+export async function saveDisplayName(name: string): Promise<void> {
+  setDisplayName(name); // 空なら throw（呼び出し側で trim 済みを渡す）
+  try {
+    await publishProfile(name);
+  } catch {
+    // publish 失敗はローカル名を保持して握り潰す。
+  }
 }
 
 /**

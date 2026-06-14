@@ -142,7 +142,7 @@ export default function PostDetail({ post, onClose, onSelectHashtag }: Props) {
                 {plants.map((p) => (
                   <li key={p.id}>
                     <a
-                      href={`/discover?q=${encodeURIComponent(p.name)}`}
+                      href={`/discover?q=${encodeURIComponent(`#${p.name}`)}`}
                       className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm hover:border-ha-green/50 transition-colors"
                       title={`${p.sci}（${p.name}）で探す`}
                     >

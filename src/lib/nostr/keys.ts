@@ -133,14 +133,9 @@ export function getDisplayName(): string | null {
   return name === null || name === undefined || name === "" ? null : name;
 }
 
-/** 表示名をローカルに保存する（空はエラー）。kind:0 publish は別途。 */
+/** 表示名をローカルに保存する（空はエラー）。kind:0 publish は別途（client.saveDisplayName）。 */
 export function setDisplayName(name: string): void {
   const trimmed = name.trim();
   if (trimmed === "") throw new Error("ユーザー名を入力してください");
   getLS()?.setItem(NAME_KEY, trimmed);
-}
-
-/** 表示名が設定済みか（＝投稿できる状態か）。 */
-export function hasDisplayName(): boolean {
-  return getDisplayName() !== null;
 }

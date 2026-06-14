@@ -44,7 +44,7 @@ export const PLANTS: PlantEntry[] = [
     id: "philodendron",
     sci: "Philodendron",
     name: "フィロデンドロン",
-    aliases: ["philodendron", "フィロデン", "フィロ"],
+    aliases: ["philodendron", "フィロデン"],
   },
   {
     id: "sansevieria",

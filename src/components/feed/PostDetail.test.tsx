@@ -71,6 +71,10 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.getByText("パキポディウム")).toBeInTheDocument();
     // クリックでその植物の discover 検索へ。
     const link = screen.getByRole("link", { name: /Pachypodium/ });
-    expect(link).toHaveAttribute("href", "/discover?q=%E3%83%91%E3%82%AD%E3%83%9D%E3%83%87%E3%82%A3%E3%82%A6%E3%83%A0");
+    // タグ集約モードで検索するため #（=%23）付きで discover へ。
+    expect(link).toHaveAttribute(
+      "href",
+      "/discover?q=%23%E3%83%91%E3%82%AD%E3%83%9D%E3%83%87%E3%82%A3%E3%82%A6%E3%83%A0",
+    );
   });
 });

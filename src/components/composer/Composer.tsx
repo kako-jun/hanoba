@@ -9,8 +9,8 @@ import { useEffect, useRef, useState } from "react";
 import type { PixelCrop } from "react-image-crop";
 import { renderSquareImage } from "../../lib/image/crop.ts";
 import type { FilterPreset } from "../../lib/image/presets.ts";
-import { fetchKnownHashtags, publishProfile, signAndPublishNote } from "../../lib/nostr/client.ts";
-import { getDisplayName, setDisplayName } from "../../lib/nostr/keys.ts";
+import { fetchKnownHashtags, saveDisplayName, signAndPublishNote } from "../../lib/nostr/client.ts";
+import { getDisplayName } from "../../lib/nostr/keys.ts";
 import { uploadImage } from "../../lib/nostr/upload.ts";
 import CaptionInput from "./CaptionInput.tsx";
 import CropFrame from "./CropFrame.tsx";
@@ -95,11 +95,11 @@ export default function Composer() {
     }
     setStatus({ kind: "posting" });
     try {
-      // 初回はユーザー名を確定（ローカル保存＋kind:0 publish）してから投稿する。
+      // 初回はユーザー名を確定してから投稿する。kind:0 publish は best-effort なので
+      // 名前 publish が失敗しても写真＋一言の投稿は止まらない（saveDisplayName が握り潰す）。
       if (!nameLocked) {
-        setDisplayName(name);
         setNameLocked(true);
-        await publishProfile(name);
+        await saveDisplayName(name);
       }
       const blob = await renderSquareImage(image, crop, filter?.filter ?? null);
       const squareFile = new File([blob], "hanoba.jpg", { type: "image/jpeg" });

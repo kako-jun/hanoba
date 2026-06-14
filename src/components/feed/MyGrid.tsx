@@ -1,7 +1,7 @@
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
-import { deletePost, fetchMyPosts, publishProfile } from "../../lib/nostr/client.ts";
-import { getDisplayName, getPublicKeyHex, setDisplayName } from "../../lib/nostr/keys.ts";
+import { deletePost, fetchMyPosts, saveDisplayName } from "../../lib/nostr/client.ts";
+import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
 type Status = "loading" | "error" | "loaded";
@@ -21,16 +21,27 @@ export default function MyGrid() {
   const [draftName, setDraftName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // アンマウント後 / 再取得中の古い応答での setState を防ぐ（stale-async ガード）。
+  const aliveRef = useRef(true);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
   async function load() {
     setStatus("loading");
     try {
       const pubkey = await getPublicKeyHex();
       const result = await fetchMyPosts(pubkey);
+      if (!aliveRef.current) return;
       setPosts(result);
       setStatus("loaded");
     } catch {
-      setStatus("error");
+      if (aliveRef.current) setStatus("error");
     }
   }
 
@@ -42,27 +53,29 @@ export default function MyGrid() {
   async function saveName() {
     const trimmed = draftName.trim();
     if (trimmed === "") return;
-    setDisplayName(trimmed);
     setName(trimmed);
     setEditing(false);
-    // kind:0 を publish（失敗してもローカル名は保持＝表示は通す）。
-    try {
-      await publishProfile(trimmed);
-    } catch {
-      // 通信失敗は握り潰す（次回投稿時などに再度乗る）。
-    }
+    await saveDisplayName(trimmed); // ローカル保存＋best-effort kind:0 publish（共通）
   }
 
   async function onDelete(post: FeedPost) {
     setConfirmId(null);
+    setNotice(null);
     setDeletingId(post.id);
     try {
-      await deletePost(post);
+      const { imageDeleted } = await deletePost(post);
+      if (!aliveRef.current) return;
       setPosts((cur) => cur.filter((p) => p.id !== post.id));
+      // 写真と一蓮托生のはずが、画像削除が確認できなかった場合は正直に伝える。
+      if (post.imageUrl !== null && !imageDeleted) {
+        setNotice("投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。");
+      }
     } catch {
-      // kind:5 publish 失敗（全 relay 落ち等）。投稿は残す。
+      if (aliveRef.current) {
+        setNotice("削除できませんでした。時間をおいて再試行してください。");
+      }
     } finally {
-      setDeletingId(null);
+      if (aliveRef.current) setDeletingId(null);
     }
   }
 
@@ -116,6 +129,15 @@ export default function MyGrid() {
           </>
         )}
       </div>
+
+      {notice !== null && (
+        <p
+          role="status"
+          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-pink text-ha-ink px-4 py-3 text-sm"
+        >
+          {notice}
+        </p>
+      )}
 
       {status === "loading" && <p className="py-12 text-center text-ha-ink/60">読み込み中…</p>}
 

@@ -49,4 +49,13 @@ describe("detectPlants", () => {
   it("空文字は空", () => {
     expect(detectPlants("")).toEqual([]);
   });
+
+  it("曖昧な短い別名による誤爆を避ける（フィロソフィー → フィロデンドロンにしない）", () => {
+    expect(detectPlants("植物のフィロソフィー")).toEqual([]);
+  });
+
+  it("ラテン別名は語境界で照合し、語の一部では誤爆しない", () => {
+    expect(detectPlants("agavextract serum")).toEqual([]); // "agave" を含むが語ではない
+    expect(ids("I grow agave at home")).toContain("agave"); // 語としてなら拾う
+  });
 });
