@@ -1,7 +1,8 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
-import { deletePost, fetchMyPosts, saveDisplayName } from "../../lib/nostr/client.ts";
-import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
+import AccountName from "../account/AccountName.tsx";
+import { deletePost, fetchMyPosts } from "../../lib/nostr/client.ts";
+import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
 type Status = "loading" | "error" | "loaded";
@@ -10,15 +11,12 @@ type Status = "loading" | "error" | "loaded";
  * 「自分の植物」島（#28・client:only）。
  * - 自分の pubkey ＋ t:hanoba の投稿だけを取得して表示。
  * - 各投稿を削除できる（NIP-09 kind:5 ＋ nostr.build 画像削除＝写真と一蓮托生）。
- * - 表示名（ユーザー名）の確認・変更（kind:0 publish）。
+ * - 表示名（ユーザー名）は共通 AccountName で表示・変更（compose と同一の仕組み）。
  * 鍵・ネットワークはクライアントのみ（getPublicKeyHex / fetchMyPosts / deletePost）。
  */
 export default function MyGrid() {
   const [status, setStatus] = useState<Status>("loading");
   const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [name, setName] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [draftName, setDraftName] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -46,17 +44,8 @@ export default function MyGrid() {
   }
 
   useEffect(() => {
-    setName(getDisplayName());
     void load();
   }, []);
-
-  async function saveName() {
-    const trimmed = draftName.trim();
-    if (trimmed === "") return;
-    setName(trimmed);
-    setEditing(false);
-    await saveDisplayName(trimmed); // ローカル保存＋best-effort kind:0 publish（共通）
-  }
 
   async function onDelete(post: FeedPost) {
     setConfirmId(null);
@@ -81,54 +70,8 @@ export default function MyGrid() {
 
   return (
     <section className="flex flex-col gap-5">
-      {/* アカウント（表示名） */}
-      <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
-        {editing ? (
-          <form
-            className="flex items-center gap-2 flex-1"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void saveName();
-            }}
-          >
-            <input
-              type="text"
-              value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
-              placeholder="ユーザー名"
-              aria-label="ユーザー名"
-              autoFocus
-              className="flex-1 rounded-full bg-white/10 border border-white/15 px-3 py-1.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-ha-green text-ha-white px-4 py-1.5 text-sm font-semibold hover:brightness-110 transition"
-            >
-              保存
-            </button>
-          </form>
-        ) : (
-          <>
-            <span className="text-ha-ink/85">
-              {name === null ? (
-                <span className="text-ha-ink/55">ユーザー名 未設定</span>
-              ) : (
-                <span className="font-semibold">{name}</span>
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setDraftName(name ?? "");
-                setEditing(true);
-              }}
-              className="shrink-0 text-sm text-ha-green hover:text-ha-green-deep transition-colors"
-            >
-              {name === null ? "名前を設定" : "名前を変える"}
-            </button>
-          </>
-        )}
-      </div>
+      {/* 表示名（compose と同一の共通コンポーネント）。 */}
+      <AccountName />
 
       {notice !== null && (
         <p

@@ -8,6 +8,7 @@ import {
   discoverTagFilters,
 } from "../feed/discover.ts";
 import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
+import { rankHashtags, type RankedTag } from "../feed/popular.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
@@ -87,6 +88,26 @@ export async function fetchKnownHashtags(limit = 200): Promise<string[]> {
       }
     }
     return result;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 最近の hanoba 投稿から、本文ハッシュタグを**出現回数で人気順**に集計する（#22）。
+ * タグクラウド/ランキング（選んで入力）の素データ。失敗は空配列。
+ */
+export async function fetchPopularHashtags(limit = 30): Promise<RankedTag[]> {
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      { kinds: [1], "#t": [TAG_HANOBA], limit: 200 },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    return rankHashtags(
+      events.map((e) => extractHashtags(e.content)),
+      limit,
+    );
   } catch {
     return [];
   }

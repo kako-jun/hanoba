@@ -1,5 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { detectHashtagQuery, filterHashtagCandidates } from "./hashtag-complete.ts";
+import { detectHashtagQuery, filterHashtagCandidates, insertTag } from "./hashtag-complete.ts";
+
+describe("insertTag", () => {
+  it("空の本文には #タグ と末尾空白を入れる", () => {
+    expect(insertTag("", "アガベ")).toBe("#アガベ ");
+  });
+
+  it("既存本文の末尾に区切り空白付きで足す", () => {
+    expect(insertTag("開花", "アガベ")).toBe("開花 #アガベ ");
+  });
+
+  it("末尾が空白なら二重空白にしない", () => {
+    expect(insertTag("開花 ", "アガベ")).toBe("開花 #アガベ ");
+  });
+
+  it("タグ内のスペースはアンダースコアにする", () => {
+    expect(insertTag("", "Perle von Nürnberg")).toBe("#Perle_von_Nürnberg ");
+  });
+
+  it("先頭 # は除去して付け直す", () => {
+    expect(insertTag("", "#モンステラ")).toBe("#モンステラ ");
+  });
+
+  it("既にあるタグは二重に足さない（大小無視）", () => {
+    expect(insertTag("#アガベ ", "アガベ")).toBe("#アガベ ");
+    expect(insertTag("my #Agave here", "agave")).toBe("my #Agave here");
+  });
+
+  it("空タグは本文をそのまま返す", () => {
+    expect(insertTag("x", "   ")).toBe("x");
+  });
+});
 
 describe("detectHashtagQuery", () => {
   it("キャレット直前の #語 を検出する", () => {

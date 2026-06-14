@@ -12,9 +12,11 @@ vi.mock("../../lib/nostr/upload.ts", () => ({
   uploadImage: (...args: unknown[]) => uploadImage(...args),
 }));
 const saveDisplayName = vi.fn();
+const fetchPopularHashtags = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   signAndPublishNote: (...args: unknown[]) => signAndPublishNote(...args),
   fetchKnownHashtags: (...args: unknown[]) => fetchKnownHashtags(...args),
+  fetchPopularHashtags: (...args: unknown[]) => fetchPopularHashtags(...args),
   saveDisplayName: (...args: unknown[]) => saveDisplayName(...args),
 }));
 vi.mock("../../lib/image/crop.ts", () => ({
@@ -36,6 +38,7 @@ describe("Composer", () => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
+    fetchPopularHashtags.mockReset().mockResolvedValue([]);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
     renderSquareImage.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
     // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
