@@ -1,12 +1,11 @@
 ---
-import DisclaimerNotice from "../components/DisclaimerNotice.tsx";
 import FeedGrid from "../components/feed/FeedGrid.tsx";
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
 
 // トップ＝hanoba フィード（Issue #4）。
 // FeedGrid は relay 取得を useEffect で行うため client:load（SSR では取得しない）。
-// DisclaimerNotice は「Nostr フィードを表示しているだけ」を常設する（DESIGN §2）。
+// 「Nostr の表示だけ・mypace でも見られる」等の断り書きは About に集約（重複させない）。
 ---
 
 <MainLayout>
@@ -38,10 +37,6 @@ import MainLayout from "../layouts/MainLayout.astro";
     </section>
 
     <div class="ha-rise" style="--i:1">
-      <DisclaimerNotice client:load />
-    </div>
-
-    <div class="ha-rise" style="--i:2">
       <FeedGrid client:load />
     </div>
   </main>
