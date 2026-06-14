@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAutoTags, extractHashtags } from "./tags.ts";
+import { buildAutoTags, extractHashtags, stripHashtags } from "./tags.ts";
 
 describe("buildAutoTags", () => {
   it("厳密にこの順序のタグを返す（mypace / hanoba / client）", () => {
@@ -53,5 +53,31 @@ describe("extractHashtags", () => {
 
   it("大小文字はそのまま保持する", () => {
     expect(extractHashtags("#Agave と #agave は別")).toEqual(["Agave", "agave"]);
+  });
+});
+
+describe("stripHashtags", () => {
+  it("末尾のタグを除いて本文だけ返す", () => {
+    expect(stripHashtags("開花した #アガベ #パキポ")).toBe("開花した");
+  });
+
+  it("文中・先頭のタグも除き、余分な空白を畳む", () => {
+    expect(stripHashtags("#アガベ が #種まき から咲いた")).toBe("が から咲いた");
+  });
+
+  it("単語内の # は本文として残す（a#b は非タグ）", () => {
+    expect(stripHashtags("a#b は残す #ok")).toBe("a#b は残す");
+  });
+
+  it("改行は保ちつつ行頭行末の余白を除く", () => {
+    expect(stripHashtags("一行目 #t1\n二行目 #t2")).toBe("一行目\n二行目");
+  });
+
+  it("タグだけの本文は空文字になる", () => {
+    expect(stripHashtags("#アガベ #パキポ")).toBe("");
+  });
+
+  it("タグが無ければそのまま（trim のみ）", () => {
+    expect(stripHashtags("  ただの一言です  ")).toBe("ただの一言です");
   });
 });
