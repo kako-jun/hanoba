@@ -93,6 +93,24 @@ describe("DiscoverGrid", () => {
     expect(screen.getByText(/hanoba 以外のクライアントの投稿も含みます/)).toBeInTheDocument();
   });
 
+  it("× ボタンで検索文字を全消しできる（#60）", async () => {
+    const user = userEvent.setup();
+    render(<DiscoverGrid />);
+
+    const box = screen.getByRole("textbox", { name: SEARCH_BOX }) as HTMLInputElement;
+    // 入力前は × は出ない。
+    expect(screen.queryByRole("button", { name: "検索文字を消す" })).not.toBeInTheDocument();
+    await user.type(box, "アガベ");
+    expect(box.value).toBe("アガベ");
+    const clearBtn = screen.getByRole("button", { name: "検索文字を消す" });
+    // submit を暴発させない（再検索でなく text を消すだけ）。
+    expect(clearBtn).toHaveAttribute("type", "button");
+    await user.click(clearBtn);
+    expect(box.value).toBe("");
+    // 消えたら × も消える。
+    expect(screen.queryByRole("button", { name: "検索文字を消す" })).not.toBeInTheDocument();
+  });
+
   it("キーワード（# 無し）で検索すると fetchDiscover に素の語を渡す（本文検索・#24）", async () => {
     const user = userEvent.setup();
     setResponse("葉焼け", [
