@@ -7,7 +7,7 @@ import {
   discoverKeywordFilters,
   discoverTagFilters,
 } from "../feed/discover.ts";
-import { mergePostsById, parsePost, type FeedPost } from "../feed/parse.ts";
+import { mergePostsById, parseProfileName, parsePost, type FeedPost } from "../feed/parse.ts";
 import { rankHashtags, type RankedTag } from "../feed/popular.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
@@ -252,6 +252,25 @@ export async function publishProfile(name: string): Promise<NostrEvent> {
   const signed = await signTemplate(buildProfileEvent(name));
   await publishEvent(signed);
   return signed;
+}
+
+/**
+ * 指定 pubkey の表示名（kind:0 の name）を取得する（#28・nsec インポート時に既存名を引き継ぐ）。
+ * 最新の kind:0 を採用。無ければ null。失敗も null。
+ */
+export async function fetchProfileName(pubkey: string): Promise<string | null> {
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      { kinds: [0], authors: [pubkey], limit: 1 },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    if (events.length === 0) return null;
+    const latest = events.reduce((a, b) => (b.created_at > a.created_at ? b : a));
+    return parseProfileName(latest.content);
+  } catch {
+    return null;
+  }
 }
 
 /**

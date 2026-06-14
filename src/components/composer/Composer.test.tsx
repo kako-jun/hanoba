@@ -13,11 +13,13 @@ vi.mock("../../lib/nostr/upload.ts", () => ({
 }));
 const saveDisplayName = vi.fn();
 const fetchPopularHashtags = vi.fn();
+const fetchProfileName = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   signAndPublishNote: (...args: unknown[]) => signAndPublishNote(...args),
   fetchKnownHashtags: (...args: unknown[]) => fetchKnownHashtags(...args),
   fetchPopularHashtags: (...args: unknown[]) => fetchPopularHashtags(...args),
   saveDisplayName: (...args: unknown[]) => saveDisplayName(...args),
+  fetchProfileName: (...args: unknown[]) => fetchProfileName(...args),
 }));
 vi.mock("../../lib/image/crop.ts", () => ({
   renderSquareImage: (...args: unknown[]) => renderSquareImage(...args),
@@ -39,6 +41,7 @@ describe("Composer", () => {
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
     fetchPopularHashtags.mockReset().mockResolvedValue([]);
+    fetchProfileName.mockReset().mockResolvedValue(null);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
     renderSquareImage.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
     // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
