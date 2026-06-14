@@ -9,29 +9,8 @@ import MainLayout from "../layouts/MainLayout.astro";
 ---
 
 <MainLayout>
-  <SiteHeader>
-    <a
-      slot="nav"
-      href="/discover"
-      class="hidden sm:inline font-medium text-ha-green-deep/80 hover:text-ha-green-deep transition-colors"
-    >
-      みんなの植物
-    </a>
-    <a
-      slot="nav"
-      href="/me"
-      class="hidden sm:inline font-medium text-ha-green-deep/80 hover:text-ha-green-deep transition-colors"
-    >
-      自分の植物
-    </a>
-    <a
-      slot="nav"
-      href="/compose"
-      class="rounded-full bg-ha-green text-ha-white px-4 sm:px-5 py-2 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-    >
-      投稿する
-    </a>
-  </SiteHeader>
+  <SiteHeader current="home" />
+
 
   <main class="mx-auto max-w-3xl px-5 py-9 flex flex-col gap-8">
     <section class="ha-rise flex flex-col gap-2">

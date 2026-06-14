@@ -2,8 +2,26 @@
 // 共通ヘッダー＆ワードマーク（#20）。
 // ロゴ＝架空都市ハノーバの市旗（#21・H 字・favicon と同型）。
 // ワードマークは「Hanoba」のみ（国際的な印象・font-display）。漢字はロゴ下に置かない。
-// スラッシュ併記は廃止。右側のナビは <slot name="nav" /> で各ページが差し込む。
 // sticky＋backdrop-blur でガラス越しの空気感を出す。
+//
+// 主要ナビはこのヘッダに内蔵し全ページで一貫表示する（#30）。
+// デスクトップ（sm 以上）はインライン、モバイル（sm 未満）はハンバーガー→ドロップダウン。
+// 旧来は index だけが slot でナビを差し込み、しかも一部 hidden sm:inline でスマホ時に
+// 主要動線へ辿れなかった。ナビをここに一本化して解消する。
+
+interface Props {
+  /** 現在ページ。該当リンクを強調する（任意）。 */
+  current?: "home" | "discover" | "me" | "compose" | "about";
+}
+
+const { current } = Astro.props;
+
+// compose は塗りボタン（主アクション）なので nav 配列とは別扱い。
+const links = [
+  { href: "/discover", label: "みんなの植物", key: "discover" },
+  { href: "/me", label: "自分の植物", key: "me" },
+  { href: "/about", label: "Hanōba とは", key: "about" },
+] as const;
 ---
 
 <header
@@ -24,8 +42,93 @@
       </svg>
       <span class="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep">Hanōba</span>
     </a>
-    <nav class="flex items-center gap-3 sm:gap-5 text-sm">
-      <slot name="nav" />
+
+    <!-- デスクトップ: インラインナビ -->
+    <nav class="hidden sm:flex items-center gap-5 text-sm">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class:list={[
+              "font-medium transition-colors hover:text-ha-green-deep",
+              current === l.key ? "text-ha-green-deep" : "text-ha-green-deep/80",
+            ]}
+          >
+            {l.label}
+          </a>
+        ))
+      }
+      <a
+        href="/compose"
+        class="rounded-full bg-ha-green text-ha-white px-5 py-2 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+      >
+        投稿する
+      </a>
     </nav>
+
+    <!-- モバイル: ハンバーガー -->
+    <button
+      type="button"
+      id="ha-menu-btn"
+      class="sm:hidden inline-flex items-center justify-center w-10 h-10 -mr-2 rounded-xl text-ha-green-deep hover:bg-ha-green/10 transition-colors"
+      aria-label="メニューを開く"
+      aria-expanded="false"
+      aria-controls="ha-menu"
+    >
+      <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+        <path d="M4 7h16M4 12h16M4 17h16"></path>
+      </svg>
+    </button>
   </div>
+
+  <!-- モバイル: ドロップダウンメニュー（既定で隠す） -->
+  <nav
+    id="ha-menu"
+    class="sm:hidden hidden border-t border-ha-green/10 bg-ha-base/95 backdrop-blur-md"
+  >
+    <div class="mx-auto max-w-3xl px-5 py-3 flex flex-col gap-1 text-sm">
+      {
+        links.map((l) => (
+          <a
+            href={l.href}
+            class:list={[
+              "rounded-xl px-3 py-3 font-medium transition-colors hover:bg-ha-green/10",
+              current === l.key ? "text-ha-green-deep bg-ha-green/10" : "text-ha-green-deep/85",
+            ]}
+          >
+            {l.label}
+          </a>
+        ))
+      }
+      <a
+        href="/compose"
+        class="mt-1 rounded-xl bg-ha-green text-ha-white px-3 py-3 font-semibold text-center hover:brightness-110 transition-all"
+      >
+        投稿する
+      </a>
+    </div>
+  </nav>
 </header>
+
+<script>
+  // モバイルメニューのトグル（#30）。aria-expanded 同期・Escape・外側クリックで閉じる。
+  const btn = document.getElementById("ha-menu-btn");
+  const menu = document.getElementById("ha-menu");
+  if (btn && menu) {
+    const setOpen = (open: boolean) => {
+      menu.classList.toggle("hidden", !open);
+      btn.setAttribute("aria-expanded", String(open));
+      btn.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+    };
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setOpen(menu.classList.contains("hidden"));
+    });
+    // メニュー内クリックは閉じない（リンク遷移は遷移自体で閉じる）。
+    menu.addEventListener("click", (e) => e.stopPropagation());
+    document.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setOpen(false);
+    });
+  }
+</script>

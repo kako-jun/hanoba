@@ -54,7 +54,9 @@ describe("Composer", () => {
 
   it("画像未選択ではピッカーを表示し、送信ボタンは無い", async () => {
     render(<Composer />);
-    expect(screen.getByText("写真を選ぶ")).toBeInTheDocument();
+    // 撮影とアルバムは別ボタン（#29: 単一 input + capture のカメラ直起動を回避）。
+    expect(screen.getByRole("button", { name: /撮影/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /アルバム/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /投稿する/ })).not.toBeInTheDocument();
     // マウント時の fetchKnownHashtags 解決による state 更新を待つ（act 警告回避）。
     await waitFor(() => expect(fetchKnownHashtags).toHaveBeenCalled());
