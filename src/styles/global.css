@@ -55,8 +55,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Tailwind v4 は <button> の既定カーソルを default に変えたため、
-   操作可能要素にポインタを戻す（#45・全ボタンでホバー時に指マークが出ない問題）。 */
+/* Tailwind v4 は <button> の既定カーソルを default に変えたため、操作可能要素にポインタを戻す
+   （#45・ホバー時に指マークが出ない問題）。a 要素は元から pointer なので含めない。
+   role=button / label[for] / summary は現状未使用でも将来の保険として併記する。 */
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),
 label[for],
