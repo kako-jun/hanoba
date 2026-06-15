@@ -1,15 +1,16 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ネットワークはモック境界で止める（実 relay を呼ばない）。
 // keys.ts は実物のまま localStorage（hanoba:name）で初期状態を作る。
+// #93: 取り込みは単発でなく fetchMyProfileResilient を使う。
 const saveDisplayName = vi.fn();
-const fetchMyProfile = vi.fn();
+const fetchMyProfileResilient = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   saveDisplayName: (...args: unknown[]) => saveDisplayName(...args),
-  fetchMyProfile: (...args: unknown[]) => fetchMyProfile(...args),
+  fetchMyProfileResilient: (...args: unknown[]) => fetchMyProfileResilient(...args),
 }));
 
 import AccountName from "./AccountName.tsx";
@@ -17,7 +18,7 @@ import AccountName from "./AccountName.tsx";
 describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）", () => {
   beforeEach(() => {
     saveDisplayName.mockReset().mockResolvedValue(undefined);
-    fetchMyProfile.mockReset().mockResolvedValue(null);
+    fetchMyProfileResilient.mockReset().mockResolvedValue(null);
     localStorage.clear();
   });
 
@@ -136,5 +137,34 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
     await user.type(screen.getByLabelText("ハンドルネーム"), "  新太郎  ");
     await user.click(screen.getByRole("button", { name: "保存" }));
     expect(onChange).toHaveBeenCalledWith("新太郎");
+  });
+
+  // #93: 取り込みは resilient fetch で relay の websites を掴み、控えにシードする。
+  // 単発取得だと取りこぼして websites:[] を焼き、編集欄にサイトが出ない原因になっていた。
+  it("nsec 取り込みで relay の websites を控えにシードする（#93）", async () => {
+    const reload = vi.spyOn(window.location, "reload").mockImplementation(() => {});
+    fetchMyProfileResilient.mockResolvedValue({
+      name: "みどり園",
+      picture: null,
+      about: null,
+      websites: ["https://midori-en.example.com", "https://x.com/midori_test"],
+    });
+    const user = userEvent.setup();
+    render(<AccountName />);
+    await user.click(screen.getByRole("button", { name: "すでにアカウントをお持ちですか？" }));
+    await user.type(
+      screen.getByLabelText("nsec 秘密鍵"),
+      "nsec1d75nkk0cywkgsz35zjnxtmhkqsgaxvzv927sv7ndzanl00pfhprqlaqwz7",
+    );
+    await user.click(screen.getByRole("button", { name: "続ける" }));
+    await waitFor(() => {
+      const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
+      expect(extra.websites).toEqual([
+        "https://midori-en.example.com",
+        "https://x.com/midori_test",
+      ]);
+    });
+    expect(fetchMyProfileResilient).toHaveBeenCalled();
+    reload.mockRestore();
   });
 });
