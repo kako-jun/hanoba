@@ -9,7 +9,7 @@ const external = [
 ];
 ---
 
-<footer class="mt-16 border-t border-white/10">
+<footer class="mt-16">
   {/* 街＋緑のシルエット（#94）。単色透過 PNG を CSS マスクにし、色と上下グラデは CSS で付ける
       ＝テーマ色を後から自在に変えられる。超横長・鏡像シームレスで repeat-x、狭い画面は中央が出る。 */}
   <div class="hanoba-skyline" aria-hidden="true"></div>
@@ -62,7 +62,7 @@ const external = [
   .hanoba-skyline {
     height: clamp(44px, 6vw, 84px);
     background: linear-gradient(to bottom, var(--color-ha-green-deep), var(--color-ha-green));
-    opacity: 0.9;
+    opacity: 0.35;
     -webkit-mask-image: url("/footer-skyline.png");
     mask-image: url("/footer-skyline.png");
     -webkit-mask-repeat: repeat-x;
