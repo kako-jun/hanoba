@@ -22,7 +22,12 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
  * （client.saveProfile）。初期値はローカル控え（getProfileExtra）＋ relay の自分の kind:0 で補完し、
  * 他デバイス/他クライアントで設定済みの値も引き継ぐ。鍵・ネットワークはクライアントのみ。
  */
-export default function ProfileEditor() {
+interface Props {
+  /** 外側のガラスカードを描かない（/me で名前と同じプロフィールカードに内包するとき・#104）。 */
+  bare?: boolean;
+}
+
+export default function ProfileEditor({ bare = false }: Props) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
   const [picture, setPicture] = useState<string | null>(null);
@@ -145,15 +150,16 @@ export default function ProfileEditor() {
   const nameMissing = name === null || name.trim() === "";
 
   return (
-    <section className="glass rounded-2xl p-5 flex flex-col gap-3">
+    <section className={`${bare ? "" : "glass rounded-2xl p-5 "}flex flex-col gap-3`}>
       <div className="flex items-center justify-between gap-3">
         <span className="flex min-w-0 items-center gap-2.5">
           <Avatar src={picture} name={name ?? "?"} className="w-9 h-9" />
           <span className="flex min-w-0 flex-col">
+            {/* bare（/me の統合カード）では名前は上の AccountName が主表示するので重複させない（#104）。 */}
             <span className="text-sm font-semibold text-ha-ink/85 truncate">
-              {name ?? "ハンドルネーム 未設定"}
+              {bare ? "プロフィール" : (name ?? "ハンドルネーム 未設定")}
             </span>
-            <span className="text-xs text-ha-ink/50">プロフィール（アイコン・自己紹介・サイト）</span>
+            <span className="text-xs text-ha-ink/50">アイコン・自己紹介・サイト</span>
           </span>
         </span>
         <button
