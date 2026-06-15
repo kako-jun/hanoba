@@ -58,7 +58,8 @@ describe("serviceIconName", () => {
   });
 
   it("カテゴリに対応付ける", () => {
-    expect(serviceIconName("GitHub")).toBe("code");
+    expect(serviceIconName("GitHub")).toBe("github");
+    expect(serviceIconName("GitLab")).toBe("code");
     expect(serviceIconName("YouTube")).toBe("youtube");
     expect(serviceIconName("Instagram")).toBe("instagram");
     expect(serviceIconName("Zenn")).toBe("writing");
@@ -85,7 +86,7 @@ describe("toSiteLinks", () => {
       "https://llll-ll.com",
     ]);
     expect(links).toEqual([
-      { url: "https://github.com/kako-jun", label: "GitHub", icon: "code" },
+      { url: "https://github.com/kako-jun", label: "GitHub", icon: "github" },
       { url: "https://llll-ll.com", label: "Website", icon: "link" },
     ]);
   });

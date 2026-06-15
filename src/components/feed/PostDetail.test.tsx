@@ -31,10 +31,10 @@ describe("PostDetail いいね数表示", () => {
     cleanup();
   });
 
-  it("取得したいいね数をハート＋数で表示する", async () => {
+  it("取得したいいね数を花アイコン＋数で表示する", async () => {
     fetchReactionCount.mockResolvedValue(3);
     render(<PostDetail post={makePost({ id: "p1" })} onClose={() => {}} onSelectHashtag={() => {}} />);
-    // ハートはアイコン化したので数は aria-label（いいね N）で確認する。
+    // 花アイコン化したので数は aria-label（いいね N）で確認する。
     const like = await screen.findByLabelText("いいね 3");
     expect(like).toHaveTextContent("3");
     expect(fetchReactionCount).toHaveBeenCalledWith("p1");
@@ -59,14 +59,15 @@ describe("PostDetail いいね数表示", () => {
 
   it("本文 <p> から #タグ を除き、タグはチップにだけ出す（二重表示解消・#43）", async () => {
     fetchReactionCount.mockResolvedValue(0);
-    const { container } = render(
+    render(
       <PostDetail
         post={makePost({ id: "t1", caption: "きれいに咲いた #アガベ", hashtags: ["アガベ"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,
     );
-    const body = container.querySelector("p.whitespace-pre-wrap");
+    // モーダルは body にポータルされるので container でなく dialog を起点に探す。
+    const body = screen.getByRole("dialog").querySelector("p.whitespace-pre-wrap");
     expect(body?.textContent).toBe("きれいに咲いた");
     expect(body?.textContent).not.toContain("#");
     // タグは下のチップ（ボタン）にだけ出る。
@@ -75,14 +76,14 @@ describe("PostDetail いいね数表示", () => {
 
   it("タグだけの投稿は本文 <p> を出さない（空段落の余白を作らない・#43）", async () => {
     fetchReactionCount.mockResolvedValue(0);
-    const { container } = render(
+    render(
       <PostDetail
         post={makePost({ id: "t2", caption: "#アガベ #多肉", hashtags: ["アガベ", "多肉"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,
     );
-    expect(container.querySelector("p.whitespace-pre-wrap")).toBeNull();
+    expect(screen.getByRole("dialog").querySelector("p.whitespace-pre-wrap")).toBeNull();
     expect(screen.getByRole("button", { name: "#アガベ" })).toBeInTheDocument();
   });
 

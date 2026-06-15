@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
 import { detectPlants } from "../../lib/plants/detect.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
@@ -109,7 +110,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
   const captionText = stripHashtags(post.caption);
 
-  return (
+  // モーダルは body 直下にポータルする。さもないと島を包む `.ha-rise`（アニメ後も
+  // 計算 transform が identity matrix で残る＝containing block を作る）の中に `position:fixed`
+  // が閉じ込められ、長いページ（みんなの植物＝多数の投稿）では巨大ラッパの上端に貼り付いて
+  // スクロール位置から外れ、「ポップアップが出ない」ように見える（トップは投稿が少なく露見しない）。
+  const modal = (
     <div
       role="dialog"
       aria-modal="true"
@@ -199,6 +204,16 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                 <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
               </span>
               <span className="flex shrink-0 items-center gap-3">
+                {/* いいね（#117）。X シェアより使用頻度が高いので左に置く。黄色い花アイコン（#116）。 */}
+                <span
+                  className="inline-flex items-center gap-1.5"
+                  aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
+                >
+                  <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
+                  <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
+                    {likeCount === null ? "-" : likeCount}
+                  </span>
+                </span>
                 {/* X でシェア（#37）。1パートなら即 intent、複数なら全文／各パートのメニュー。
                     パーマリンクは njump（nevent）で、X 上に写真の OGP プレビューを出す。 */}
                 <span className="relative inline-flex">
@@ -255,15 +270,6 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   )}
                 </span>
 
-                <span
-                  className="inline-flex items-center gap-1.5"
-                  aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
-                >
-                  <Icon name="heart" className="w-4 h-4 text-ha-pink" />
-                  <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
-                    {likeCount === null ? "-" : likeCount}
-                  </span>
-                </span>
                 <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
               </span>
             </div>
@@ -293,4 +299,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
       </div>
     </div>
   );
+
+  // SSR では document が無い（島はクライアントでのみ開くので通常ここは通らないが防御）。
+  return typeof document === "undefined" ? modal : createPortal(modal, document.body);
 }
