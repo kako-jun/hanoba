@@ -31,10 +31,10 @@ describe("PostDetail いいね数表示", () => {
     cleanup();
   });
 
-  it("取得したいいね数をハート＋数で表示する", async () => {
+  it("取得したいいね数を花アイコン＋数で表示する", async () => {
     fetchReactionCount.mockResolvedValue(3);
     render(<PostDetail post={makePost({ id: "p1" })} onClose={() => {}} onSelectHashtag={() => {}} />);
-    // ハートはアイコン化したので数は aria-label（いいね N）で確認する。
+    // 花アイコン化したので数は aria-label（いいね N）で確認する。
     const like = await screen.findByLabelText("いいね 3");
     expect(like).toHaveTextContent("3");
     expect(fetchReactionCount).toHaveBeenCalledWith("p1");

@@ -1,6 +1,7 @@
 // 統一アイコンセット（#21）。
 // 寄せ集めの Unicode 記号（♡ / × / ↑↓ / →）をやめ、単一出自・統一線幅の SVG に揃える。
-// 線アイコンは currentColor・stroke-width 1.75 で統一。heart だけ塗り（いいね＝花の差し色）。
+// 線アイコンは currentColor・stroke-width 1.75 で統一。塗りは flower（いいね＝黄色い花）・
+// heart（Ko-fi）・X 公式ロゴだけ（識別性のため）。
 //
 // 使い方: <Icon name="close" className="w-5 h-5" />
 // 装飾用途は aria-hidden（既定）。意味を持たせる場合は呼び出し側で aria-label を付ける。
@@ -10,6 +11,7 @@
 export type IconName =
   | "close"
   | "heart"
+  | "flower"
   | "search"
   | "chevron"
   | "trash"
@@ -51,10 +53,24 @@ export default function Icon({ name, className }: IconProps) {
         </svg>
       );
     case "heart":
-      // いいね＝塗り（花＝ピンクは呼び出し側で text-ha-pink を指定）。
+      // Ko-fi（支援）の差し色。塗り。色は呼び出し側で指定。
       return (
         <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
           <path d="M12 20.5 4.2 12.9a4.6 4.6 0 0 1 6.5-6.5l1.3 1.3 1.3-1.3a4.6 4.6 0 0 1 6.5 6.5z" />
+        </svg>
+      );
+    case "flower":
+      // いいね＝黄色い花（絵文字でなく単一出自の SVG・#116）。5枚の花びら＋中心。
+      // 塗りで小サイズでも花と即読できる。黄色は呼び出し側で text-ha-yellow を指定。
+      // 中心はベース色で抜いて花芯に見せる（暗地単一テーマ＝session640 前提）。
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="6.6" r="3.1" />
+          <circle cx="17.1" cy="10.3" r="3.1" />
+          <circle cx="15.2" cy="16.3" r="3.1" />
+          <circle cx="8.8" cy="16.3" r="3.1" />
+          <circle cx="6.9" cy="10.3" r="3.1" />
+          <circle cx="12" cy="12" r="2.6" fill="var(--color-ha-base)" />
         </svg>
       );
     case "search":
@@ -117,10 +133,11 @@ export default function Icon({ name, className }: IconProps) {
         </svg>
       );
     case "x":
-      // X（旧 Twitter）。普及済みで識別性が高いので専用。close と区別するため端まで引く。
+      // X（旧 Twitter）公式ロゴ。線アイコンの ✕（close）と紛れないよう公式グリフを塗りで使う
+      // （#21 の線縛りの明示的例外＝DESIGN.md「X だけは専用」・#115）。
       return (
-        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
-          <path d="M4 4 20 20M20 4 4 20" />
+        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       );
     case "youtube":

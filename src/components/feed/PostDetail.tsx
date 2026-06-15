@@ -199,6 +199,16 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                 <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
               </span>
               <span className="flex shrink-0 items-center gap-3">
+                {/* いいね（#117）。X シェアより使用頻度が高いので左に置く。黄色い花アイコン（#116）。 */}
+                <span
+                  className="inline-flex items-center gap-1.5"
+                  aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
+                >
+                  <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
+                  <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
+                    {likeCount === null ? "-" : likeCount}
+                  </span>
+                </span>
                 {/* X でシェア（#37）。1パートなら即 intent、複数なら全文／各パートのメニュー。
                     パーマリンクは njump（nevent）で、X 上に写真の OGP プレビューを出す。 */}
                 <span className="relative inline-flex">
@@ -255,15 +265,6 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   )}
                 </span>
 
-                <span
-                  className="inline-flex items-center gap-1.5"
-                  aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
-                >
-                  <Icon name="heart" className="w-4 h-4 text-ha-pink" />
-                  <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
-                    {likeCount === null ? "-" : likeCount}
-                  </span>
-                </span>
                 <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
               </span>
             </div>
