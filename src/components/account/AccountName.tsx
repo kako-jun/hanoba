@@ -166,7 +166,7 @@ export default function AccountName({ onChange, promptLabel = "ハンドルネ�
                   nameInputRef.current?.focus();
                 }}
                 aria-label="入力をクリア"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 grid place-items-center text-ha-ink/55 hover:text-ha-ink transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
               >
                 <Icon name="close" className="w-4 h-4" />
               </button>
