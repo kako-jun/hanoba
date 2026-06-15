@@ -89,7 +89,7 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 
 - **ロゴ＝架空都市ハノーバの市旗（H 字）**。葉モチーフ（マンネリ）も丸も使わない。**4色に塗り分けて H に見せる**: 生成り地＋緑の左柱＋深緑の右柱＋ピンクの横棒。favicon / icon / maskable / apple-touch / ヘッダーで同型に統一（`scripts/generate-icons.mjs` で PNG 再生成）。
 - **ワードマークは `Hanoba` のみ**（国際的な印象・`font-display`）。**漢字「葉の場」はロゴ下に併記しない**。カッコ表記（`Hanoba（葉の場）` 等）も使わない。
-- **アイコン**: 寄せ集めの Unicode 記号（♡/×）を廃し、単一出自・統一線幅の SVG（`src/components/ui/Icon.tsx`）。**いいねは黄色い花（`flower`＝`text-ha-yellow`・#116。ハート/絵文字でなく SVG）**。投稿ボタンは発芽したての双葉（`sprout`＝育てる世界観・#48）。撮影/アルバムは `camera`/`image`（#29）。サービスリンク（#35 Piece 2）も同じ線スタイルで `link`(地球)/`code`/`x`/`youtube`/`instagram`/`writing`/`art`/`music`/`shopping`/`game`/`at`/`chat` をカテゴリ単位で持つ（ブランドロゴは作らない）。**塗りの例外は `flower`(いいね)・`heart`(Ko-fi)・`x`（X 公式ロゴ＝close の ✕ と紛れないよう線縛りの例外・#115）**。
+- **アイコン**: 寄せ集めの Unicode 記号（♡/×）を廃し、単一出自・統一線幅の SVG（`src/components/ui/Icon.tsx`）。**いいねは黄色い花（`flower`＝`text-ha-yellow`・#116。ハート/絵文字でなく SVG）**。投稿ボタンは発芽したての双葉（`sprout`＝育てる世界観・#48）。撮影/アルバムは `camera`/`image`（#29）。サービスリンク（#35 Piece 2）も同じ線スタイルで `link`(地球)/`code`/`x`/`youtube`/`instagram`/`writing`/`art`/`music`/`shopping`/`game`/`at`/`chat` をカテゴリ単位で持つ（ブランドロゴは作らない）。**塗りの例外は `flower`(いいね)・`heart`(Ko-fi)・`x`（X 公式ロゴ・#115）・`github`（公式 Octocat・#118）**＝ブランド識別性が高いものは線縛り（#21）の明示的例外として公式グリフを塗りで使う。
 
 ### 5.4 画像アセット（AI 生成・`/image`）
 

@@ -119,8 +119,11 @@ export function serviceIconName(label: string): IconName {
     case "X":
       return "x";
 
-    // コード/開発
+    // GitHub だけ公式マーク（Octocat）。識別性が高く X と同じ扱い（#118）。
     case "GitHub":
+      return "github";
+
+    // コード/開発（汎用 < > アイコン）
     case "GitLab":
     case "Bitbucket":
     case "CodePen":
