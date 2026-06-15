@@ -57,16 +57,24 @@ const external = [
 
 <style>
   /* 街＋緑シルエット帯（#94）。PNG はアルファ・マスクとして使い、見える色は background が決める。
-     縦方向グラデ（上=明るい葉色→下=葉色）。素材は超横長・鏡像でシームレスなので repeat-x で全幅、
-     狭い画面ではタイルが画面より広いため中央部分だけが見える。 */
+     素材は別構図4枚を連結した超横長の単色シルエット（鏡像なし＝反射に気づかれない／左右端は
+     水平フェードで暗地に溶けるビネット）。中央寄せ no-repeat で、狭い画面はタイルが画面より広く
+     中央部分だけが見える。 */
   .hanoba-skyline {
     height: clamp(44px, 6vw, 84px);
-    background: linear-gradient(to bottom, var(--color-ha-green-deep), var(--color-ha-green));
-    opacity: 0.35;
+    /* 上ほど透過が強い縦グラデ（建物の頭が暗地に溶ける）。色は緑のまま alpha だけ落とすので
+       transparent との混色で灰色化しない（color-mix で同色の alpha を下げる）。 */
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-ha-green-deep) 0%, transparent) 0%,
+      color-mix(in srgb, var(--color-ha-green-deep) 45%, transparent) 55%,
+      var(--color-ha-green) 100%
+    );
+    opacity: 0.5;
     -webkit-mask-image: url("/footer-skyline.png");
     mask-image: url("/footer-skyline.png");
-    -webkit-mask-repeat: repeat-x;
-    mask-repeat: repeat-x;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
     -webkit-mask-position: center bottom;
     mask-position: center bottom;
     -webkit-mask-size: auto 100%;
