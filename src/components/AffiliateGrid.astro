@@ -1,0 +1,69 @@
+---
+// #27: 道具棚 — Amazon アフィリエイトの 3 商品グリッド（静的 Astro）。
+// orber の AffiliateGrid パターンを hanoba トーン（暗色グラス・ha-* トークン・
+// モダン温室）に移植したもの。React 島にはしない（SiteFooter/About と同じ静的 Astro）。
+//
+// 商品データは src/data/affiliateProducts.ts に分離。差し替えはそちらだけ。
+//
+// 配置（v1）: About ページの最終 CTA の手前に 1 スロットだけ。
+// フィード内/discover 下への配置は密度判断（kako-jun）待ちのため v1 では出さない。
+//
+// 開示（景表法 / ステマ規制 2023・必須）: 広告/アフィリエイトである旨を商品の近くに
+// 明示する。rel に sponsored nofollow を付け、文言でも「広告・アフィリエイトを含みます」
+// とはっきり示す。
+import { AFFILIATE_ENABLED, AFFILIATE_PRODUCTS } from "../data/affiliateProducts";
+
+// 無効化フラグ・空配列なら一切描画しない。
+const show = AFFILIATE_ENABLED && AFFILIATE_PRODUCTS.length > 0;
+---
+
+{
+  show && (
+    <section class="glass ha-rise rounded-2xl p-6 flex flex-col gap-4" style="--i:5">
+      <header class="flex flex-col gap-1">
+        <h2 class="font-display text-xl font-bold text-ha-green-deep">道具棚</h2>
+        <p class="text-sm text-ha-ink/70 leading-relaxed [word-break:auto-phrase]">
+          ハノーバの片隅の道具棚。kako-jun が実際に使っている、株を育てるための道具を置いています。
+        </p>
+      </header>
+
+      <ul class="grid grid-cols-3 gap-3 sm:gap-4">
+        {AFFILIATE_PRODUCTS.map((p) => (
+          <li>
+            <a
+              href={p.url}
+              target="_blank"
+              rel="noopener noreferrer sponsored nofollow"
+              title={p.title}
+              class="group block focus-visible:outline-none"
+            >
+              <div class="relative aspect-square w-full overflow-hidden rounded-full bg-ha-green-soft ring-1 ring-ha-white/10 shadow-sm shadow-black/30 transition-all duration-200 ease-out group-hover:scale-105 group-hover:ring-ha-green/40 group-focus-visible:ring-2 group-focus-visible:ring-ha-green">
+                <img
+                  src={p.imageUrl}
+                  alt={p.title}
+                  loading="lazy"
+                  decoding="async"
+                  width="160"
+                  height="160"
+                  class="absolute inset-0 h-full w-full object-cover"
+                />
+              </div>
+              <div class="mt-2 text-center">
+                <div class="text-xs font-medium text-ha-ink/90 leading-snug [word-break:auto-phrase]">
+                  {p.caption}
+                </div>
+                <div class="mt-0.5 text-[0.7rem] text-ha-ink/55 leading-snug [word-break:auto-phrase]">
+                  {p.title}
+                </div>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <p class="text-xs text-ha-ink/60 leading-relaxed [word-break:auto-phrase]">
+        広告・アフィリエイトを含みます（Amazon アソシエイト）。リンクから購入すると運営の支えになります。
+      </p>
+    </section>
+  )
+}
