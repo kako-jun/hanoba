@@ -2,10 +2,13 @@
 // 共通フッタ（#26）。kako-jun の他サイト（llll-ll）のリンク構成を踏襲しつつ、
 // 暗色グラスの世界観（§5）に合わせる。全ページに MainLayout 経由で出る。
 // Hanoba 自身に関係するリンクだけ（kako-jun の個人メディアは載せない）。
-// mypace＝同じ投稿が見える先、GitHub＝この OSS のリポジトリ。
+// mypace＝同じ投稿が見える先（白い★）、GitHub＝この OSS のリポジトリ（Octocat）。
+// アイコンは React の Icon を Astro が静的 HTML に描画する（client 不要・単色 SVG・#105）。
+import Icon from "./ui/Icon.tsx";
+
 const external = [
-  { label: "mypace", href: "https://mypace.llll-ll.com" },
-  { label: "GitHub", href: "https://github.com/kako-jun/hanoba" },
+  { label: "mypace", href: "https://mypace.llll-ll.com", icon: "star" as const },
+  { label: "GitHub", href: "https://github.com/kako-jun/hanoba", icon: "github" as const },
 ];
 ---
 
@@ -29,8 +32,9 @@ const external = [
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:text-ha-green transition-colors"
+              class="inline-flex items-center gap-1.5 hover:text-ha-green transition-colors"
             >
+              <Icon name={s.icon} className="w-4 h-4" />
               {s.label}
             </a>
           ))
