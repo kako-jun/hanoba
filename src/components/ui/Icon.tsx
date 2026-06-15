@@ -13,7 +13,6 @@ export type IconName =
   | "info"
   | "heart"
   | "flower"
-  | "star"
   | "search"
   | "chevron"
   | "trash"
@@ -69,13 +68,6 @@ export default function Icon({ name, className }: IconProps) {
           <circle cx="12" cy="12" r="9" />
           <path d="M12 11v5" />
           <path d="M12 7.6h.01" />
-        </svg>
-      );
-    case "star":
-      // mypace の印（白い★・#105）。絵文字でなく単一出自の塗り SVG。色は呼び出し側で指定。
-      return (
-        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-          <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
         </svg>
       );
     case "flower":
