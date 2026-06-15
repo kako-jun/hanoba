@@ -124,7 +124,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
     >
       <div
         ref={panelRef}
-        className="glass-strong relative w-full max-w-md max-h-full overflow-y-auto rounded-3xl shadow-2xl flex flex-col ha-rise"
+        className="glass-strong relative w-full max-w-md max-h-full overflow-y-auto rounded-xl shadow-2xl flex flex-col ha-rise"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -142,7 +142,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
           // なので正方形に収まり、他クライアントの非正方形写真はその比率のまま（クロップしない・#61）。
           // flex 列（max-h-full・overflow-y-auto）の中で flex-shrink に潰されて横長化していたので
           // shrink-0 で写真の自然な高さを確保する（これが「正方形が確保できない」の原因だった）。
-          <div className="w-full shrink-0 overflow-hidden rounded-t-3xl bg-ha-green-soft flex items-center justify-center">
+          <div className="w-full shrink-0 overflow-hidden rounded-t-xl bg-ha-green-soft flex items-center justify-center">
             <img
               src={post.imageUrl}
               alt={post.caption}
