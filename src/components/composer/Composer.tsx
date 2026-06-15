@@ -147,7 +147,7 @@ export default function Composer() {
           {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
           {!posting && missing.length > 0 && (
             <p className="text-right text-xs text-ha-ink/55">
-              あと <span className="text-ha-pink font-medium">{missing.join("・")}</span>{" "}
+              あと <span className="text-ha-pink font-medium">{missing.join("と")}</span>{" "}
               を入れると投稿できます
             </p>
           )}
