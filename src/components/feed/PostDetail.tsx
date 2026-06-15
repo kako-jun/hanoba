@@ -6,6 +6,7 @@ import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
+import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
 import SciName from "../ui/SciName.tsx";
 import Avatar from "./Avatar.tsx";
 
@@ -41,10 +42,25 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
 
+  // X シェアのメニュー開閉（複数パートのときだけ「全文／1/n…」を出す・#37）。
+  const [shareOpen, setShareOpen] = useState(false);
+
+  // 共有テキストは生 caption（インライン #タグ込み）を使う。画像 URL は本文から除去済み
+  // （parsePost）で、リンクは njump（最終パート）に集約する。タグはインライン済みなので
+  // 追加ハッシュタグは渡さない（[]）。permalink は単一投稿ルートを持たない hanoba 用の nevent。
+  const permalink = buildNjumpPermalink(post);
+  const shareParts = buildXShareParts(post.caption, [], permalink);
+  const isSplit = shareParts.length > 1;
+
   // Esc で閉じる／Tab はモーダル内に循環を閉じる（フォーカストラップ）。
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
+        // シェアのポップオーバーが開いていれば、まずそれを閉じる（モーダルは閉じない）。
+        if (shareOpen) {
+          setShareOpen(false);
+          return;
+        }
         onClose();
         return;
       }
@@ -60,7 +76,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, shareOpen]);
 
   // フォーカス管理（a11y）: 開いたら閉じるボタンへフォーカスを移し、
   // 閉じたら開く前にフォーカスがあった要素（クリックしたセル）へ戻す。
@@ -182,6 +198,62 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                 <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
               </span>
               <span className="flex shrink-0 items-center gap-3">
+                {/* X でシェア（#37）。1パートなら即 intent、複数なら全文／各パートのメニュー。
+                    パーマリンクは njump（nevent）で、X 上に写真の OGP プレビューを出す。 */}
+                <span className="relative inline-flex">
+                  <button
+                    type="button"
+                    aria-label="X でシェア"
+                    aria-haspopup={isSplit ? "menu" : undefined}
+                    aria-expanded={isSplit ? shareOpen : undefined}
+                    onClick={() => {
+                      if (isSplit) {
+                        setShareOpen((v) => !v);
+                      } else {
+                        openXShare(shareParts[0] ?? "");
+                      }
+                    }}
+                    className="grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-ha-ink/5 transition-colors"
+                  >
+                    <Icon name="x" className="w-4 h-4" />
+                  </button>
+
+                  {isSplit && shareOpen && (
+                    <div
+                      role="menu"
+                      aria-label="X でシェア（分割）"
+                      className="glass-strong absolute bottom-full right-0 mb-2 z-20 flex flex-col gap-1 rounded-2xl p-1.5 shadow-xl"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          openXShare(buildXShareWhole(post.caption, [], permalink));
+                          setShareOpen(false);
+                        }}
+                        className="rounded-full px-3 py-1 text-left text-xs font-medium text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
+                      >
+                        全文
+                      </button>
+                      {shareParts.map((part, i) => (
+                        <button
+                          // 並びは固定（index で安定）。複数パートは本文の分割位置で決まる。
+                          key={i}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            openXShare(part);
+                            setShareOpen(false);
+                          }}
+                          className="rounded-full px-3 py-1 text-left text-xs font-medium tabular-nums text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
+                        >
+                          {i + 1}/{shareParts.length}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </span>
+
                 <span
                   className="inline-flex items-center gap-1.5"
                   aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}

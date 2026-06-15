@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
@@ -84,6 +84,56 @@ describe("PostDetail いいね数表示", () => {
     );
     expect(container.querySelector("p.whitespace-pre-wrap")).toBeNull();
     expect(screen.getByRole("button", { name: "#アガベ" })).toBeInTheDocument();
+  });
+
+  it("X でシェア（短文）= 1クリックで X intent を開く・採番なし（#37）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    render(
+      <PostDetail
+        // permalink（njump nevent）は 64hex の id を要求するため有効な id を使う。
+        post={makePost({ id: "e".repeat(64), caption: "開花した #アガベ", hashtags: ["アガベ"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const shareBtn = screen.getByRole("button", { name: "X でシェア" });
+    // 短文はメニューを開かず直接 intent（aria-haspopup なし）。
+    expect(shareBtn).not.toHaveAttribute("aria-haspopup");
+    fireEvent.click(shareBtn);
+    expect(open).toHaveBeenCalledTimes(1);
+    const url = open.mock.calls[0]![0] as string;
+    expect(url.startsWith("https://twitter.com/intent/tweet?text=")).toBe(true);
+    const text = decodeURIComponent(url.replace("https://twitter.com/intent/tweet?text=", ""));
+    // 生 caption（インライン #タグ込み）を共有し、採番は付かない。njump パーマリンクが末尾に付く。
+    expect(text).toContain("開花した #アガベ");
+    expect(text).not.toMatch(/\(\d+\/\d+\)/);
+    expect(text).toContain("https://njump.me/");
+    open.mockRestore();
+  });
+
+  it("X でシェア（長文）= メニューで全文／各パートを開ける（#37）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    render(
+      <PostDetail
+        post={makePost({ id: "f".repeat(64), caption: "あ".repeat(400) })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const shareBtn = screen.getByRole("button", { name: "X でシェア" });
+    // 長文はメニュー（aria-haspopup="menu"）。
+    expect(shareBtn).toHaveAttribute("aria-haspopup", "menu");
+    fireEvent.click(shareBtn);
+    // 「全文」と 各パート（1/n…）が menuitem として並ぶ。
+    expect(screen.getByRole("menuitem", { name: "全文" })).toBeInTheDocument();
+    const part1 = screen.getByRole("menuitem", { name: /^1\/\d+$/ });
+    fireEvent.click(part1);
+    expect(open).toHaveBeenCalledTimes(1);
+    // パートを開いたらメニューは閉じる。
+    expect(screen.queryByRole("menu")).toBeNull();
+    open.mockRestore();
   });
 
   it("本文から植物を認識し 学名＋著名表記を並べ discover 検索へリンクする（#23）", async () => {
