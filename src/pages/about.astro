@@ -1,6 +1,9 @@
 ---
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
+// #27: 道具棚（アフィリエイト）。最終 CTA の手前に 1 スロットだけ置く。
+// フィード/discover への配置は密度判断（kako-jun）待ちのため v1 では未配置。
+import AffiliateGrid from "../components/AffiliateGrid.astro";
 
 // Hanoba のコンセプト説明（#26）。世界観＝架空の植物好き都市ハノーバをみんなで作る。
 // 「なぜ既存 SNS で物足りないか」は端的に。詳細は llll-ll のブログ記事へ誘導する。
@@ -81,7 +84,9 @@ const BLOG_URL = "https://llll-ll.com";
       </p>
     </section>
 
-    <div class="ha-rise flex justify-center pt-2" style="--i:5">
+    <AffiliateGrid />
+
+    <div class="ha-rise flex justify-center pt-2" style="--i:6">
       <a
         href="/compose"
         class="rounded-full bg-ha-green text-ha-white px-7 py-3 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
