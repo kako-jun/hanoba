@@ -95,7 +95,18 @@ export default function MyGrid() {
         </p>
       )}
 
-      {status === "loading" && <p className="py-12 text-center text-ha-ink/60">読み込み中…</p>}
+      {status === "loading" && (
+        <>
+          <p role="status" className="sr-only">
+            あなたの植物を読み込み中…
+          </p>
+          <ul className="grid grid-cols-3 sm:grid-cols-4 gap-0.5" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <li key={i} className="aspect-square rounded-md bg-ha-green-soft animate-pulse" />
+            ))}
+          </ul>
+        </>
+      )}
 
       {status === "error" && (
         <div className="py-12 flex flex-col items-center gap-4 text-center">

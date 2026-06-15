@@ -170,12 +170,12 @@ export default function DiscoverGrid() {
         </button>
       </form>
 
-      {/* クロスクライアントの断り書き（枠なしの控えめな注記）。 */}
-      <p role="note" className="text-sm leading-relaxed text-ha-ink/60 [word-break:auto-phrase]">
-        <span className="font-medium text-ha-ink/80">#タグ</span> ・{" "}
-        <span className="font-medium text-ha-ink/80">本文のことば</span> ・{" "}
-        <span className="font-medium text-ha-ink/80">@ユーザー名</span>（や{" "}
-        <span className="font-medium text-ha-ink/80">npub…</span>）で探せます。特定の人の植物を定期チェックするのに使えます（Nostr 全体の集約・hanoba 以外のクライアントの投稿も含みます）。
+      {/* 検索モードの短い手がかり（控えめな1行）。詳しい説明は出さない（#102）。 */}
+      <p role="note" className="text-sm text-ha-ink/55 [word-break:auto-phrase]">
+        <span className="font-medium text-ha-ink/75">#タグ</span>・
+        <span className="font-medium text-ha-ink/75">ことば</span>・
+        <span className="font-medium text-ha-ink/75">@名前</span>
+        <span className="text-ha-ink/40">（npub も）</span>で探せます。
       </p>
 
       {status === "idle" && (
