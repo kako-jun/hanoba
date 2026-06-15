@@ -2,9 +2,10 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import ProfileEditor from "../account/ProfileEditor.tsx";
-import { deletePost, fetchMyPosts } from "../../lib/nostr/client.ts";
+import PostDetail from "./PostDetail.tsx";
+import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
-import type { FeedPost } from "../../lib/feed/parse.ts";
+import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -21,6 +22,10 @@ export default function MyGrid() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // サムネをクリックで拡大モーダル（#101・フィードと同じ PostDetail）。
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 自分の投稿なので著者は全部自分。モーダルの著者ヘッダ用に自分の kind:0 を1回引く。
+  const [myProfile, setMyProfile] = useState<Profile | null>(null);
 
   // アンマウント後 / 再取得中の古い応答での setState を防ぐ（stale-async ガード）。
   const aliveRef = useRef(true);
@@ -39,6 +44,10 @@ export default function MyGrid() {
       if (!aliveRef.current) return;
       setPosts(result);
       setStatus("loaded");
+      // モーダルの著者表示用に自分のプロフィールも引く（失敗は null＝npub フォールバック）。
+      void fetchMyProfileResilient(pubkey).then((p) => {
+        if (aliveRef.current) setMyProfile(p);
+      });
     } catch {
       if (aliveRef.current) setStatus("error");
     }
@@ -121,12 +130,19 @@ export default function MyGrid() {
                 style={{ "--i": Math.min(i, 11) } as CSSProperties}
               >
                 {post.imageUrl !== null && (
-                  <img
-                    src={post.imageUrl}
-                    alt={post.caption}
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(post.id)}
+                    aria-label={post.caption === "" ? "写真を拡大" : post.caption}
+                    className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+                  >
+                    <img
+                      src={post.imageUrl}
+                      alt={post.caption}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
                 )}
 
                 {/* 削除ボタン（常時うっすら・hover で明瞭） */}
@@ -178,6 +194,25 @@ export default function MyGrid() {
             ))}
           </ul>
         ))}
+
+      {/* 拡大モーダル（#101）。フィードと同じ PostDetail。タグは discover 再検索へ繋ぐ。 */}
+      {selectedId !== null &&
+        (() => {
+          const selected = posts.find((p) => p.id === selectedId);
+          if (selected === undefined) return null;
+          return (
+            <PostDetail
+              post={selected}
+              profile={myProfile}
+              onClose={() => setSelectedId(null)}
+              onSelectHashtag={(tag) => {
+                if (typeof window !== "undefined") {
+                  window.location.href = `/discover?q=${encodeURIComponent(`#${tag}`)}`;
+                }
+              }}
+            />
+          );
+        })()}
     </section>
   );
 }
