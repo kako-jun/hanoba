@@ -37,7 +37,9 @@ const external = [
               class="inline-flex items-center gap-1.5 leading-none hover:text-ha-green transition-colors"
             >
               {s.img ? (
-                <img src={s.img} alt="" width="16" height="16" class="w-4 h-4 shrink-0" />
+                /* 無彩色（白）の星。黄背景はチャンクキーで透過済み。暗地フッタの控えめな
+                   テキスト（ha-ink/55）と重さを揃えるため opacity を落とす（#105 follow-up）。 */
+                <img src={s.img} alt="" width="16" height="16" class="w-4 h-4 shrink-0 opacity-70" />
               ) : (
                 s.icon && <Icon name={s.icon} className="w-4 h-4 shrink-0" />
               )}
