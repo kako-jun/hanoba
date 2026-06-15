@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hanoba.llll-ll.com/sitemap-index.xml

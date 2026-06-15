@@ -8,10 +8,36 @@ interface Props {
   description?: string;
 }
 
-const {
-  title = "Hanōba",
-  description = "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。",
-} = Astro.props;
+// サイト全体の既定説明（各ページが description を渡さなければこれ。JSON-LD WebSite にも使う）。
+const SITE_DESCRIPTION = "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。";
+const { title = "Hanōba", description = SITE_DESCRIPTION } = Astro.props;
+
+// canonical / og:url は本番ドメイン（astro.config の site）＋現在パスの絶対 URL（#107）。
+// Astro.site が未設定でも落ちないようフォールバックを持つ。
+const SITE = Astro.site ?? new URL("https://hanoba.llll-ll.com");
+const canonical = new URL(Astro.url.pathname, SITE).href;
+const ogImage = new URL("/og/og-image.jpg", SITE).href;
+
+// 検索エンジン向け構造化データ（JSON-LD・<script> で描画＝meta 化しない）。
+// WebSite ＋ サイトリンク検索ボックス（discover の ?q= 検索を提示）。
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Hanōba",
+  alternateName: "葉の場",
+  url: SITE.href,
+  // WebSite はサイト全体を表すので、ページ個別でなくサイト既定の説明を使う。
+  description: SITE_DESCRIPTION,
+  inLanguage: "ja",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: new URL("/discover?q={search_term_string}", SITE).href,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
 ---
 
 <!doctype html>
@@ -20,6 +46,7 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#509120" />
     <!-- タイポ（cookbook: 汎用フォント禁止）。見出し＝Outfit（geometric sans）、
          日本語＝Zen Kaku Gothic New。preconnect でフォント取得を前倒しする。 -->
@@ -40,14 +67,18 @@ const {
     <meta property="og:site_name" content="Hanōba" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content="https://hanoba.llll-ll.com/og/og-image.jpg" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content="https://hanoba.llll-ll.com/og/og-image.jpg" />
+    <meta name="twitter:image" content={ogImage} />
     <title>{title}</title>
+    {/* 構造化データ（JSON-LD）。<meta> でなく <script> で描画する（meta 化すると無効）。
+        is:inline でそのまま出力（Astro のバンドル対象にしない＝検索エンジンが読む生 JSON）。 */}
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   </head>
   <body class="text-ha-ink min-h-screen antialiased flex flex-col">
     <div class="flex-1">

@@ -98,6 +98,13 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 - `public/og/og-image.jpg`（1200×630）… OGP/Twitter カード。
 - ソース PNG はリポに残さず、`/image`（codex/gpt-image-2）のプロンプトで再生成する。
 
+### 5.5 SEO / OGP（#107）
+
+- `MainLayout` で head を一元管理。`astro.config` の `site=https://hanoba.llll-ll.com` を基準に **canonical / og:url** をページごとの絶対 URL で出す（`Astro.url.pathname`）。`og:image`/`twitter:image` も同 site の絶対 URL。
+- **JSON-LD** は `<script type="application/ld+json" is:inline>` で描画する（`<meta>` 化しない＝meta だと無効）。`WebSite` ＋ サイトリンク検索ボックス（`SearchAction` で discover の `?q=` を提示）。
+- **sitemap** は `@astrojs/sitemap` が全ページから `sitemap-index.xml`＋`sitemap-0.xml` を自動生成。**`public/robots.txt`** が `Sitemap:` で参照する。
+- title/description は各ページが `MainLayout` の props で渡す（未指定はデフォルト）。
+
 ## 6. データ（Nostr）— 検証済み契約
 
 mypace と同じ Nostr 空間・同じタグ規約に準拠する（独自化しない＝mypace から見える要件）。
