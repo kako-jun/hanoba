@@ -115,6 +115,14 @@ describe("classifyDiscoverQuery", () => {
       term: "これは npub1abc です",
     });
   });
+
+  it("大文字 NPUB1… は著者にしない（bech32 は小文字・decode 不能を避ける）", () => {
+    expect(classifyDiscoverQuery("NPUB1ABCDEF")).toEqual({ mode: "keyword", term: "NPUB1ABCDEF" });
+  });
+
+  it("@npub1… は @ 始まりが優先されユーザー名モード（term は @ 除去後）", () => {
+    expect(classifyDiscoverQuery("@npub1abc")).toEqual({ mode: "author-name", term: "npub1abc" });
+  });
 });
 
 describe("selectAuthorsByName (#68)", () => {

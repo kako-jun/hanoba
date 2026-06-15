@@ -40,8 +40,10 @@ export interface DiscoverQuery {
   term: string;
 }
 
-// npub（bech32・`nostr:` 接頭辞許容）。厳密検証は nip19.decode（client 側）に任せ、ここでは振り分けだけ。
-const NPUB_RE = /^(?:nostr:)?(npub1[a-z0-9]+)$/i;
+// npub（bech32・`nostr:` 接頭辞許容）。bech32 は小文字なので case-sensitive で照合する
+// （大文字 `NPUB1…` は decode 不能＝著者にせずキーワードに落とす・#68 レビュー）。
+// 厳密検証は nip19.decode（client 側）に任せ、ここでは振り分けだけ。
+const NPUB_RE = /^(?:nostr:)?(npub1[a-z0-9]+)$/;
 
 /**
  * discover の入力を分類する（#24/#68・純粋関数）。
@@ -82,13 +84,16 @@ export function selectAuthorsByName(events: NostrEvent[], name: string, max = 20
     const cur = latest.get(ev.pubkey);
     if (cur === undefined || ev.created_at > cur.created_at) latest.set(ev.pubkey, ev);
   }
-  const pubkeys: string[] = [];
-  for (const [pubkey, ev] of latest) {
-    const n = parseProfileName(ev.content);
-    if (n !== null && n.toLowerCase().includes(needle)) pubkeys.push(pubkey);
-    if (pubkeys.length >= max) break;
-  }
-  return pubkeys;
+  // name が検索語を含む著者だけを残し、プロフィール更新が新しい順に並べてから max 件取る
+  // （どの著者が残るかが relay の返却順まかせにならないように・#68 レビュー）。
+  return [...latest.values()]
+    .filter((ev) => {
+      const n = parseProfileName(ev.content);
+      return n !== null && n.toLowerCase().includes(needle);
+    })
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, max)
+    .map((ev) => ev.pubkey);
 }
 
 /** discoverTagFilters が返す二段構えフィルタ。①=#t タグ／②=NIP-50 本文検索。 */

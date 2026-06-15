@@ -217,10 +217,12 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
 
   // 著者検索（#68）。特定の人の植物を引く（昔のユーザーの新着待ちでなく能動チェック）。
   if (mode === "author") {
+    // classify が npub 形に振り分けたものだけがここに来る。decode 不能（壊れた npub）は
+    // キーワード全文検索しても無意味なので空で返す（正直に「0件」）。
     const pubkey = npubToPubkey(term);
-    if (pubkey !== null) return fetchPostsByAuthors([pubkey], limit);
-    // npub として decode できなければキーワード検索に落とす（打ち間違い等）。
-  } else if (mode === "author-name") {
+    return pubkey === null ? [] : fetchPostsByAuthors([pubkey], limit);
+  }
+  if (mode === "author-name") {
     return fetchPostsByAuthorName(term, limit);
   }
 
@@ -298,24 +300,29 @@ async function fetchPostsByAuthors(pubkeys: string[], limit: number): Promise<Fe
   }
 }
 
+// @名前 検索（#68）。NIP-50 で kind:0 を取る上限と、その中から選ぶ著者の上限。
+// 50 件取って name 一致の新しい順に最大 20 人を選ぶ（fetchPostsByAuthorName / selectAuthorsByName）。
+const AUTHOR_NAME_PROFILE_LIMIT = 50;
+const AUTHOR_NAME_MAX = 20;
+
 /**
  * ユーザー名（kind:0 の name）で著者を引き、その投稿を取得する（#68・`@名前` 検索）。
  * NIP-50 で kind:0 を全文検索し、name に検索語を含む著者だけに絞ってから（NIP-50 はゆるいので
  * 誤ヒットを parseProfileName で再確認）その authors の kind:1 を取得する。失敗は空配列。
+ *
+ * kind:0 の NIP-50 検索は検索リレー（search.nos.today）に加え一般リレーにも投げて取りこぼしを
+ * 減らす（NIP-50 kind:0 対応はリレー依存・1本に賭けない）。片方落ちても他方を活かす（allSettled）。
  */
 async function fetchPostsByAuthorName(name: string, limit: number): Promise<FeedPost[]> {
-  try {
-    const profileEvents = await getPool().querySync(
-      [...SEARCH_RELAYS],
-      { kinds: [0], search: name, limit: 50 },
-      { maxWait: QUERY_MAXWAIT },
-    );
-    // name が検索語を含む著者だけ集める（pubkey ごと最新 kind:0・上限 20 人・純粋関数）。
-    const pubkeys = selectAuthorsByName(profileEvents, name, 20);
-    return fetchPostsByAuthors(pubkeys, limit);
-  } catch {
-    return [];
-  }
+  const filter = { kinds: [0], search: name, limit: AUTHOR_NAME_PROFILE_LIMIT };
+  const settled = await Promise.allSettled([
+    getPool().querySync([...SEARCH_RELAYS], filter, { maxWait: QUERY_MAXWAIT }),
+    getPool().querySync([...GENERAL_RELAYS], filter, { maxWait: QUERY_MAXWAIT }),
+  ]);
+  const profileEvents = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  // name が検索語を含む著者だけ集める（pubkey ごと最新 kind:0・新しい順・上限・純粋関数）。
+  const pubkeys = selectAuthorsByName(profileEvents, name, AUTHOR_NAME_MAX);
+  return fetchPostsByAuthors(pubkeys, limit);
 }
 
 /**
