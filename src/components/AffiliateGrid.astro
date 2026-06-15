@@ -8,9 +8,8 @@
 // 配置（v1）: About ページの最終 CTA の手前に 1 スロットだけ。
 // フィード内/discover 下への配置は密度判断（kako-jun）待ちのため v1 では出さない。
 //
-// 開示（景表法 / ステマ規制 2023・必須）: 広告/アフィリエイトである旨を商品の近くに
-// 明示する。rel に sponsored nofollow を付け、文言でも「広告・アフィリエイトを含みます」
-// とはっきり示す。
+// 開示（景表法 / ステマ規制 2023・必須）: アフィリエイトである旨を商品の近くに
+// 明示する。rel に sponsored nofollow を付け、文言でも「Amazon アソシエイトです」と示す。
 import { AFFILIATE_ENABLED, AFFILIATE_PRODUCTS } from "../data/affiliateProducts";
 
 // 無効化フラグ・空配列なら一切描画しない。
@@ -23,7 +22,7 @@ const show = AFFILIATE_ENABLED && AFFILIATE_PRODUCTS.length > 0;
       <header class="flex flex-col gap-1">
         <h2 class="font-display text-xl font-bold text-ha-green-deep">道具棚</h2>
         <p class="text-sm text-ha-ink/70 leading-relaxed [word-break:auto-phrase]">
-          ハノーバの片隅の道具棚。kako-jun が実際に使っている、株を育てるための道具を置いています。
+          ハノーバの片隅の道具棚。管理人の使っている道具を置いています。
         </p>
       </header>
 
@@ -62,7 +61,7 @@ const show = AFFILIATE_ENABLED && AFFILIATE_PRODUCTS.length > 0;
       </ul>
 
       <p class="text-xs text-ha-ink/60 leading-relaxed [word-break:auto-phrase]">
-        広告・アフィリエイトを含みます（Amazon アソシエイト）。リンクから購入すると運営の支えになります。
+        Amazon アソシエイトです。運営の支えになります。
       </p>
     </section>
   )
