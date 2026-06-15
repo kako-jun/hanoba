@@ -133,14 +133,15 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
         </button>
 
         {post.imageUrl !== null && (
-          // 写真エリアは正方形で確保する（#108）。hanoba 自前投稿は 1:1 出力（renderSquareImage）
-          // なのでぴったり収まる。クロップはしない（object-contain）＝他クライアントの非正方形写真は
-          // 正方形枠内にレターボックス表示（1:1 へ切り詰めて改変しない・#61 を両立）。
-          <div className="w-full shrink-0 aspect-square overflow-hidden rounded-t-3xl bg-ha-green-soft">
+          // 写真は元の比率のまま見せる（#108）。hanoba 自前投稿は 1:1 出力（renderSquareImage）
+          // なので正方形に収まり、他クライアントの非正方形写真はその比率のまま（クロップしない・#61）。
+          // flex 列（max-h-full・overflow-y-auto）の中で flex-shrink に潰されて横長化していたので
+          // shrink-0 で写真の自然な高さを確保する（これが「正方形が確保できない」の原因だった）。
+          <div className="w-full shrink-0 overflow-hidden rounded-t-3xl bg-ha-green-soft flex items-center justify-center">
             <img
               src={post.imageUrl}
               alt={post.caption}
-              className="w-full h-full object-contain"
+              className="max-w-full max-h-[70vh] object-contain"
             />
           </div>
         )}

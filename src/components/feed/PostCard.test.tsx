@@ -97,6 +97,45 @@ describe("PostCard", () => {
     }
   });
 
+  it("本文など非インタラクティブ領域クリックで onOpen を呼ぶ（#101）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      let opened = 0;
+      render(
+        <PostCard post={makePost()} index={0} now={2000} onOpen={() => (opened += 1)} onSelectHashtag={noop} />,
+      );
+      // 写真でもタグでもない本文テキストをクリック → カード全体クリックで拡大。
+      await user.click(screen.getByText("開花した"));
+      expect(opened).toBe(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("タグクリックは onSelectHashtag のみ・onOpen は呼ばない（stopPropagation・#101）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      let opened = 0;
+      const picked: string[] = [];
+      render(
+        <PostCard
+          post={makePost()}
+          index={0}
+          now={2000}
+          onOpen={() => (opened += 1)}
+          onSelectHashtag={(t) => picked.push(t)}
+        />,
+      );
+      await user.click(screen.getByRole("button", { name: "#アガベ" }));
+      expect(picked).toEqual(["アガベ"]);
+      expect(opened).toBe(0); // stopPropagation でカード拡大は発火しない
+    } finally {
+      restore();
+    }
+  });
+
   it("profile があれば著者名を出す（#35）", () => {
     const restore = mockSizes(0, 0);
     try {

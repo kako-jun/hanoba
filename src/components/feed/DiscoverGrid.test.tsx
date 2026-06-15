@@ -87,12 +87,16 @@ describe("DiscoverGrid", () => {
     expect(fetchHanobaFeed).toHaveBeenCalled();
   });
 
-  it("既定検索が 0 件なら案内（idle プロンプト）に戻す", async () => {
+  it("既定検索が 0 件なら idle（案内文・カードを出さない）に戻す", async () => {
     render(<DiscoverGrid />); // #plantstr は未登録＝[]
 
     await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
-    // idle ヒーローに戻る。検索の説明は placeholder に一本化したので重複文は出さない（#102）。
-    expect(await screen.findByText(/「探す」を押すと/)).toBeInTheDocument();
+    // idle は何も出さない（auto-search 前提なので「探すを押すと」案内は撤去・#102）。
+    // 探索中表示やカード・エラーが残らず、検索フォームだけが残ることを確認する。
+    await waitFor(() => expect(screen.queryByText(/探しています/)).not.toBeInTheDocument());
+    expect(screen.queryByText(/「探す」を押すと/)).not.toBeInTheDocument();
+    expect(document.querySelector("article")).toBeNull();
+    expect(screen.getByRole("button", { name: "探す" })).toBeInTheDocument();
   });
 
   it("× ボタンで検索文字を全消しできる（#60）", async () => {
