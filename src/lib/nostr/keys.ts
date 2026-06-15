@@ -120,7 +120,7 @@ export function importNsec(nsec: string): void {
   getLS()?.setItem(SK_KEY, bytesToHex(decoded.data));
   // 鍵＝アカウントが変わったので、旧鍵のプロフィール控え（picture/about/websites）を捨てる。
   // 残すと別人のアバター/サイトが新アカウントの kind:0 に混入・上書きされる（#78 レビュー M1）。
-  // 新アカウントの値は呼び出し側が relay から再シードする（client.fetchMyProfile）。
+  // 新アカウントの値は呼び出し側が relay から再シードする（client.fetchMyProfileResilient・#93）。
   getLS()?.removeItem(PROFILE_EXTRA_KEY);
 }
 
@@ -148,7 +148,7 @@ export function setDisplayName(name: string): void {
 //
 // kind:0 は replaceable なので publish のたびに全項目を載せ直す必要がある。name 以外の
 // 項目をローカルにも控え、name だけ変えたときも全体を publish できるようにする（clobber 防止）。
-// 取得は client.fetchMyProfile（relay）が一次ソースだが、編集中の控えとしてここに保存する。
+// 取得は client.fetchMyProfileResilient（relay）が一次ソースだが、編集中の控えとしてここに保存する。
 
 const PROFILE_EXTRA_KEY = "hanoba:profileExtra";
 

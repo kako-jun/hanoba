@@ -61,7 +61,7 @@ describe("fetchMyProfileResilient (#93 bounded retry)", () => {
     expect(fetchOnce).toHaveBeenCalledTimes(3);
   });
 
-  it("件数の多い（richest）版を採る", async () => {
+  it("websites を1件でも掴めたら早期確定し、より豊富な版を待たない", async () => {
     const one: Profile = { name: "x", picture: null, about: null, websites: ["https://a.example.com"] };
     const fetchOnce = vi
       .fn<(p: string) => Promise<Profile | null>>()

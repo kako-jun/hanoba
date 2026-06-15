@@ -373,8 +373,9 @@ function sleep(ms: number): Promise<void> {
  * 編集欄が空のまま固定され、その空控えが saveDisplayName の clobber（websites:[] で
  * relay の正本を上書き）を招く（#93 の data-loss 経路）。
  *
- * websites を持つ版を掴めたら即確定。取れなければ最大 attempts 回まで引き直し、
- * その間で最も豊富（websites 件数が多い）な結果を採って返す。全部空振りなら null。
+ * websites を1件でも掴めたら即確定して返す（websites 取りこぼしが主因なので、解消したら止める）。
+ * まだ空の間は最大 attempts 回まで引き直し、その時点で最も豊富（websites 件数が多い）な結果を
+ * 保持する＝早期確定しない all-empty 経路では richest を返す。全部空振りなら null。
  * 取得は非ブロッキング（呼び出し側は先にローカル控えで描画済み）なので、待ちは UI を止めない。
  */
 export async function fetchMyProfileResilient(
