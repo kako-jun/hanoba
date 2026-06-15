@@ -133,7 +133,7 @@ export default function ProfileEditor() {
           <Avatar src={picture} name={name ?? "?"} className="w-9 h-9" />
           <span className="flex min-w-0 flex-col">
             <span className="text-sm font-semibold text-ha-ink/85 truncate">
-              {name ?? "ユーザー名 未設定"}
+              {name ?? "ハンドルネーム 未設定"}
             </span>
             <span className="text-xs text-ha-ink/50">プロフィール（アイコン・自己紹介・サイト）</span>
           </span>
@@ -298,7 +298,7 @@ export default function ProfileEditor() {
               {status === "saving" ? "保存中…" : "保存"}
             </button>
             {nameMissing && (
-              <span className="text-xs text-ha-ink/55">先に上でユーザー名を設定してください。</span>
+              <span className="text-xs text-ha-ink/55">先に上でハンドルネームを設定してください。</span>
             )}
             {!nameMissing && status === "saved" && (
               <span className="text-xs text-ha-green-deep">保存しました。</span>

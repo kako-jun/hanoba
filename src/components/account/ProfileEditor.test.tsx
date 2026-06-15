@@ -74,6 +74,12 @@ describe("ProfileEditor (#35 Piece3)", () => {
     render(<ProfileEditor />);
     await user.click(screen.getByRole("button", { name: /編集/ }));
     expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
-    expect(screen.getByText("先に上でユーザー名を設定してください。")).toBeInTheDocument();
+    expect(screen.getByText("先に上でハンドルネームを設定してください。")).toBeInTheDocument();
+  });
+
+  it("名前未設定ならヘッダに「ハンドルネーム 未設定」が出る（#92）", () => {
+    localStorage.removeItem("hanoba:name");
+    render(<ProfileEditor />);
+    expect(screen.getByText("ハンドルネーム 未設定")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Icon from "../ui/Icon.tsx";
 import { fetchMyProfile, saveDisplayName } from "../../lib/nostr/client.ts";
 import {
   getDisplayName,
@@ -23,10 +24,11 @@ type Mode = "display" | "edit" | "import";
  * - 未設定なら最初から入力（「ユーザー名を入れたら投稿できる」）。
  * - **すでにアカウントがある人**は nsec を持ち込める（mypace ユーザーがアカウントを増やさない）。
  */
-export default function AccountName({ onChange, promptLabel = "お名前は？" }: Props) {
+export default function AccountName({ onChange, promptLabel = "ハンドルネームは？" }: Props) {
   const [name, setName] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("display");
   const [draft, setDraft] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [nsecDraft, setNsecDraft] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -143,17 +145,33 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
           {promptLabel}
         </label>
         <div className="flex items-center gap-2">
-          <input
-            id="hanoba-name"
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="ユーザー名（あとで変えられます）"
-            aria-label="ユーザー名"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-            className="flex-1 rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
-          />
+          <div className="relative flex-1">
+            <input
+              ref={nameInputRef}
+              id="hanoba-name"
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="ハンドルネーム（あとで変えられます）"
+              aria-label="ハンドルネーム"
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              className="w-full rounded-full bg-white/10 border border-white/15 pl-3.5 pr-10 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+            />
+            {draft !== "" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft("");
+                  nameInputRef.current?.focus();
+                }}
+                aria-label="入力をクリア"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
+              >
+                <Icon name="close" className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           <button
             type="submit"
             className="shrink-0 rounded-full bg-ha-green text-ha-white px-4 py-2 text-sm font-semibold hover:brightness-110 transition"
@@ -161,7 +179,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
             保存
           </button>
         </div>
-        <p className="text-xs text-ha-ink/55">名前を入れると、見るだけでなく投稿できます。</p>
+        <p className="text-xs text-ha-ink/55">ハンドルネームを決めると、見るだけでなく投稿できます。</p>
         <button
           type="button"
           onClick={() => {
@@ -181,7 +199,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
     <div className="glass rounded-2xl p-5 flex items-center justify-between gap-3">
       <span className="text-ha-ink/85">
         {name === null ? (
-          <span className="text-ha-ink/55">ユーザー名 未設定</span>
+          <span className="text-ha-ink/55">ハンドルネーム 未設定</span>
         ) : (
           <span className="font-semibold">{name}</span>
         )}
@@ -195,7 +213,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
           }}
           className="text-ha-green hover:text-ha-green-deep transition-colors"
         >
-          {name === null ? "名前を設定" : "名前を変更"}
+          {name === null ? "ハンドルネームを設定" : "ハンドルネームを変更"}
         </button>
         <button
           type="button"
