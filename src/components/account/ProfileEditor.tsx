@@ -311,16 +311,8 @@ export default function ProfileEditor({ bare = false }: Props) {
             </button>
           </div>
 
-          {/* 保存 */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={status === "saving" || nameMissing}
-              className="rounded-full bg-ha-green text-ha-white px-5 py-2 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition"
-            >
-              {status === "saving" ? "保存中…" : "保存"}
-            </button>
+          {/* 保存（アクション行＝主操作を右端に・補足は左／#98 統一ポリシー）。 */}
+          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
             {nameMissing && (
               <span className="text-xs text-ha-ink/55">先に上でハンドルネームを設定してください。</span>
             )}
@@ -330,6 +322,14 @@ export default function ProfileEditor({ bare = false }: Props) {
             {!nameMissing && status === "error" && (
               <span className="text-xs text-ha-pink">保存できませんでした（端末には保存済み）。</span>
             )}
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={status === "saving" || nameMissing}
+              className="rounded-full bg-ha-green text-ha-white px-5 py-2 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition"
+            >
+              {status === "saving" ? "保存中…" : "保存"}
+            </button>
           </div>
         </div>
       )}
