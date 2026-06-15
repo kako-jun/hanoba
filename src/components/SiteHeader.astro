@@ -24,10 +24,11 @@ const { current, wide = false } = Astro.props;
 const maxW = wide ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl";
 
 // compose は塗りボタン（主アクション）なので nav 配列とは別扱い。
+// 並びはフッタの規則に揃える（About→discover→me・#106）。About は情報ページなので i アイコンを付ける。
 const links = [
-  { href: "/discover", label: "みんなの植物", key: "discover" },
-  { href: "/me", label: "あなたの植物", key: "me" },
-  { href: "/about", label: "Hanōba とは", key: "about" },
+  { href: "/about", label: "Hanōba とは", key: "about", icon: "info" },
+  { href: "/discover", label: "みんなの植物", key: "discover", icon: null },
+  { href: "/me", label: "あなたの植物", key: "me", icon: null },
 ] as const;
 ---
 
@@ -57,10 +58,11 @@ const links = [
           <a
             href={l.href}
             class:list={[
-              "font-medium transition-colors hover:text-ha-green-deep",
+              "inline-flex items-center gap-1.5 font-medium transition-colors hover:text-ha-green-deep",
               current === l.key ? "text-ha-green-deep" : "text-ha-green-deep/80",
             ]}
           >
+            {l.icon && <Icon name={l.icon} className="w-4 h-4" />}
             {l.label}
           </a>
         ))
@@ -100,10 +102,11 @@ const links = [
           <a
             href={l.href}
             class:list={[
-              "rounded-xl px-3 py-3 font-medium transition-colors hover:bg-ha-green/10",
+              "inline-flex items-center gap-1.5 rounded-xl px-3 py-3 font-medium transition-colors hover:bg-ha-green/10",
               current === l.key ? "text-ha-green-deep bg-ha-green/10" : "text-ha-green-deep/85",
             ]}
           >
+            {l.icon && <Icon name={l.icon} className="w-4 h-4" />}
             {l.label}
           </a>
         ))

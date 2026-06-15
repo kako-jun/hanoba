@@ -10,6 +10,7 @@
 // 寄せ集めにせず、意味カテゴリの線アイコンに寄せる（対応付けは lib/profile/services.ts）。
 export type IconName =
   | "close"
+  | "info"
   | "heart"
   | "flower"
   | "star"
@@ -59,6 +60,15 @@ export default function Icon({ name, className }: IconProps) {
       return (
         <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
           <path d="M12 20.5 4.2 12.9a4.6 4.6 0 0 1 6.5-6.5l1.3 1.3 1.3-1.3a4.6 4.6 0 0 1 6.5 6.5z" />
+        </svg>
+      );
+    case "info":
+      // 情報ページ（About）の導線に付ける i（#106）。線アイコン・円＋i。
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5" />
+          <path d="M12 7.6h.01" />
         </svg>
       );
     case "star":
