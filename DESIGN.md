@@ -82,6 +82,7 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 
 - **タイポ**: 見出し＝`Outfit`（geometric sans・欧/数字）×日本語 `Zen Kaku Gothic New`。本文＝Zen Kaku。本文400↔見出し800/900でウェイト飛躍。汎用フォント（Inter/Roboto/system/Space Grotesk）禁止（Anthropic frontend aesthetics 準拠）。`--font-display` / `--font-sans`。
 - **モーション**: ページロードの控えめな staggered reveal（`.ha-rise`＋`--i`・CSS-only・`prefers-reduced-motion` で無効）。**安っぽい装飾は禁止**（ホバーでロゴを傾ける等はダサいので不可）。
+- **フローティング UI**: 右下に「一番上へ戻る」（`ScrollToTop`・全ページ共通・400px 超で出現・`prefers-reduced-motion` 時は smooth でなく即時・#110）。
 - **グリッド**: 写真は Instagram explore 流に**隙間を詰め（gap 0.5）角丸は小さく（rounded-md）フラット**（浮かせない）。
 
 ### 5.3 ワードマーク／アイコン

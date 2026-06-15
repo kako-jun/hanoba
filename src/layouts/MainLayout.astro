@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import SiteFooter from "../components/SiteFooter.astro";
+import ScrollToTop from "../components/ui/ScrollToTop.tsx";
 
 interface Props {
   title?: string;
@@ -53,5 +54,6 @@ const {
       <slot />
     </div>
     <SiteFooter />
+    <ScrollToTop client:idle />
   </body>
 </html>
