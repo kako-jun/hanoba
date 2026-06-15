@@ -84,7 +84,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
   if (mode === "import") {
     return (
       <form
-        className="glass rounded-2xl px-4 py-3 flex flex-col gap-2"
+        className="glass rounded-2xl p-5 flex flex-col gap-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           void doImport();
@@ -101,7 +101,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
           placeholder="nsec1… を貼り付け"
           aria-label="nsec 秘密鍵"
           autoComplete="off"
-          className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+          className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
         />
         {importError !== null && <p className="text-xs text-ha-pink">{importError}</p>}
         <p className="text-xs text-ha-ink/55">
@@ -133,7 +133,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
   if (mode === "edit") {
     return (
       <form
-        className="glass rounded-2xl px-4 py-3 flex flex-col gap-2"
+        className="glass rounded-2xl p-5 flex flex-col gap-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
@@ -152,7 +152,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
             aria-label="ユーザー名"
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
-            className="flex-1 rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+            className="flex-1 rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
           />
           <button
             type="submit"
@@ -178,7 +178,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
   }
 
   return (
-    <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+    <div className="glass rounded-2xl p-5 flex items-center justify-between gap-3">
       <span className="text-ha-ink/85">
         {name === null ? (
           <span className="text-ha-ink/55">ユーザー名 未設定</span>
