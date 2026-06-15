@@ -23,7 +23,7 @@ type Mode = "display" | "edit" | "import";
  * - 未設定なら最初から入力（「ユーザー名を入れたら投稿できる」）。
  * - **すでにアカウントがある人**は nsec を持ち込める（mypace ユーザーがアカウントを増やさない）。
  */
-export default function AccountName({ onChange, promptLabel = "お名前は？" }: Props) {
+export default function AccountName({ onChange, promptLabel = "ハンドルネームは？" }: Props) {
   const [name, setName] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("display");
   const [draft, setDraft] = useState("");
@@ -148,8 +148,8 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="ユーザー名（あとで変えられます）"
-            aria-label="ユーザー名"
+            placeholder="ハンドルネーム（あとで変えられます）"
+            aria-label="ハンドルネーム"
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
             className="flex-1 rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
@@ -161,7 +161,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
             保存
           </button>
         </div>
-        <p className="text-xs text-ha-ink/55">名前を入れると、見るだけでなく投稿できます。</p>
+        <p className="text-xs text-ha-ink/55">ハンドルネームを決めると、見るだけでなく投稿できます。</p>
         <button
           type="button"
           onClick={() => {
@@ -181,7 +181,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
     <div className="glass rounded-2xl p-5 flex items-center justify-between gap-3">
       <span className="text-ha-ink/85">
         {name === null ? (
-          <span className="text-ha-ink/55">ユーザー名 未設定</span>
+          <span className="text-ha-ink/55">ハンドルネーム 未設定</span>
         ) : (
           <span className="font-semibold">{name}</span>
         )}
@@ -195,7 +195,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
           }}
           className="text-ha-green hover:text-ha-green-deep transition-colors"
         >
-          {name === null ? "名前を設定" : "名前を変更"}
+          {name === null ? "ハンドルネームを設定" : "ハンドルネームを変更"}
         </button>
         <button
           type="button"
