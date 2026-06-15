@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
+import { ClearableInput, ClearableTextarea } from "../ui/ClearableInput.tsx";
 import Avatar from "../feed/Avatar.tsx";
 import { fetchMyProfileResilient, saveProfile } from "../../lib/nostr/client.ts";
 import {
@@ -214,16 +215,16 @@ export default function ProfileEditor({ bare = false }: Props) {
               </div>
             </div>
             {/* URL 直接指定も可（他所の画像を使いたい人向け）。 */}
-            <input
+            <ClearableInput
               type="url"
               value={picture ?? ""}
-              onChange={(e) => {
-                setPicture(e.target.value === "" ? null : e.target.value);
+              onValueChange={(v) => {
+                setPicture(v === "" ? null : v);
                 touch();
               }}
               placeholder="または画像 URL を貼る（https://…）"
               aria-label="アイコン画像 URL"
-              className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+              className="rounded-full bg-white/10 border border-white/15 pl-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
             />
             {uploadError !== null && <p className="text-xs text-ha-pink">{uploadError}</p>}
           </div>
@@ -233,16 +234,16 @@ export default function ProfileEditor({ bare = false }: Props) {
             <label htmlFor="hanoba-about" className="text-sm font-medium text-ha-green-deep">
               自己紹介
             </label>
-            <textarea
+            <ClearableTextarea
               id="hanoba-about"
               value={about}
-              onChange={(e) => {
-                setAbout(e.target.value);
+              onValueChange={(v) => {
+                setAbout(v);
                 touch();
               }}
               rows={3}
               placeholder="育てている植物のこと、好きな品種など"
-              className="rounded-2xl bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30 resize-y"
+              className="rounded-2xl bg-white/10 border border-white/15 pl-3.5 py-2 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30 resize-y"
             />
           </div>
 
@@ -258,13 +259,14 @@ export default function ProfileEditor({ bare = false }: Props) {
                 return (
                   <li key={site.id} className="flex items-center gap-2.5">
                     <div className="flex-1 flex flex-col gap-0.5">
-                      <input
+                      <ClearableInput
                         type="url"
                         value={site.url}
-                        onChange={(e) => updateSite(site.id, e.target.value)}
+                        onValueChange={(v) => updateSite(site.id, v)}
                         placeholder="https://…"
                         aria-label={`サイト ${i + 1} の URL`}
-                        className="w-full rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+                        clearLabel={`サイト ${i + 1} をクリア`}
+                        className="rounded-full bg-white/10 border border-white/15 pl-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                       />
                       {label !== null && (
                         <span className="pl-3.5 text-[11px] text-ha-ink/45">{label}</span>
