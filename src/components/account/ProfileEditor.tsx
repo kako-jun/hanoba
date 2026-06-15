@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import Avatar from "../feed/Avatar.tsx";
-import { fetchMyProfile, saveProfile } from "../../lib/nostr/client.ts";
-import { getDisplayName, getProfileExtra, getPublicKeyHex } from "../../lib/nostr/keys.ts";
+import { fetchMyProfileResilient, saveProfile } from "../../lib/nostr/client.ts";
+import {
+  getDisplayName,
+  getProfileExtra,
+  getPublicKeyHex,
+  mergeProfileExtra,
+  setProfileExtra,
+} from "../../lib/nostr/keys.ts";
 import { detectServiceLabel } from "../../lib/profile/services.ts";
 import { uploadImage } from "../../lib/nostr/upload.ts";
 
@@ -51,12 +57,24 @@ export default function ProfileEditor() {
     void (async () => {
       try {
         const pubkey = await getPublicKeyHex();
-        const remote = await fetchMyProfile(pubkey);
+        // 単発でなく bounded retry で取る。取りこぼすと websites が空のまま固定され、
+        // その空控えが clobber を招く（#93）。
+        const remote = await fetchMyProfileResilient(pubkey);
         if (!aliveRef.current || remote === null) return;
         setPicture((cur) => cur ?? remote.picture);
         setAbout((cur) => (cur === "" ? (remote.about ?? "") : cur));
         setSites((cur) => (cur.length === 0 ? remote.websites.map((url) => ({ id: nextId(), url })) : cur));
         if (localName === null && remote.name !== null) setName(remote.name);
+        // relay から取れた値をローカル控えにも書き戻す（#93）。表示だけ回復して控えが空のまま
+        // 残ると、名前変更時の saveDisplayName が websites:[] で relay の正本を潰す（clobber）。
+        // mergeProfileExtra はローカル非空を優先するので、編集中の控えは壊さない。
+        setProfileExtra(
+          mergeProfileExtra(getProfileExtra(), {
+            picture: remote.picture,
+            about: remote.about,
+            websites: remote.websites,
+          }),
+        );
       } catch {
         // relay 取得失敗は無視（ローカル値で編集できる）。
       }

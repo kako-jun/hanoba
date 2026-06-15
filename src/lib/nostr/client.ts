@@ -360,6 +360,44 @@ export async function fetchMyProfile(pubkey: string): Promise<Profile | null> {
   return map.get(pubkey) ?? null;
 }
 
+/** ms 待つ（resilient fetch のリトライ間隔・テストは attempts/delay を注入して即時化できる）。 */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * 自分の kind:0 を bounded retry 付きで取得する（#93）。
+ *
+ * 単発の querySync は、接続直後やモバイル回線で websites を載せた最新版を
+ * maxWait 内に掴み損ねることがある（lagging relay が古い版を速く返す等）。単発だと
+ * 編集欄が空のまま固定され、その空控えが saveDisplayName の clobber（websites:[] で
+ * relay の正本を上書き）を招く（#93 の data-loss 経路）。
+ *
+ * websites を持つ版を掴めたら即確定。取れなければ最大 attempts 回まで引き直し、
+ * その間で最も豊富（websites 件数が多い）な結果を採って返す。全部空振りなら null。
+ * 取得は非ブロッキング（呼び出し側は先にローカル控えで描画済み）なので、待ちは UI を止めない。
+ */
+export async function fetchMyProfileResilient(
+  pubkey: string,
+  attempts = 3,
+  delayMs = 600,
+  // 内部依存（取得1回・待ち）はテスト注入できるようにする。本番は既定のまま。
+  fetchOnce: (pubkey: string) => Promise<Profile | null> = fetchMyProfile,
+  wait: (ms: number) => Promise<void> = sleep,
+): Promise<Profile | null> {
+  let best: Profile | null = null;
+  for (let i = 0; i < attempts; i++) {
+    const p = await fetchOnce(pubkey);
+    if (p !== null && (best === null || p.websites.length > best.websites.length)) {
+      best = p;
+    }
+    // websites は最も取りこぼしやすい項目。掴めたら確定する（無駄な再取得をしない）。
+    if (best !== null && best.websites.length > 0) return best;
+    if (i < attempts - 1) await wait(delayMs);
+  }
+  return best;
+}
+
 /**
  * 指定 pubkey の表示名（kind:0 の name）を取得する（#28・nsec インポート時に既存名を引き継ぐ）。
  * 最新の kind:0 を採用。無ければ null。失敗も null。
@@ -421,7 +459,9 @@ export async function saveDisplayName(name: string): Promise<void> {
   // ローカル控えが空でも relay に実体があれば消さないよう、relay 値とマージする（#78 レビュー M2）。
   let extra = getProfileExtra();
   try {
-    const remote = await fetchMyProfile(await getPublicKeyHex());
+    // 単発取得だと取りこぼし時に websites:[] を publish して relay の正本を潰す（#93 clobber）。
+    // bounded retry で最新版を掴んでからマージする。
+    const remote = await fetchMyProfileResilient(await getPublicKeyHex());
     extra = mergeProfileExtra(extra, remote === null ? null : profileToExtra(remote));
     setProfileExtra(extra); // 次回以降のためローカルにも反映。
   } catch {
