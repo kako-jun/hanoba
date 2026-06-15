@@ -127,7 +127,7 @@ export default function ProfileEditor() {
   const nameMissing = name === null || name.trim() === "";
 
   return (
-    <section className="glass rounded-2xl px-4 py-3 flex flex-col gap-3">
+    <section className="glass rounded-2xl p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <span className="flex min-w-0 items-center gap-2.5">
           <Avatar src={picture} name={name ?? "?"} className="w-9 h-9" />
@@ -150,7 +150,7 @@ export default function ProfileEditor() {
       </div>
 
       {open && (
-        <div className="flex flex-col gap-4 pt-1">
+        <div className="flex flex-col gap-5 pt-1">
           {/* アイコン */}
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-ha-green-deep">アイコン</span>
@@ -199,7 +199,7 @@ export default function ProfileEditor() {
               }}
               placeholder="または画像 URL を貼る（https://…）"
               aria-label="アイコン画像 URL"
-              className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+              className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
             />
             {uploadError !== null && <p className="text-xs text-ha-pink">{uploadError}</p>}
           </div>
@@ -228,11 +228,11 @@ export default function ProfileEditor() {
             <p className="text-xs text-ha-ink/55">
               拡大写真の著者欄にアイコンで並びます。各人が自分のサイトへ誘導できます。
             </p>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2.5 pl-3 border-l border-white/10">
               {sites.map((site, i) => {
                 const label = site.url.trim() === "" ? null : detectServiceLabel(site.url);
                 return (
-                  <li key={site.id} className="flex items-center gap-1.5">
+                  <li key={site.id} className="flex items-center gap-2.5">
                     <div className="flex-1 flex flex-col gap-0.5">
                       <input
                         type="url"
@@ -240,13 +240,13 @@ export default function ProfileEditor() {
                         onChange={(e) => updateSite(site.id, e.target.value)}
                         placeholder="https://…"
                         aria-label={`サイト ${i + 1} の URL`}
-                        className="w-full rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+                        className="w-full rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                       />
                       {label !== null && (
                         <span className="pl-3.5 text-[11px] text-ha-ink/45">{label}</span>
                       )}
                     </div>
-                    <div className="flex shrink-0 items-center">
+                    <div className="flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
                         onClick={() => moveSite(i, -1)}
@@ -281,7 +281,7 @@ export default function ProfileEditor() {
             <button
               type="button"
               onClick={addSite}
-              className="self-start text-sm text-ha-green hover:text-ha-green-deep underline underline-offset-2"
+              className="self-start mt-0.5 text-sm text-ha-green hover:text-ha-green-deep underline underline-offset-2"
             >
               ＋ サイトを追加
             </button>
