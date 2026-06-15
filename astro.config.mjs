@@ -1,4 +1,5 @@
 import react from "@astrojs/react";
+import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import AstroPWA from "@vite-pwa/astro";
 import { defineConfig } from "astro/config";
@@ -6,15 +7,19 @@ import { defineConfig } from "astro/config";
 // 完全静的・バックエンドレス。状態は全て Nostr（クライアント側）に乗る。
 // SSR アダプタは持たない（dist/ をそのまま CF Pages に配信）。
 export default defineConfig({
+  // 本番ドメイン。canonical / og:url / sitemap の絶対 URL 生成に使う（#107）。
+  site: "https://hanoba.llll-ll.com",
   output: "static",
   integrations: [
     react(),
+    // sitemap-index.xml / sitemap-0.xml を全ページから自動生成（robots.txt から参照）。
+    sitemap(),
     AstroPWA({
       registerType: "autoUpdate",
       manifest: {
         name: "Hanōba",
         short_name: "Hanōba",
-        description: "植物写真のSNS。Instagram より、はやく・かんたんに、ひとこと添えて。",
+        description: "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。",
         id: "/",
         start_url: "/",
         scope: "/",
