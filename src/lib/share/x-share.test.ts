@@ -51,6 +51,25 @@ describe("buildXShareParts — 単一パート（採番なし）", () => {
     const parts = buildXShareParts("メモ", ["アガベ", "塊根"], "");
     expect(parts[0]).toBe("メモ\n\n#アガベ #塊根");
   });
+
+  it("caption が空（写真のみ）ならパーマリンク単体＝先頭に空行を付けない", () => {
+    const parts = buildXShareParts("", [], "https://njump.me/nevent1none");
+    expect(parts).toHaveLength(1);
+    // 先頭に \n\n を残さない（区切りは本文が空のとき付けない）。
+    expect(parts[0]).toBe("https://njump.me/nevent1none");
+    expect(parts[0]!.startsWith("\n")).toBe(false);
+  });
+
+  it("空白だけの caption もトリムされ、パーマリンク単体になる", () => {
+    const parts = buildXShareParts("   \n\n  ", [], "https://njump.me/nevent1ws");
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toBe("https://njump.me/nevent1ws");
+  });
+
+  it("caption も permalink も空なら空文字1件（先頭空行なし）", () => {
+    const parts = buildXShareParts("", [], "");
+    expect(parts).toEqual([""]);
+  });
 });
 
 describe("buildXShareParts — 複数パート分割と採番", () => {
@@ -203,5 +222,23 @@ describe("buildNjumpPermalink", () => {
     const url = buildNjumpPermalink({ id: "not-hex", pubkey });
     // note も hex を要求するため空文字になる（リンク無し）。クラッシュしないことが要点。
     expect(typeof url).toBe("string");
+  });
+
+  it("空の id は encode せず空文字を返す（nevent1qqqq... の偽リンクを出さない）", () => {
+    // nip19.neventEncode({id:""}) は throw せず見た目だけ正しい nevent を作る＝
+    // njump で何も指さない壊れたリンクになる。エンコード前に 64hex で弾く。
+    expect(buildNjumpPermalink({ id: "", pubkey })).toBe("");
+  });
+
+  it("63桁 hex（長さ不足）は空文字を返す", () => {
+    expect(buildNjumpPermalink({ id: "e".repeat(63), pubkey })).toBe("");
+  });
+
+  it("大文字 hex（小文字でない）は空文字を返す", () => {
+    expect(buildNjumpPermalink({ id: "E".repeat(64), pubkey })).toBe("");
+  });
+
+  it("正しい 64桁小文字 hex なら https://njump.me/nevent1... を返す", () => {
+    expect(buildNjumpPermalink({ id, pubkey }).startsWith("https://njump.me/nevent1")).toBe(true);
   });
 });

@@ -204,7 +204,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   <button
                     type="button"
                     aria-label="X でシェア"
-                    aria-haspopup={isSplit ? "menu" : undefined}
+                    aria-haspopup={isSplit ? "true" : undefined}
                     aria-expanded={isSplit ? shareOpen : undefined}
                     onClick={() => {
                       if (isSplit) {
@@ -219,14 +219,15 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   </button>
 
                   {isSplit && shareOpen && (
+                    // role="menu" は付けない＝矢印キー移動やフォーカス移動を実装していないのに
+                    // メニューのセマンティクスを名乗らないため（aria-label 付きの単なるボタン列）。
+                    // 開閉トグルの aria-haspopup/aria-expanded はポップオーバーの存在を伝える。
                     <div
-                      role="menu"
                       aria-label="X でシェア（分割）"
                       className="glass-strong absolute bottom-full right-0 mb-2 z-20 flex flex-col gap-1 rounded-2xl p-1.5 shadow-xl"
                     >
                       <button
                         type="button"
-                        role="menuitem"
                         onClick={() => {
                           openXShare(buildXShareWhole(post.caption, [], permalink));
                           setShareOpen(false);
@@ -240,7 +241,6 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                           // 並びは固定（index で安定）。複数パートは本文の分割位置で決まる。
                           key={i}
                           type="button"
-                          role="menuitem"
                           onClick={() => {
                             openXShare(part);
                             setShareOpen(false);

@@ -30,6 +30,11 @@ const URL_REGEX = /https?:\/\/[^\s]+/g;
  * X（twitter-text）準拠の weighted length を計算する。
  * 重み1のコードポイント範囲: 0–4351, 8192–8205, 8208–8223, 8242–8247（ASCII/ラテン/一部記号）。
  * それ以外（CJK・絵文字・多くの非Latin）は重み2。URL は実長に関わらず 23 として加算。
+ *
+ * 注: 絵文字は「コードポイント単位」で数える（`for...of` の反復が1コードポイント単位のため、
+ * ZWJ ファミリ 👨‍👩‍👧‍👦 や旗 🇯🇵 のような複数コードポイント絵文字は twitter-text の
+ * 書記素あたり重み2より過大に数える）。これは安全側の誤差＝パートが実際より短く出るので
+ * 本物の X で溢れることはない。mypace から意図的にこの近似を移植している。
  */
 export function weightedLengthX(text: string): number {
   // URL 部分を除いたテキストの weighted length に、23×URL個数 を加える。
@@ -85,11 +90,15 @@ function assemblePart(content: string, opts: PartOpts): string {
   }
 
   if (opts.isFirst && opts.hashtags.length > 0) {
-    text = `${text}\n\n${opts.hashtags.map((t) => `#${t}`).join(" ")}`;
+    const tags = opts.hashtags.map((t) => `#${t}`).join(" ");
+    // 本文が空ならハッシュタグも区切り無しで出す（先頭の空行2つを残さない）。
+    text = text === "" ? tags : `${text}\n\n${tags}`;
   }
 
   if (opts.isLast && opts.permalink !== "") {
-    text = `${text}\n\n${opts.permalink}`;
+    // 直前の本文が空（caption 無しの写真など）なら区切りの \n\n を付けず、
+    // パーマリンクだけを出す（先頭に空行2つが残るのを防ぐ）。
+    text = text === "" ? opts.permalink : `${text}\n\n${opts.permalink}`;
   }
 
   return text;
@@ -304,8 +313,16 @@ export function getXIntentUrl(text: string): string {
  * njump が画像を OGP に出すので X 上でも写真プレビューが出る＝写真 SNS として正しいリンクバック。
  *
  * nevent 生成が失敗した場合は note（id だけ）にフォールバックする。
+ *
+ * id が 64桁の小文字 hex でないなら何もエンコードせず "" を返す。nip19.neventEncode は
+ * 空文字 id を渡しても throw せず、見た目だけ正しい意味のない nevent（nevent1qqqq...）を
+ * 作ってしまう＝njump で何も指さない壊れたリンクになるため、エンコード前に弾く。
  */
+const EVENT_ID_HEX = /^[0-9a-f]{64}$/;
+
 export function buildNjumpPermalink(post: Pick<FeedPost, "id" | "pubkey">): string {
+  // 64hex でない id は encode できても無意味な nevent になるのでリンクを省く。
+  if (!EVENT_ID_HEX.test(post.id)) return "";
   try {
     const nevent = nip19.neventEncode({
       id: post.id,
