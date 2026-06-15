@@ -51,7 +51,7 @@ export default function PlantSuggest({ caption, onAddTag }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs text-ha-ink/45">植物のタグを正規形でそろえる</span>
+      <span className="text-xs text-ha-ink/45">書いた呼び名を植物のタグにそろえる</span>
       <div className="flex flex-col gap-2">
         {groups.map((g) => (
           <div key={g.plant.id} className="flex flex-col gap-1.5">
@@ -62,7 +62,7 @@ export default function PlantSuggest({ caption, onAddTag }: Props) {
             )}
             {g.children.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-ha-ink/45">もっと具体的に</span>
+                <span className="text-xs text-ha-ink/45">さらに具体的にできます</span>
                 {g.children.map((c) => (
                   <Chip key={c.id} entry={c} onAdd={onAddTag} />
                 ))}

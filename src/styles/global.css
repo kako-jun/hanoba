@@ -70,14 +70,14 @@ summary {
 .bg-ha-green {
   /* 全方向に均等なソフトハロー（下方向オフセット無し・ぼかし広め）。 */
   text-shadow:
-    0 0 3px rgba(8, 30, 4, 0.75),
-    0 0 6px rgba(8, 30, 4, 0.55);
+    0 0 3px rgba(8, 30, 4, 0.55),
+    0 0 6px rgba(8, 30, 4, 0.4);
 }
 
 /* アイコン（SVG）は text-shadow が効かないので drop-shadow で同じ濃緑ハローを当てる。 */
 .bg-ha-green svg {
   filter:
-    drop-shadow(0 0 2px rgba(8, 30, 4, 0.75)) drop-shadow(0 0 3px rgba(8, 30, 4, 0.5));
+    drop-shadow(0 0 2px rgba(8, 30, 4, 0.55)) drop-shadow(0 0 3px rgba(8, 30, 4, 0.35));
 }
 
 /* 見出しは display 書体。 */

@@ -27,15 +27,15 @@ describe("PlantSuggest", () => {
     render(<PlantSuggest caption="パキポ #パキポディウム" onAddTag={() => {}} />);
     // 属本体（＋ #パキポディウム）はもう出さない。
     expect(screen.queryByText(/＋ #パキポディウム/)).not.toBeInTheDocument();
-    // が、「もっと具体的に」で子（グラキリス）を出す。
-    expect(screen.getByText("もっと具体的に")).toBeInTheDocument();
+    // が、「さらに具体的にできます」で子（グラキリス）を出す。
+    expect(screen.getByText("さらに具体的にできます")).toBeInTheDocument();
     expect(screen.getByText("＋ #グラキリス")).toBeInTheDocument();
   });
 
-  it("属を認識したら子（もっと具体的に）も提示する（#63）", () => {
+  it("属を認識したら子（さらに具体的にできます）も提示する（#63）", () => {
     render(<PlantSuggest caption="パキポ かわいい" onAddTag={() => {}} />);
     expect(screen.getByText("＋ #パキポディウム")).toBeInTheDocument();
-    expect(screen.getByText("もっと具体的に")).toBeInTheDocument();
+    expect(screen.getByText("さらに具体的にできます")).toBeInTheDocument();
     expect(screen.getByText("＋ #グラキリス")).toBeInTheDocument();
   });
 

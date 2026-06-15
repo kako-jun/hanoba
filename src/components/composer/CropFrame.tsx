@@ -59,7 +59,7 @@ export default function CropFrame({ src, imgRef, filter, onCropComplete }: CropF
           style={{ filter: filter ?? "none", maxHeight: "60vh", display: "block" }}
         />
       </ReactCrop>
-      <p className="text-xs text-ha-ink/60">枠をドラッグして位置を決めてください（正方形に切り抜かれます）。</p>
+      <p className="text-xs text-ha-ink/60">枠をドラッグして位置を決めてください。</p>
     </div>
   );
 }
