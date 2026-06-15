@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Icon from "../ui/Icon.tsx";
 import { fetchMyProfile, saveDisplayName } from "../../lib/nostr/client.ts";
 import {
   getDisplayName,
@@ -27,6 +28,7 @@ export default function AccountName({ onChange, promptLabel = "ハンドルネ�
   const [name, setName] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("display");
   const [draft, setDraft] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [nsecDraft, setNsecDraft] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -143,17 +145,33 @@ export default function AccountName({ onChange, promptLabel = "ハンドルネ�
           {promptLabel}
         </label>
         <div className="flex items-center gap-2">
-          <input
-            id="hanoba-name"
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="ハンドルネーム（あとで変えられます）"
-            aria-label="ハンドルネーム"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-            className="flex-1 rounded-full bg-white/10 border border-white/15 px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
-          />
+          <div className="relative flex-1">
+            <input
+              ref={nameInputRef}
+              id="hanoba-name"
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="ハンドルネーム（あとで変えられます）"
+              aria-label="ハンドルネーム"
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              className="w-full rounded-full bg-white/10 border border-white/15 pl-3.5 pr-10 py-2.5 text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+            />
+            {draft !== "" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft("");
+                  nameInputRef.current?.focus();
+                }}
+                aria-label="入力をクリア"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 grid place-items-center text-ha-ink/55 hover:text-ha-ink transition-colors"
+              >
+                <Icon name="close" className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           <button
             type="submit"
             className="shrink-0 rounded-full bg-ha-green text-ha-white px-4 py-2 text-sm font-semibold hover:brightness-110 transition"
