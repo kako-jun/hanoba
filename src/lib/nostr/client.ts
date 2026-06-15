@@ -2,10 +2,12 @@
 // 他モジュールや React 島から relay 呼び出しをばら撒かない（guidelines §3）。
 
 import { SimplePool } from "nostr-tools/pool";
+import { nip19 } from "nostr-tools";
 import {
   classifyDiscoverQuery,
   discoverKeywordFilters,
   discoverTagFilters,
+  selectAuthorsByName,
 } from "../feed/discover.ts";
 import {
   mergePostsById,
@@ -213,6 +215,15 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
 
   const pool = getPool();
 
+  // 著者検索（#68）。特定の人の植物を引く（昔のユーザーの新着待ちでなく能動チェック）。
+  if (mode === "author") {
+    const pubkey = npubToPubkey(term);
+    if (pubkey !== null) return fetchPostsByAuthors([pubkey], limit);
+    // npub として decode できなければキーワード検索に落とす（打ち間違い等）。
+  } else if (mode === "author-name") {
+    return fetchPostsByAuthorName(term, limit);
+  }
+
   // 既知の植物なら別名 OR 検索（#23 Phase 2）。「パキポ」でも Pachypodium/グラキリス 等の
   // 全表記を横断して拾う。#t は配列で OR できるので 1 クエリで別名タグをまとめて取得し、
   // 本文は著名表記で NIP-50 全文検索する。
@@ -256,6 +267,55 @@ export async function fetchDiscover(query: string, limit = 100): Promise<FeedPos
 
   const posts = mergePostsById(events.map(parsePost));
   return posts.filter((post) => post.imageUrl !== null);
+}
+
+/** npub（bech32）を pubkey（hex）に変換する。npub でなければ null。nip19 は純粋。 */
+function npubToPubkey(npub: string): string | null {
+  try {
+    const decoded = nip19.decode(npub);
+    return decoded.type === "npub" ? decoded.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 指定著者（pubkey 群）の投稿（kind:1）を取得する（#68・著者検索の共通処理）。
+ * discover と同じく画像ありのみ・createdAt 降順。t:hanoba には絞らない
+ * （他クライアントの投稿も含めて「その人の植物/写真」を見たいため）。失敗は空配列。
+ */
+async function fetchPostsByAuthors(pubkeys: string[], limit: number): Promise<FeedPost[]> {
+  if (pubkeys.length === 0) return [];
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      { kinds: [1], authors: pubkeys, limit },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    return mergePostsById(events.map(parsePost)).filter((post) => post.imageUrl !== null);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * ユーザー名（kind:0 の name）で著者を引き、その投稿を取得する（#68・`@名前` 検索）。
+ * NIP-50 で kind:0 を全文検索し、name に検索語を含む著者だけに絞ってから（NIP-50 はゆるいので
+ * 誤ヒットを parseProfileName で再確認）その authors の kind:1 を取得する。失敗は空配列。
+ */
+async function fetchPostsByAuthorName(name: string, limit: number): Promise<FeedPost[]> {
+  try {
+    const profileEvents = await getPool().querySync(
+      [...SEARCH_RELAYS],
+      { kinds: [0], search: name, limit: 50 },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    // name が検索語を含む著者だけ集める（pubkey ごと最新 kind:0・上限 20 人・純粋関数）。
+    const pubkeys = selectAuthorsByName(profileEvents, name, 20);
+    return fetchPostsByAuthors(pubkeys, limit);
+  } catch {
+    return [];
+  }
 }
 
 /**

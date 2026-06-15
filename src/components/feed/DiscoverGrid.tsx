@@ -144,8 +144,8 @@ export default function DiscoverGrid() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="#アガベ や 葉焼け で探す"
-            aria-label="植物のタグ または 本文キーワード"
+            placeholder="#アガベ・葉焼け・@ユーザー名 で探す"
+            aria-label="植物のタグ・本文キーワード・@ユーザー名 または npub"
             className="glass w-full rounded-full pl-10 pr-10 py-2.5 text-ha-ink placeholder:text-ha-ink/45 focus:outline-none focus:border-ha-green/60 focus:ring-2 focus:ring-ha-green/30"
           />
           {input !== "" && (
@@ -172,9 +172,10 @@ export default function DiscoverGrid() {
 
       {/* クロスクライアントの断り書き（枠なしの控えめな注記）。 */}
       <p role="note" className="text-sm leading-relaxed text-ha-ink/60 [word-break:auto-phrase]">
-        <span className="font-medium text-ha-ink/80">#タグ</span> でも{" "}
-        <span className="font-medium text-ha-ink/80">本文のことば</span>{" "}
-        でも探せます（Nostr 全体の集約・hanoba 以外のクライアントの投稿も含みます）。
+        <span className="font-medium text-ha-ink/80">#タグ</span> ・{" "}
+        <span className="font-medium text-ha-ink/80">本文のことば</span> ・{" "}
+        <span className="font-medium text-ha-ink/80">@ユーザー名</span>（や{" "}
+        <span className="font-medium text-ha-ink/80">npub…</span>）で探せます。特定の人の植物を定期チェックするのに使えます（Nostr 全体の集約・hanoba 以外のクライアントの投稿も含みます）。
       </p>
 
       {status === "idle" && (
