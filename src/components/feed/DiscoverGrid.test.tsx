@@ -23,7 +23,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
 import DiscoverGrid from "./DiscoverGrid.tsx";
 
 // 検索ボックスの aria-label（タグ/キーワード両対応・#24）。
-const SEARCH_BOX = "植物のタグ または 本文キーワード";
+const SEARCH_BOX = "植物のタグ・本文キーワード・@ユーザー名 または npub";
 
 // クエリ語 → 応答投稿。未登録は空配列（既定検索 #plantstr も既定で空＝idle に戻る）。
 const responses = new Map<string, FeedPost[]>();
