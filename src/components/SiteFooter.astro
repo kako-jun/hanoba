@@ -2,21 +2,27 @@
 // 共通フッタ（#26）。kako-jun の他サイト（llll-ll）のリンク構成を踏襲しつつ、
 // 暗色グラスの世界観（§5）に合わせる。全ページに MainLayout 経由で出る。
 // Hanoba 自身に関係するリンクだけ（kako-jun の個人メディアは載せない）。
-// mypace＝同じ投稿が見える先、GitHub＝この OSS のリポジトリ。
+// mypace＝同じ投稿が見える先（白い★）、GitHub＝この OSS のリポジトリ（Octocat）。
+// アイコンは React の Icon を Astro が静的 HTML に描画する（client 不要・単色 SVG・#105）。
+import Icon from "./ui/Icon.tsx";
+
 const external = [
-  { label: "mypace", href: "https://mypace.llll-ll.com" },
-  { label: "GitHub", href: "https://github.com/kako-jun/hanoba" },
+  { label: "mypace", href: "https://mypace.llll-ll.com", icon: "star" as const },
+  { label: "GitHub", href: "https://github.com/kako-jun/hanoba", icon: "github" as const },
 ];
 ---
 
 <footer class="mt-16">
-  {/* 街＋緑のシルエット（#94）。単色透過 PNG を CSS マスクにし、色と上下グラデは CSS で付ける
-      ＝テーマ色を後から自在に変えられる。超横長・鏡像シームレスで repeat-x、狭い画面は中央が出る。 */}
+  {/* 街＋緑のシルエット（#94/#112）。単色透過 PNG を CSS マスクにし、色と上下グラデは CSS で付ける
+      ＝テーマ色を後から自在に変えられる。素材は左右のフェード端を切り落とした密シルエット。
+      mask-size:cover でどの幅でも左右端まで充填する（鏡像なし＝#94 既決・端は街が画面外へ続く断ち切り）。 */}
   <div class="hanoba-skyline" aria-hidden="true"></div>
   <div class="mx-auto max-w-3xl px-5 py-10 flex flex-col gap-6 text-sm">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <a href="/about" class="text-ha-ink/80 hover:text-ha-green transition-colors">Hanōba とは</a>
+        <a href="/about" class="inline-flex items-center gap-1.5 text-ha-ink/80 hover:text-ha-green transition-colors">
+          <Icon name="info" className="w-4 h-4" />Hanōba とは
+        </a>
         <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors">みんなの植物</a>
         <a href="/me" class="text-ha-ink/80 hover:text-ha-green transition-colors">あなたの植物</a>
         <a href="/compose" class="text-ha-ink/80 hover:text-ha-green transition-colors">投稿する</a>
@@ -28,8 +34,9 @@ const external = [
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:text-ha-green transition-colors"
+              class="inline-flex items-center gap-1.5 hover:text-ha-green transition-colors"
             >
+              <Icon name={s.icon} className="w-4 h-4" />
               {s.label}
             </a>
           ))
@@ -56,10 +63,10 @@ const external = [
 </footer>
 
 <style>
-  /* 街＋緑シルエット帯（#94）。PNG はアルファ・マスクとして使い、見える色は background が決める。
-     素材は別構図4枚を連結した超横長の単色シルエット（鏡像なし＝反射に気づかれない／左右端は
-     水平フェードで暗地に溶けるビネット）。中央寄せ no-repeat で、狭い画面はタイルが画面より広く
-     中央部分だけが見える。 */
+  /* 街＋緑シルエット帯（#94/#112）。PNG はアルファ・マスクとして使い、見える色は background が決める。
+     素材は左右のフェード端を切り落とした密な単色シルエット（鏡像なし＝反射に気づかれない）。
+     mask-size:cover で帯を充填＝どの幅でも左右端まで届く。狭い画面は中央スライス、広い画面は
+     縦に少しトリミング（建物の頭は元から暗地に溶けるので影響小）。 */
   .hanoba-skyline {
     height: clamp(44px, 6vw, 84px);
     /* 上ほど透過が強い縦グラデ（建物の頭が暗地に溶ける）。色は緑のまま alpha だけ落とすので
@@ -77,7 +84,7 @@ const external = [
     mask-repeat: no-repeat;
     -webkit-mask-position: center bottom;
     mask-position: center bottom;
-    -webkit-mask-size: auto 100%;
-    mask-size: auto 100%;
+    -webkit-mask-size: cover;
+    mask-size: cover;
   }
 </style>
