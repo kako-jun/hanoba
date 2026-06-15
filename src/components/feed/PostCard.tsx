@@ -50,14 +50,22 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
 
   return (
     <li
-      className="ha-rise glass rounded-2xl overflow-hidden"
+      className="ha-rise glass rounded-xl overflow-hidden"
       style={{ "--i": Math.min(index, 11) } as CSSProperties}
     >
-      <article className={`flex flex-col sm:flex-row ${expanded ? "" : "sm:h-56 lg:h-72"}`}>
+      {/* カードの非インタラクティブ領域はどこを押しても拡大（#101）。リンク・タグ・続きを読む等の
+          個別操作は stopPropagation で従来動作を維持。写真ボタンはキーボード/SR 用の主導線として残す。 */}
+      <article
+        onClick={onOpen}
+        className={`flex flex-col sm:flex-row cursor-pointer ${expanded ? "" : "sm:h-56 lg:h-72"}`}
+      >
         {post.imageUrl !== null && (
           <button
             type="button"
-            onClick={onOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen();
+            }}
             // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
             aria-label={post.caption === "" ? "写真を拡大" : post.caption}
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
@@ -93,7 +101,10 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
             {(clipped || expanded) && (
               <button
                 type="button"
-                onClick={() => setExpanded((v) => !v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpanded((v) => !v);
+                }}
                 aria-expanded={expanded}
                 className="ml-auto shrink-0 text-sm font-medium text-ha-green hover:text-ha-green-deep transition-colors"
               >
@@ -117,7 +128,10 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
               <li key={tag} className="min-w-0 max-w-full">
                 <button
                   type="button"
-                  onClick={() => onSelectHashtag(tag)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectHashtag(tag);
+                  }}
                   className="block max-w-full truncate rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
                 >
                   #{tag}

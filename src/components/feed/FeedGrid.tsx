@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchHanobaFeed } from "../../lib/nostr/client.ts";
 import { filterByHashtag, type FeedPost } from "../../lib/feed/parse.ts";
 import PostGrid from "./PostGrid.tsx";
+import FeedSkeleton from "./FeedSkeleton.tsx";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -43,7 +44,7 @@ export default function FeedGrid() {
   );
 
   if (status === "loading") {
-    return <p className="py-12 text-center text-ha-ink/60">読み込み中…</p>;
+    return <FeedSkeleton />;
   }
 
   if (status === "error") {

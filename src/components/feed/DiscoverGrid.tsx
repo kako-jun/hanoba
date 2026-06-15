@@ -170,28 +170,8 @@ export default function DiscoverGrid() {
         </button>
       </form>
 
-      {/* クロスクライアントの断り書き（枠なしの控えめな注記）。 */}
-      <p role="note" className="text-sm leading-relaxed text-ha-ink/60 [word-break:auto-phrase]">
-        <span className="font-medium text-ha-ink/80">#タグ</span> ・{" "}
-        <span className="font-medium text-ha-ink/80">本文のことば</span> ・{" "}
-        <span className="font-medium text-ha-ink/80">@ユーザー名</span>（や{" "}
-        <span className="font-medium text-ha-ink/80">npub…</span>）で探せます。特定の人の植物を定期チェックするのに使えます（Nostr 全体の集約・hanoba 以外のクライアントの投稿も含みます）。
-      </p>
-
-      {status === "idle" && (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10">
-          <img
-            src="/og/room-dark.webp"
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30"></div>
-          <p className="relative px-6 py-16 sm:py-20 text-center font-display text-lg font-semibold text-ha-white">
-            #タグ や ことば を入れて「探す」を押すと、みんなの植物が並びます。
-          </p>
-        </div>
-      )}
+      {/* idle（初期/クリア後/既定検索が空）は何も出さない。マウント時に既定検索を自動で流すので
+          「探すを押すと…」の案内は不要・矛盾するため撤去（#102）。検索の説明は placeholder に一本化。 */}
 
       {status === "loading" && (
         <p className="py-12 text-center text-ha-ink/60">「{query}」を探しています…</p>

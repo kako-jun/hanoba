@@ -177,7 +177,7 @@ export default function Composer() {
 
       {status.kind === "done" && (
         <p role="status" className="glass rounded-2xl text-ha-ink px-4 py-3 text-sm">
-          投稿しました。自分の植物へ移動します…
+          投稿しました。あなたの植物へ移動します…
         </p>
       )}
       {status.kind === "error" && (
