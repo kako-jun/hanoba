@@ -9,7 +9,10 @@ const external = [
 ];
 ---
 
-<footer class="mt-16 border-t border-white/10">
+<footer class="mt-16">
+  {/* 街＋緑のシルエット（#94）。単色透過 PNG を CSS マスクにし、色と上下グラデは CSS で付ける
+      ＝テーマ色を後から自在に変えられる。超横長・鏡像シームレスで repeat-x、狭い画面は中央が出る。 */}
+  <div class="hanoba-skyline" aria-hidden="true"></div>
   <div class="mx-auto max-w-3xl px-5 py-10 flex flex-col gap-6 text-sm">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -51,3 +54,30 @@ const external = [
     </div>
   </div>
 </footer>
+
+<style>
+  /* 街＋緑シルエット帯（#94）。PNG はアルファ・マスクとして使い、見える色は background が決める。
+     素材は別構図4枚を連結した超横長の単色シルエット（鏡像なし＝反射に気づかれない／左右端は
+     水平フェードで暗地に溶けるビネット）。中央寄せ no-repeat で、狭い画面はタイルが画面より広く
+     中央部分だけが見える。 */
+  .hanoba-skyline {
+    height: clamp(44px, 6vw, 84px);
+    /* 上ほど透過が強い縦グラデ（建物の頭が暗地に溶ける）。色は緑のまま alpha だけ落とすので
+       transparent との混色で灰色化しない（color-mix で同色の alpha を下げる）。 */
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-ha-green-deep) 0%, transparent) 0%,
+      color-mix(in srgb, var(--color-ha-green-deep) 45%, transparent) 55%,
+      var(--color-ha-green) 100%
+    );
+    opacity: 0.5;
+    -webkit-mask-image: url("/footer-skyline.png");
+    mask-image: url("/footer-skyline.png");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center bottom;
+    mask-position: center bottom;
+    -webkit-mask-size: auto 100%;
+    mask-size: auto 100%;
+  }
+</style>
