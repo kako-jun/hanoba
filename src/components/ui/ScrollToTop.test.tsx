@@ -30,4 +30,12 @@ describe("ScrollToTop（#110）", () => {
     act(() => btn.click());
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
+
+  it("上に戻ると（閾値以下に）再び消える", () => {
+    render(<ScrollToTop />);
+    setScrollY(900);
+    expect(screen.getByRole("button", { name: "一番上へ戻る" })).toBeInTheDocument();
+    setScrollY(0);
+    expect(screen.queryByRole("button", { name: "一番上へ戻る" })).toBeNull();
+  });
 });

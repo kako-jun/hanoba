@@ -18,12 +18,21 @@ export default function ScrollToTop() {
 
   if (!visible) return null;
 
+  function toTop() {
+    // モーション抑制設定を尊重する（DESIGN §5.2）。
+    const reduce =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  }
+
   return (
     <button
       type="button"
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      onClick={toTop}
       aria-label="一番上へ戻る"
-      className="fixed bottom-5 right-5 z-40 grid place-items-center w-11 h-11 rounded-full glass-strong text-ha-green-deep shadow-lg hover:text-ha-green hover:brightness-110 transition-colors"
+      // 操作要素の慣習に合わせ rest=ha-green / hover=ha-green-deep（明）＋focus リング。
+      className="fixed bottom-5 right-5 z-40 grid place-items-center w-11 h-11 rounded-full glass-strong text-ha-green shadow-lg hover:text-ha-green-deep transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
     >
       <Icon name="chevron" className="w-5 h-5 rotate-180" />
     </button>
