@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
 import { detectPlants } from "../../lib/plants/detect.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
@@ -109,7 +110,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
   const captionText = stripHashtags(post.caption);
 
-  return (
+  // モーダルは body 直下にポータルする。さもないと島を包む `.ha-rise`（アニメ後も
+  // 計算 transform が identity matrix で残る＝containing block を作る）の中に `position:fixed`
+  // が閉じ込められ、長いページ（みんなの植物＝多数の投稿）では巨大ラッパの上端に貼り付いて
+  // スクロール位置から外れ、「ポップアップが出ない」ように見える（トップは投稿が少なく露見しない）。
+  const modal = (
     <div
       role="dialog"
       aria-modal="true"
@@ -294,4 +299,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
       </div>
     </div>
   );
+
+  // SSR では document が無い（島はクライアントでのみ開くので通常ここは通らないが防御）。
+  return typeof document === "undefined" ? modal : createPortal(modal, document.body);
 }
