@@ -91,9 +91,8 @@ describe("DiscoverGrid", () => {
     render(<DiscoverGrid />); // #plantstr は未登録＝[]
 
     await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
+    // idle ヒーローに戻る。検索の説明は placeholder に一本化したので重複文は出さない（#102）。
     expect(await screen.findByText(/「探す」を押すと/)).toBeInTheDocument();
-    // 検索モードの手がかり（#102 で簡潔化）。
-    expect(screen.getByText(/で探せます/)).toBeInTheDocument();
   });
 
   it("× ボタンで検索文字を全消しできる（#60）", async () => {

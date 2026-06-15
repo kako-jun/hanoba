@@ -133,14 +133,14 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
         </button>
 
         {post.imageUrl !== null && (
-          // 拡大は元の縦横比のまま（object-contain）。他クライアント＝他人の写真を 1:1 に
-          // トリミングすると著作の改変になるため、モーダルではクロップしない（#61）。
-          // サムネイル（フィードカード）は一覧の見た目を揃えるため正方形のまま。
-          <div className="w-full overflow-hidden rounded-t-3xl bg-ha-green-soft flex items-center justify-center">
+          // 写真エリアは正方形で確保する（#108）。hanoba 自前投稿は 1:1 出力（renderSquareImage）
+          // なのでぴったり収まる。クロップはしない（object-contain）＝他クライアントの非正方形写真は
+          // 正方形枠内にレターボックス表示（1:1 へ切り詰めて改変しない・#61 を両立）。
+          <div className="w-full shrink-0 aspect-square overflow-hidden rounded-t-3xl bg-ha-green-soft">
             <img
               src={post.imageUrl}
               alt={post.caption}
-              className="max-w-full max-h-[70vh] object-contain"
+              className="w-full h-full object-contain"
             />
           </div>
         )}

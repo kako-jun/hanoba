@@ -170,14 +170,8 @@ export default function DiscoverGrid() {
         </button>
       </form>
 
-      {/* 検索モードの短い手がかり（控えめな1行）。詳しい説明は出さない（#102）。 */}
-      <p role="note" className="text-sm text-ha-ink/55 [word-break:auto-phrase]">
-        <span className="font-medium text-ha-ink/75">#タグ</span>・
-        <span className="font-medium text-ha-ink/75">ことば</span>・
-        <span className="font-medium text-ha-ink/75">@名前</span>
-        <span className="text-ha-ink/40">（npub も）</span>で探せます。
-      </p>
-
+      {/* 検索の説明は重複させない（#102）。「探し方」は入力欄の placeholder（例示）に一本化し、
+          ここでは別の説明文を出さない。idle のときだけ空状態のヒーローを出す。 */}
       {status === "idle" && (
         <div className="relative overflow-hidden rounded-2xl border border-white/10">
           <img
@@ -188,7 +182,7 @@ export default function DiscoverGrid() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30"></div>
           <p className="relative px-6 py-16 sm:py-20 text-center font-display text-lg font-semibold text-ha-white">
-            #タグ や ことば を入れて「探す」を押すと、みんなの植物が並びます。
+            「探す」を押すと、みんなの植物が並びます。
           </p>
         </div>
       )}
