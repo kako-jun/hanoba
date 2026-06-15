@@ -3,12 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ネットワークはモック境界で止める（実 relay・実アップロードを呼ばない）。
-const fetchMyProfile = vi.fn();
+// 編集欄は #93 で単発取得をやめ fetchMyProfileResilient を使う。keys.ts（控えの読み書き）は
+// 実装のまま（happy-dom の localStorage）使い、書き戻しを実 localStorage で検証する。
+const fetchMyProfileResilient = vi.fn();
 const saveProfile = vi.fn();
 const uploadImage = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
-  fetchMyProfile: (...args: unknown[]) => fetchMyProfile(...args),
+  fetchMyProfileResilient: (...args: unknown[]) => fetchMyProfileResilient(...args),
   saveProfile: (...args: unknown[]) => saveProfile(...args),
 }));
 vi.mock("../../lib/nostr/upload.ts", () => ({
@@ -19,7 +21,7 @@ import ProfileEditor from "./ProfileEditor.tsx";
 
 describe("ProfileEditor (#35 Piece3)", () => {
   beforeEach(() => {
-    fetchMyProfile.mockReset().mockResolvedValue(null);
+    fetchMyProfileResilient.mockReset().mockResolvedValue(null);
     saveProfile.mockReset().mockResolvedValue({ id: "evt1" });
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/x.jpg" });
     localStorage.clear();
@@ -81,5 +83,76 @@ describe("ProfileEditor (#35 Piece3)", () => {
     localStorage.removeItem("hanoba:name");
     render(<ProfileEditor />);
     expect(screen.getByText("ハンドルネーム 未設定")).toBeInTheDocument();
+  });
+
+  // #93: nsec 取り込み直後は控えが空（websites:[]）になりうる。relay から websites を
+  // 表示に回復するだけでなく、ローカル控えにも書き戻して clobber 経路を塞ぐ。
+  it("控えが空でも relay の websites を表示に出し、控えにも書き戻す（#93）", async () => {
+    // import 直後を模す: 控えは空、relay には websites がある。
+    localStorage.setItem(
+      "hanoba:profileExtra",
+      JSON.stringify({ picture: null, about: null, websites: [] }),
+    );
+    fetchMyProfileResilient.mockResolvedValue({
+      name: "テスト栽培家",
+      picture: null,
+      about: null,
+      websites: ["https://midori-en.example.com", "https://x.com/midori_test"],
+    });
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    // 表示: relay の 2 サイトが編集欄に出る。
+    await waitFor(() =>
+      expect(screen.getByLabelText("サイト 1 の URL")).toHaveValue("https://midori-en.example.com"),
+    );
+    expect(screen.getByLabelText("サイト 2 の URL")).toHaveValue("https://x.com/midori_test");
+    // 書き戻し: 控えにも websites が入る（名前変更時の saveDisplayName が空で潰さない）。
+    await waitFor(() => {
+      const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
+      expect(extra.websites).toEqual([
+        "https://midori-en.example.com",
+        "https://x.com/midori_test",
+      ]);
+    });
+  });
+
+  it("控えに websites があれば relay 値で上書きしない（local 優先・#93）", async () => {
+    localStorage.setItem(
+      "hanoba:profileExtra",
+      JSON.stringify({ picture: null, about: null, websites: ["https://local-only.example.com"] }),
+    );
+    fetchMyProfileResilient.mockResolvedValue({
+      name: "テスト栽培家",
+      picture: null,
+      about: null,
+      websites: ["https://relay-different.example.com"],
+    });
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("サイト 1 の URL")).toHaveValue("https://local-only.example.com"),
+    );
+    // relay は別 URL を返すが local を保持。控えも local のまま（上書きしない）。
+    expect(screen.queryByDisplayValue("https://relay-different.example.com")).not.toBeInTheDocument();
+    const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
+    expect(extra.websites).toEqual(["https://local-only.example.com"]);
+  });
+
+  it("relay が null（取得失敗）なら控えを書き換えない（空で潰さない・#93）", async () => {
+    localStorage.setItem(
+      "hanoba:profileExtra",
+      JSON.stringify({ picture: null, about: null, websites: ["https://keep.example.com"] }),
+    );
+    fetchMyProfileResilient.mockResolvedValue(null);
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("サイト 1 の URL")).toHaveValue("https://keep.example.com"),
+    );
+    const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
+    expect(extra.websites).toEqual(["https://keep.example.com"]);
   });
 });
