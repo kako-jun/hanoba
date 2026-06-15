@@ -12,7 +12,7 @@ import {
 interface Props {
   /** 名前が変わるたび（マウント時含む）に呼ぶ。投稿ゲート等が現在名を知るため。 */
   onChange?: (name: string | null) => void;
-  /** 未設定時の促し文（compose は「はじめまして…」、/me は標準）。 */
+  /** 未設定時の促し文（「はじめまして。」で迎える・#92 の「ハンドルネーム」表記に統一）。 */
   promptLabel?: string;
   /** 外側のガラスカードを描かない（/me でプロフィールカードに内包するとき・#104）。 */
   bare?: boolean;
@@ -26,7 +26,7 @@ type Mode = "display" | "edit" | "import";
  * - 未設定なら最初から入力（「ユーザー名を入れたら投稿できる」）。
  * - **すでにアカウントがある人**は nsec を持ち込める（mypace ユーザーがアカウントを増やさない）。
  */
-export default function AccountName({ onChange, promptLabel = "ハンドルネームは？", bare = false }: Props) {
+export default function AccountName({ onChange, promptLabel = "はじめまして。ハンドルネームは？", bare = false }: Props) {
   // bare のときはガラスカードを描かず、親（/me のプロフィールカード）に内包される（#104）。
   const wrap = bare ? "" : "glass rounded-2xl p-5 ";
   const [name, setName] = useState<string | null>(null);
