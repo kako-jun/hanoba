@@ -127,7 +127,7 @@ describe("Composer", () => {
       await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
       expect(uploadImage).toHaveBeenCalled();
       // 成功メッセージ＋ /me へ遷移。
-      expect(await screen.findByText(/自分の植物へ移動します/)).toBeInTheDocument();
+      expect(await screen.findByText(/あなたの植物へ移動します/)).toBeInTheDocument();
       expect(stub.href).toBe("/me");
     } finally {
       if (orig) Object.defineProperty(window, "location", orig);
