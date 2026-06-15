@@ -41,6 +41,16 @@ describe("ProfileEditor (#35 Piece3)", () => {
     expect(screen.getByLabelText("自己紹介")).toBeInTheDocument();
   });
 
+  it("bare では glass カードを描かず、見出しは名前でなく『プロフィール』（#104）", () => {
+    const { container } = render(<ProfileEditor bare />);
+    // 名前は上の AccountName が主表示するので、bare の見出しは重複させない。
+    expect(screen.getByText("プロフィール")).toBeInTheDocument();
+    expect(screen.queryByText("テスト栽培家")).not.toBeInTheDocument();
+    // 外側のガラスカードは親（統合カード）に委ねる＝自分では描かない。
+    expect(container.querySelector(".glass")).toBeNull();
+    expect(container.querySelector("section")?.className).not.toContain("glass");
+  });
+
   it("サイトを追加して URL を入れるとサービス名が出る", async () => {
     const user = userEvent.setup();
     render(<ProfileEditor />);
