@@ -195,7 +195,7 @@ export default function AccountName({ onChange, promptLabel = "お名前は？" 
           }}
           className="text-ha-green hover:text-ha-green-deep transition-colors"
         >
-          {name === null ? "名前を設定" : "名前を変える"}
+          {name === null ? "名前を設定" : "名前を変更"}
         </button>
         <button
           type="button"

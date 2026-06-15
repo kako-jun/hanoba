@@ -77,7 +77,7 @@ describe("Composer", () => {
     expect(screen.getByText(/を入れると投稿できます/)).toBeInTheDocument();
 
     // 一言を入力 → enabled、不足理由は消える。
-    await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
+    await user.type(screen.getByLabelText("ひとこと（必須）"), "開花した");
     expect(submit).toBeEnabled();
     expect(screen.queryByText(/を入れると投稿できます/)).not.toBeInTheDocument();
   });
@@ -121,7 +121,7 @@ describe("Composer", () => {
       expect(img).not.toBeNull();
       fireEvent.load(img!);
       // 一言を入れて投稿。
-      await user.type(screen.getByLabelText("ひとこと・必須"), "開花した");
+      await user.type(screen.getByLabelText("ひとこと（必須）"), "開花した");
       await user.click(await screen.findByRole("button", { name: /投稿する/ }));
 
       await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
