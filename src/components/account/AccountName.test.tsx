@@ -36,6 +36,18 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
     expect(screen.getByRole("button", { name: "ハンドルネームを変更" })).toBeInTheDocument();
   });
 
+  it("bare では glass カードを描かず、操作ボタンは名前の下段に並ぶ（#104）", () => {
+    localStorage.setItem("hanoba:name", "アガベ太郎");
+    const { container } = render(<AccountName bare />);
+    // 外側のガラスカードは親（統合カード）に委ねる。
+    expect(container.querySelector(".glass")).toBeNull();
+    // 名前と操作（変更/アカウント変更）が縦積みの flex-col に入る＝名前の下段にボタン。
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain("flex-col");
+    expect(screen.getByRole("button", { name: "ハンドルネームを変更" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "アカウントを変更" })).toBeInTheDocument();
+  });
+
   it("「ハンドルネームを変更」押下で既存名を初期値に edit へ遷移する", async () => {
     localStorage.setItem("hanoba:name", "アガベ太郎");
     const user = userEvent.setup();

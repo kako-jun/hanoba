@@ -80,11 +80,15 @@ export default function MyGrid() {
 
   return (
     <section className="flex flex-col gap-5">
-      {/* 表示名（compose と同一の共通コンポーネント）。 */}
-      <AccountName />
-
-      {/* プロフィール編集（アイコン・自己紹介・複数サイト・#35 Piece3）。著者ヘッダに反映される。 */}
-      <ProfileEditor />
+      {/* アカウント＋プロフィールを1枚のカードに統合（#104）。名前（変更/アカウント変更）が
+          プロフィール内に収まり、操作ボタンは名前の下段に並ぶ。両者を bare で内包する。
+          AccountName は compose（投稿ゲート）と同一の共通コンポーネント。 */}
+      <div className="glass rounded-2xl p-5 flex flex-col gap-4">
+        <AccountName bare />
+        <div className="border-t border-white/10" />
+        {/* プロフィール編集（アイコン・自己紹介・複数サイト・#35 Piece3）。著者ヘッダに反映される。 */}
+        <ProfileEditor bare />
+      </div>
 
       {notice !== null && (
         <p
