@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
@@ -84,6 +84,89 @@ describe("PostDetail いいね数表示", () => {
     );
     expect(container.querySelector("p.whitespace-pre-wrap")).toBeNull();
     expect(screen.getByRole("button", { name: "#アガベ" })).toBeInTheDocument();
+  });
+
+  it("X でシェア（短文）= 1クリックで X intent を開く・採番なし（#37）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    render(
+      <PostDetail
+        // permalink（njump nevent）は 64hex の id を要求するため有効な id を使う。
+        post={makePost({ id: "e".repeat(64), caption: "開花した #アガベ", hashtags: ["アガベ"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const shareBtn = screen.getByRole("button", { name: "X でシェア" });
+    // 短文はメニューを開かず直接 intent（aria-haspopup なし）。
+    expect(shareBtn).not.toHaveAttribute("aria-haspopup");
+    fireEvent.click(shareBtn);
+    expect(open).toHaveBeenCalledTimes(1);
+    const url = open.mock.calls[0]![0] as string;
+    expect(url.startsWith("https://twitter.com/intent/tweet?text=")).toBe(true);
+    const text = decodeURIComponent(url.replace("https://twitter.com/intent/tweet?text=", ""));
+    // 生 caption（インライン #タグ込み）を共有し、採番は付かない。njump パーマリンクが末尾に付く。
+    expect(text).toContain("開花した #アガベ");
+    expect(text).not.toMatch(/\(\d+\/\d+\)/);
+    expect(text).toContain("https://njump.me/");
+    open.mockRestore();
+  });
+
+  it("X でシェア（長文）= ポップオーバーで全文／各パートを開ける（#37）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    render(
+      <PostDetail
+        post={makePost({ id: "f".repeat(64), caption: "あ".repeat(400) })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const shareBtn = screen.getByRole("button", { name: "X でシェア" });
+    // 長文はポップオーバー（aria-haspopup="true"）。矢印キー移動を実装していないので
+    // role="menu" は名乗らない＝ボタン列のまま（aria-label 付きコンテナ）。
+    expect(shareBtn).toHaveAttribute("aria-haspopup", "true");
+    fireEvent.click(shareBtn);
+    // ポップオーバーは aria-label 付きの単なるボタン列。「全文」と 各パート（1/n…）が並ぶ。
+    const popover = screen.getByLabelText("X でシェア（分割）");
+    expect(popover).toBeInTheDocument();
+    // menu/menuitem ロールは付けていない。
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("menuitem")).toBeNull();
+    expect(screen.getByRole("button", { name: "全文" })).toBeInTheDocument();
+    const part1 = screen.getByRole("button", { name: /^1\/\d+$/ });
+    fireEvent.click(part1);
+    expect(open).toHaveBeenCalledTimes(1);
+    // パートを開いたらポップオーバーは閉じる。
+    expect(screen.queryByLabelText("X でシェア（分割）")).toBeNull();
+    open.mockRestore();
+  });
+
+  it("Esc は まずシェアのポップオーバーを閉じ、もう一度でモーダルを閉じる（#37）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const onClose = vi.fn();
+    render(
+      <PostDetail
+        // 分割が起きる長文＝ポップオーバーを出せる caption。
+        post={makePost({ id: "f".repeat(64), caption: "あ".repeat(400) })}
+        onClose={onClose}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // 非同期のいいね数取得を先に確定させてから操作する（act 警告回避）。
+    await screen.findByLabelText("いいね 0");
+    // ポップオーバーを開く。
+    fireEvent.click(screen.getByRole("button", { name: "X でシェア" }));
+    expect(screen.getByLabelText("X でシェア（分割）")).toBeInTheDocument();
+
+    // 1回目の Esc: ポップオーバーだけ閉じる（モーダルは閉じない）。
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByLabelText("X でシェア（分割）")).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+
+    // 2回目の Esc: モーダルを閉じる。
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("本文から植物を認識し 学名＋著名表記を並べ discover 検索へリンクする（#23）", async () => {
