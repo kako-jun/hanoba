@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
+import { ClearableInput } from "../ui/ClearableInput.tsx";
 import { fetchDiscover, fetchHanobaFeed } from "../../lib/nostr/client.ts";
 import { mergePostsById, type FeedPost } from "../../lib/feed/parse.ts";
 import PostGrid from "./PostGrid.tsx";
@@ -68,8 +69,6 @@ export default function DiscoverGrid() {
   // 直近の検索リクエストのトークン。連続検索で古い応答が新しい結果を上書きしないよう、
   // await 後にトークンが最新でなければ反映を捨てる（stale-response レース対策）。
   const latestRef = useRef(0);
-  // クリア（×）後にフォーカスを戻すための入力参照。
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // raw はタグ（`#アガベ`）でもキーワード（`葉焼け`）でもよい。モード分岐は fetchDiscover 側（#24）。
   // fromDefault=true は初回の自動既定検索（入力欄・URL を汚さない・0件は idle に戻す）。
@@ -139,28 +138,15 @@ export default function DiscoverGrid() {
           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ha-green-deep/70">
             <Icon name="search" className="w-4 h-4" />
           </span>
-          <input
-            ref={inputRef}
+          <ClearableInput
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onValueChange={setInput}
             placeholder="#アガベ・葉焼け・@ユーザー名 で探す"
             aria-label="植物のタグ・本文キーワード・@ユーザー名 または npub"
-            className="glass w-full rounded-full pl-10 pr-10 py-2.5 text-ha-ink placeholder:text-ha-ink/45 focus:outline-none focus:border-ha-green/60 focus:ring-2 focus:ring-ha-green/30"
+            clearLabel="検索文字を消す"
+            className="glass rounded-full pl-10 py-2.5 text-ha-ink placeholder:text-ha-ink/45 focus:outline-none focus:border-ha-green/60 focus:ring-2 focus:ring-ha-green/30"
           />
-          {input !== "" && (
-            <button
-              type="button"
-              onClick={() => {
-                setInput("");
-                inputRef.current?.focus();
-              }}
-              aria-label="検索文字を消す"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full text-ha-ink/60 hover:text-ha-ink hover:bg-white/10 transition-colors"
-            >
-              <Icon name="close" className="w-4 h-4" />
-            </button>
-          )}
         </div>
         <button
           type="submit"

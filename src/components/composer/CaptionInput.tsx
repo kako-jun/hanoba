@@ -5,6 +5,7 @@
 // 候補は ↑↓ で移動、Enter で確定、Esc で閉じる。
 
 import { useRef, useState } from "react";
+import Icon from "../ui/Icon.tsx";
 import { detectHashtagQuery, filterHashtagCandidates } from "../../lib/image/hashtag-complete.ts";
 
 interface CaptionInputProps {
@@ -111,18 +112,36 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
       <label htmlFor="hanoba-caption" className="text-sm font-medium text-ha-green-deep">
         ひとこと（必須）
       </label>
-      <textarea
-        ref={textareaRef}
-        id="hanoba-caption"
-        value={value}
-        onChange={handleChange}
-        onSelect={handleSelect}
-        onKeyDown={handleKeyDown}
-        onBlur={() => setPopup(null)}
-        rows={3}
-        placeholder="株のこと、ひとこと。#アガベ のようにタグも付けられます。"
-        className="glass rounded-2xl px-3.5 py-2.5 text-ha-ink placeholder:text-ha-ink/45 resize-y focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
-      />
+      {/* キャレット/ハッシュタグ補完のため ClearableTextarea は使わず、× だけ共通の見た目で足す。
+          ハンドラ（onChange/onSelect/onKeyDown）は触らず、× は値を空にして補完ポップアップも閉じる。 */}
+      <div className="relative">
+        <textarea
+          ref={textareaRef}
+          id="hanoba-caption"
+          value={value}
+          onChange={handleChange}
+          onSelect={handleSelect}
+          onKeyDown={handleKeyDown}
+          onBlur={() => setPopup(null)}
+          rows={3}
+          placeholder="株のこと、ひとこと。#アガベ のようにタグも付けられます。"
+          className="w-full glass rounded-2xl px-3.5 py-2.5 pr-10 text-ha-ink placeholder:text-ha-ink/45 resize-y focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+        />
+        {value !== "" && (
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              setPopup(null);
+              textareaRef.current?.focus();
+            }}
+            aria-label="入力をクリア"
+            className="absolute right-2.5 top-2.5 grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
+          >
+            <Icon name="close" className="w-4 h-4" />
+          </button>
+        )}
+      </div>
       {popup !== null && (
         <ul
           role="listbox"
