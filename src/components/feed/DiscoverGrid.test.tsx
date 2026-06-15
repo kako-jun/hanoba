@@ -92,7 +92,8 @@ describe("DiscoverGrid", () => {
 
     await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
     expect(await screen.findByText(/「探す」を押すと/)).toBeInTheDocument();
-    expect(screen.getByText(/hanoba 以外のクライアントの投稿も含みます/)).toBeInTheDocument();
+    // 検索モードの手がかり（#102 で簡潔化）。
+    expect(screen.getByText(/で探せます/)).toBeInTheDocument();
   });
 
   it("× ボタンで検索文字を全消しできる（#60）", async () => {
