@@ -116,7 +116,7 @@ export default function Composer() {
 
   return (
     <div className="flex flex-col gap-6">
-      <AccountName onChange={setName} promptLabel="はじめまして。お名前は？" />
+      <AccountName onChange={setName} promptLabel="はじめまして。ハンドルネームは？" />
 
       {!hasImage ? (
         <div className="py-6">

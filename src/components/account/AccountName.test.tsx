@@ -110,15 +110,15 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
     expect(saveDisplayName).not.toHaveBeenCalled();
   });
 
-  it("promptLabel 未指定なら「ハンドルネームは？」（新デフォルト回帰）", () => {
+  it("promptLabel 未指定なら「はじめまして。ハンドルネームは？」（はじめまして付き既定）", () => {
     render(<AccountName />);
-    expect(screen.getByText("ハンドルネームは？")).toBeInTheDocument();
+    expect(screen.getByText("はじめまして。ハンドルネームは？")).toBeInTheDocument();
   });
 
   it("promptLabel を渡すとそのラベルが描画される（上書きが効く）", () => {
     render(<AccountName promptLabel="テスト用ラベル" />);
     expect(screen.getByText("テスト用ラベル")).toBeInTheDocument();
-    expect(screen.queryByText("ハンドルネームは？")).toBeNull();
+    expect(screen.queryByText("はじめまして。ハンドルネームは？")).toBeNull();
   });
 
   it("edit のヒント文に本名想起回避の文言が出る", () => {
