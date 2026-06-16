@@ -80,6 +80,7 @@ export function renderSquareImage(
   filterCss: string | null,
   vignette = 0,
   sharpen = 0,
+  edgeBlur = 0,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -92,7 +93,7 @@ export function renderSquareImage(
 
   const { sx, sy, size } = computeSquareCropRect(crop, scaleX, scaleY, naturalW, naturalH);
 
-  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, type, quality);
+  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, edgeBlur, type, quality);
 }
 
 /**
@@ -105,6 +106,7 @@ export function renderSquareImageFromRect(
   filterCss: string | null,
   vignette = 0,
   sharpen = 0,
+  edgeBlur = 0,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -121,6 +123,9 @@ export function renderSquareImageFromRect(
   ctx.filter = filterCss ?? "none";
   ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, rect.size, rect.size);
   applySharpen(ctx, rect.size, sharpen);
+  // 影暮（減光）の前に霞幻（周辺ぼかし）を合成する。中央はシャープのまま外周だけ柔らかくし、
+  // その上から vignette が外周を暗く締める順にする。
+  applyEdgeBlur(ctx, rect.size, edgeBlur);
   drawVignette(ctx, rect.size, vignette);
 
   return new Promise<Blob>((resolve, reject) => {
@@ -181,5 +186,47 @@ function drawVignette(ctx: CanvasRenderingContext2D, size: number, amount: numbe
   ctx.filter = "none";
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
+  ctx.restore();
+}
+
+/**
+ * 周辺ぼかし「霞幻」（#155）。中央はシャープのまま、外周だけを canvas でぼかす。
+ *
+ * 1. 別 canvas に現 canvas を `filter: blur(r)` で描画してぼかしレイヤーを作る
+ *    （blur は端で透明にフェードするため、少し拡大して描き外周フリンジを可視域の外へ逃がす）。
+ * 2. `destination-in` ＋ ラジアルグラデ（中心 透明 → 外周 不透明）で**外周リングだけ**を残す。
+ * 3. 元 canvas に `source-over` で重ねる → 中央は元のシャープ、外周はぼかしへ滑らかに移行する。
+ */
+function applyEdgeBlur(ctx: CanvasRenderingContext2D, size: number, amount: number): void {
+  if (amount <= 0 || size < 4) return;
+  const strength = Math.min(Math.max(amount, 0), 1);
+  const radius = Math.max(1, Math.round(size * 0.02 * strength));
+
+  const layer = document.createElement("canvas");
+  layer.width = size;
+  layer.height = size;
+  const lctx = layer.getContext("2d");
+  if (lctx === null) return;
+
+  // 1. ぼかしレイヤー。blur 半径ぶん拡大して描き、端のフェードを可視域外へ追い出す。
+  const pad = radius * 2;
+  lctx.filter = `blur(${radius}px)`;
+  lctx.drawImage(ctx.canvas, -pad, -pad, size + pad * 2, size + pad * 2);
+
+  // 2. 外周リングだけ残す（中心は透明にして元のシャープを透けさせる）。
+  lctx.filter = "none";
+  lctx.globalCompositeOperation = "destination-in";
+  const mask = lctx.createRadialGradient(size / 2, size / 2, size * 0.3, size / 2, size / 2, size * 0.72);
+  mask.addColorStop(0, "rgba(0, 0, 0, 0)");
+  mask.addColorStop(0.6, "rgba(0, 0, 0, 0.5)");
+  mask.addColorStop(1, "rgba(0, 0, 0, 1)");
+  lctx.fillStyle = mask;
+  lctx.fillRect(0, 0, size, size);
+
+  // 3. 元 canvas に外周ぼかしを重ねる。
+  ctx.save();
+  ctx.filter = "none";
+  ctx.globalCompositeOperation = "source-over";
+  ctx.drawImage(layer, 0, 0);
   ctx.restore();
 }
