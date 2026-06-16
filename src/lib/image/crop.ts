@@ -100,6 +100,7 @@ export function renderSquareImage(
   sharpen = 0,
   edgeBlur = 0,
   tone: ToneCurve = null,
+  toneAmount = 0.32,
   type = "image/jpeg",
   quality = 0.85,
 ): Promise<Blob> {
@@ -112,7 +113,7 @@ export function renderSquareImage(
 
   const { sx, sy, size } = computeSquareCropRect(crop, scaleX, scaleY, naturalW, naturalH);
 
-  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, edgeBlur, tone, type, quality);
+  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, edgeBlur, tone, toneAmount, type, quality);
 }
 
 /**
@@ -132,6 +133,7 @@ export function renderSquareImageFromRect(
   sharpen = 0,
   edgeBlur = 0,
   tone: ToneCurve = null,
+  toneAmount = 0.32,
   type = "image/jpeg",
   quality = 0.85,
 ): Promise<Blob> {
@@ -152,7 +154,7 @@ export function renderSquareImageFromRect(
   ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, out, out);
   // 以降のピクセル処理は縮小後の小 canvas（out）に掛ける（速い・相対強度なので見えは維持）。
   // トーンカーブ（翠露/土香）は CSS filter と同じ tonal 段として、シャープ/ぼかしより前に焼く。
-  applyToneCurve(ctx, out, tone);
+  applyToneCurve(ctx, out, tone, toneAmount);
   applySharpen(ctx, out, sharpen);
   // 影暮（減光）の前に霞幻（周辺ぼかし）を合成する。中央はシャープのまま外周だけ柔らかくし、
   // その上から vignette が外周を暗く締める順にする。
@@ -297,9 +299,9 @@ export function buildToneLut(tone: ToneCurve, amount = 0.32): Uint8ClampedArray 
  * （彩度は美華だけが扱う方針なので、ここでは色相を動かさず明暗のカーブだけ）。
  * jsdom では getImageData が動かないため、純関数 buildToneLut のみユニットテストする。
  */
-function applyToneCurve(ctx: CanvasRenderingContext2D, size: number, tone: ToneCurve): void {
+function applyToneCurve(ctx: CanvasRenderingContext2D, size: number, tone: ToneCurve, amount = 0.32): void {
   if (tone === null || size < 1) return;
-  const lut = buildToneLut(tone);
+  const lut = buildToneLut(tone, amount);
   const imageData = ctx.getImageData(0, 0, size, size);
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
