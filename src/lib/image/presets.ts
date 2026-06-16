@@ -20,7 +20,7 @@ export const FILTER_PRESETS: readonly FilterPreset[] = [
   { name: "土香", filter: "contrast(0.86)", color: "#9b7047" },
   { name: "美華", filter: "saturate(1.28)", color: "#d96d8b" },
   { name: "影暮", filter: "brightness(0.98) contrast(1.08)", color: "#2f4028", vignette: 0.82 },
-  { name: "線明", filter: "none", color: "#5e807c", sharpen: 1 },
+  { name: "線明", filter: "none", color: "#5e807c", sharpen: 0.82 },
 ] as const;
 
 export function composeFilterCss(presets: readonly FilterPreset[]): string | null {

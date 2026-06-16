@@ -28,9 +28,13 @@ interface PopupState {
 
 export default function CaptionInput({ value, onChange, pool }: CaptionInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [rows, setRows] = useState(3);
+  const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
+  const [height, setHeight] = useState(124);
   const [popup, setPopup] = useState<PopupState | null>(null);
-  const expanded = rows > 3;
+
+  function resizeCaption(nextHeight: number) {
+    setHeight(Math.min(Math.max(nextHeight, 104), 360));
+  }
 
   function buildItems(query: string): string[] {
     const candidates = filterHashtagCandidates(pool, query);
@@ -125,9 +129,10 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
           onSelect={handleSelect}
           onKeyDown={handleKeyDown}
           onBlur={() => setPopup(null)}
-          rows={rows}
+          rows={3}
           placeholder="株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。"
-          className="w-full glass resize-none rounded-2xl px-3.5 py-2.5 pb-12 pr-10 text-ha-ink placeholder:text-ha-ink/45 focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+          className="w-full glass resize-none rounded-2xl px-3.5 py-2.5 pb-9 pr-10 text-ha-ink placeholder:text-ha-ink/45 focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+          style={{ height }}
         />
         {value !== "" && (
           <button
@@ -143,17 +148,40 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
             <Icon name="close" className="w-4 h-4" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => {
-            setRows(expanded ? 3 : 7);
-            requestAnimationFrame(() => textareaRef.current?.focus());
+        <div
+          role="separator"
+          tabIndex={0}
+          aria-label="入力欄の高さを調整"
+          aria-orientation="horizontal"
+          aria-valuemin={104}
+          aria-valuemax={360}
+          aria-valuenow={height}
+          onPointerDown={(e) => {
+            dragRef.current = { startY: e.clientY, startHeight: height };
+            e.currentTarget.setPointerCapture(e.pointerId);
+            e.preventDefault();
           }}
-          aria-label={expanded ? "入力欄を縮める" : "入力欄を広げる"}
-          className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-xl border border-ha-green/30 bg-ha-white/20 text-ha-green-deep shadow-sm transition-colors hover:border-ha-green/60 hover:bg-ha-white/35"
+          onPointerMove={(e) => {
+            if (dragRef.current === null) return;
+            resizeCaption(dragRef.current.startHeight + e.clientY - dragRef.current.startY);
+          }}
+          onPointerUp={(e) => {
+            dragRef.current = null;
+            e.currentTarget.releasePointerCapture(e.pointerId);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              resizeCaption(height + 16);
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              resizeCaption(height - 16);
+            }
+          }}
+          className="absolute inset-x-4 bottom-2 flex h-7 cursor-ns-resize touch-none items-center justify-center rounded-full text-ha-green-deep/75 transition-colors hover:bg-ha-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green/40"
         >
-          <Icon name="chevron" className={`h-5 w-5 transition-transform ${expanded ? "rotate-180" : ""}`} />
-        </button>
+          <span className="h-1.5 w-14 rounded-full bg-ha-green/45" aria-hidden="true" />
+        </div>
       </div>
       {popup !== null && (
         <ul

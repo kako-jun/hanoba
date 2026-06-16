@@ -284,17 +284,18 @@ describe("Composer", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("upload failed");
   });
 
-  it("ひとこと入力欄は大きなボタンで広げられる", async () => {
+  it("ひとこと入力欄は大きなハンドルで高さを変えられる", async () => {
     const user = userEvent.setup();
     render(<Composer />);
     const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
     await user.upload(input, makeImageFile());
     const caption = await screen.findByLabelText("ひとこと");
+    const handle = screen.getByRole("separator", { name: "入力欄の高さを調整" });
 
-    expect(caption).toHaveAttribute("rows", "3");
-    await user.click(screen.getByRole("button", { name: "入力欄を広げる" }));
-    expect(caption).toHaveAttribute("rows", "7");
-    await user.click(screen.getByRole("button", { name: "入力欄を縮める" }));
-    expect(caption).toHaveAttribute("rows", "3");
+    expect(caption).toHaveStyle({ height: "124px" });
+    fireEvent.keyDown(handle, { key: "ArrowDown" });
+    expect(caption).toHaveStyle({ height: "140px" });
+    fireEvent.keyDown(handle, { key: "ArrowUp" });
+    expect(caption).toHaveStyle({ height: "124px" });
   });
 });
