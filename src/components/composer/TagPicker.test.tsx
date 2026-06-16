@@ -121,6 +121,77 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["我が家のレア株"]]);
   });
 
+  it("INLINE_LIMIT を超える行に「その他」ボタンが出る（世話・記録とも・#169）", () => {
+    renderPicker();
+    expect(screen.getByRole("button", { name: "世話のその他のタグ" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "記録のその他のタグ" })).toBeTruthy();
+  });
+
+  it("インラインに出ていない定番（断水）は常時表示されず、「その他」を開くと見える（#169）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    // 断水 は世話の8番目以降＝インライン（先頭7件）には出ない
+    expect(screen.queryByRole("button", { name: "#断水" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
+    const dialog = screen.getByRole("dialog", { name: "世話のタグ一覧" });
+    expect(within(dialog).getByRole("button", { name: "#断水" })).toBeTruthy();
+  });
+
+  it("ポップアップ内のチップを選ぶと onPick が呼ばれる（#169）", async () => {
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    await user.click(screen.getByRole("button", { name: "記録のその他のタグ" }));
+    const dialog = screen.getByRole("dialog", { name: "記録のタグ一覧" });
+    await user.click(within(dialog).getByRole("button", { name: "#休眠" }));
+    expect(onPick.mock.calls).toEqual([["休眠"]]);
+  });
+
+  it("「その他」ボタンの aria-expanded は開閉に追従する（#169）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    const btn = screen.getByRole("button", { name: "世話のその他のタグ" });
+    expect(btn).toHaveAttribute("aria-expanded", "false");
+    await user.click(btn);
+    expect(btn).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("ポップアップは × で閉じる（#169）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
+    expect(screen.getByRole("dialog", { name: "世話のタグ一覧" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "タグ一覧を閉じる" }));
+    expect(screen.queryByRole("dialog", { name: "世話のタグ一覧" })).toBeNull();
+  });
+
+  it("ポップアップは Esc で閉じる（#169）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: "記録のその他のタグ" }));
+    expect(screen.getByRole("dialog", { name: "記録のタグ一覧" })).toBeTruthy();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "記録のタグ一覧" })).toBeNull();
+  });
+
+  it("ポップアップは囲み外クリックで閉じる（#169）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
+    expect(screen.getByRole("dialog", { name: "世話のタグ一覧" })).toBeTruthy();
+    await user.click(screen.getByText("タグを選ぶ"));
+    expect(screen.queryByRole("dialog", { name: "世話のタグ一覧" })).toBeNull();
+  });
+
+  it("追加リクエストリンクが github issues/new・labels=tagging で存在する（#169）", () => {
+    renderPicker();
+    const link = screen.getByRole("link", { name: /追加をリクエスト/ });
+    const href = link.getAttribute("href")!;
+    expect(href).toContain("https://github.com/kako-jun/hanoba/issues/new");
+    expect(href).toContain("labels=tagging");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it("「最近使った」は localStorage（過去の投稿）から読み、タップでは増やさない", async () => {
     const user = userEvent.setup();
     window.localStorage.setItem("hanoba:recent-tags", JSON.stringify(["チタノタ"]));

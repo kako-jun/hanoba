@@ -24,6 +24,19 @@ interface Props {
   onRemove: (tag: string) => void;
 }
 
+/**
+ * 世話/記録のクイック行で、常時インライン表示するタグの上限（#169）。
+ * これを超えた残りは行末「その他」ポップアップで全件見せる（幅で候補を消さない＝共通化）。
+ */
+const INLINE_LIMIT = 7;
+
+/**
+ * タグ追加リクエストの宛先。当面は hanoba リポの新規 Issue 作成 URL に飛ばす。
+ * 将来 #163 市役所ハブ / #164 市長運用が整ったらここを差し替える（#169）。
+ */
+const REQUEST_TAG_URL =
+  "https://github.com/kako-jun/hanoba/issues/new?labels=tagging&title=%E3%82%BF%E3%82%B0%E8%BF%BD%E5%8A%A0%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%EF%BC%9A&body=%E8%BF%BD%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%BB%E3%81%97%E3%81%84%E6%A4%8D%E7%89%A9%EF%BC%9A%0A%E5%B1%9E%2F%E5%93%81%E7%A8%AE%E5%90%8D%EF%BC%9A%0A%E5%8F%82%E8%80%83URL%EF%BC%9A";
+
 /** 人気タグの出現回数を 3 段階の文字サイズに割り当てる（タグクラウドの強弱）。 */
 function cloudSize(count: number, max: number): string {
   if (max <= 1) return "text-sm";
@@ -88,8 +101,12 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
 export default function TagPicker({ popular, caption, onPick, onRemove }: Props) {
   const max = popular.length > 0 ? Math.max(...popular.map((t) => t.count)) : 1;
   const panelRef = useRef<HTMLDivElement>(null);
+  // 「その他」ポップアップ（世話/記録の行ごと）。ドリルダウンの open とは独立に管理する（#169）。
+  const overflowRef = useRef<HTMLDivElement>(null);
 
   const [query, setQuery] = useState("");
+  // どの行（label）の「その他」ポップアップが開いているか。同時に 1 つだけ（#169）。
+  const [overflowOpen, setOverflowOpen] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
   // 品種カタログは初期バンドルに載せず、検索/ドリルダウン/属タップ時だけ動的 import する。
   const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
@@ -114,6 +131,25 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
+
+  // 「その他」ポップアップは 囲み外クリック / Esc で閉じる（×でも閉じる・#169）。
+  useEffect(() => {
+    if (overflowOpen === null) return;
+    const onDown = (e: MouseEvent) => {
+      if (overflowRef.current !== null && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(null);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOverflowOpen(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [overflowOpen]);
 
   const has = (tag: string) => captionHasTag(caption, tag);
 
@@ -245,18 +281,46 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
             </ChipGroup>
           )}
 
-          {TAG_CATEGORIES.map((c) => (
-            <ChipGroup key={c.label} label={c.label}>
-              {c.tags.map((tag) => (
-                <Chip
-                  key={`${c.label}-${tag}`}
-                  label={tag}
-                  active={has(tag)}
-                  onClick={() => toggle(tag, () => pick(tag))}
-                />
-              ))}
-            </ChipGroup>
-          ))}
+          {TAG_CATEGORIES.map((c) => {
+            // 頻度上位（先頭 N）だけ常時インライン。残りは「その他」ポップアップで全件見せる（#169）。
+            const inline = c.tags.slice(0, INLINE_LIMIT);
+            const hasOverflow = c.tags.length > INLINE_LIMIT;
+            return (
+              <ChipGroup key={c.label} label={c.label}>
+                {inline.map((tag) => (
+                  <Chip
+                    key={`${c.label}-${tag}`}
+                    label={tag}
+                    active={has(tag)}
+                    onClick={() => toggle(tag, () => pick(tag))}
+                  />
+                ))}
+                {hasOverflow && (
+                  <button
+                    type="button"
+                    onClick={() => setOverflowOpen((o) => (o === c.label ? null : c.label))}
+                    aria-haspopup="dialog"
+                    aria-expanded={overflowOpen === c.label}
+                    aria-label={`${c.label}のその他のタグ`}
+                    className="glass flex items-center gap-1 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                  >
+                    <Icon name="plus" className="h-3.5 w-3.5" />
+                    その他
+                  </button>
+                )}
+              </ChipGroup>
+            );
+          })}
+
+          {/* この植物が無い → 追加をリクエスト（控えめなテキストリンク・#169）。 */}
+          <a
+            href={REQUEST_TAG_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="self-start text-xs text-ha-ink/45 underline decoration-dotted underline-offset-2 hover:text-ha-green-deep transition-colors"
+          >
+            この植物が無い → 追加をリクエスト
+          </a>
         </>
       ) : (
         // ── 展開状態: 検索（パネル内・全件横断）＋ カテゴリ→属→品種 ドリルダウン ──────
@@ -412,6 +476,45 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
           )}
         </div>
       )}
+
+      {/* 「その他」ポップアップ（#169）: その行の全タグを幅でクロップせず一覧する。
+          ドリルダウンパネルの体裁を流用（glass・見出し・×閉じる・囲み外/Esc で閉じる）。
+          インラインに既出のタグも含めて全件出す＝定番を取りこぼさない（重複表示は許容）。 */}
+      {overflowOpen !== null &&
+        (() => {
+          const c = TAG_CATEGORIES.find((x) => x.label === overflowOpen);
+          if (c === undefined) return null;
+          return (
+            <div
+              ref={overflowRef}
+              role="dialog"
+              aria-label={`${c.label}のタグ一覧`}
+              className="glass flex flex-col gap-2 rounded-2xl p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-ha-ink/55">{c.label}（全{c.tags.length}件）</span>
+                <button
+                  type="button"
+                  onClick={() => setOverflowOpen(null)}
+                  aria-label="タグ一覧を閉じる"
+                  className="grid h-7 w-7 place-items-center rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
+                >
+                  <Icon name="close" className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {c.tags.map((tag) => (
+                  <Chip
+                    key={`overflow-${c.label}-${tag}`}
+                    label={tag}
+                    active={has(tag)}
+                    onClick={() => toggle(tag, () => pick(tag))}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }
