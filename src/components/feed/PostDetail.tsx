@@ -42,6 +42,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   // X シェアのメニュー開閉（複数パートのときだけ「全文／1/n…」を出す・#37）。
   const [shareOpen, setShareOpen] = useState(false);
@@ -65,6 +66,16 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
         onClose();
         return;
       }
+      if (post.imageUrls.length > 1 && e.key === "ArrowLeft") {
+        setPhotoIndex((i) => (i === 0 ? post.imageUrls.length - 1 : i - 1));
+        e.preventDefault();
+        return;
+      }
+      if (post.imageUrls.length > 1 && e.key === "ArrowRight") {
+        setPhotoIndex((i) => (i + 1) % post.imageUrls.length);
+        e.preventDefault();
+        return;
+      }
       if (e.key === "Tab" && panelRef.current !== null) {
         const focusables = getFocusableElements(panelRef.current);
         const active = document.activeElement as HTMLElement | null;
@@ -77,7 +88,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, shareOpen]);
+  }, [onClose, post.imageUrls.length, shareOpen]);
 
   // フォーカス管理（a11y）: 開いたら閉じるボタンへフォーカスを移し、
   // 閉じたら開く前にフォーカスがあった要素（クリックしたセル）へ戻す。
@@ -137,17 +148,55 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
           <Icon name="close" className="w-4 h-4" />
         </button>
 
-        {post.imageUrl !== null && (
+        {post.imageUrls.length > 0 && (
           // 写真は元の比率のまま見せる（#108）。hanoba 自前投稿は 1:1 出力（renderSquareImage）
           // なので正方形に収まり、他クライアントの非正方形写真はその比率のまま（クロップしない・#61）。
           // flex 列（max-h-full・overflow-y-auto）の中で flex-shrink に潰されて横長化していたので
           // shrink-0 で写真の自然な高さを確保する（これが「正方形が確保できない」の原因だった）。
-          <div className="w-full shrink-0 overflow-hidden rounded-t-xl bg-ha-green-soft flex items-center justify-center">
-            <img
-              src={post.imageUrl}
-              alt={post.caption}
-              className="max-w-full max-h-[70vh] object-contain"
-            />
+          <div className="w-full shrink-0 overflow-hidden rounded-t-xl bg-ha-green-soft">
+            <div className="relative flex items-center justify-center">
+              <img
+                src={post.imageUrls[photoIndex] ?? post.imageUrls[0]}
+                alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
+                className="max-w-full max-h-[70vh] object-contain"
+              />
+              {post.imageUrls.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoIndex((i) => (i === 0 ? post.imageUrls.length - 1 : i - 1))}
+                    aria-label="前の写真"
+                    className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white backdrop-blur-md hover:bg-ha-green transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+                  >
+                    <Icon name="chevron" className="h-5 w-5 rotate-90" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoIndex((i) => (i + 1) % post.imageUrls.length)}
+                    aria-label="次の写真"
+                    className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white backdrop-blur-md hover:bg-ha-green transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+                  >
+                    <Icon name="chevron" className="h-5 w-5 -rotate-90" />
+                  </button>
+                </>
+              )}
+            </div>
+            {post.imageUrls.length > 1 && (
+              <div className="flex justify-center gap-1.5 py-2">
+                {post.imageUrls.map((imageUrl, i) => (
+                  <button
+                    type="button"
+                    key={`${imageUrl}-dot-${i}`}
+                    onClick={() => setPhotoIndex(i)}
+                    aria-label={`${i + 1}枚目を表示`}
+                    aria-current={photoIndex === i ? "true" : undefined}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                      photoIndex === i ? "bg-ha-green" : "bg-ha-green-deep/35 hover:bg-ha-green/70"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -168,7 +217,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   <li key={p.id}>
                     <a
                       href={`/discover?q=${encodeURIComponent(`#${p.name}`)}`}
-                      className="glass inline-flex items-baseline gap-1.5 rounded-full px-3 py-1 text-sm hover:border-ha-green/50 transition-colors"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-[2px] border border-ha-green/35 bg-ha-white px-3 py-1.5 text-sm shadow-sm shadow-ha-green/10 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/55 hover:border-ha-green hover:bg-ha-yellow/25 hover:text-ha-green-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                       title={`${p.sci}（${p.name}）で探す`}
                     >
                       <SciName sci={p.sci} className="font-display text-ha-green-deep" />

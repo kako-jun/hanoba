@@ -13,35 +13,51 @@ import Icon from "../ui/Icon.tsx";
 
 interface ImagePickerProps {
   /** 画像ファイルが選択されたとき（image/ 以外は呼ばれない）。 */
-  onSelect: (file: File) => void;
+  onSelect: (files: File[], rejectedCount?: number) => void;
+  /** 追加できる残り枚数。 */
+  remaining?: number;
+  /** サムネイル列の中に置く省スペース表示。 */
+  compact?: boolean;
 }
 
-export default function ImagePicker({ onSelect }: ImagePickerProps) {
+export default function ImagePicker({ onSelect, remaining = 4, compact = false }: ImagePickerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    if (files.some((file) => !file.type.startsWith("image/"))) {
       setError("画像ファイルを選んでください（動画は投稿できません）。");
       e.target.value = "";
       return;
     }
+    if (remaining <= 0) {
+      setError("写真は4枚までです。");
+      e.target.value = "";
+      return;
+    }
+    const accepted = files.slice(0, remaining);
     setError(null);
-    onSelect(file);
+    onSelect(accepted, files.length - accepted.length);
+    if (files.length > accepted.length) {
+      setError("写真は4枚までです。追加できる分だけ追加しました。");
+    }
     // 同じファイルを選び直せるよう値をリセット（change が再発火するように）。
     e.target.value = "";
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="flex items-center gap-3">
+    <div className={compact ? "flex flex-col items-center gap-2" : "flex flex-col items-center gap-3"}>
+      <div className={compact ? "flex flex-col items-stretch gap-1.5" : "flex items-center gap-3"}>
         <button
           type="button"
           onClick={() => cameraInputRef.current?.click()}
-          className="flex items-center gap-2 rounded-2xl bg-ha-green text-ha-white px-6 py-3 font-semibold hover:brightness-110 transition-colors"
+          disabled={remaining <= 0}
+          className={`flex items-center justify-center gap-2 bg-ha-green text-ha-white font-semibold hover:brightness-110 transition-colors disabled:opacity-40 ${
+            compact ? "rounded-full px-3 py-1.5 text-xs" : "rounded-2xl px-6 py-3"
+          }`}
         >
           <Icon name="camera" className="w-5 h-5" />
           撮影
@@ -49,7 +65,10 @@ export default function ImagePicker({ onSelect }: ImagePickerProps) {
         <button
           type="button"
           onClick={() => galleryInputRef.current?.click()}
-          className="flex items-center gap-2 glass rounded-2xl text-ha-ink px-6 py-3 font-semibold hover:border-ha-green/50 transition-colors"
+          disabled={remaining <= 0}
+          className={`flex items-center justify-center gap-2 glass text-ha-ink font-semibold hover:border-ha-green/50 transition-colors disabled:opacity-40 ${
+            compact ? "rounded-full px-3 py-1.5 text-xs" : "rounded-2xl px-6 py-3"
+          }`}
         >
           <Icon name="image" className="w-5 h-5" />
           アルバム
@@ -68,11 +87,16 @@ export default function ImagePicker({ onSelect }: ImagePickerProps) {
         ref={galleryInputRef}
         type="file"
         accept="image/*"
+        multiple
         onChange={handleChange}
         className="sr-only"
         aria-label="アルバムから選ぶ"
       />
-      <p className="text-xs text-ha-ink/60">植物の写真を撮るか、アルバムから選んでください。</p>
+      {!compact && (
+        <p className="text-xs text-ha-ink/60">
+          植物の写真を撮るか、アルバムから選んでください。最大4枚まで。
+        </p>
+      )}
       {error !== null && <p className="text-sm text-ha-pink font-medium">{error}</p>}
     </div>
   );

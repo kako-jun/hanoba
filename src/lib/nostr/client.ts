@@ -515,13 +515,23 @@ export async function deletePost(
   await publishEvent(signed);
 
   // ② 画像の実体削除（任意・失敗しても投稿は隠れている）。
-  let imageDeleted = false;
-  if (post.imageUrl !== null) {
-    try {
-      imageDeleted = await deleteImage(post.imageUrl);
-    } catch {
-      imageDeleted = false;
-    }
-  }
+  const imageDeleted = await deletePostImages(post.imageUrls);
   return { noteDeleted: true, imageDeleted };
+}
+
+export async function deletePostImages(
+  imageUrls: string[],
+  deleteFn: (url: string) => Promise<boolean> = deleteImage,
+): Promise<boolean> {
+  if (imageUrls.length === 0) return true;
+  const results = await Promise.all(
+    imageUrls.map(async (url) => {
+      try {
+        return await deleteFn(url);
+      } catch {
+        return false;
+      }
+    }),
+  );
+  return results.every(Boolean);
 }

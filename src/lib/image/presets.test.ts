@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { FILTER_PRESETS } from "./presets.ts";
 
 describe("FILTER_PRESETS", () => {
-  it("7 件ある", () => {
-    expect(FILTER_PRESETS).toHaveLength(7);
+  it("畑で迷わない数に絞っている", () => {
+    expect(FILTER_PRESETS.length).toBeGreaterThanOrEqual(3);
+    expect(FILTER_PRESETS.length).toBeLessThanOrEqual(5);
   });
 
   it("各プリセットは name / filter / color を持つ", () => {

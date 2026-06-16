@@ -29,6 +29,7 @@ const post: FeedPost = {
   pubkey: "a".repeat(64),
   createdAt: 1000,
   caption: "うちのアガベ",
+  imageUrls: ["https://example.com/a.jpg"],
   imageUrl: "https://example.com/a.jpg",
   hashtags: [],
 };

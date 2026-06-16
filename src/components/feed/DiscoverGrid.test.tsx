@@ -37,6 +37,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     pubkey: overrides.pubkey ?? "0".repeat(64),
     createdAt: overrides.createdAt ?? 1000,
     caption: overrides.caption ?? "",
+    imageUrls: overrides.imageUrls ?? [overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`],
     imageUrl: overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`,
     hashtags: overrides.hashtags ?? [],
   };

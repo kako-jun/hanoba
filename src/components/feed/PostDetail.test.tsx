@@ -17,6 +17,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     pubkey: overrides.pubkey ?? "0".repeat(64),
     createdAt: overrides.createdAt ?? Math.floor(Date.now() / 1000),
     caption: overrides.caption ?? "開花した",
+    imageUrls: overrides.imageUrls ?? [overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`],
     imageUrl: overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`,
     hashtags: overrides.hashtags ?? [],
   };
@@ -55,6 +56,32 @@ describe("PostDetail いいね数表示", () => {
       const like = screen.getByLabelText("いいね 取得中");
       expect(like).toHaveTextContent("-");
     });
+  });
+
+  it("複数画像は前後ボタンで切り替えられる", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({
+          id: "multi1",
+          caption: "成長記録",
+          imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "成長記録 1枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/one.jpg",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "次の写真" }));
+    expect(screen.getByRole("img", { name: "成長記録 2枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/two.jpg",
+    );
+    expect(screen.getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
   });
 
   it("本文 <p> から #タグ を除き、タグはチップにだけ出す（二重表示解消・#43）", async () => {

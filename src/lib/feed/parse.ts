@@ -11,7 +11,8 @@ import type { NostrEvent } from "../nostr/types.ts";
  *
  * - id / pubkey / createdAt: イベント由来。
  * - caption: content から画像 URL を除いた「一言」。
- * - imageUrl: content の最初の画像 URL（無ければ null）。
+ * - imageUrls: content の画像 URL（最大数は投稿側のUIで制限。読む側は全て拾う）。
+ * - imageUrl: content の最初の画像 URL（無ければ null）。既存表示コードとの互換用。
  * - hashtags: 本文の #ハッシュタグ（クリックでクライアント側絞り込みに使う）。
  */
 export interface FeedPost {
@@ -19,6 +20,7 @@ export interface FeedPost {
   pubkey: string;
   createdAt: number;
   caption: string;
+  imageUrls: string[];
   imageUrl: string | null;
   hashtags: string[];
 }
@@ -32,7 +34,7 @@ const IMAGE_URL_RE = /(https?:\/\/\S+\.(?:jpe?g|png|gif|webp|avif))(?:\?\S*)?/gi
 /**
  * Nostr イベント（kind:1）を表示用 FeedPost に変換する純粋関数。
  *
- * - content から画像 URL を抽出。複数あれば最初を imageUrl に、無ければ null。
+ * - content から画像 URL を抽出。複数あれば imageUrls に全て、imageUrl に先頭を入れる。
  * - caption: content から画像 URL（マッチ部分）を除去 → trim。連続改行は 1 つに畳む。
  * - hashtags: extractHashtags(content)（本文 # を t タグ化せず読み取りで拾う）。
  */
@@ -41,7 +43,8 @@ export function parsePost(event: NostrEvent): FeedPost {
 
   // 画像 URL の全マッチを取る（matchAll はステートフルな lastIndex を持たない安全な呼び方）。
   const matches = [...content.matchAll(IMAGE_URL_RE)];
-  const imageUrl = matches.length > 0 ? matches[0]![0] : null;
+  const imageUrls = matches.map((match) => match[0]);
+  const imageUrl = imageUrls.length > 0 ? imageUrls[0]! : null;
 
   // content から画像 URL を取り除く（replace は別途新しい RegExp で。グローバルフラグの lastIndex 汚染を避ける）。
   const withoutImages = content.replace(new RegExp(IMAGE_URL_RE.source, "gi"), "");
@@ -54,6 +57,7 @@ export function parsePost(event: NostrEvent): FeedPost {
     pubkey: event.pubkey,
     createdAt: event.created_at,
     caption,
+    imageUrls,
     imageUrl,
     hashtags: extractHashtags(content),
   };

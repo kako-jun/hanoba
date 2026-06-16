@@ -90,9 +90,23 @@ export function renderSquareImage(
 
   const { sx, sy, size } = computeSquareCropRect(crop, scaleX, scaleY, naturalW, naturalH);
 
+  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, type, quality);
+}
+
+/**
+ * 自然座標系の正方形矩形から canvas に焼き込む。
+ * 複数画像投稿では、表示中でない画像も Object URL から再ロードして同じ rect で処理する。
+ */
+export function renderSquareImageFromRect(
+  image: HTMLImageElement,
+  rect: SquareCropRect,
+  filterCss: string | null,
+  type = "image/jpeg",
+  quality = 0.95,
+): Promise<Blob> {
   const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = rect.size;
+  canvas.height = rect.size;
 
   const ctx = canvas.getContext("2d");
   if (ctx === null) {
@@ -101,7 +115,7 @@ export function renderSquareImage(
 
   // canvas は呼び出しごとに新規生成するため、filter のリセット（"none" へ戻す）は不要。
   ctx.filter = filterCss ?? "none";
-  ctx.drawImage(image, sx, sy, size, size, 0, 0, size, size);
+  ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, rect.size, rect.size);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

@@ -88,6 +88,7 @@ describe("parsePost", () => {
   it("画像 URL を抽出して imageUrl にする", () => {
     const post = parsePost(makeEvent({ content: "開花した\nhttps://image.nostr.build/abc.jpg" }));
     expect(post.imageUrl).toBe("https://image.nostr.build/abc.jpg");
+    expect(post.imageUrls).toEqual(["https://image.nostr.build/abc.jpg"]);
   });
 
   it("caption は画像 URL を除去して trim する（連続改行は畳む）", () => {
@@ -103,6 +104,7 @@ describe("parsePost", () => {
   it("画像 URL が無ければ imageUrl は null、caption は本文そのまま", () => {
     const post = parsePost(makeEvent({ content: "ただの一言 #植物" }));
     expect(post.imageUrl).toBeNull();
+    expect(post.imageUrls).toEqual([]);
     expect(post.caption).toBe("ただの一言 #植物");
     expect(post.hashtags).toEqual(["植物"]);
   });
@@ -124,6 +126,7 @@ describe("parsePost", () => {
       }),
     );
     expect(post.imageUrl).toBe("https://image.nostr.build/a.jpg");
+    expect(post.imageUrls).toEqual(["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.png"]);
     // caption からは両方の URL が消える。
     expect(post.caption).toBe("二枚");
   });
@@ -156,7 +159,7 @@ describe("parsePost", () => {
 
 describe("mergePostsById", () => {
   function p(id: string, createdAt: number): FeedPost {
-    return { id, pubkey: "pk", createdAt, caption: "", imageUrl: null, hashtags: [] };
+    return { id, pubkey: "pk", createdAt, caption: "", imageUrls: [], imageUrl: null, hashtags: [] };
   }
 
   it("id で重複除去する（最初の出現を採用）", () => {
@@ -177,7 +180,7 @@ describe("mergePostsById", () => {
 
 describe("filterByHashtag", () => {
   function p(id: string, hashtags: string[]): FeedPost {
-    return { id, pubkey: "pk", createdAt: 1, caption: "", imageUrl: null, hashtags };
+    return { id, pubkey: "pk", createdAt: 1, caption: "", imageUrls: [], imageUrl: null, hashtags };
   }
   const posts = [p("a", ["アガベ", "パキポ"]), p("b", ["植物"]), p("c", ["Agave"])];
 

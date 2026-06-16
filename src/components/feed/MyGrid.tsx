@@ -66,7 +66,7 @@ export default function MyGrid() {
       if (!aliveRef.current) return;
       setPosts((cur) => cur.filter((p) => p.id !== post.id));
       // 写真と一蓮托生のはずが、画像削除が確認できなかった場合は正直に伝える。
-      if (post.imageUrl !== null && !imageDeleted) {
+      if (post.imageUrls.length > 0 && !imageDeleted) {
         setNotice("投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。");
       }
     } catch {
@@ -157,6 +157,11 @@ export default function MyGrid() {
                       loading="lazy"
                       className="w-full h-full object-cover"
                     />
+                    {post.imageUrls.length > 1 && (
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold text-ha-white backdrop-blur-sm">
+                        {post.imageUrls.length}枚
+                      </span>
+                    )}
                   </button>
                 )}
 

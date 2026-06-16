@@ -4,12 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ネットワーク・canvas 焼き込みはモック境界で止める（実ネットワーク・実 canvas を呼ばない）。
 const uploadImage = vi.fn();
+const deleteImage = vi.fn();
 const signAndPublishNote = vi.fn();
 const fetchKnownHashtags = vi.fn();
-const renderSquareImage = vi.fn();
+const renderSquareImageFromRect = vi.fn();
 
 vi.mock("../../lib/nostr/upload.ts", () => ({
   uploadImage: (...args: unknown[]) => uploadImage(...args),
+  deleteImage: (...args: unknown[]) => deleteImage(...args),
 }));
 const saveDisplayName = vi.fn();
 const fetchPopularHashtags = vi.fn();
@@ -22,13 +24,18 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchProfileName: (...args: unknown[]) => fetchProfileName(...args),
 }));
 vi.mock("../../lib/image/crop.ts", () => ({
-  renderSquareImage: (...args: unknown[]) => renderSquareImage(...args),
+  computeSquareCropRect: () => ({ sx: 0, sy: 0, size: 100 }),
+  renderSquareImageFromRect: (...args: unknown[]) => renderSquareImageFromRect(...args),
 }));
 
 import Composer from "./Composer.tsx";
 
 function makeImageFile(): File {
   return new File([new Uint8Array([1, 2, 3])], "plant.jpg", { type: "image/jpeg" });
+}
+
+function makeNamedImageFile(name: string): File {
+  return new File([new Uint8Array([1, 2, 3])], name, { type: "image/jpeg" });
 }
 
 function makeVideoFile(): File {
@@ -38,18 +45,32 @@ function makeVideoFile(): File {
 describe("Composer", () => {
   beforeEach(() => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
+    deleteImage.mockReset().mockResolvedValue(true);
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
     fetchPopularHashtags.mockReset().mockResolvedValue([]);
     fetchProfileName.mockReset().mockResolvedValue(null);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
-    renderSquareImage.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    renderSquareImageFromRect.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = 100;
+        naturalHeight = 100;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
     // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
     localStorage.setItem("hanoba:name", "テスト栽培家");
   });
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("画像未選択ではピッカーを表示し、送信ボタンは無い", async () => {
@@ -67,8 +88,9 @@ describe("Composer", () => {
     render(<Composer />);
 
     // 画像を選ぶ（ImagePicker の input は sr-only だが upload で対象にできる）。
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
     await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
 
     // 画像ありでも一言が空 → disabled（両条件のうち一言条件）。
     const submit = await screen.findByRole("button", { name: /投稿する/ });
@@ -94,7 +116,7 @@ describe("Composer", () => {
     // （実ブラウザでも accept は soft filter なので、最終防御は type.startsWith）。
     const user = userEvent.setup({ applyAccept: false });
     render(<Composer />);
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
     await user.upload(input, makeVideoFile());
 
     expect(screen.getByText(/動画は投稿できません/)).toBeInTheDocument();
@@ -115,11 +137,9 @@ describe("Composer", () => {
     try {
       render(<Composer />);
       // 画像選択 → クロップ画像の load で初期正方形クロップが親に確定する。
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
       await user.upload(input, makeImageFile());
-      const img = document.querySelector("img");
-      expect(img).not.toBeNull();
-      fireEvent.load(img!);
+      fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
       // 一言を入れて投稿。
       await user.type(screen.getByLabelText("ひとこと（必須）"), "開花した");
       await user.click(await screen.findByRole("button", { name: /投稿する/ }));
@@ -132,5 +152,119 @@ describe("Composer", () => {
     } finally {
       if (orig) Object.defineProperty(window, "location", orig);
     }
+  });
+
+  it("複数写真を選び、各写真を焼き込んで複数 URL で投稿する", async () => {
+    const user = userEvent.setup();
+    uploadImage
+      .mockReset()
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/one.jpg" })
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/two.jpg" });
+    render(<Composer />);
+
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const secondThumb = screen.getByAltText("2枚目").closest("button");
+    expect(secondThumb).not.toBeNull();
+    await user.click(secondThumb!);
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    await user.type(screen.getByLabelText("ひとこと（必須）"), "成長記録");
+    await user.click(await screen.findByRole("button", { name: /投稿する/ }));
+
+    await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
+    expect(renderSquareImageFromRect).toHaveBeenCalledTimes(2);
+    expect(uploadImage).toHaveBeenCalledTimes(2);
+    expect(signAndPublishNote).toHaveBeenCalledWith({
+      caption: "成長記録",
+      imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+    });
+  });
+
+  it("5枚選んでも4枚までに切り詰める", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [
+      makeNamedImageFile("1.jpg"),
+      makeNamedImageFile("2.jpg"),
+      makeNamedImageFile("3.jpg"),
+      makeNamedImageFile("4.jpg"),
+      makeNamedImageFile("5.jpg"),
+    ]);
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "4/4枚")).toBeInTheDocument());
+    expect(screen.getByText("写真は4枚までです。追加できる分だけ追加しました。")).toBeInTheDocument();
+    expect(screen.getAllByAltText(/枚目$/)).toHaveLength(4);
+  });
+
+  it("複数写真から1枚外すと残数が戻る", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "この写真を外す" }));
+    expect(screen.getByText((_, el) => el?.textContent === "1/4枚")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "写真を選び直す" })).toBeInTheDocument();
+  });
+
+  it("4枚すべてを焼き込んで投稿する", async () => {
+    const user = userEvent.setup();
+    uploadImage
+      .mockReset()
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/1.jpg" })
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/2.jpg" })
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/3.jpg" })
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/4.jpg" });
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [
+      makeNamedImageFile("1.jpg"),
+      makeNamedImageFile("2.jpg"),
+      makeNamedImageFile("3.jpg"),
+      makeNamedImageFile("4.jpg"),
+    ]);
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "4/4枚")).toBeInTheDocument());
+    await user.type(screen.getByLabelText("ひとこと（必須）"), "四枚記録");
+    await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: /投稿する/ }));
+
+    await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
+    expect(renderSquareImageFromRect).toHaveBeenCalledTimes(4);
+    expect(uploadImage).toHaveBeenCalledTimes(4);
+    expect(signAndPublishNote).toHaveBeenCalledWith({
+      caption: "四枚記録",
+      imageUrls: [
+        "https://image.nostr.build/1.jpg",
+        "https://image.nostr.build/2.jpg",
+        "https://image.nostr.build/3.jpg",
+        "https://image.nostr.build/4.jpg",
+      ],
+    });
+  });
+
+  it("複数写真の投稿途中で失敗したらアップロード済み画像を削除する", async () => {
+    const user = userEvent.setup();
+    uploadImage
+      .mockReset()
+      .mockResolvedValueOnce({ url: "https://image.nostr.build/one.jpg" })
+      .mockRejectedValueOnce(new Error("upload failed"));
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+    await user.type(screen.getByLabelText("ひとこと（必須）"), "失敗時 cleanup");
+    await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: /投稿する/ }));
+
+    await waitFor(() => expect(deleteImage).toHaveBeenCalledWith("https://image.nostr.build/one.jpg"));
+    expect(signAndPublishNote).not.toHaveBeenCalled();
+    expect(await screen.findByRole("alert")).toHaveTextContent("upload failed");
   });
 });

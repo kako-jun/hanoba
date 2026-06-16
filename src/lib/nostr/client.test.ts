@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchMyProfileResilient } from "./client.ts";
+import { deletePostImages, fetchMyProfileResilient } from "./client.ts";
 import type { Profile } from "../feed/parse.ts";
 
 // #93: nsec 取り込み・編集欄初期化での websites 取りこぼし（単発取得）を bounded retry で塞ぐ。
@@ -71,5 +71,35 @@ describe("fetchMyProfileResilient (#93 bounded retry)", () => {
     // websites を 1 件でも掴めたら早期確定する仕様（取りこぼしの主因を解消したら止める）。
     expect(got).toEqual(one);
     expect(fetchOnce).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("deletePostImages", () => {
+  it("画像 URL が無ければ成功扱い", async () => {
+    const deleteFn = vi.fn<(url: string) => Promise<boolean>>();
+    await expect(deletePostImages([], deleteFn)).resolves.toBe(true);
+    expect(deleteFn).not.toHaveBeenCalled();
+  });
+
+  it("複数画像をすべて削除できれば true", async () => {
+    const deleteFn = vi.fn<(url: string) => Promise<boolean>>().mockResolvedValue(true);
+    await expect(deletePostImages(["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.jpg"], deleteFn)).resolves.toBe(true);
+    expect(deleteFn).toHaveBeenCalledTimes(2);
+  });
+
+  it("部分失敗があれば false", async () => {
+    const deleteFn = vi
+      .fn<(url: string) => Promise<boolean>>()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    await expect(deletePostImages(["https://image.nostr.build/a.jpg", "https://other.example/b.jpg"], deleteFn)).resolves.toBe(false);
+  });
+
+  it("削除中の例外は false に畳む", async () => {
+    const deleteFn = vi
+      .fn<(url: string) => Promise<boolean>>()
+      .mockResolvedValueOnce(true)
+      .mockRejectedValueOnce(new Error("network"));
+    await expect(deletePostImages(["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.jpg"], deleteFn)).resolves.toBe(false);
   });
 });

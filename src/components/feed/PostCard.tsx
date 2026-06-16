@@ -31,6 +31,7 @@ interface Props {
  */
 export default function PostCard({ post, index, now, onOpen, onSelectHashtag, profile }: Props) {
   const captionText = stripHashtags(post.caption);
+  const photoCount = post.imageUrls.length;
   // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
   const authorName = profile?.name ?? shortNpub(post.pubkey);
   const [expanded, setExpanded] = useState(false);
@@ -69,7 +70,7 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
             // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
             aria-label={post.caption === "" ? "写真を拡大" : post.caption}
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
-            className="group block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            className="group relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
             <img
               src={post.imageUrl}
@@ -77,6 +78,11 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
               loading="lazy"
               className="w-full h-full object-cover transition duration-300 group-hover:opacity-90"
             />
+            {photoCount > 1 && (
+              <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-1 text-xs font-semibold text-ha-white backdrop-blur-sm">
+                {photoCount}枚
+              </span>
+            )}
           </button>
         )}
 

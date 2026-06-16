@@ -25,6 +25,7 @@ function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
     pubkey: "pk1",
     createdAt: 1000,
     caption: "開花した #アガベ",
+    imageUrls: ["https://example.com/a.jpg"],
     imageUrl: "https://example.com/a.jpg",
     hashtags: ["アガベ"],
     ...overrides,
