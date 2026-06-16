@@ -7,17 +7,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
-import { insertTag } from "../../lib/image/hashtag-complete.ts";
+import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneCurve, composeVignette, type FilterPreset } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
 import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
+import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
+import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
 import CropFrame from "./CropFrame.tsx";
 import FilterChips from "./FilterChips.tsx";
 import ImagePicker from "./ImagePicker.tsx";
-import PlantSuggest from "./PlantSuggest.tsx";
 import TagPicker from "./TagPicker.tsx";
 
 type Status = { kind: "idle" } | { kind: "posting" } | { kind: "done" } | { kind: "error"; message: string };
@@ -185,6 +186,8 @@ export default function Composer() {
         uploadedUrls.push(url);
       }
       await signAndPublishNote({ caption, imageUrls: uploadedUrls });
+      // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
+      recordRecentTags(extractHashtags(caption));
       resetAll();
       setStatus({ kind: "done" });
       // 投稿直後は「自分の植物」へ遷移し、増えた1枚を一番上に見せる（時系列降順）。
@@ -207,7 +210,7 @@ export default function Composer() {
       ) : (
         <>
           <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-baseline gap-2">
               <h2 className="text-sm font-medium text-ha-green-deep">写真</h2>
               <span className="text-xs text-ha-ink/55">{images.length}/{MAX_IMAGES}枚</span>
             </div>
@@ -264,16 +267,18 @@ export default function Composer() {
 
           <CaptionInput value={caption} onChange={setCaption} pool={pool} />
 
-          {/* 書いた俗称/略を正規形タグで揃える（#23 Phase2）。 */}
-          <PlantSuggest caption={caption} onAddTag={(tag) => setCaption((c) => insertTag(c, tag))} />
-
           {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。 */}
-          <TagPicker popular={popular} onPick={(tag) => setCaption((c) => insertTag(c, tag))} />
+          <TagPicker
+            popular={popular}
+            caption={caption}
+            onPick={(tag) => setCaption((c) => insertTag(c, tag))}
+            onRemove={(tag) => setCaption((c) => removeTag(c, tag))}
+          />
 
           {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
           {!posting && missing.length > 0 && (
             <p className="text-right text-xs text-ha-ink/55">
-              あと <span className="text-ha-pink font-medium">{missing.join("と")}</span>{" "}
+              あと <span className="text-ha-pink font-medium">{missing.join("、")}</span>{" "}
               を入れると投稿できます
             </p>
           )}

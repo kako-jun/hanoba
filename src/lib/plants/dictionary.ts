@@ -20,24 +20,17 @@ export interface PlantEntry {
   name: string;
   /** 俗称・カナ・英・略など、検出に使う追加表記。 */
   aliases: string[];
-  /**
-   * 親エントリの id（属→種→品種の木）。省略＝最上位（属など）。
-   * 例: グラキリス(parent=pachypodium)。投稿時に属を選んでから「もっと具体的に」
-   * 子を辿って具体化できる（#63）。属タグと具体タグは併存してよい。
-   */
-  parent?: string;
 }
 
 export const PLANTS: PlantEntry[] = [
   { id: "agave", sci: "Agave", name: "アガベ", aliases: ["agave", "アガヴェ", "竜舌蘭"] },
-  { id: "agave-titanota", sci: "Agave titanota", name: "チタノタ", aliases: ["titanota"], parent: "agave" },
+  { id: "agave-titanota", sci: "Agave titanota", name: "チタノタ", aliases: ["titanota"] },
   { id: "pachypodium", sci: "Pachypodium", name: "パキポディウム", aliases: ["pachypodium", "パキポ"] },
   {
     id: "pachypodium-gracilius",
     sci: "Pachypodium rosulatum var. gracilius",
     name: "グラキリス",
     aliases: ["gracilius", "gracilis"],
-    parent: "pachypodium",
   },
   {
     id: "platycerium",

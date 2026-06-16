@@ -25,14 +25,6 @@ export function findPlantByTerm(term: string): PlantEntry | null {
 }
 
 /**
- * 直接の子エントリ（属→種→品種の木・#63）を辞書順で返す。
- * 投稿時のドリルダウン（「もっと具体的に」）に使う。
- */
-export function childrenOf(id: string): PlantEntry[] {
-  return PLANTS.filter((p) => p.parent === id);
-}
-
-/**
  * `#t` フィルタ（OR 検索）用のタグ値。名前＋別名＋単語の学名のうち、
  * **空白を含まない**もの（＝タグになり得るもの）だけを重複なしで返す。
  * 学名の "Pachypodium rosulatum var. gracilius" のような空白入りは除外。
