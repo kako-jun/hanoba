@@ -289,13 +289,13 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
           </div>
 
           {/* インクリメンタル検索（パネル内・全件横断・フォーカスは保持される）。 */}
-          <div className="relative">
+          <div className="relative mb-1.5">
             <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ha-ink/40" />
             <ClearableInput
               value={query}
               onValueChange={handleQueryChange}
               aria-label="タグを検索"
-              placeholder="品種・属・世話を検索（例: チタノタ）"
+              placeholder="品種・属を検索（例: チタノタ）"
               className="rounded-full border border-white/30 bg-white/5 py-2 pl-9 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:border-ha-green/50 focus:outline-none"
             />
           </div>
