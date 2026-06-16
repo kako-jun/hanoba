@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import RevealImage from "./RevealImage.tsx";
 
 // 状態遷移（未ロード → loaded）を blur-up のゲートクラスで検証する。
@@ -11,6 +11,8 @@ function imgOf(): HTMLImageElement {
 describe("RevealImage（#145 blur-up リビール）", () => {
   afterEach(() => {
     cleanup();
+    // fake timer を使うテストが混ざるので、毎回 real timer に戻して漏れを防ぐ。
+    vi.useRealTimers();
   });
 
   it("初期は未ロード状態：opacity-0 blur-md で隠れている（opacity-100/blur-0 は付かない）", () => {
@@ -35,6 +37,26 @@ describe("RevealImage（#145 blur-up リビール）", () => {
     const img = imgOf();
     expect(img).toHaveClass("opacity-0"); // 発火前は隠れている
     fireEvent.error(img);
+    expect(img).toHaveClass("opacity-100", "blur-0");
+    expect(img).not.toHaveClass("opacity-0");
+    expect(img).not.toHaveClass("blur-md");
+  });
+
+  it("onLoad も error も来なくても、タイムアウト安全網で必ずリビールする（白固着を原理的に作らない）", () => {
+    // load/error が一切発火しないケース（合成 onLoad 取りこぼし・hydration タイミング等）を模す。
+    // 三段構えの最終安全網＝setTimeout(reveal, 3000) が効いて opacity-0 で永久固着しないことを検証する。
+    vi.useFakeTimers();
+    render(<RevealImage src="https://example.com/stuck.jpg" alt="白固着しうる画像" />);
+    const img = imgOf();
+    // 初期は隠れている（complete=false かつ load/error 未発火）。
+    expect(img).toHaveClass("opacity-0", "blur-md");
+    expect(img).not.toHaveClass("opacity-100");
+    expect(img).not.toHaveClass("blur-0");
+
+    // 安全網のタイムアウト（3000ms）を進めると reveal が呼ばれる。act でステート更新をフラッシュ。
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
     expect(img).toHaveClass("opacity-100", "blur-0");
     expect(img).not.toHaveClass("opacity-0");
     expect(img).not.toHaveClass("blur-md");

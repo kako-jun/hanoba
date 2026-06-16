@@ -23,9 +23,33 @@ export default function RevealImage({ src, alt, className = "", loading = "lazy"
   const ref = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    // src が変わるたび complete を実測。キャッシュ済みなら即表示、未ロードなら隠して再リビール。
-    // true にするだけでなく false にも戻すことで、複数写真切替の2枚目以降も blur-up し直す。
-    setLoaded(ref.current?.complete ?? false);
+    // 白固着を作らない三段構え：(1) complete 実測で即表示 (2) imperative load/error で拾う
+    // (3) timeout 安全網。React 合成 onLoad は hydration/キャッシュ/SSR 後の即ロードで
+    // 取りこぼすので頼らず、原理的に opacity-0 で永久固着しない作りにする。
+    const img = ref.current;
+    if (!img) return;
+    // 既に読み込み済み（キャッシュ / SSR 後の即ロード / 合成 onLoad 取りこぼし）なら実測して即表示。
+    if (img.complete) {
+      setLoaded(true);
+      return;
+    }
+    // まだなら隠して再リビール待ち（src 変更時のリセット兼用。2枚目以降も blur-up し直す）。
+    setLoaded(false);
+    let alive = true;
+    const reveal = () => {
+      if (alive) setLoaded(true);
+    };
+    // React 合成イベントは hydration 前に発火した load を取りこぼすので imperative に張る。
+    img.addEventListener("load", reveal);
+    img.addEventListener("error", reveal); // 壊れた画像でも白く残さない
+    // 最終安全網：何があっても一定時間で必ず表示し、白固着を原理的に作らない。
+    const safety = setTimeout(reveal, 3000);
+    return () => {
+      alive = false;
+      img.removeEventListener("load", reveal);
+      img.removeEventListener("error", reveal);
+      clearTimeout(safety);
+    };
   }, [src]);
 
   const cls = [
@@ -43,9 +67,8 @@ export default function RevealImage({ src, alt, className = "", loading = "lazy"
       alt={alt}
       loading={loading}
       decoding="async"
-      onLoad={() => setLoaded(true)}
-      // 壊れた画像が永久に opacity-0 で消えないように、エラーでも表示状態にする。
-      onError={() => setLoaded(true)}
+      // load/error は React 合成イベントを使わず effect 内で addEventListener で拾う
+      // （hydration 前の取りこぼし回避・二重発火防止）。
       className={cls}
     />
   );
