@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { detectHashtagQuery, filterHashtagCandidates, insertTag } from "./hashtag-complete.ts";
+import { captionHasTag, detectHashtagQuery, filterHashtagCandidates, insertTag } from "./hashtag-complete.ts";
+
+describe("captionHasTag", () => {
+  it("独立した #タグ が含まれれば true（大小無視）", () => {
+    expect(captionHasTag("今日は #チタノタ が届いた", "チタノタ")).toBe(true);
+    expect(captionHasTag("#Albo 最高", "albo")).toBe(true);
+  });
+
+  it("先頭 # 付き・内部空白入りの引数も正規化して判定する", () => {
+    expect(captionHasTag("#我が家_の株 です", "#我が家 の株")).toBe(true);
+  });
+
+  it("部分一致（語の一部）では true にしない", () => {
+    expect(captionHasTag("#チタノタス", "チタノタ")).toBe(false);
+    expect(captionHasTag("aチタノタ", "チタノタ")).toBe(false);
+  });
+
+  it("含まれなければ false。空タグも false", () => {
+    expect(captionHasTag("#アガベ", "パキポディウム")).toBe(false);
+    expect(captionHasTag("#アガベ", "  ")).toBe(false);
+  });
+
+  it("insertTag と整合（入れた直後は true）", () => {
+    const c = insertTag("メモ", "ブレビカウレ");
+    expect(captionHasTag(c, "ブレビカウレ")).toBe(true);
+  });
+});
 
 describe("insertTag", () => {
   it("空の本文には #タグ と末尾空白を入れる", () => {

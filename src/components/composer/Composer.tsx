@@ -264,7 +264,7 @@ export default function Composer() {
           <PlantSuggest caption={caption} onAddTag={(tag) => setCaption((c) => insertTag(c, tag))} />
 
           {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。 */}
-          <TagPicker popular={popular} onPick={(tag) => setCaption((c) => insertTag(c, tag))} />
+          <TagPicker popular={popular} caption={caption} onPick={(tag) => setCaption((c) => insertTag(c, tag))} />
 
           {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
           {!posting && missing.length > 0 && (
