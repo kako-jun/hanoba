@@ -8,3 +8,4 @@ coverage/
 
 # 画像生成の中間ファイル（footer skyline 等の PIL/chroma-key 作業用）
 tmp-gen/
+tmp-about-gen/
