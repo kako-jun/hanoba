@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FILTER_PRESETS, composeFilterCss, composeSharpen, composeVignette } from "./presets.ts";
+import { FILTER_PRESETS, composeEdgeBlur, composeFilterCss, composeSharpen, composeVignette } from "./presets.ts";
 
 describe("FILTER_PRESETS", () => {
   it("畑で迷わない数に絞っている", () => {
@@ -23,6 +23,10 @@ describe("FILTER_PRESETS", () => {
         expect(preset.sharpen).toBeGreaterThan(0);
         expect(preset.sharpen).toBeLessThanOrEqual(1);
       }
+      if (preset.edgeBlur !== undefined) {
+        expect(preset.edgeBlur).toBeGreaterThan(0);
+        expect(preset.edgeBlur).toBeLessThanOrEqual(1);
+      }
     }
   });
 
@@ -32,8 +36,10 @@ describe("FILTER_PRESETS", () => {
   });
 
   it("filter は CSS の filter 関数文字列（brightness/contrast 等）を含む", () => {
+    // 線明（シャープ）と霞幻（周辺ぼかし）は canvas 側だけで効く＝CSS tonal filter は持たない。
+    const canvasOnly = new Set(["線明", "霞幻"]);
     for (const preset of FILTER_PRESETS) {
-      if (preset.name === "線明") {
+      if (canvasOnly.has(preset.name)) {
         expect(preset.filter).toBe("none");
       } else {
         expect(preset.filter).toMatch(/(brightness|contrast|saturate|sepia|hue-rotate)\(/);
@@ -54,6 +60,19 @@ describe("FILTER_PRESETS", () => {
 
   it("シャープにするプリセットがある", () => {
     expect(FILTER_PRESETS.some((preset) => (preset.sharpen ?? 0) > 0.5)).toBe(true);
+  });
+
+  it("周辺をぼかすプリセット（霞幻）がある", () => {
+    expect(FILTER_PRESETS.some((preset) => (preset.edgeBlur ?? 0) > 0.5)).toBe(true);
+  });
+
+  it("周辺ぼかしを重ねがけ用に合成する（最大値・未指定は0）", () => {
+    const kagen = FILTER_PRESETS.find((preset) => preset.name === "霞幻")!;
+    const senmei = FILTER_PRESETS.find((preset) => preset.name === "線明")!;
+    expect(composeEdgeBlur([])).toBe(0);
+    expect(composeEdgeBlur([senmei])).toBe(0);
+    expect(composeEdgeBlur([kagen])).toBe(kagen.edgeBlur);
+    expect(composeEdgeBlur([senmei, kagen])).toBe(kagen.edgeBlur);
   });
 
   it("複数プリセットを重ねがけ用に合成する", () => {
