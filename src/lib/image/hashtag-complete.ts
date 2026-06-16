@@ -100,3 +100,20 @@ export function insertTag(caption: string, tag: string): string {
   const needsSpace = caption !== "" && !/\s$/.test(caption);
   return `${caption}${needsSpace ? " " : ""}#${norm} `;
 }
+
+/**
+ * caption から独立した `#タグ` を1つ外す（ピッカーで選択済みチップを再タップ＝トグル解除・#144）。
+ * - tag を正規化して語境界で一致する箇所を除去。前後どちらかの空白も一緒に畳んで二重空白を残さない。
+ * - 末尾は insertTag の規約（`#tag ` で終わる）に合わせ、タグが残るうちは末尾空白1つを保つ。
+ * 一致が無ければ caption をそのまま返す。
+ */
+export function removeTag(caption: string, tag: string): string {
+  const norm = normalizeTagForBody(tag);
+  if (norm === "") return caption;
+  const escaped = norm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // 直前の空白（あれば）ごと #tag を除去。語境界は後続の空白/終端で担保。
+  const re = new RegExp(`(^|\\s)#${escaped}(?=\\s|$)`, "gi");
+  const out = caption.replace(re, (_m, lead: string) => (lead === "" ? "" : lead));
+  // 置換で生じうる二重スペースだけ畳む（改行は保つ）。
+  return out.replace(/ {2,}/g, " ");
+}

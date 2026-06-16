@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
-import { insertTag } from "../../lib/image/hashtag-complete.ts";
+import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeFilterCss, composeSharpen, composeVignette, type FilterPreset } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
 import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
@@ -268,7 +268,12 @@ export default function Composer() {
           <PlantSuggest caption={caption} onAddTag={(tag) => setCaption((c) => insertTag(c, tag))} />
 
           {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。 */}
-          <TagPicker popular={popular} caption={caption} onPick={(tag) => setCaption((c) => insertTag(c, tag))} />
+          <TagPicker
+            popular={popular}
+            caption={caption}
+            onPick={(tag) => setCaption((c) => insertTag(c, tag))}
+            onRemove={(tag) => setCaption((c) => removeTag(c, tag))}
+          />
 
           {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
           {!posting && missing.length > 0 && (

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { VarietyCategory } from "./variety-catalog.ts";
-import { findPickableGenus, findVarietyGenus, foldForSearch, searchCatalog } from "./variety-search.ts";
+import {
+  findPickableGenus,
+  findVarietyGenus,
+  foldForSearch,
+  searchCatalog,
+  tagsToUnpick,
+} from "./variety-search.ts";
 
 describe("foldForSearch", () => {
   it("カタカナをひらがなに寄せる", () => {
@@ -144,5 +150,30 @@ describe("findVarietyGenus", () => {
 
   it("無ければ null", () => {
     expect(findVarietyGenus(CATALOG, "存在しない")).toBeNull();
+  });
+});
+
+describe("tagsToUnpick（兄弟ルール）", () => {
+  it("同属の兄弟品種が残るなら品種だけ外す", () => {
+    const caption = "#アガベ #チタノタ #赤猫";
+    expect(tagsToUnpick(caption, "チタノタ", CATALOG)).toEqual(["チタノタ"]);
+  });
+
+  it("兄弟が居らず・カテゴリに他も無ければ 品種＋属＋カテゴリ を外す", () => {
+    const caption = "#多肉・塊根 #アガベ #チタノタ";
+    expect(tagsToUnpick(caption, "チタノタ", CATALOG)).toEqual(["チタノタ", "アガベ", "多肉・塊根"]);
+  });
+
+  it("兄弟は居ないが同カテゴリの他属が残るならカテゴリは残す（属だけ連動）", () => {
+    const caption = "#多肉・塊根 #アガベ #チタノタ #火星人";
+    expect(tagsToUnpick(caption, "チタノタ", CATALOG)).toEqual(["チタノタ", "アガベ"]);
+  });
+
+  it("属名（品種でない）を外すときは自分だけ", () => {
+    expect(tagsToUnpick("#多肉・塊根 #アガベ", "アガベ", CATALOG)).toEqual(["アガベ"]);
+  });
+
+  it("catalog 未ロード時は自分だけ", () => {
+    expect(tagsToUnpick("#アガベ #チタノタ", "チタノタ", null)).toEqual(["チタノタ"]);
   });
 });

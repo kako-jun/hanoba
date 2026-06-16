@@ -4,6 +4,7 @@
 // このモジュールは variety-catalog を静的 import せず、データの code-split を壊さない
 // （呼び出し側が `await import("./variety-catalog.ts")` してから渡す）。
 
+import { captionHasTag } from "../image/hashtag-complete.ts";
 import type { Genus, VarietyCategory } from "./variety-catalog.ts";
 
 /** 属 or 品種の所在（カテゴリ＋属）。階層への誘導・上位属の補完に使う。 */
@@ -120,4 +121,40 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
   }
 
   return [...prefix, ...substr].slice(0, limit);
+}
+
+/**
+ * 選択済みの品種タグを外すとき、連動して外すタグ名の一覧を返す（兄弟ルール・#144）。
+ * - name は必ず含む。
+ * - name が**品種**で、外した後その属に**他の品種タグ**が本文に残らなければ、属タグも外す
+ *   （pickable かつ本文にある時）。さらにそのカテゴリに他属の品種/属タグが残らなければカテゴリも外す。
+ * - name が属/世話など品種でない、または catalog 未ロード時は name 単体（上位は触らない）。
+ * `caption` は外す前の本文（name 以外の生存判定に使う）。
+ */
+export function tagsToUnpick(
+  caption: string,
+  name: string,
+  catalog: VarietyCategory[] | null,
+): string[] {
+  if (catalog === null) return [name];
+  const loc = findVarietyGenus(catalog, name);
+  if (loc === null) return [name];
+  const { category, genus } = loc;
+  const result = [name];
+
+  // 同属の他品種が残るなら上位はそのまま（兄弟が居れば残る）。
+  const siblingRemains = genus.varieties.some((v) => v.name !== name && captionHasTag(caption, v.name));
+  if (siblingRemains) return result;
+
+  if (genus.pickable && captionHasTag(caption, genus.name)) result.push(genus.name);
+
+  // カテゴリ内に他属の生存（他属タグ or 他属の品種）が残るならカテゴリは残す。
+  const categoryRemains = category.genera.some((g) => {
+    if (g === genus) return false;
+    if (g.pickable && captionHasTag(caption, g.name)) return true;
+    return g.varieties.some((v) => captionHasTag(caption, v.name));
+  });
+  if (!categoryRemains && captionHasTag(caption, category.label)) result.push(category.label);
+
+  return result;
 }

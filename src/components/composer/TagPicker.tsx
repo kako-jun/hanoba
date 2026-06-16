@@ -1,10 +1,15 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { captionHasTag } from "../../lib/image/hashtag-complete.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
 import { getRecentTags } from "../../lib/plants/recent-tags.ts";
 import { TAG_CATEGORIES } from "../../lib/plants/tag-catalog.ts";
 import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts";
-import { findPickableGenus, findVarietyGenus, searchCatalog } from "../../lib/plants/variety-search.ts";
+import {
+  findPickableGenus,
+  findVarietyGenus,
+  searchCatalog,
+  tagsToUnpick,
+} from "../../lib/plants/variety-search.ts";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import Icon from "../ui/Icon.tsx";
 
@@ -15,6 +20,8 @@ interface Props {
   caption: string;
   /** チップを選んだとき（本文末尾へ挿入する）。 */
   onPick: (tag: string) => void;
+  /** 選択済みチップを再タップしたとき（本文から外す）。 */
+  onRemove: (tag: string) => void;
 }
 
 /** 人気タグの出現回数を 3 段階の文字サイズに割り当てる（タグクラウドの強弱）。 */
@@ -76,8 +83,9 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * - 本文に入っているタグは**満たされた色**（緑塗り）にする。
  * - 値は本文に `#タグ` テキストとして末尾挿入されるだけ（DESIGN §6・t 化しない）。
  */
-export default function TagPicker({ popular, caption, onPick }: Props) {
+export default function TagPicker({ popular, caption, onPick, onRemove }: Props) {
   const max = popular.length > 0 ? Math.max(...popular.map((t) => t.count)) : 1;
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
@@ -94,6 +102,16 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
   useEffect(() => {
     setRecent(getRecentTags());
   }, []);
+
+  // 囲みの外をクリックしたらドリルダウンを閉じる（×を押さなくてよい・#144）。
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (panelRef.current !== null && !panelRef.current.contains(e.target as Node)) closeDrilldown();
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
 
   const has = (tag: string) => captionHasTag(caption, tag);
 
@@ -121,6 +139,16 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
   function pick(name: string, ancestors: string[] = []) {
     for (const a of ancestors) onPick(a);
     onPick(name);
+  }
+
+  // 選択済みチップの再タップ＝解除。兄弟が残らなければ上位（属・カテゴリ）も連動して外す。
+  // 未選択なら add()（通常の挿入/階層誘導）を実行する。
+  function toggle(name: string, add: () => void) {
+    if (has(name)) {
+      for (const t of tagsToUnpick(caption, name, catalog)) onRemove(t);
+    } else {
+      add();
+    }
   }
 
   // 品種の所在（カテゴリ・属）から上位タグ列を作る（カテゴリ→pickableな属 の順）。
@@ -186,12 +214,23 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
       <span className="text-sm font-medium text-ha-green-deep">タグを選ぶ</span>
 
       {!open ? (
-        // ── 畳んだ状態: 最近・人気・世話/記録（0〜1タップ）＋ ドリルダウン入口 ──────
+        // ── 畳んだ状態: ドリルダウン入口を最上段に・最近・人気・世話/記録（0〜1タップ） ──────
         <>
+          <button
+            type="button"
+            onClick={openDrilldown}
+            aria-expanded={false}
+            className="glass flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:border-ha-green/50 transition-colors"
+          >
+            <Icon name="sprout" className="h-4 w-4" />
+            植物から選ぶ
+            <span aria-hidden className="text-ha-ink/40">›</span>
+          </button>
+
           {recent.length > 0 && (
             <ChipGroup label="最近使った">
               {recent.map((t) => (
-                <Chip key={`recent-${t}`} label={t} active={has(t)} onClick={() => engage(t)} />
+                <Chip key={`recent-${t}`} label={t} active={has(t)} onClick={() => toggle(t, () => engage(t))} />
               ))}
             </ChipGroup>
           )}
@@ -204,7 +243,7 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
                   label={t.tag}
                   sizeClass={cloudSize(t.count, max)}
                   active={has(t.tag)}
-                  onClick={() => engage(t.tag)}
+                  onClick={() => toggle(t.tag, () => engage(t.tag))}
                 />
               ))}
             </ChipGroup>
@@ -213,25 +252,19 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
           {TAG_CATEGORIES.map((c) => (
             <ChipGroup key={c.label} label={c.label}>
               {c.tags.map((tag) => (
-                <Chip key={`${c.label}-${tag}`} label={tag} active={has(tag)} onClick={() => pick(tag)} />
+                <Chip
+                  key={`${c.label}-${tag}`}
+                  label={tag}
+                  active={has(tag)}
+                  onClick={() => toggle(tag, () => pick(tag))}
+                />
               ))}
             </ChipGroup>
           ))}
-
-          <button
-            type="button"
-            onClick={openDrilldown}
-            aria-expanded={false}
-            className="glass flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:border-ha-green/50 transition-colors"
-          >
-            <Icon name="sprout" className="h-4 w-4" />
-            植物から選ぶ
-            <span aria-hidden className="text-ha-ink/40">›</span>
-          </button>
         </>
       ) : (
         // ── 展開状態: 検索（パネル内・全件横断）＋ カテゴリ→属→品種 ドリルダウン ──────
-        <div className="glass flex flex-col gap-2 rounded-2xl p-3">
+        <div ref={panelRef} className="glass flex flex-col gap-2 rounded-2xl p-3">
           {/* ヘッダ: ‹戻る ＋ パンくず ＋ ×閉じる */}
           <div className="flex items-center justify-between gap-2">
             <button
@@ -285,12 +318,19 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
                     <button
                       key={`g-${h.name}`}
                       type="button"
-                      onClick={() => engage(h.name)}
-                      className="glass rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                      onClick={() => toggle(h.name, () => engage(h.name))}
+                      aria-pressed={has(h.name)}
+                      className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                        has(h.name)
+                          ? "border border-ha-green bg-ha-green text-ha-white"
+                          : "glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep"
+                      }`}
                     >
                       #{h.name}
-                      <span className="ml-1 text-[10px] text-ha-ink/40">{h.category}</span>
-                      <span aria-hidden className="ml-1 text-ha-ink/40">›</span>
+                      <span className={`ml-1 text-[10px] ${has(h.name) ? "text-ha-white/70" : "text-ha-ink/40"}`}>
+                        {h.category}
+                      </span>
+                      {!has(h.name) && <span aria-hidden className="ml-1 text-ha-ink/40">›</span>}
                     </button>
                   ) : (
                     <Chip
@@ -299,7 +339,9 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
                       context={h.genus ?? h.category}
                       active={has(h.name)}
                       onClick={() =>
-                        pick(h.name, [h.category, ...(h.genusPickable === true && h.genus ? [h.genus] : [])])
+                        toggle(h.name, () =>
+                          pick(h.name, [h.category, ...(h.genusPickable === true && h.genus ? [h.genus] : [])]),
+                        )
                       }
                     />
                   ),
@@ -355,7 +397,7 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
               {genus.pickable && (
                 <button
                   type="button"
-                  onClick={() => pick(genus.name, cat ? [cat.label] : [])}
+                  onClick={() => toggle(genus.name, () => pick(genus.name, cat ? [cat.label] : []))}
                   aria-pressed={has(genus.name)}
                   className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                     has(genus.name)
@@ -371,7 +413,11 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
                   key={v.name}
                   label={v.name}
                   active={has(v.name)}
-                  onClick={() => pick(v.name, cat ? ancestorsOf(cat.label, genus) : genus.pickable ? [genus.name] : [])}
+                  onClick={() =>
+                    toggle(v.name, () =>
+                      pick(v.name, cat ? ancestorsOf(cat.label, genus) : genus.pickable ? [genus.name] : []),
+                    )
+                  }
                 />
               ))}
             </div>
