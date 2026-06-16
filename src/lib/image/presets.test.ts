@@ -38,6 +38,12 @@ describe("FILTER_PRESETS", () => {
     }
   });
 
+  it("彩度を変えるのは美華だけ", () => {
+    for (const preset of FILTER_PRESETS) {
+      expect(preset.filter.includes("saturate(")).toBe(preset.name === "美華");
+    }
+  });
+
   it("周辺を暗く落とすプリセットがある", () => {
     expect(FILTER_PRESETS.some((preset) => (preset.vignette ?? 0) > 0.5)).toBe(true);
   });
