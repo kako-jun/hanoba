@@ -34,12 +34,12 @@
   --color-ha-ink: #ece6da;
 
   /* タイポ（cookbook: 汎用フォント禁止・高コントラスト組み）。
-     見出し＝Outfit（geometric sans・欧/数字）×日本語はクリーンゴシック。 */
+     見出し＝Outfit（geometric sans・欧/数字）×日本語＝Zen Maru Gothic（丸ゴシック・角丸の世界観に合わせる #170）。 */
   --font-sans:
-    "Zen Kaku Gothic New", "Outfit", ui-sans-serif, system-ui, "Hiragino Kaku Gothic ProN",
+    "Zen Maru Gothic", "Outfit", ui-sans-serif, system-ui, "Hiragino Maru Gothic ProN",
     "Noto Sans JP", sans-serif;
   --font-display:
-    "Outfit", "Zen Kaku Gothic New", ui-sans-serif, system-ui, "Hiragino Kaku Gothic ProN",
+    "Outfit", "Zen Maru Gothic", ui-sans-serif, system-ui, "Hiragino Maru Gothic ProN",
     sans-serif;
 }
 
