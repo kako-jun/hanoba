@@ -110,7 +110,7 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
   return (
     <div className="relative flex flex-col gap-1">
       <label htmlFor="hanoba-caption" className="text-sm font-medium text-ha-green-deep">
-        ひとこと（必須）
+        ひとこと
       </label>
       {/* キャレット/ハッシュタグ補完のため ClearableTextarea は使わず、× だけ共通の見た目で足す。
           ハンドラ（onChange/onSelect/onKeyDown）は触らず、× は値を空にして補完ポップアップも閉じる。 */}
@@ -124,7 +124,7 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
           onKeyDown={handleKeyDown}
           onBlur={() => setPopup(null)}
           rows={3}
-          placeholder="株のこと、ひとこと。#アガベ のようにタグも付けられます。"
+          placeholder="株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。"
           className="w-full glass rounded-2xl px-3.5 py-2.5 pr-10 text-ha-ink placeholder:text-ha-ink/45 resize-y focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
         />
         {value !== "" && (
