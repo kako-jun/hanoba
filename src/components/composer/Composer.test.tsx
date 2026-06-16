@@ -212,6 +212,22 @@ describe("Composer", () => {
     expect(screen.getByRole("button", { name: "写真を選び直す" })).toBeInTheDocument();
   });
 
+  it("写真を追加したら追加した写真を自動選択する", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, makeNamedImageFile("one.jpg"));
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "1/4枚")).toBeInTheDocument());
+    const add = screen.getByRole("button", { name: "写真を追加" });
+    await user.click(add);
+    const nextInput = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(nextInput, makeNamedImageFile("two.jpg"));
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+    expect(screen.getByAltText("2枚目").closest("button")).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("4枚すべてを焼き込んで投稿する", async () => {
     const user = userEvent.setup();
     uploadImage
@@ -266,5 +282,19 @@ describe("Composer", () => {
     await waitFor(() => expect(deleteImage).toHaveBeenCalledWith("https://image.nostr.build/one.jpg"));
     expect(signAndPublishNote).not.toHaveBeenCalled();
     expect(await screen.findByRole("alert")).toHaveTextContent("upload failed");
+  });
+
+  it("ひとこと入力欄は大きなボタンで広げられる", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    const caption = await screen.findByLabelText("ひとこと");
+
+    expect(caption).toHaveAttribute("rows", "3");
+    await user.click(screen.getByRole("button", { name: "入力欄を広げる" }));
+    expect(caption).toHaveAttribute("rows", "7");
+    await user.click(screen.getByRole("button", { name: "入力欄を縮める" }));
+    expect(caption).toHaveAttribute("rows", "3");
   });
 });

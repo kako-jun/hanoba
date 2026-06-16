@@ -107,7 +107,7 @@ export default function Composer() {
     if (nextImages.length === 0) return;
     setImageNotice(rejectedCount > 0 ? "写真は4枚までです。追加できる分だけ追加しました。" : null);
     setImages((prev) => [...prev, ...nextImages]);
-    if (currentId === null) setCurrentId(nextImages[0]!.id);
+    setCurrentId(nextImages[0]!.id);
     for (const draft of nextImages) {
       void loadImage(draft.src).then((image) => {
         const crop = centeredSquareRect(image);
@@ -245,6 +245,7 @@ export default function Composer() {
               initialCrop={currentImage.crop}
               filter={composeFilterCss(currentImage.filters)}
               vignette={composeVignette(currentImage.filters)}
+              sharpen={composeSharpen(currentImage.filters)}
               onCropComplete={(crop) => updateCurrentImage({ crop })}
             />
           )}

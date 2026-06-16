@@ -28,7 +28,9 @@ interface PopupState {
 
 export default function CaptionInput({ value, onChange, pool }: CaptionInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [rows, setRows] = useState(3);
   const [popup, setPopup] = useState<PopupState | null>(null);
+  const expanded = rows > 3;
 
   function buildItems(query: string): string[] {
     const candidates = filterHashtagCandidates(pool, query);
@@ -123,9 +125,9 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
           onSelect={handleSelect}
           onKeyDown={handleKeyDown}
           onBlur={() => setPopup(null)}
-          rows={3}
+          rows={rows}
           placeholder="株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。"
-          className="w-full glass rounded-2xl px-3.5 py-2.5 pr-10 text-ha-ink placeholder:text-ha-ink/45 resize-y focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+          className="w-full glass resize-none rounded-2xl px-3.5 py-2.5 pb-12 pr-10 text-ha-ink placeholder:text-ha-ink/45 focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
         />
         {value !== "" && (
           <button
@@ -141,6 +143,17 @@ export default function CaptionInput({ value, onChange, pool }: CaptionInputProp
             <Icon name="close" className="w-4 h-4" />
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => {
+            setRows(expanded ? 3 : 7);
+            requestAnimationFrame(() => textareaRef.current?.focus());
+          }}
+          aria-label={expanded ? "入力欄を縮める" : "入力欄を広げる"}
+          className="absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-xl border border-ha-green/30 bg-ha-white/20 text-ha-green-deep shadow-sm transition-colors hover:border-ha-green/60 hover:bg-ha-white/35"
+        >
+          <Icon name="chevron" className={`h-5 w-5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        </button>
       </div>
       {popup !== null && (
         <ul

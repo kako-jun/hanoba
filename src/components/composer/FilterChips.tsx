@@ -11,6 +11,8 @@ interface FilterChipsProps {
 }
 
 export default function FilterChips({ selected, onChange }: FilterChipsProps) {
+  const chipClass = "flex w-[4.75rem] items-center justify-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-colors";
+
   function toggle(preset: FilterPreset) {
     const exists = selected.some((item) => item.name === preset.name);
     onChange(exists ? selected.filter((item) => item.name !== preset.name) : [...selected, preset]);
@@ -22,11 +24,11 @@ export default function FilterChips({ selected, onChange }: FilterChipsProps) {
         type="button"
         onClick={() => onChange([])}
         aria-pressed={selected.length === 0}
-        className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+        className={`${chipClass} ${
           selected.length === 0 ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"
         }`}
       >
-        <span className="inline-block w-3 h-3 rounded-full border border-white/25 bg-white/10" aria-hidden="true" />
+        <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white/25 bg-white/10" aria-hidden="true" />
         なし
       </button>
       {FILTER_PRESETS.map((preset) => {
@@ -37,12 +39,12 @@ export default function FilterChips({ selected, onChange }: FilterChipsProps) {
             type="button"
             onClick={() => toggle(preset)}
             aria-pressed={isActive}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
+            className={`${chipClass} ${
               isActive ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"
             }`}
           >
             <span
-              className="inline-block w-3 h-3 rounded-full border border-white/25"
+              className="inline-block h-3 w-3 shrink-0 rounded-full border border-white/25"
               style={{ backgroundColor: preset.color }}
               aria-hidden="true"
             />

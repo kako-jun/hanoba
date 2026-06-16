@@ -19,6 +19,8 @@ interface CropFrameProps {
   filter: string | null;
   /** プレビューに重ねる周辺減光の強さ（0〜1）。 */
   vignette?: number;
+  /** プレビューに適用するシャープ処理の強さ（0〜1）。 */
+  sharpen?: number;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
 }
@@ -28,8 +30,22 @@ function centeredSquareCrop(width: number, height: number): Crop {
   return centerCrop(makeAspectCrop({ unit: "%", width: 90 }, 1, width, height), width, height);
 }
 
-export default function CropFrame({ src, imgRef, initialCrop, filter, vignette = 0, onCropComplete }: CropFrameProps) {
+export default function CropFrame({
+  src,
+  imgRef,
+  initialCrop,
+  filter,
+  vignette = 0,
+  sharpen = 0,
+  onCropComplete,
+}: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
+  const sharpenAmount = Math.min(Math.max(sharpen, 0), 1);
+  const sharpenEdge = -1.5 * sharpenAmount;
+  const sharpenCenter = 1 + 6 * sharpenAmount;
+  const previewFilter = [filter, sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
+    .filter((item): item is string => item !== null && item !== "")
+    .join(" ") || "none";
 
   function commitCrop(pixelCrop: PixelCrop, image: HTMLImageElement | null) {
     if (image === null) return;
@@ -72,6 +88,17 @@ export default function CropFrame({ src, imgRef, initialCrop, filter, vignette =
 
   return (
     <div className="flex flex-col items-center gap-2">
+      {sharpenAmount > 0 && (
+        <svg aria-hidden="true" className="absolute h-0 w-0">
+          <filter id="hanoba-sharpen-preview" colorInterpolationFilters="sRGB">
+            <feConvolveMatrix
+              order="3"
+              preserveAlpha="true"
+              kernelMatrix={`0 ${sharpenEdge} 0 ${sharpenEdge} ${sharpenCenter} ${sharpenEdge} 0 ${sharpenEdge} 0`}
+            />
+          </filter>
+        </svg>
+      )}
       <ReactCrop
         crop={crop}
         onChange={(_pixelCrop, percentCrop) => setCrop(percentCrop)}
@@ -86,7 +113,7 @@ export default function CropFrame({ src, imgRef, initialCrop, filter, vignette =
           src={src}
           alt="クロップ対象の写真"
           onLoad={handleImageLoad}
-          style={{ filter: filter ?? "none", maxHeight: "60vh", display: "block" }}
+          style={{ filter: previewFilter, maxHeight: "60vh", display: "block" }}
         />
         {vignette > 0 && (
           <div

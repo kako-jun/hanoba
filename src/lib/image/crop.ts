@@ -141,6 +141,8 @@ export function renderSquareImageFromRect(
 function applySharpen(ctx: CanvasRenderingContext2D, size: number, amount: number): void {
   if (amount <= 0 || size < 3) return;
   const strength = Math.min(Math.max(amount, 0), 1);
+  const edge = 1.5 * strength;
+  const centerWeight = 1 + edge * 4;
   const imageData = ctx.getImageData(0, 0, size, size);
   const src = imageData.data;
   const out = new Uint8ClampedArray(src);
@@ -155,8 +157,12 @@ function applySharpen(ctx: CanvasRenderingContext2D, size: number, amount: numbe
       for (let c = 0; c < 3; c++) {
         const center = src[i + c] ?? 0;
         const sharpened =
-          center * 5 - (src[top + c] ?? 0) - (src[bottom + c] ?? 0) - (src[left + c] ?? 0) - (src[right + c] ?? 0);
-        out[i + c] = center + (sharpened - center) * strength;
+          center * centerWeight -
+          (src[top + c] ?? 0) * edge -
+          (src[bottom + c] ?? 0) * edge -
+          (src[left + c] ?? 0) * edge -
+          (src[right + c] ?? 0) * edge;
+        out[i + c] = sharpened;
       }
     }
   }
