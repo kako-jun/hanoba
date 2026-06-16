@@ -20,12 +20,12 @@ const external = [
   <div class="mx-auto max-w-3xl px-5 py-7 flex flex-col gap-5 text-sm">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <a href="/about" class="inline-flex items-center gap-1.5 leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
+        <a href="/about" class="inline-flex items-center gap-[5px] leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
           <Icon name="info" className="w-4 h-4 shrink-0" />Hanōba とは
         </a>
         <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors">みんなの植物</a>
         <a href="/me" class="text-ha-ink/80 hover:text-ha-green transition-colors">あなたの植物</a>
-        <a href="/compose" class="inline-flex items-center gap-1.5 leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
+        <a href="/compose" class="inline-flex items-center gap-[5px] leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
           <Icon name="sprout" className="w-4 h-4 shrink-0" />投稿する
         </a>
       </nav>
@@ -36,7 +36,7 @@ const external = [
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1.5 leading-none hover:text-ha-green transition-colors"
+              class="inline-flex items-center gap-[5px] leading-none hover:text-ha-green transition-colors"
             >
               {s.img ? (
                 /* 無彩色（白）の星。黄背景はチャンクキーで透過済み。暗地フッタの控えめな
