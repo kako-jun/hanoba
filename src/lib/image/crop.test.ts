@@ -167,6 +167,24 @@ describe("buildToneLut", () => {
     expect(Array.from(buildToneLut("reverse-s", 0))).toEqual(Array.from(buildToneLut(null)));
   });
 
+  it("S字は amount を上げるほど効きが強まる（弱<中<強で締まりが増す・#171）", () => {
+    // 暗部(64)はより暗く、明部(192)はより明るくなる方向。amount が大きいほど中点から離れる。
+    const weak = buildToneLut("s", 0.2);
+    const mid = buildToneLut("s", 0.32);
+    const strong = buildToneLut("s", 0.45);
+    expect(weak[64]!).toBeGreaterThan(mid[64]!); // 弱は暗部の落ちが浅い
+    expect(mid[64]!).toBeGreaterThan(strong[64]!); // 強は暗部がより落ちる
+    expect(weak[192]!).toBeLessThan(mid[192]!); // 明部は逆に持ち上がり幅が広がる
+    expect(mid[192]!).toBeLessThan(strong[192]!);
+  });
+
+  it("逆S字も amount を上げるほどやわらぎが強まる（弱<中<強・#171）", () => {
+    const weak = buildToneLut("reverse-s", 0.2);
+    const strong = buildToneLut("reverse-s", 0.45);
+    expect(strong[64]!).toBeGreaterThan(weak[64]!); // 暗部の持ち上げが強い
+    expect(strong[192]!).toBeLessThan(weak[192]!); // 明部の抑えが強い
+  });
+
   it("単調増加（順序を反転しない）", () => {
     for (const tone of ["s", "reverse-s"] as const) {
       const lut = buildToneLut(tone);
