@@ -26,6 +26,8 @@ interface CropFrameProps {
   edgeBlur?: number;
   /** トーンカーブ（翠露=S字/土香=逆S字）。焼き込みは canvas、プレビューは contrast() で近似。 */
   toneCurve?: ToneCurve;
+  /** トーンカーブの効き具合（#171・弱/中/強）。プレビューの contrast 近似に反映する。 */
+  toneAmount?: number;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
 }
@@ -44,6 +46,7 @@ export default function CropFrame({
   sharpen = 0,
   edgeBlur = 0,
   toneCurve = null,
+  toneAmount = 0.32,
   onCropComplete,
 }: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
@@ -53,7 +56,7 @@ export default function CropFrame({
   const sharpenEdge = -1.5 * sharpenAmount;
   const sharpenCenter = 1 + 6 * sharpenAmount;
   // トーンカーブ（翠露/土香）は焼き込みが canvas LUT、プレビューは従来どおり contrast() で近似する。
-  const previewFilter = [filter, toneCurvePreviewCss(toneCurve), sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
+  const previewFilter = [filter, toneCurvePreviewCss(toneCurve, toneAmount), sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
     .filter((item): item is string => item !== null && item !== "")
     .join(" ") || "none";
 
@@ -156,7 +159,7 @@ export default function CropFrame({
                 // 焼き込みは出力の2%（applyEdgeBlur）。プレビューも表示中のクロップ枠の2%に
                 // 合わせ、画像サイズに依らず焼き上がりと同じ強さで見せる。トーン（翠露/土香）も
                 // 重ねて、外周リングが中央と同じ明暗になるようにする。
-                filter: [filter, toneCurvePreviewCss(toneCurve), `blur(${(((crop.width / 100) * renderedW) * 0.02 * edgeBlur).toFixed(2)}px)`]
+                filter: [filter, toneCurvePreviewCss(toneCurve, toneAmount), `blur(${(((crop.width / 100) * renderedW) * 0.02 * edgeBlur).toFixed(2)}px)`]
                   .filter((item): item is string => item !== null && item !== "")
                   .join(" "),
               }}
