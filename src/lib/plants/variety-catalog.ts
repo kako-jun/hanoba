@@ -59,6 +59,16 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "乱れ雪" }, { name: "吹上" }, { name: "ストリクタ" }, { name: "アテナータ" },
         { name: "アメリカーナ" }, { name: "オバティフォリア" }, { name: "パラサナ" }, { name: "モンタナ" },
       ] },
+      { name: "ユーフォルビア", pickable: true, varieties: [
+        { name: "オベサ" }, { name: "バリダ" }, { name: "鉄甲丸" }, { name: "ホリダ" },
+        { name: "ラクテア" }, { name: "ホワイトゴースト" }, { name: "マハラジャ" }, { name: "白樺キリン" },
+        { name: "瑠璃晃" }, { name: "スザンナエ" }, { name: "笹蟹丸" }, { name: "ステラータ" },
+        { name: "飛竜" }, { name: "ギラウミニアナ" }, { name: "ポイゾニー" }, { name: "デカリー" },
+        { name: "峨眉山" }, { name: "グロボーサ" }, { name: "玉鱗宝" }, { name: "ソテツキリン" },
+        { name: "蓬莱島" }, { name: "奇怪ヶ島" }, { name: "鬼笑い" }, { name: "エクロニー" },
+        { name: "スクアローサ" }, { name: "デシデュア" }, { name: "トゥレアレンシス" }, { name: "ブルアナ" },
+        { name: "ダイヤモンドフロスト" },
+      ] },
       { name: "チレコドン", pickable: true, varieties: [
         { name: "万物想" }, { name: "阿房宮" }, { name: "奇峰錦" }, { name: "砂夜叉姫" },
         { name: "レティキュラータス" }, { name: "パニクラーツス" },
@@ -184,16 +194,6 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "アンボンゲンセ" }, { name: "バロニー" }, { name: "サンデルシー" }, { name: "白馬城" },
         { name: "ビスピノーサム" }, { name: "サキュレンタム" }, { name: "ナマクアナム" }, { name: "光堂" },
         { name: "リーアリー" },
-      ] },
-      { name: "ユーフォルビア", pickable: true, varieties: [
-        { name: "オベサ" }, { name: "バリダ" }, { name: "鉄甲丸" }, { name: "ホリダ" },
-        { name: "ラクテア" }, { name: "ホワイトゴースト" }, { name: "マハラジャ" }, { name: "白樺キリン" },
-        { name: "瑠璃晃" }, { name: "スザンナエ" }, { name: "笹蟹丸" }, { name: "ステラータ" },
-        { name: "飛竜" }, { name: "ギラウミニアナ" }, { name: "ポイゾニー" }, { name: "デカリー" },
-        { name: "峨眉山" }, { name: "グロボーサ" }, { name: "玉鱗宝" }, { name: "ソテツキリン" },
-        { name: "蓬莱島" }, { name: "奇怪ヶ島" }, { name: "鬼笑い" }, { name: "エクロニー" },
-        { name: "スクアローサ" }, { name: "デシデュア" }, { name: "トゥレアレンシス" }, { name: "ブルアナ" },
-        { name: "ダイヤモンドフロスト" },
       ] },
       { name: "アデニウム", pickable: true, varieties: [
         { name: "砂漠のバラ" }, { name: "オベスム" }, { name: "アラビカム" }, { name: "ソコトラナム" },
