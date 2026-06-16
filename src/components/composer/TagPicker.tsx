@@ -5,8 +5,8 @@ import { getRecentTags } from "../../lib/plants/recent-tags.ts";
 import { TAG_CATEGORIES } from "../../lib/plants/tag-catalog.ts";
 import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import {
+  ancestorTagsPresent,
   findPickableGenus,
-  findVarietyGenus,
   searchCatalog,
   tagsToUnpick,
 } from "../../lib/plants/variety-search.ts";
@@ -76,8 +76,10 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * 1,400件超の品種カタログ（variety-catalog）を**動的 import で code-split**し、
  * カテゴリ→属→品種の多段ドリルダウン＋インクリメンタル検索で少クリック選択する。
  *
- * 規約（kako-jun 指示・#144）:
- * - 品種を選ぶと**上位の属タグも前置**して `#属 #品種` の順で入れる（属は pickable な時だけ）。
+ * 規約（kako-jun 指示・#166 1鉢1札）:
+ * - タグは**最も具体的な1段だけ**入れる。品種を選べば `#品種` だけ・属止まりなら `#属` だけ。
+ *   **上位（属）も分類（カテゴリ）も札にしない**。より具体的な品種を入れたら本文の上位タグは外す。
+ *   集約は読み取り側の OR 検索（§6）が吸収するので葉だけでも属から辿れる。
  * - 人気/最近/検索で**属をタップしたら階層に入る**（その属の品種一覧へ誘導）。属だけ欲しい時は
  *   ドリルダウン内の「#属 をこのまま使う」。
  * - 本文に入っているタグは**満たされた色**（緑塗り）にする。
@@ -132,12 +134,12 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
     }
   }
 
-  // タグ挿入＝本文末尾へ入れる（全ピック経路で通す）。
-  // ancestors（上位＝カテゴリ→属の順）があれば先に入れて `#カテゴリ #属 #品種` の順にする。
+  // タグ挿入＝本文末尾へ葉（最も具体的な1段）だけ入れる（全ピック経路で通す・#166 1鉢1札）。
+  // 入れた葉が品種/属なら、本文に既にある上位タグ（属・カテゴリ）を外す（1鉢1札の徹底）。
   // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
   // （タップしただけ・あとで消したタグは最近に残さない）。
-  function pick(name: string, ancestors: string[] = []) {
-    for (const a of ancestors) onPick(a);
+  function pick(name: string) {
+    for (const t of ancestorTagsPresent(caption, name, catalog)) onRemove(t);
     onPick(name);
   }
 
@@ -151,12 +153,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
     }
   }
 
-  // 品種の所在（カテゴリ・属）から上位タグ列を作る（カテゴリ→pickableな属 の順）。
-  function ancestorsOf(categoryLabel: string, g: Genus | null): string[] {
-    return [categoryLabel, ...(g !== null && g.pickable ? [g.name] : [])];
-  }
-
-  // フラットなタグ（人気/最近）のタップ。属なら階層へ誘導、品種なら上位（カテゴリ・属）を補って挿入。
+  // フラットなタグ（人気/最近）のタップ。属なら階層へ誘導、それ以外は葉として挿入（#166）。
   async function engage(name: string) {
     const loaded = await ensureCatalog();
     if (loaded === null) {
@@ -171,8 +168,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
       setGenus(asGenus.genus);
       return;
     }
-    const at = findVarietyGenus(loaded, name);
-    pick(name, at !== null ? ancestorsOf(at.category.label, at.genus) : []);
+    pick(name);
   }
 
   function handleQueryChange(v: string) {
@@ -301,7 +297,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
           </div>
 
           {searching ? (
-            // ── 検索結果（属→階層へ・品種→上位属を補って挿入・freeform→そのまま） ──
+            // ── 検索結果（属→階層へ・品種→その葉だけ挿入・freeform→そのまま） ──
             <div className="flex flex-col gap-1.5">
               {loadingCatalog && catalog === null && (
                 <span className="text-xs text-ha-ink/45">辞書を読み込み中…</span>
@@ -338,11 +334,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                       label={h.name}
                       context={h.genus ?? h.category}
                       active={has(h.name)}
-                      onClick={() =>
-                        toggle(h.name, () =>
-                          pick(h.name, [h.category, ...(h.genusPickable === true && h.genus ? [h.genus] : [])]),
-                        )
-                      }
+                      onClick={() => toggle(h.name, () => pick(h.name))}
                     />
                   ),
                 )}
@@ -392,12 +384,12 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
               ))}
             </div>
           ) : (
-            // 品種一覧（pickable な属はその属タグも先頭で使える）
+            // 品種一覧（pickable な属は「このまま使う」で属だけを葉として入れられる）
             <div className="flex flex-wrap gap-1.5">
               {genus.pickable && (
                 <button
                   type="button"
-                  onClick={() => toggle(genus.name, () => pick(genus.name, cat ? [cat.label] : []))}
+                  onClick={() => toggle(genus.name, () => pick(genus.name))}
                   aria-pressed={has(genus.name)}
                   className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                     has(genus.name)
@@ -413,11 +405,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                   key={v.name}
                   label={v.name}
                   active={has(v.name)}
-                  onClick={() =>
-                    toggle(v.name, () =>
-                      pick(v.name, cat ? ancestorsOf(cat.label, genus) : genus.pickable ? [genus.name] : []),
-                    )
-                  }
+                  onClick={() => toggle(v.name, () => pick(v.name))}
                 />
               ))}
             </div>
