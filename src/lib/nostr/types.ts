@@ -23,12 +23,14 @@ export type NostrEvent = NostrToolsEvent;
  * - filter: プレビューの style={{filter}} と canvas 焼き込みで共用する CSS filter
  * - color: チップに添えるスウォッチ色（雰囲気の視覚ヒント）
  * - vignette: 周辺減光の強さ（0〜1）。中央を残し、周辺を暗く落とす。
+ * - sharpen: シャープ処理の強さ（0〜1）。投稿画像の書き出し時に焼き込む。
  */
 export interface FilterPreset {
   name: string;
   filter: string;
   color: string;
   vignette?: number;
+  sharpen?: number;
 }
 
 // クロップ位置は react-image-crop の PixelCrop をそのまま使う（独自の CropState は持たない）。

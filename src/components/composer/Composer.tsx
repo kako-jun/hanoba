@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag } from "../../lib/image/hashtag-complete.ts";
-import type { FilterPreset } from "../../lib/image/presets.ts";
+import { composeFilterCss, composeSharpen, composeVignette, type FilterPreset } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
 import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
@@ -26,7 +26,7 @@ type DraftImage = {
   file: File;
   src: string;
   crop: SquareCropRect | null;
-  filter: FilterPreset | null;
+  filters: FilterPreset[];
 };
 
 const MAX_IMAGES = 4;
@@ -36,7 +36,7 @@ function makeDraftImage(file: File): DraftImage {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random()}`;
-  return { id, file, src: URL.createObjectURL(file), crop: null, filter: null };
+  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [] };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -119,7 +119,7 @@ export default function Composer() {
     setStatus({ kind: "idle" });
   }
 
-  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filter">>) {
+  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters">>) {
     if (currentId === null) return;
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
   }
@@ -174,8 +174,9 @@ export default function Composer() {
         const blob = await renderSquareImageFromRect(
           image,
           draft.crop,
-          draft.filter?.filter ?? null,
-          draft.filter?.vignette ?? 0,
+          composeFilterCss(draft.filters),
+          composeVignette(draft.filters),
+          composeSharpen(draft.filters),
         );
         const squareFile = new File([blob], `hanoba-${index + 1}.jpg`, { type: "image/jpeg" });
         const { url } = await uploadImage(squareFile);
@@ -242,8 +243,8 @@ export default function Composer() {
               src={currentImage.src}
               imgRef={imgRef}
               initialCrop={currentImage.crop}
-              filter={currentImage.filter?.filter ?? null}
-              vignette={currentImage.filter?.vignette ?? 0}
+              filter={composeFilterCss(currentImage.filters)}
+              vignette={composeVignette(currentImage.filters)}
               onCropComplete={(crop) => updateCurrentImage({ crop })}
             />
           )}
@@ -251,8 +252,8 @@ export default function Composer() {
           <section className="flex flex-col gap-2">
             <h2 className="text-sm font-medium text-ha-green-deep">フィルタ</h2>
             <FilterChips
-              selected={currentImage?.filter ?? null}
-              onSelect={(filter) => updateCurrentImage({ filter })}
+              selected={currentImage?.filters ?? []}
+              onChange={(filters) => updateCurrentImage({ filters })}
             />
           </section>
 

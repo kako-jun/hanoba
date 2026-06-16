@@ -79,6 +79,7 @@ export function renderSquareImage(
   crop: PixelCrop,
   filterCss: string | null,
   vignette = 0,
+  sharpen = 0,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -91,7 +92,7 @@ export function renderSquareImage(
 
   const { sx, sy, size } = computeSquareCropRect(crop, scaleX, scaleY, naturalW, naturalH);
 
-  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, type, quality);
+  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, type, quality);
 }
 
 /**
@@ -103,6 +104,7 @@ export function renderSquareImageFromRect(
   rect: SquareCropRect,
   filterCss: string | null,
   vignette = 0,
+  sharpen = 0,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -118,6 +120,7 @@ export function renderSquareImageFromRect(
   // canvas は呼び出しごとに新規生成するため、filter のリセット（"none" へ戻す）は不要。
   ctx.filter = filterCss ?? "none";
   ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, rect.size, rect.size);
+  applySharpen(ctx, rect.size, sharpen);
   drawVignette(ctx, rect.size, vignette);
 
   return new Promise<Blob>((resolve, reject) => {
@@ -133,6 +136,32 @@ export function renderSquareImageFromRect(
       quality,
     );
   });
+}
+
+function applySharpen(ctx: CanvasRenderingContext2D, size: number, amount: number): void {
+  if (amount <= 0 || size < 3) return;
+  const strength = Math.min(Math.max(amount, 0), 1);
+  const imageData = ctx.getImageData(0, 0, size, size);
+  const src = imageData.data;
+  const out = new Uint8ClampedArray(src);
+
+  for (let y = 1; y < size - 1; y++) {
+    for (let x = 1; x < size - 1; x++) {
+      const i = (y * size + x) * 4;
+      const top = ((y - 1) * size + x) * 4;
+      const bottom = ((y + 1) * size + x) * 4;
+      const left = (y * size + x - 1) * 4;
+      const right = (y * size + x + 1) * 4;
+      for (let c = 0; c < 3; c++) {
+        const center = src[i + c] ?? 0;
+        const sharpened =
+          center * 5 - (src[top + c] ?? 0) - (src[bottom + c] ?? 0) - (src[left + c] ?? 0) - (src[right + c] ?? 0);
+        out[i + c] = center + (sharpened - center) * strength;
+      }
+    }
+  }
+
+  ctx.putImageData(new ImageData(out, size, size), 0, 0);
 }
 
 function drawVignette(ctx: CanvasRenderingContext2D, size: number, amount: number): void {

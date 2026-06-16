@@ -1,36 +1,41 @@
-// レトロ加工フィルタの選択チップ（DESIGN §3: ガチャでなく選択式）。
-// 各チップに color のスウォッチ＋name。選択中をハイライト。「なし」も選べる。
+// 植物写真向けフィルタの選択チップ。重ねがけできるよう各チップをトグルにする。
+// 各チップに color のスウォッチ＋name。選択中をハイライト。「なし」は全解除。
 
 import { FILTER_PRESETS, type FilterPreset } from "../../lib/image/presets.ts";
 
 interface FilterChipsProps {
-  /** 選択中フィルタ（未選択＝「なし」は null）。 */
-  selected: FilterPreset | null;
-  /** チップを選んだとき（「なし」は null）。 */
-  onSelect: (preset: FilterPreset | null) => void;
+  /** 選択中フィルタ（空配列＝「なし」）。 */
+  selected: readonly FilterPreset[];
+  /** 選択状態を更新する。 */
+  onChange: (presets: FilterPreset[]) => void;
 }
 
-export default function FilterChips({ selected, onSelect }: FilterChipsProps) {
+export default function FilterChips({ selected, onChange }: FilterChipsProps) {
+  function toggle(preset: FilterPreset) {
+    const exists = selected.some((item) => item.name === preset.name);
+    onChange(exists ? selected.filter((item) => item.name !== preset.name) : [...selected, preset]);
+  }
+
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="フィルタを選ぶ">
+    <div className="flex flex-wrap gap-2" role="group" aria-label="フィルタを重ねる">
       <button
         type="button"
-        onClick={() => onSelect(null)}
-        aria-pressed={selected === null}
+        onClick={() => onChange([])}
+        aria-pressed={selected.length === 0}
         className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
-          selected === null ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"
+          selected.length === 0 ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"
         }`}
       >
         <span className="inline-block w-3 h-3 rounded-full border border-white/25 bg-white/10" aria-hidden="true" />
         なし
       </button>
       {FILTER_PRESETS.map((preset) => {
-        const isActive = selected?.name === preset.name;
+        const isActive = selected.some((item) => item.name === preset.name);
         return (
           <button
             key={preset.name}
             type="button"
-            onClick={() => onSelect(preset)}
+            onClick={() => toggle(preset)}
             aria-pressed={isActive}
             className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${
               isActive ? "bg-ha-green text-ha-white" : "glass text-ha-ink hover:border-ha-green/50"

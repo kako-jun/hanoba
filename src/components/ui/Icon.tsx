@@ -16,6 +16,7 @@ export type IconName =
   | "search"
   | "chevron"
   | "trash"
+  | "plus"
   | "camera"
   | "image"
   | "sprout"
@@ -101,6 +102,12 @@ export default function Icon({ name, className }: IconProps) {
       return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
           <path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3" />
+        </svg>
+      );
+    case "plus":
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
+          <path d="M12 5v14M5 12h14" />
         </svg>
       );
     case "camera":

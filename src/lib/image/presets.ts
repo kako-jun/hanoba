@@ -10,14 +10,27 @@ import type { FilterPreset } from "../nostr/types.ts";
 export type { FilterPreset };
 
 /**
- * 選択式フィルタの一覧。畑で迷わないよう、細かな調整ではなく用途が違うプリセットだけにする。
- * 葉の階調は潰さず、必要な時だけ周辺減光で見せたくない範囲を落とす。
+ * 選択式フィルタの一覧。畑で迷わないよう、細かな調整ではなく効果単位のプリセットにする。
+ * 重ねがけ前提なので、各効果は潰しすぎない強さに抑える。
  * 「なし」は UI 側で別途用意する（このリストには含めない）。
  */
 export const FILTER_PRESETS: readonly FilterPreset[] = [
-  { name: "葉を残す", filter: "brightness(1.03) contrast(1.07) saturate(1.1)", color: "#76b65a" },
-  { name: "花を出す", filter: "brightness(1.08) contrast(1.03) saturate(1.22)", color: "#d96d8b" },
-  { name: "土を温かく", filter: "brightness(1.02) contrast(1.12) saturate(0.95) sepia(0.14)", color: "#a5794f" },
-  { name: "周辺を隠す", filter: "brightness(0.98) contrast(1.14) saturate(1.04)", color: "#2f4028", vignette: 0.82 },
-  { name: "記録モノ", filter: "brightness(1.04) contrast(1.24) saturate(0.15) grayscale(0.85)", color: "#777777" },
+  { name: "葉露", filter: "brightness(1.02) contrast(1.06) saturate(1.08)", color: "#76b65a" },
+  { name: "華美", filter: "brightness(1.04) contrast(1.04) saturate(1.16)", color: "#d96d8b" },
+  { name: "土香", filter: "brightness(0.99) contrast(1.1) saturate(1.05) sepia(0.08)", color: "#9b7047" },
+  { name: "葉隠", filter: "brightness(0.98) contrast(1.08) saturate(1.02)", color: "#2f4028", vignette: 0.82 },
+  { name: "輪郭", filter: "brightness(1.01) contrast(1.08) saturate(1.02)", color: "#5e807c", sharpen: 0.72 },
 ] as const;
+
+export function composeFilterCss(presets: readonly FilterPreset[]): string | null {
+  if (presets.length === 0) return null;
+  return presets.map((preset) => preset.filter).join(" ");
+}
+
+export function composeVignette(presets: readonly FilterPreset[]): number {
+  return Math.max(0, ...presets.map((preset) => preset.vignette ?? 0));
+}
+
+export function composeSharpen(presets: readonly FilterPreset[]): number {
+  return Math.max(0, ...presets.map((preset) => preset.sharpen ?? 0));
+}
