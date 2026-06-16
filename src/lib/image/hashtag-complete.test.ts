@@ -28,6 +28,18 @@ describe("removeTag", () => {
     expect(removeTag("hello  world #アガベ ", "アガベ")).toBe("hello  world ");
   });
 
+  it("タグ行の最後の1つを外したら散文末尾に空行（改行）を残さない", () => {
+    expect(removeTag("水やり\n#アガベ ", "アガベ")).toBe("水やり ");
+  });
+
+  it("タグ行に兄弟が残るなら改行（タグ行）は保つ", () => {
+    expect(removeTag("水やり\n#アガベ #パキポ ", "パキポ")).toBe("水やり\n#アガベ ");
+  });
+
+  it("散文中の改行は #タグ を含まないので触れない", () => {
+    expect(removeTag("一行目\n二行目 #アガベ ", "アガベ")).toBe("一行目\n二行目 ");
+  });
+
   it("無ければそのまま・insertTag と往復で戻る", () => {
     expect(removeTag("#アガベ ", "パキポディウム")).toBe("#アガベ ");
     const added = insertTag("メモ", "アガベ");
@@ -66,12 +78,22 @@ describe("insertTag", () => {
     expect(insertTag("", "アガベ")).toBe("#アガベ ");
   });
 
-  it("既存本文の末尾に区切り空白付きで足す", () => {
-    expect(insertTag("開花", "アガベ")).toBe("開花 #アガベ ");
+  it("散文の末尾には改行で分けてタグ行を作る", () => {
+    expect(insertTag("開花", "アガベ")).toBe("開花\n#アガベ ");
+    expect(insertTag("水やり", "アガベ")).toBe("水やり\n#アガベ ");
   });
 
-  it("末尾が空白なら二重空白にしない", () => {
-    expect(insertTag("開花 ", "アガベ")).toBe("開花 #アガベ ");
+  it("散文が改行で終わっていれば二重改行しない", () => {
+    expect(insertTag("開花\n", "アガベ")).toBe("開花\n#アガベ ");
+  });
+
+  it("末尾行が既にタグ行なら同じ行にスペース区切りで積む", () => {
+    expect(insertTag("水やり\n#アガベ ", "パキポ")).toBe("水やり\n#アガベ #パキポ ");
+    expect(insertTag("#アガベ", "パキポ")).toBe("#アガベ #パキポ ");
+  });
+
+  it("タグ行が空白で終わっていれば二重空白にしない", () => {
+    expect(insertTag("#アガベ ", "パキポ")).toBe("#アガベ #パキポ ");
   });
 
   it("タグ内のスペースはアンダースコアにする", () => {

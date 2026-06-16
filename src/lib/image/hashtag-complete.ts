@@ -84,27 +84,47 @@ export function captionHasTag(caption: string, tag: string): boolean {
   return new RegExp(`(?:^|\\s)#${escaped}(?:\\s|$)`, "i").test(caption);
 }
 
+/** caption の最後の改行以降（＝末尾行）に独立した `#タグ` が1つでもあるか（#165）。 */
+function lastLineHasTag(caption: string): boolean {
+  const lastBreak = caption.lastIndexOf("\n");
+  const lastLine = lastBreak < 0 ? caption : caption.slice(lastBreak + 1);
+  return /(?:^|\s)#[^\s#]/.test(lastLine);
+}
+
 /**
- * 一言（caption）にタグを1つ**末尾に**挿入する（#22・ピッカーから選んだとき）。
+ * 一言（caption）にタグを1つ**末尾に**挿入する（#22/#165・ピッカーから選んだとき）。
  * - tag を正規化: 前後 trim・先頭 `#` 除去・**内部の空白は `_`**（タグのスペース→アンダースコア）。
  * - 既に同じタグがあれば二重に足さない（大小無視・語境界）。
- * - 末尾に `#tag ` を足す（直前が空白/改行/空でなければ空白を1つ入れて区切る）。
- *   ＝文章を打っている最中でも常に本文の一番下に固定追加される（キャレット位置に割り込まない）。
+ * - 散文（本文）とタグは**改行で分ける**（#165）。挿入規則:
+ *   - caption が空なら `#tag `。
+ *   - **末尾行に既に `#タグ` があれば**（タグ行が継続中）スペース区切りで追記して同じ行に積む。
+ *   - **末尾行が散文（タグ無し）なら**新しい行（`\n`）にタグを置く。caption が既に改行で
+ *     終わっていれば二重改行はしない。
+ *   ＝文章を打っている最中でも常に本文の一番下にタグ行として固定追加される（キャレット位置に割り込まない）。
  * 空タグ（正規化後 ""）は caption をそのまま返す。
  */
 export function insertTag(caption: string, tag: string): string {
   const norm = normalizeTagForBody(tag);
   if (norm === "") return caption;
   if (captionHasTag(caption, norm)) return caption;
+  if (caption === "") return `#${norm} `;
 
-  const needsSpace = caption !== "" && !/\s$/.test(caption);
-  return `${caption}${needsSpace ? " " : ""}#${norm} `;
+  // 末尾行がタグ行（既に #タグ を含む）ならスペースで継続、散文なら改行で新しいタグ行へ。
+  let sep: string;
+  if (lastLineHasTag(caption)) {
+    sep = /\s$/.test(caption) ? "" : " ";
+  } else {
+    sep = /\n$/.test(caption) ? "" : "\n";
+  }
+  return `${caption}${sep}#${norm} `;
 }
 
 /**
- * caption から独立した `#タグ` を1つ外す（ピッカーで選択済みチップを再タップ＝トグル解除・#144）。
+ * caption から独立した `#タグ` を1つ外す（ピッカーで選択済みチップを再タップ＝トグル解除・#144/#165）。
  * - tag を正規化して語境界で一致する箇所を除去。前後どちらかの空白も一緒に畳んで二重空白を残さない。
  * - 末尾は insertTag の規約（`#tag ` で終わる）に合わせ、タグが残るうちは末尾空白1つを保つ。
+ * - タグを外した結果**末尾のタグ行が空になったら、その直前のぶら下がり改行も除去**して
+ *   散文だけが `prose\n` で終わらないようにする（#165）。無関係な散文中の改行・連続スペースには触れない。
  * 一致が無ければ caption をそのまま返す。
  */
 export function removeTag(caption: string, tag: string): string {
@@ -114,5 +134,11 @@ export function removeTag(caption: string, tag: string): string {
   // 直前の境界（空白 or 先頭）ごと #tag を外す。語境界は後続の空白/終端で担保。
   // 先頭の `(?:^|\s)` で隣の空白を一緒に飲むので二重空白は生じず、無関係な散文の
   // 連続スペースには触れない（global collapse はしない）。
-  return caption.replace(new RegExp(`(?:^|\\s)#${escaped}(?=\\s|$)`, "gi"), "");
+  const removed = caption.replace(new RegExp(`(?:^|\\s)#${escaped}(?=\\s|$)`, "gi"), "");
+  // タグ行が空（最後の改行以降が空白だけ）になったら、ぶら下がり改行ごと末尾を畳む。
+  // 散文中の改行は #タグ を含まない行なので触れない（末尾行が空白のみのときだけ働く）。
+  if (removed !== caption) {
+    return removed.replace(/\n[ \t]*$/, "");
+  }
+  return removed;
 }
