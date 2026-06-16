@@ -99,7 +99,7 @@ describe("Composer", () => {
     expect(screen.getByText(/を入れると投稿できます/)).toBeInTheDocument();
 
     // 一言を入力 → enabled、不足理由は消える。
-    await user.type(screen.getByLabelText("ひとこと（必須）"), "開花した");
+    await user.type(screen.getByLabelText("ひとこと"), "開花した");
     expect(submit).toBeEnabled();
     expect(screen.queryByText(/を入れると投稿できます/)).not.toBeInTheDocument();
   });
@@ -141,7 +141,7 @@ describe("Composer", () => {
       await user.upload(input, makeImageFile());
       fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
       // 一言を入れて投稿。
-      await user.type(screen.getByLabelText("ひとこと（必須）"), "開花した");
+      await user.type(screen.getByLabelText("ひとこと"), "開花した");
       await user.click(await screen.findByRole("button", { name: /投稿する/ }));
 
       await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
@@ -171,7 +171,7 @@ describe("Composer", () => {
     await user.click(secondThumb!);
     fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
 
-    await user.type(screen.getByLabelText("ひとこと（必須）"), "成長記録");
+    await user.type(screen.getByLabelText("ひとこと"), "成長記録");
     await user.click(await screen.findByRole("button", { name: /投稿する/ }));
 
     await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
@@ -230,7 +230,7 @@ describe("Composer", () => {
     ]);
 
     await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "4/4枚")).toBeInTheDocument());
-    await user.type(screen.getByLabelText("ひとこと（必須）"), "四枚記録");
+    await user.type(screen.getByLabelText("ひとこと"), "四枚記録");
     await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: /投稿する/ }));
 
@@ -259,7 +259,7 @@ describe("Composer", () => {
     await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
 
     await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
-    await user.type(screen.getByLabelText("ひとこと（必須）"), "失敗時 cleanup");
+    await user.type(screen.getByLabelText("ひとこと"), "失敗時 cleanup");
     await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: /投稿する/ }));
 
