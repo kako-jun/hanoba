@@ -1,11 +1,12 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,416件 / 120属 / 15カテゴリ・#143）。
+// 品種タグ辞書（カテゴリ→属→品種・1,795件 / 185属 / 22カテゴリ・#143 / #168）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
 // **TagPicker（#144）が開いた時に動的 import で code-split** されるよう、ここはデータ専用にする
 // （静的 import で初期 composer バンドルに載せない）。検索/ドリルダウンは全てクライアントで回る。
 //
-// カテゴリは意味の近いもの順（多肉→メセン→塊根→サボテン→着生→観葉→食虫→蘭→和もの→花→食用）。
+// カテゴリは意味の近いもの順（多肉→メセン→塊根→サボテン→着生→観葉→食虫→蘭→和もの→シダ→コケ→
+// 水草→水生→花→球根→花木→食用）。基本種・別ジャンル（水草等）は #168 で補完した。
 // 値は「本文 # に入るタグ文字列」（空白は insertTag 側で _ に正規化）。表記揺れ（赤猫 ↔
 // レッドキャットウィーズル 等）は調査が両形を別品種として持つため、そのまま両方を pickable に残す。
 
@@ -368,12 +369,31 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ライム" }, { name: "エンジョイ" }, { name: "グローバルグリーン" }, { name: "ハーレクイン" },
         { name: "セブブルー" }, { name: "シンダプサス" }, { name: "トリカラー" },
       ] },
+      { name: "フィカス", pickable: true, aliases: ["ゴムの木"], varieties: [
+        { name: "ウンベラータ" }, { name: "ベンガレンシス" }, { name: "アルテシマ" }, { name: "バーガンディ" },
+        { name: "ベンジャミン" }, { name: "ベンジャミナ" }, { name: "ガジュマル" }, { name: "ティネケ" },
+        { name: "ルビギノーサ" }, { name: "ペティオラリス" }, { name: "リラータ" }, { name: "プミラ" },
+      ] },
+      { name: "ドラセナ", pickable: true, varieties: [
+        { name: "幸福の木" }, { name: "マッサンゲアナ" }, { name: "コンシンネ" }, { name: "マジナータ" },
+        { name: "ソング・オブ・インディア" }, { name: "ソング・オブ・ジャマイカ" }, { name: "コンパクタ" }, { name: "レモンライム" },
+        { name: "ワーネッキー" }, { name: "ドラド" }, { name: "デレメンシス" },
+      ] },
+      { name: "パキラ", pickable: true, aliases: ["発財樹"], varieties: [
+        { name: "グラブラ" }, { name: "アクアティカ" }, { name: "ミルキーウェイ" },
+      ] },
+      { name: "アイビー", pickable: true, aliases: ["ヘデラ"], varieties: [
+        { name: "ヘデラ" }, { name: "ヘリックス" }, { name: "グレーシャー" }, { name: "ゴールドチャイルド" },
+        { name: "ホワイトワンダー" }, { name: "ピッツバーグ" }, { name: "カナリエンシス" }, { name: "雪の妖精" },
+      ] },
+      { name: "シェフレラ", pickable: true, aliases: ["カポック"], varieties: [
+        { name: "アンガスティフォリア" }, { name: "コンパクタ" }, { name: "ホンコン" }, { name: "アルボリコラ" },
+        { name: "レナータ" }, { name: "アマテ" },
+      ] },
       { name: "その他観葉", pickable: false, varieties: [
         { name: "ディフェンバキア" }, { name: "クワズイモ" }, { name: "アグラオネマ" }, { name: "ザミオクルカス" },
-        { name: "シェフレラ" }, { name: "フィカス" }, { name: "ウンベラータ" }, { name: "アルテシマ" },
-        { name: "ベンガレンシス" }, { name: "ペペロミア" }, { name: "ストレリチア" }, { name: "エバーフレッシュ" },
-        { name: "ガジュマル" }, { name: "ストロマンテ" }, { name: "クテナンテ" }, { name: "ディスキディア" },
-        { name: "サンスベリア" },
+        { name: "ペペロミア" }, { name: "ストレリチア" }, { name: "エバーフレッシュ" }, { name: "ストロマンテ" },
+        { name: "クテナンテ" }, { name: "ディスキディア" }, { name: "サンスベリア" },
       ] },
     ],
   },
@@ -495,6 +515,100 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     ],
   },
   {
+    label: "シダ",
+    genera: [
+      { name: "アジアンタム", pickable: true, varieties: [
+        { name: "ラディアナム" }, { name: "フリッツルーシー" }, { name: "ペルビアナム" }, { name: "ホウライシダ" },
+      ] },
+      { name: "プテリス", pickable: true, varieties: [
+        { name: "クレティカ" }, { name: "アルボリネアタ" }, { name: "イノキシマ" },
+      ] },
+      { name: "ネフロレピス", pickable: true, aliases: ["タマシダ"], varieties: [
+        { name: "ツデー" }, { name: "ボストンファーン" }, { name: "スコッチ" }, { name: "ダフィー" },
+      ] },
+      { name: "ダバリア", pickable: true, aliases: ["シノブ"], varieties: [
+        { name: "トキワシノブ" }, { name: "玉シダ" },
+      ] },
+      { name: "アスプレニウム", pickable: true, aliases: ["タニワタリ"], varieties: [
+        { name: "オオタニワタリ" }, { name: "コブラ" }, { name: "エメラルドウェーブ" }, { name: "アビス" },
+      ] },
+      { name: "その他シダ", pickable: false, aliases: ["シダ"], varieties: [
+        { name: "シダ" }, { name: "リュウビンタイ" }, { name: "ヒノキシダ" }, { name: "クサソテツ" },
+        { name: "コゴミ" }, { name: "ゼンマイ" }, { name: "ワラビ" }, { name: "イノモトソウ" },
+        { name: "トキワシダ" }, { name: "ブレクナム" }, { name: "ヘミオニティス" }, { name: "イワヒバ" },
+      ] },
+    ],
+  },
+  {
+    label: "コケ",
+    genera: [
+      { name: "コケ各種", pickable: false, aliases: ["苔", "コケ", "モス"], varieties: [
+        { name: "苔" }, { name: "コケ" }, { name: "ホソバオキナゴケ", aliases: ["山苔"] }, { name: "ハイゴケ" },
+        { name: "スナゴケ" }, { name: "タマゴケ" }, { name: "ヒノキゴケ" }, { name: "シノブゴケ" },
+        { name: "ホウオウゴケ" }, { name: "コツボゴケ" }, { name: "スギゴケ" }, { name: "ゼニゴケ" },
+        { name: "苔テラリウム" }, { name: "苔玉" },
+      ] },
+    ],
+  },
+  {
+    label: "水草",
+    genera: [
+      { name: "アヌビアス", pickable: true, varieties: [
+        { name: "ナナ" }, { name: "ナナプチ" }, { name: "コーヒーフォリア" }, { name: "バルテリー" },
+        { name: "ナナゴールデン" }, { name: "ナンギ" },
+      ] },
+      { name: "ミクロソリウム", pickable: true, varieties: [
+        { name: "プテロプス" }, { name: "ナローリーフ" }, { name: "本ナロー" }, { name: "トライデント" },
+        { name: "ウェンディロフ" }, { name: "セミナロー" },
+      ] },
+      { name: "ウィローモス", pickable: true, aliases: ["モス"], varieties: [
+        { name: "南米ウィローモス" }, { name: "ウィーピングモス" }, { name: "プレミアムモス" }, { name: "クリスマスモス" },
+        { name: "フレイムモス" }, { name: "リシア" },
+      ] },
+      { name: "クリプトコリネ", pickable: true, varieties: [
+        { name: "ウェンティ" }, { name: "ベケッティ" }, { name: "バランサエ" }, { name: "ルテア" },
+        { name: "ペッチー" }, { name: "ウェンティグリーン" }, { name: "パルバ" },
+      ] },
+      { name: "ロタラ", pickable: true, varieties: [
+        { name: "ロトンディフォリア" }, { name: "グリーン" }, { name: "ハイグロフィラ赤" }, { name: "インディカ" },
+        { name: "ナンセアン" }, { name: "ワリッキー" }, { name: "ベトナム" },
+      ] },
+      { name: "ブセファランドラ", pickable: true, aliases: ["ブセ"], varieties: [
+        { name: "クダガン" }, { name: "クアラクアヤン" }, { name: "ブラウニー" }, { name: "シンタン" },
+        { name: "デフォルメ" },
+      ] },
+      { name: "エキノドルス", pickable: true, aliases: ["アマゾンソード"], varieties: [
+        { name: "アマゾンソード" }, { name: "オゼロット" }, { name: "ルビン" }, { name: "テネルス" },
+      ] },
+      { name: "ハイグロフィラ", pickable: true, varieties: [
+        { name: "ポリスペルマ" }, { name: "ピンナティフィダ" }, { name: "ロザエネルビス" }, { name: "ギニア" },
+      ] },
+      { name: "前景草・その他水草", pickable: false, varieties: [
+        { name: "グロッソスティグマ" }, { name: "ニューラージパールグラス" }, { name: "ヘアーグラス" }, { name: "キューバパールグラス" },
+        { name: "バリスネリア" }, { name: "ピグミーチェーンサジタリア" }, { name: "マツモ" }, { name: "アナカリス" },
+        { name: "ウォータースプライト" }, { name: "ニードルリーフルドウィジア" }, { name: "ブリクサ" }, { name: "ヘテランテラ" },
+        { name: "テネルス" }, { name: "ウォーターローン" },
+      ] },
+    ],
+  },
+  {
+    label: "水生・ビオトープ",
+    genera: [
+      { name: "スイレン", pickable: true, aliases: ["睡蓮"], varieties: [
+        { name: "温帯性スイレン" }, { name: "熱帯性スイレン" }, { name: "姫スイレン" }, { name: "ヒツジグサ" },
+      ] },
+      { name: "ハス", pickable: true, aliases: ["蓮"], varieties: [
+        { name: "茶碗蓮" }, { name: "大賀蓮" }, { name: "舞妃蓮" }, { name: "ミニ蓮" },
+      ] },
+      { name: "水生植物各種", pickable: false, varieties: [
+        { name: "ホテイアオイ" }, { name: "アサザ" }, { name: "ウォーターマッシュルーム" }, { name: "ナガバオモダカ" },
+        { name: "オモダカ" }, { name: "ウォーターポピー" }, { name: "ウォーターバコパ" }, { name: "ミズトクサ" },
+        { name: "カキツバタ" }, { name: "ガマ" }, { name: "コウホネ" }, { name: "ミズユキノシタ" },
+        { name: "デンジソウ" }, { name: "サンショウモ" }, { name: "アマゾンフロッグビット" },
+      ] },
+    ],
+  },
+  {
     label: "バラ",
     genera: [
       { name: "バラ", pickable: true, varieties: [
@@ -534,11 +648,135 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "シングル" }, { name: "セミダブル" }, { name: "ダブル" }, { name: "ピコティ" },
         { name: "ダークネクタリー" },
       ] },
-      { name: "その他人気草花", pickable: false, varieties: [
-        { name: "プリムラ" }, { name: "ビオラ" }, { name: "パンジー" }, { name: "多年草" },
-        { name: "宿根草" }, { name: "原種チューリップ" }, { name: "ダリア" }, { name: "変化朝顔" },
+      { name: "ヒマワリ", pickable: true, aliases: ["ひまわり", "向日葵", "サンフラワー", "sunflower"], varieties: [
+        { name: "サンリッチ" }, { name: "ビンセント" }, { name: "テディベア" }, { name: "東北八重" },
+        { name: "モネのひまわり" }, { name: "ゴッホのひまわり" }, { name: "ムーランルージュ" }, { name: "ロシアひまわり" },
+      ] },
+      { name: "アサガオ", pickable: true, aliases: ["朝顔", "あさがお"], varieties: [
+        { name: "団十郎" }, { name: "ヘブンリーブルー" }, { name: "西洋朝顔" }, { name: "曜白朝顔" },
+        { name: "変化朝顔" }, { name: "大輪朝顔" },
+      ] },
+      { name: "コスモス", pickable: true, varieties: [
+        { name: "センセーション" }, { name: "イエローキャンパス" }, { name: "シーシェル" }, { name: "ダブルクリック" },
+        { name: "キバナコスモス" }, { name: "チョコレートコスモス" },
+      ] },
+      { name: "ペチュニア", pickable: true, varieties: [
+        { name: "サフィニア" }, { name: "サフィニアアート" }, { name: "スーパーチュニア" }, { name: "バカラ" },
+        { name: "ナイトスカイ" }, { name: "ブリエッタ" }, { name: "カリブラコア" },
+      ] },
+      { name: "マリーゴールド", pickable: true, varieties: [
+        { name: "フレンチマリーゴールド" }, { name: "アフリカンマリーゴールド" }, { name: "ストロベリーブロンド" }, { name: "ボナンザ" },
+      ] },
+      { name: "サルビア", pickable: true, aliases: ["セージ"], varieties: [
+        { name: "スプレンデンス" }, { name: "ファリナセア" }, { name: "ブルーサルビア" }, { name: "ガラニチカ" },
+        { name: "メキシカンセージ" }, { name: "レウカンサ" }, { name: "ネモローサ" },
+      ] },
+      { name: "ガーベラ", pickable: true, varieties: [
+        { name: "ガービー" }, { name: "スパイダー咲き" }, { name: "ミニガーベラ" }, { name: "パスタ" },
+      ] },
+      { name: "キク", pickable: true, aliases: ["菊", "マム"], varieties: [
+        { name: "ポットマム" }, { name: "スプレーマム" }, { name: "ガーデンマム" }, { name: "クッションマム" },
         { name: "古典菊" }, { name: "嵯峨菊" }, { name: "江戸菊" }, { name: "肥後菊" },
-        { name: "花菖蒲" }, { name: "君子蘭" },
+        { name: "厚物" }, { name: "管物" }, { name: "イソギク" },
+      ] },
+      { name: "ナデシコ", pickable: true, aliases: ["ダイアンサス"], varieties: [
+        { name: "カワラナデシコ" }, { name: "なでしこ" }, { name: "テルスター" }, { name: "ビジョナデシコ" },
+        { name: "アメリカナデシコ" },
+      ] },
+      { name: "ジニア", pickable: true, aliases: ["百日草", "ヒャクニチソウ"], varieties: [
+        { name: "プロフュージョン" }, { name: "ジニアリネアリス" }, { name: "ザハラ" }, { name: "クイーンライム" },
+      ] },
+      { name: "パンジー", pickable: true, aliases: ["ビオラ"], varieties: [
+        { name: "ビオラ" }, { name: "よく咲くスミレ" }, { name: "ヌーヴェルヴァーグ" }, { name: "ムーランフリル" },
+        { name: "フリズルシズル" }, { name: "見元ビオラ" }, { name: "ローブドアンティーク" },
+      ] },
+      { name: "キンセンカ", pickable: true, aliases: ["カレンデュラ"], varieties: [
+        { name: "冬知らず" }, { name: "コーヒークリーム" }, { name: "オレンジキング" },
+      ] },
+      { name: "ケイトウ", pickable: true, aliases: ["セロシア"], varieties: [
+        { name: "久留米ケイトウ" }, { name: "ノゲイトウ" }, { name: "羽毛ケイトウ" }, { name: "ヤリゲイトウ" },
+      ] },
+      { name: "その他人気草花", pickable: false, varieties: [
+        { name: "プリムラ" }, { name: "多年草" }, { name: "宿根草" }, { name: "原種チューリップ" },
+        { name: "ダリア" }, { name: "花菖蒲" }, { name: "君子蘭" },
+      ] },
+    ],
+  },
+  {
+    label: "球根",
+    genera: [
+      { name: "チューリップ", pickable: true, varieties: [
+        { name: "アンジェリケ" }, { name: "ブルーダイヤモンド" }, { name: "クイーンオブナイト" }, { name: "アプリコットビューティー" },
+        { name: "原種チューリップ" }, { name: "パーロット咲き" }, { name: "フリンジ咲き" }, { name: "ユリ咲き" },
+        { name: "八重咲きチューリップ" },
+      ] },
+      { name: "スイセン", pickable: true, aliases: ["水仙", "ナルシサス"], varieties: [
+        { name: "日本水仙" }, { name: "ラッパスイセン" }, { name: "テタテート" }, { name: "ペーパーホワイト" },
+        { name: "口紅水仙" }, { name: "八重咲きスイセン" },
+      ] },
+      { name: "ヒヤシンス", pickable: true, varieties: [
+        { name: "デルフトブルー" }, { name: "ピンクパール" }, { name: "ジャンボス" }, { name: "カーネギー" },
+        { name: "ローマンヒヤシンス" },
+      ] },
+      { name: "ユリ", pickable: true, aliases: ["リリー", "百合"], varieties: [
+        { name: "カサブランカ" }, { name: "オリエンタルリリー" }, { name: "テッポウユリ" }, { name: "スカシユリ" },
+        { name: "ヤマユリ" }, { name: "カノコユリ" }, { name: "オニユリ" }, { name: "LAハイブリッド" },
+      ] },
+      { name: "クロッカス", pickable: true, varieties: [
+        { name: "ジャンヌダルク" }, { name: "クリームビューティー" }, { name: "サフラン" }, { name: "原種クロッカス" },
+      ] },
+      { name: "アマリリス", pickable: true, aliases: ["ヒッペアストルム"], varieties: [
+        { name: "アップルブロッサム" }, { name: "レッドライオン" }, { name: "ダブルドリーム" }, { name: "パピリオ" },
+      ] },
+      { name: "グラジオラス", pickable: true, varieties: [
+        { name: "夏咲きグラジオラス" }, { name: "春咲きグラジオラス" },
+      ] },
+      { name: "ムスカリ", pickable: true, varieties: [
+        { name: "アルメニアカム" }, { name: "ホワイトマジック" }, { name: "ラティフォリウム" }, { name: "オーシャンマジック" },
+      ] },
+      { name: "その他球根", pickable: false, varieties: [
+        { name: "スノードロップ" }, { name: "スノーフレーク" }, { name: "アネモネ" }, { name: "ラナンキュラス" },
+        { name: "フリージア" }, { name: "チオノドクサ" }, { name: "イフェイオン" }, { name: "ハナニラ" },
+        { name: "アリウム" }, { name: "コルチカム" }, { name: "ネリネ" }, { name: "ダッチアイリス" },
+      ] },
+    ],
+  },
+  {
+    label: "花木・庭木",
+    genera: [
+      { name: "ツツジ", pickable: true, aliases: ["躑躅"], varieties: [
+        { name: "クルメツツジ" }, { name: "ヒラドツツジ" }, { name: "オオムラサキ" }, { name: "ミツバツツジ" },
+        { name: "ヤマツツジ" }, { name: "レンゲツツジ" }, { name: "シャクナゲ" },
+      ] },
+      { name: "サツキ", pickable: true, aliases: ["皐月"], varieties: [
+        { name: "大盃" }, { name: "日光" }, { name: "鹿沼" }, { name: "暁天" },
+        { name: "晃山" },
+      ] },
+      { name: "ツバキ", pickable: true, aliases: ["椿", "カメリア"], varieties: [
+        { name: "侘助" }, { name: "乙女椿" }, { name: "数寄屋侘助" }, { name: "卜伴" },
+        { name: "玉之浦" }, { name: "ヤブツバキ" }, { name: "肥後椿" },
+      ] },
+      { name: "サザンカ", pickable: true, aliases: ["山茶花"], varieties: [
+        { name: "朝倉" }, { name: "勘次郎" }, { name: "富士の峰" }, { name: "獅子頭" },
+      ] },
+      { name: "アジサイ以外の花木", pickable: false, varieties: [
+        { name: "キンモクセイ", aliases: ["金木犀"] }, { name: "ギンモクセイ", aliases: ["銀木犀"] }, { name: "ジンチョウゲ", aliases: ["沈丁花"] }, { name: "クチナシ" },
+        { name: "ハナミズキ" }, { name: "ヤマボウシ" }, { name: "モクレン" }, { name: "コブシ" },
+        { name: "サルスベリ", aliases: ["百日紅"] }, { name: "ライラック" }, { name: "ユキヤナギ" }, { name: "レンギョウ" },
+        { name: "ボケ" }, { name: "コデマリ" }, { name: "ナンテン", aliases: ["南天"] }, { name: "センリョウ" },
+        { name: "マンリョウ" }, { name: "ムクゲ" }, { name: "フヨウ" }, { name: "キョウチクトウ" },
+      ] },
+      { name: "モミジ", pickable: true, aliases: ["紅葉", "カエデ", "もみじ"], varieties: [
+        { name: "イロハモミジ" }, { name: "ヤマモミジ" }, { name: "出猩々" }, { name: "野村もみじ" },
+        { name: "獅子頭" }, { name: "青枝垂れ" }, { name: "デショウジョウ" }, { name: "トウカエデ" },
+      ] },
+      { name: "ウメ", pickable: true, aliases: ["梅"], varieties: [
+        { name: "南高" }, { name: "白加賀" }, { name: "豊後" }, { name: "鶯宿" },
+        { name: "枝垂れ梅" }, { name: "思いのまま" }, { name: "長寿梅" },
+      ] },
+      { name: "サクラ", pickable: true, aliases: ["桜"], varieties: [
+        { name: "ソメイヨシノ" }, { name: "枝垂れ桜" }, { name: "八重桜" }, { name: "河津桜" },
+        { name: "陽光" }, { name: "旭山桜" }, { name: "富士桜" }, { name: "ヤマザクラ" },
       ] },
     ],
   },
@@ -672,16 +910,54 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "海老芋" }, { name: "ニンニク" }, { name: "ホワイト六片" }, { name: "ジャンボニンニク" },
         { name: "食用ほおずき" }, { name: "ストロベリートマト" },
       ] },
-      { name: "ハーブ", pickable: true, varieties: [
-        { name: "バジル" }, { name: "スイートバジル" }, { name: "ホーリーバジル" }, { name: "レモンバジル" },
-        { name: "ジェノベーゼ" }, { name: "ローズマリー" }, { name: "立性ローズマリー" }, { name: "匍匐性ローズマリー" },
-        { name: "タイム" }, { name: "コモンタイム" }, { name: "レモンタイム" }, { name: "ミント" },
+    ],
+  },
+  {
+    label: "ハーブ",
+    genera: [
+      { name: "バジル", pickable: true, varieties: [
+        { name: "スイートバジル" }, { name: "ホーリーバジル" }, { name: "レモンバジル" }, { name: "ジェノベーゼ" },
+        { name: "ダークオパール" }, { name: "ブッシュバジル" }, { name: "シナモンバジル" },
+      ] },
+      { name: "ミント", pickable: true, varieties: [
         { name: "スペアミント" }, { name: "ペパーミント" }, { name: "アップルミント" }, { name: "パイナップルミント" },
-        { name: "セージ" }, { name: "コモンセージ" }, { name: "パイナップルセージ" }, { name: "チェリーセージ" },
-        { name: "ホワイトセージ" }, { name: "オレガノ" }, { name: "ケントビューティー" }, { name: "ラベンダー" },
-        { name: "イングリッシュラベンダー" }, { name: "フレンチラベンダー" }, { name: "グロッソ" }, { name: "カモミール" },
-        { name: "ジャーマンカモミール" }, { name: "ローマンカモミール" }, { name: "レモングラス" }, { name: "レモンバーム" },
-        { name: "ディル" }, { name: "チャイブ" }, { name: "タラゴン" },
+        { name: "モロッカンミント" }, { name: "オーデコロンミント" }, { name: "ブラックペパーミント" },
+      ] },
+      { name: "ローズマリー", pickable: true, varieties: [
+        { name: "立性ローズマリー" }, { name: "匍匐性ローズマリー" }, { name: "トスカナブルー" }, { name: "マリンブルー" },
+        { name: "モーツァルトブルー" }, { name: "プロストラータス" },
+      ] },
+      { name: "タイム", pickable: true, varieties: [
+        { name: "コモンタイム" }, { name: "レモンタイム" }, { name: "クリーピングタイム" }, { name: "シルバータイム" },
+      ] },
+      { name: "セージ", pickable: true, varieties: [
+        { name: "コモンセージ" }, { name: "パイナップルセージ" }, { name: "チェリーセージ" }, { name: "ホワイトセージ" },
+        { name: "ゴールデンセージ" }, { name: "パープルセージ" },
+      ] },
+      { name: "ラベンダー", pickable: true, varieties: [
+        { name: "イングリッシュラベンダー" }, { name: "フレンチラベンダー" }, { name: "グロッソ" }, { name: "ラバンディン" },
+        { name: "デンタータ" }, { name: "ストエカス" },
+      ] },
+      { name: "カモミール", pickable: true, varieties: [
+        { name: "ジャーマンカモミール" }, { name: "ローマンカモミール" },
+      ] },
+      { name: "オレガノ", pickable: true, varieties: [
+        { name: "ケントビューティー" }, { name: "コモンオレガノ" }, { name: "ゴールデンオレガノ" }, { name: "マジョラム" },
+      ] },
+      { name: "パセリ", pickable: true, varieties: [
+        { name: "イタリアンパセリ" }, { name: "カーリーパセリ" }, { name: "モスカールドパセリ" },
+      ] },
+      { name: "シソ", pickable: true, aliases: ["大葉", "紫蘇"], varieties: [
+        { name: "青じそ" }, { name: "赤じそ" }, { name: "ちりめんじそ" }, { name: "穂じそ" },
+      ] },
+      { name: "パクチー", pickable: true, aliases: ["コリアンダー", "香菜", "シャンツァイ"], varieties: [
+        { name: "コリアンダー" }, { name: "サイゴンパクチー" },
+      ] },
+      { name: "その他ハーブ", pickable: false, varieties: [
+        { name: "レモングラス" }, { name: "レモンバーム" }, { name: "ディル" }, { name: "チャイブ" },
+        { name: "タラゴン" }, { name: "フェンネル" }, { name: "チャービル" }, { name: "ルッコラ" },
+        { name: "ステビア" }, { name: "ナスタチウム" }, { name: "ボリジ" }, { name: "ヒソップ" },
+        { name: "コモンマロウ" }, { name: "キャットニップ" }, { name: "ワイルドストロベリー" },
       ] },
     ],
   },
