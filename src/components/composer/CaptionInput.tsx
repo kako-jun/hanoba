@@ -4,7 +4,7 @@
 // 前方一致候補を出す。pool に無くても「そのまま #query を使う」を末尾に出す（freeform）。
 // 候補は ↑↓ で移動、Enter で確定、Esc で閉じる。
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import { detectHashtagQuery, filterHashtagCandidates } from "../../lib/image/hashtag-complete.ts";
 
@@ -13,6 +13,12 @@ interface CaptionInputProps {
   onChange: (value: string) => void;
   /** 補完候補プール（過去使用タグ）。親が fetchKnownHashtags で用意する。 */
   pool: string[];
+  /**
+   * タグチップ挿入/解除のたびに親が increment する合図（#165）。値が変わったら textarea を
+   * focus してキャレットを本文末尾へ移す。0（初期値）では発火しない。手打ち補完
+   * （applyCandidate）はこの経路を通らず、従来どおりキャレット位置で確定する。
+   */
+  focusEndSignal?: number;
 }
 
 interface PopupState {
@@ -26,11 +32,26 @@ interface PopupState {
   end: number;
 }
 
-export default function CaptionInput({ value, onChange, pool }: CaptionInputProps) {
+export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0 }: CaptionInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
   const [height, setHeight] = useState(124);
   const [popup, setPopup] = useState<PopupState | null>(null);
+
+  // タグチップ挿入/解除後にキャレットを本文末尾へ送る（#165）。初期値 0 では発火しない。
+  // value 更新（setCaption）と同フレームの再レンダリング後に textarea の現在長へ寄せる。
+  useEffect(() => {
+    if (focusEndSignal === 0) return;
+    const el = textareaRef.current;
+    if (el === null) return;
+    requestAnimationFrame(() => {
+      const node = textareaRef.current;
+      if (node === null) return;
+      const end = node.value.length;
+      node.focus();
+      node.setSelectionRange(end, end);
+    });
+  }, [focusEndSignal]);
 
   function resizeCaption(nextHeight: number) {
     setHeight(Math.min(Math.max(nextHeight, 104), 360));
