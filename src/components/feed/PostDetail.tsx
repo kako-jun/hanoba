@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
+import RevealImage from "../ui/RevealImage.tsx";
 import { detectPlants } from "../../lib/plants/detect.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
@@ -155,8 +156,8 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
           // shrink-0 で写真の自然な高さを確保する（これが「正方形が確保できない」の原因だった）。
           <div className="w-full shrink-0 overflow-hidden rounded-t-xl bg-ha-green-soft">
             <div className="relative flex items-center justify-center">
-              <img
-                src={post.imageUrls[photoIndex] ?? post.imageUrls[0]}
+              <RevealImage
+                src={post.imageUrls[photoIndex] ?? post.imageUrls[0] ?? ""}
                 alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
                 className="max-w-full max-h-[70vh] object-contain"
               />

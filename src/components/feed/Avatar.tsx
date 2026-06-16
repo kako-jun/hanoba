@@ -1,3 +1,5 @@
+import RevealImage from "../ui/RevealImage.tsx";
+
 interface Props {
   /** アバター画像 URL（無ければ頭文字フォールバック）。 */
   src: string | null;
@@ -14,7 +16,7 @@ interface Props {
 export default function Avatar({ src, name, className = "w-6 h-6" }: Props) {
   if (src !== null) {
     return (
-      <img
+      <RevealImage
         src={src}
         alt=""
         loading="lazy"

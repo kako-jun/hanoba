@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
+import RevealImage from "../ui/RevealImage.tsx";
 import AccountName from "../account/AccountName.tsx";
 import ProfileEditor from "../account/ProfileEditor.tsx";
 import PostDetail from "./PostDetail.tsx";
@@ -151,7 +152,7 @@ export default function MyGrid() {
                     aria-label={post.caption === "" ? "写真を拡大" : post.caption}
                     className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
-                    <img
+                    <RevealImage
                       src={post.imageUrl}
                       alt={post.caption}
                       loading="lazy"
