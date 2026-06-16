@@ -17,6 +17,8 @@ interface CropFrameProps {
   initialCrop?: SquareCropRect | null;
   /** プレビューにライブ適用する CSS filter（未選択は null）。 */
   filter: string | null;
+  /** プレビューに重ねる周辺減光の強さ（0〜1）。 */
+  vignette?: number;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
 }
@@ -26,7 +28,7 @@ function centeredSquareCrop(width: number, height: number): Crop {
   return centerCrop(makeAspectCrop({ unit: "%", width: 90 }, 1, width, height), width, height);
 }
 
-export default function CropFrame({ src, imgRef, initialCrop, filter, onCropComplete }: CropFrameProps) {
+export default function CropFrame({ src, imgRef, initialCrop, filter, vignette = 0, onCropComplete }: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
 
   function commitCrop(pixelCrop: PixelCrop, image: HTMLImageElement | null) {
@@ -78,6 +80,7 @@ export default function CropFrame({ src, imgRef, initialCrop, filter, onCropComp
         keepSelection
         className="max-w-full rounded-2xl overflow-hidden"
       >
+        <div className="relative">
         <img
           ref={imgRef}
           src={src}
@@ -85,6 +88,16 @@ export default function CropFrame({ src, imgRef, initialCrop, filter, onCropComp
           onLoad={handleImageLoad}
           style={{ filter: filter ?? "none", maxHeight: "60vh", display: "block" }}
         />
+        {vignette > 0 && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at center, rgba(0,0,0,0) 34%, rgba(0,0,0,${vignette * 0.18}) 68%, rgba(0,0,0,${vignette * 0.72}) 100%)`,
+            }}
+          />
+        )}
+        </div>
       </ReactCrop>
       <p className="text-xs text-ha-ink/60">枠をドラッグして位置を決めてください。</p>
     </div>

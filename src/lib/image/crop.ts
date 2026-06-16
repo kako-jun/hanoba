@@ -78,6 +78,7 @@ export function renderSquareImage(
   image: HTMLImageElement,
   crop: PixelCrop,
   filterCss: string | null,
+  vignette = 0,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -90,7 +91,7 @@ export function renderSquareImage(
 
   const { sx, sy, size } = computeSquareCropRect(crop, scaleX, scaleY, naturalW, naturalH);
 
-  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, type, quality);
+  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, type, quality);
 }
 
 /**
@@ -101,6 +102,7 @@ export function renderSquareImageFromRect(
   image: HTMLImageElement,
   rect: SquareCropRect,
   filterCss: string | null,
+  vignette = 0,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -116,6 +118,7 @@ export function renderSquareImageFromRect(
   // canvas は呼び出しごとに新規生成するため、filter のリセット（"none" へ戻す）は不要。
   ctx.filter = filterCss ?? "none";
   ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, rect.size, rect.size);
+  drawVignette(ctx, rect.size, vignette);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -130,4 +133,18 @@ export function renderSquareImageFromRect(
       quality,
     );
   });
+}
+
+function drawVignette(ctx: CanvasRenderingContext2D, size: number, amount: number): void {
+  if (amount <= 0) return;
+  const opacity = Math.min(Math.max(amount, 0), 1);
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.28, size / 2, size / 2, size * 0.72);
+  gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+  gradient.addColorStop(0.62, `rgba(0, 0, 0, ${opacity * 0.18})`);
+  gradient.addColorStop(1, `rgba(0, 0, 0, ${opacity * 0.72})`);
+  ctx.save();
+  ctx.filter = "none";
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  ctx.restore();
 }

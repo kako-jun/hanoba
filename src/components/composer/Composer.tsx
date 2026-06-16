@@ -171,7 +171,12 @@ export default function Composer() {
       for (const [index, draft] of images.entries()) {
         if (draft.crop === null) throw new Error("クロップ範囲が未確定です。枠を調整してください。");
         const image = await loadImage(draft.src);
-        const blob = await renderSquareImageFromRect(image, draft.crop, draft.filter?.filter ?? null);
+        const blob = await renderSquareImageFromRect(
+          image,
+          draft.crop,
+          draft.filter?.filter ?? null,
+          draft.filter?.vignette ?? 0,
+        );
         const squareFile = new File([blob], `hanoba-${index + 1}.jpg`, { type: "image/jpeg" });
         const { url } = await uploadImage(squareFile);
         uploadedUrls.push(url);
@@ -224,7 +229,7 @@ export default function Composer() {
                 </button>
               ))}
               {images.length < MAX_IMAGES && (
-                <div className="grid min-w-28 place-items-center rounded-lg border border-dashed border-ha-green/35 px-2">
+                <div className="shrink-0 self-start">
                   <ImagePicker onSelect={handleSelectImages} remaining={MAX_IMAGES - images.length} compact />
                 </div>
               )}
@@ -238,6 +243,7 @@ export default function Composer() {
               imgRef={imgRef}
               initialCrop={currentImage.crop}
               filter={currentImage.filter?.filter ?? null}
+              vignette={currentImage.filter?.vignette ?? 0}
               onCropComplete={(crop) => updateCurrentImage({ crop })}
             />
           )}

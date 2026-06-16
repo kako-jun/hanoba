@@ -25,6 +25,23 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const cameraLabel = compact ? (
+    <span className="flex flex-col leading-none">
+      <span>追加で</span>
+      <span>撮影</span>
+    </span>
+  ) : (
+    "撮影"
+  );
+  const galleryLabel = compact ? (
+    <span className="flex flex-col leading-none">
+      <span>追加で</span>
+      <span>選ぶ</span>
+    </span>
+  ) : (
+    "アルバム"
+  );
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
@@ -56,22 +73,22 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
           onClick={() => cameraInputRef.current?.click()}
           disabled={remaining <= 0}
           className={`flex items-center justify-center gap-2 bg-ha-green text-ha-white font-semibold hover:brightness-110 transition-colors disabled:opacity-40 ${
-            compact ? "rounded-full px-3 py-1.5 text-xs" : "rounded-2xl px-6 py-3"
+            compact ? "min-h-8 w-24 rounded-lg px-2 py-1.5 text-[11px]" : "rounded-2xl px-6 py-3"
           }`}
         >
-          <Icon name="camera" className="w-5 h-5" />
-          撮影
+          <Icon name="camera" className={compact ? "h-4 w-4 shrink-0" : "w-5 h-5"} />
+          {cameraLabel}
         </button>
         <button
           type="button"
           onClick={() => galleryInputRef.current?.click()}
           disabled={remaining <= 0}
           className={`flex items-center justify-center gap-2 glass text-ha-ink font-semibold hover:border-ha-green/50 transition-colors disabled:opacity-40 ${
-            compact ? "rounded-full px-3 py-1.5 text-xs" : "rounded-2xl px-6 py-3"
+            compact ? "min-h-8 w-24 rounded-lg px-2 py-1.5 text-[11px]" : "rounded-2xl px-6 py-3"
           }`}
         >
-          <Icon name="image" className="w-5 h-5" />
-          アルバム
+          <Icon name="image" className={compact ? "h-4 w-4 shrink-0" : "w-5 h-5"} />
+          {galleryLabel}
         </button>
       </div>
       <input

@@ -22,11 +22,13 @@ export type NostrEvent = NostrToolsEvent;
  * - name: チップに表示する名前
  * - filter: プレビューの style={{filter}} と canvas 焼き込みで共用する CSS filter
  * - color: チップに添えるスウォッチ色（雰囲気の視覚ヒント）
+ * - vignette: 周辺減光の強さ（0〜1）。中央を残し、周辺を暗く落とす。
  */
 export interface FilterPreset {
   name: string;
   filter: string;
   color: string;
+  vignette?: number;
 }
 
 // クロップ位置は react-image-crop の PixelCrop をそのまま使う（独自の CropState は持たない）。

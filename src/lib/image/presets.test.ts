@@ -15,6 +15,10 @@ describe("FILTER_PRESETS", () => {
       expect(preset.filter.length).toBeGreaterThan(0);
       expect(typeof preset.color).toBe("string");
       expect(preset.color).toMatch(/^#[0-9a-fA-F]{6}$/);
+      if (preset.vignette !== undefined) {
+        expect(preset.vignette).toBeGreaterThan(0);
+        expect(preset.vignette).toBeLessThanOrEqual(1);
+      }
     }
   });
 
@@ -27,5 +31,9 @@ describe("FILTER_PRESETS", () => {
     for (const preset of FILTER_PRESETS) {
       expect(preset.filter).toMatch(/(brightness|contrast|saturate|grayscale|sepia|hue-rotate)\(/);
     }
+  });
+
+  it("周辺を暗く落とすプリセットがある", () => {
+    expect(FILTER_PRESETS.some((preset) => (preset.vignette ?? 0) > 0.5)).toBe(true);
   });
 });

@@ -10,14 +10,14 @@ import type { FilterPreset } from "../nostr/types.ts";
 export type { FilterPreset };
 
 /**
- * 選択式フィルタの一覧。畑で迷わないよう、細かな調整ではなく穏やかなプリセットだけにする。
- * 葉の階調を潰さないため、contrast/saturate/hue-rotate は控えめに抑える。
+ * 選択式フィルタの一覧。畑で迷わないよう、細かな調整ではなく用途が違うプリセットだけにする。
+ * 葉の階調は潰さず、必要な時だけ周辺減光で見せたくない範囲を落とす。
  * 「なし」は UI 側で別途用意する（このリストには含めない）。
  */
 export const FILTER_PRESETS: readonly FilterPreset[] = [
-  { name: "自然光", filter: "brightness(1.04) contrast(1.04) saturate(1.04)", color: "#8fbf6a" },
-  { name: "朝の葉", filter: "brightness(1.06) contrast(1.02) saturate(1.08)", color: "#74a65d" },
-  { name: "曇り補正", filter: "brightness(1.08) contrast(1.05) saturate(1.02)", color: "#9aa7a1" },
-  { name: "土の色", filter: "brightness(1.02) contrast(1.04) saturate(0.98) sepia(0.06)", color: "#9b7a55" },
-  { name: "花やわらか", filter: "brightness(1.05) contrast(0.98) saturate(1.06)", color: "#d8899a" },
+  { name: "葉を残す", filter: "brightness(1.03) contrast(1.07) saturate(1.1)", color: "#76b65a" },
+  { name: "花を出す", filter: "brightness(1.08) contrast(1.03) saturate(1.22)", color: "#d96d8b" },
+  { name: "土を温かく", filter: "brightness(1.02) contrast(1.12) saturate(0.95) sepia(0.14)", color: "#a5794f" },
+  { name: "周辺を隠す", filter: "brightness(0.98) contrast(1.14) saturate(1.04)", color: "#2f4028", vignette: 0.82 },
+  { name: "記録モノ", filter: "brightness(1.04) contrast(1.24) saturate(0.15) grayscale(0.85)", color: "#777777" },
 ] as const;
