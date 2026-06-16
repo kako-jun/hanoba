@@ -25,6 +25,7 @@ export type NostrEvent = NostrToolsEvent;
  * - vignette: 周辺減光の強さ（0〜1）。中央を残し、周辺を暗く落とす。
  * - sharpen: シャープ処理の強さ（0〜1）。投稿画像の書き出し時に焼き込む。
  * - edgeBlur: 周辺ぼかしの強さ（0〜1）。中央はシャープのまま、外周だけ canvas で blur 合成する。
+ * - toneCurve: 投稿画像に canvas で焼き込むトーンカーブ。"s"=S字（締まり）/"reverse-s"=逆S字（やわらげ）。
  */
 export interface FilterPreset {
   name: string;
@@ -33,6 +34,7 @@ export interface FilterPreset {
   vignette?: number;
   sharpen?: number;
   edgeBlur?: number;
+  toneCurve?: "s" | "reverse-s";
 }
 
 // クロップ位置は react-image-crop の PixelCrop をそのまま使う（独自の CropState は持たない）。

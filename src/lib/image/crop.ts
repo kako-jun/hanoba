@@ -6,6 +6,9 @@
 
 import type { PixelCrop } from "react-image-crop";
 
+/** トーンカーブの種別（#156）。"s"=S字で締め、"reverse-s"=逆S字でやわらげる。null は無処理。 */
+export type ToneCurve = "s" | "reverse-s" | null;
+
 /** computeSquareCropRect の返り値（自然座標系の正方形矩形）。 */
 export interface SquareCropRect {
   /** ソース画像内 x（自然座標 px・整数） */
@@ -81,6 +84,7 @@ export function renderSquareImage(
   vignette = 0,
   sharpen = 0,
   edgeBlur = 0,
+  tone: ToneCurve = null,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -93,7 +97,7 @@ export function renderSquareImage(
 
   const { sx, sy, size } = computeSquareCropRect(crop, scaleX, scaleY, naturalW, naturalH);
 
-  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, edgeBlur, type, quality);
+  return renderSquareImageFromRect(image, { sx, sy, size }, filterCss, vignette, sharpen, edgeBlur, tone, type, quality);
 }
 
 /**
@@ -107,6 +111,7 @@ export function renderSquareImageFromRect(
   vignette = 0,
   sharpen = 0,
   edgeBlur = 0,
+  tone: ToneCurve = null,
   type = "image/jpeg",
   quality = 0.95,
 ): Promise<Blob> {
@@ -122,6 +127,8 @@ export function renderSquareImageFromRect(
   // canvas は呼び出しごとに新規生成するため、filter のリセット（"none" へ戻す）は不要。
   ctx.filter = filterCss ?? "none";
   ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, rect.size, rect.size);
+  // トーンカーブ（翠露/土香）は CSS filter と同じ tonal 段として、シャープ/ぼかしより前に焼く。
+  applyToneCurve(ctx, rect.size, tone);
   applySharpen(ctx, rect.size, sharpen);
   // 影暮（減光）の前に霞幻（周辺ぼかし）を合成する。中央はシャープのまま外周だけ柔らかくし、
   // その上から vignette が外周を暗く締める順にする。
@@ -229,4 +236,56 @@ function applyEdgeBlur(ctx: CanvasRenderingContext2D, size: number, amount: numb
   ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(layer, 0, 0);
   ctx.restore();
+}
+
+/**
+ * トーンカーブの 256 段 LUT を作る（純関数・テスト可能）。#156。
+ *
+ * - "s": 暗部を落とし明部を上げる S 字。smoothstep（3x²−2x³）へ寄せ、両端は固定（0→0, 255→255）で
+ *   白飛び/黒つぶれを避ける。中点傾き > 1（締まる）。
+ * - "reverse-s": 暗部を上げ明部を抑える逆S字。smoothstep の逆関数へ寄せる。中点傾き < 1（やわらぐ）。
+ * - null: 恒等。
+ *
+ * `amount`（0〜1）でカーブの強さを原画と混ぜる。控えめが既定（中点傾きが現 CSS 近似に近い）。
+ */
+export function buildToneLut(tone: ToneCurve, amount = 0.32): Uint8ClampedArray {
+  const lut = new Uint8ClampedArray(256);
+  const a = Math.min(Math.max(amount, 0), 1);
+  for (let i = 0; i < 256; i++) {
+    const x = i / 255;
+    let curved = x;
+    if (tone === "s") {
+      const s = x * x * (3 - 2 * x); // smoothstep(0, 1, x)
+      curved = (1 - a) * x + a * s;
+    } else if (tone === "reverse-s") {
+      // smoothstep の逆関数。暗部を持ち上げ、明部を寝かせる（コントラストを下げる）。
+      const u = Math.min(Math.max(1 - 2 * x, -1), 1);
+      const inv = 0.5 - Math.sin(Math.asin(u) / 3);
+      curved = (1 - a) * x + a * inv;
+    }
+    lut[i] = Math.round(curved * 255);
+  }
+  return lut;
+}
+
+/**
+ * トーンカーブ（翠露=S字／土香=逆S字・#156）を canvas に焼き込む。RGB 各チャンネルへ LUT を当てる
+ * （彩度は美華だけが扱う方針なので、ここでは色相を動かさず明暗のカーブだけ）。
+ * jsdom では getImageData が動かないため、純関数 buildToneLut のみユニットテストする。
+ */
+function applyToneCurve(ctx: CanvasRenderingContext2D, size: number, tone: ToneCurve): void {
+  if (tone === null || size < 1) return;
+  const lut = buildToneLut(tone);
+  const imageData = ctx.getImageData(0, 0, size, size);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i] ?? 0;
+    const g = data[i + 1] ?? 0;
+    const b = data[i + 2] ?? 0;
+    data[i] = lut[r] ?? r;
+    data[i + 1] = lut[g] ?? g;
+    data[i + 2] = lut[b] ?? b;
+    // alpha（i+3）はそのまま
+  }
+  ctx.putImageData(imageData, 0, 0);
 }
