@@ -284,6 +284,56 @@ describe("Composer", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("upload failed");
   });
 
+  it("散文を打ってからタグチップを選ぶと一言が prose\\n#tag 形になる（#165）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    // CaptionInput/TagPicker は画像選択後に出る。
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const caption = screen.getByLabelText("ひとこと") as HTMLTextAreaElement;
+    await user.type(caption, "開花した");
+
+    // クイックタグ #水やり を選ぶ（TagPicker→insertTag 経由で本文へ）。
+    await user.click(screen.getByRole("button", { name: "#水やり" }));
+
+    // 散文とタグは改行で分かれ、タグ行が下にできる。
+    expect(caption.value).toBe("開花した\n#水やり ");
+  });
+
+  it("タグチップを2つ続けて選ぶと同じタグ行にスペース区切りで積む（#165）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const caption = screen.getByLabelText("ひとこと") as HTMLTextAreaElement;
+    await user.type(caption, "成長記録");
+    await user.click(screen.getByRole("button", { name: "#水やり" }));
+    await user.click(screen.getByRole("button", { name: "#開花" }));
+
+    expect(caption.value).toBe("成長記録\n#水やり #開花 ");
+  });
+
+  it("選択済みチップを外すと空タグ行のぶら下がり改行を畳む（#165）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const caption = screen.getByLabelText("ひとこと") as HTMLTextAreaElement;
+    await user.type(caption, "開花した");
+    await user.click(screen.getByRole("button", { name: "#水やり" }));
+    expect(caption.value).toBe("開花した\n#水やり ");
+
+    // 選択済み（aria-pressed=true）になったチップを再タップ＝removeTag で外す。
+    await user.click(screen.getByRole("button", { name: "#水やり" }));
+    expect(caption.value).toBe("開花した ");
+  });
+
   it("ひとこと入力欄は大きなハンドルで高さを変えられる", async () => {
     const user = userEvent.setup();
     render(<Composer />);
