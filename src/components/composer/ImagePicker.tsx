@@ -8,7 +8,7 @@
 // accept="image/*" でファイルダイアログから動画を除外し、さらに選択ファイルの type が
 // image/ で始まらなければ拒否する（二重の防御）。
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 
 interface ImagePickerProps {
@@ -23,8 +23,19 @@ interface ImagePickerProps {
 export default function ImagePicker({ onSelect, remaining = 4, compact = false }: ImagePickerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const compactWrapRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [compactOpen, setCompactOpen] = useState(false);
+
+  useEffect(() => {
+    if (!compact || !compactOpen) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (compactWrapRef.current?.contains(e.target as Node)) return;
+      setCompactOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [compact, compactOpen]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -81,7 +92,10 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
   );
 
   return (
-    <div className={compact ? "relative flex flex-col items-start gap-2" : "flex flex-col items-center gap-3"}>
+    <div
+      ref={compact ? compactWrapRef : undefined}
+      className={compact ? "relative flex flex-col items-start gap-2" : "flex flex-col items-center gap-3"}
+    >
       {compact ? (
         <button
           type="button"
@@ -123,7 +137,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
               type="button"
               onClick={() => galleryInputRef.current?.click()}
               disabled={remaining <= 0}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-ha-white/25 bg-ha-white/90 px-5 py-3 font-semibold text-ha-ink transition-colors hover:border-ha-green/60 disabled:opacity-40"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-ha-green/45 bg-ha-base px-5 py-3 font-semibold text-ha-green-deep shadow-sm transition-colors hover:border-ha-green/80 disabled:opacity-40"
             >
               <Icon name="image" className="h-5 w-5" />
               アルバム
