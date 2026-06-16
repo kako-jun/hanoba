@@ -30,8 +30,9 @@ const BLOG_URL = "https://llll-ll.com";
     </section>
 
     <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:1">
-      {/* 彩り＝夜の温室写真（room-dark）の別クロップを 1:2 横長で右上にやや はみ出して重ねる（#彩り）。
-          装飾なので aria-hidden・pointer-events-none。各カードで object-position を変え別の株を見せる。 */}
+      {/* 彩り＝4カードで別々の被写体を 1:2 横長で右上にやや はみ出して重ねる（#彩り）。
+          1=室内（夜の温室＝ビカク/コーデックス/アガベ）/2=花/3=畑/4=果樹。生成写真（gpt-image-2）。
+          装飾なので aria-hidden・pointer-events-none。見出しは pr で画像を避けて折り返す。 */}
       <img
         src="/og/room-dark.webp"
         alt=""
@@ -52,11 +53,11 @@ const BLOG_URL = "https://llll-ll.com";
 
     <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:2">
       <img
-        src="/og/room-dark.webp"
+        src="/about/flower.webp"
         alt=""
         aria-hidden="true"
         class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 rotate-2"
-        style="object-position: 56% 52%"
+        style="object-position: 58% 45%"
       />
       <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">なぜ、既存の SNS では足りないのか</h2>
       <ul class="flex flex-col gap-2 text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
@@ -78,11 +79,11 @@ const BLOG_URL = "https://llll-ll.com";
 
     <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:3">
       <img
-        src="/og/room-dark.webp"
+        src="/about/field.webp"
         alt=""
         aria-hidden="true"
         class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 -rotate-2"
-        style="object-position: 60% 16%"
+        style="object-position: 50% 55%"
       />
       <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">あなたの投稿は、あなたのもの</h2>
       <p class="text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
@@ -94,11 +95,11 @@ const BLOG_URL = "https://llll-ll.com";
 
     <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:4">
       <img
-        src="/og/room-dark.webp"
+        src="/about/fruit.webp"
         alt=""
         aria-hidden="true"
         class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 rotate-2"
-        style="object-position: 14% 74%"
+        style="object-position: 42% 52%"
       />
       <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">表記の誤りや別名を教えてください</h2>
       <p class="text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
