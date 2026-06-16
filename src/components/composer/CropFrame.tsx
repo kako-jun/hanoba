@@ -6,7 +6,8 @@
 import { useState } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { computeSquareCropRect, type SquareCropRect } from "../../lib/image/crop.ts";
+import { computeSquareCropRect, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
+import { toneCurvePreviewCss } from "../../lib/image/presets.ts";
 
 interface CropFrameProps {
   /** 選択画像の Object URL。 */
@@ -21,6 +22,10 @@ interface CropFrameProps {
   vignette?: number;
   /** プレビューに適用するシャープ処理の強さ（0〜1）。 */
   sharpen?: number;
+  /** プレビューに重ねる周辺ぼかしの強さ（0〜1）。中央はそのまま、外周だけぼかす。 */
+  edgeBlur?: number;
+  /** トーンカーブ（翠露=S字/土香=逆S字）。焼き込みは canvas、プレビューは contrast() で近似。 */
+  toneCurve?: ToneCurve;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
 }
@@ -37,13 +42,18 @@ export default function CropFrame({
   filter,
   vignette = 0,
   sharpen = 0,
+  edgeBlur = 0,
+  toneCurve = null,
   onCropComplete,
 }: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
+  // 画像の表示幅（px）。霞幻プレビューの blur 半径を焼き込み（出力の2%）と同じ縮尺で出すため。
+  const [renderedW, setRenderedW] = useState(0);
   const sharpenAmount = Math.min(Math.max(sharpen, 0), 1);
   const sharpenEdge = -1.5 * sharpenAmount;
   const sharpenCenter = 1 + 6 * sharpenAmount;
-  const previewFilter = [filter, sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
+  // トーンカーブ（翠露/土香）は焼き込みが canvas LUT、プレビューは従来どおり contrast() で近似する。
+  const previewFilter = [filter, toneCurvePreviewCss(toneCurve), sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
     .filter((item): item is string => item !== null && item !== "")
     .join(" ") || "none";
 
@@ -64,6 +74,7 @@ export default function CropFrame({
 
   function handleImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
+    setRenderedW(width);
     const initial =
       initialCrop === undefined || initialCrop === null
         ? centeredSquareCrop(width, height)
@@ -115,6 +126,43 @@ export default function CropFrame({
           onLoad={handleImageLoad}
           style={{ filter: previewFilter, maxHeight: "60vh", display: "block" }}
         />
+        {edgeBlur > 0 && crop !== undefined && crop.width > 0 && crop.height > 0 && (
+          // 焼き込みと同じ「中央シャープ・外周ぼかし」をクロップ枠にクリップして近似する。
+          // 枠サイズの clip 内にぼかした複製 <img> を元画像と同じ位置で重ね、ラジアル mask で
+          // 外周だけ見せる（中央は透明にして下の元画像が透ける）。
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute overflow-hidden"
+            style={{
+              left: `${crop.x}%`,
+              top: `${crop.y}%`,
+              width: `${crop.width}%`,
+              height: `${crop.height}%`,
+              WebkitMaskImage: "radial-gradient(circle at center, transparent 42%, rgba(0,0,0,0.55) 62%, #000 80%)",
+              maskImage: "radial-gradient(circle at center, transparent 42%, rgba(0,0,0,0.55) 62%, #000 80%)",
+            }}
+          >
+            <img
+              src={src}
+              alt=""
+              style={{
+                position: "absolute",
+                left: `${-(crop.x / crop.width) * 100}%`,
+                top: `${-(crop.y / crop.height) * 100}%`,
+                width: `${(100 / crop.width) * 100}%`,
+                height: "auto",
+                maxWidth: "none",
+                display: "block",
+                // 焼き込みは出力の2%（applyEdgeBlur）。プレビューも表示中のクロップ枠の2%に
+                // 合わせ、画像サイズに依らず焼き上がりと同じ強さで見せる。トーン（翠露/土香）も
+                // 重ねて、外周リングが中央と同じ明暗になるようにする。
+                filter: [filter, toneCurvePreviewCss(toneCurve), `blur(${(((crop.width / 100) * renderedW) * 0.02 * edgeBlur).toFixed(2)}px)`]
+                  .filter((item): item is string => item !== null && item !== "")
+                  .join(" "),
+              }}
+            />
+          </div>
+        )}
         {vignette > 0 && (
           <div
             aria-hidden="true"
