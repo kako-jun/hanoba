@@ -15,6 +15,7 @@ export type { FilterPreset };
  * 「なし」は UI 側で別途用意する（このリストには含めない）。
  */
 export const FILTER_PRESETS: readonly FilterPreset[] = [
+  { name: "淡陽", filter: "brightness(1.08)", color: "#d9b85f" },
   { name: "翠露", filter: "contrast(1.16)", color: "#76b65a" },
   { name: "土香", filter: "contrast(0.86)", color: "#9b7047" },
   { name: "美華", filter: "saturate(1.28)", color: "#d96d8b" },

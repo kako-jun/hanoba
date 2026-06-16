@@ -4,7 +4,7 @@ import { FILTER_PRESETS, composeFilterCss, composeSharpen, composeVignette } fro
 describe("FILTER_PRESETS", () => {
   it("畑で迷わない数に絞っている", () => {
     expect(FILTER_PRESETS.length).toBeGreaterThanOrEqual(3);
-    expect(FILTER_PRESETS.length).toBeLessThanOrEqual(5);
+    expect(FILTER_PRESETS.length).toBeLessThanOrEqual(7);
   });
 
   it("各プリセットは name / filter / color を持つ", () => {
@@ -57,10 +57,13 @@ describe("FILTER_PRESETS", () => {
   });
 
   it("複数プリセットを重ねがけ用に合成する", () => {
-    const presets = [FILTER_PRESETS[0]!, FILTER_PRESETS[3]!, FILTER_PRESETS[4]!];
-    expect(composeFilterCss(presets)).toContain(`${FILTER_PRESETS[0]!.filter} ${FILTER_PRESETS[3]!.filter}`);
-    expect(composeVignette(presets)).toBe(FILTER_PRESETS[3]!.vignette);
-    expect(composeSharpen(presets)).toBe(FILTER_PRESETS[4]!.sharpen);
+    const suiro = FILTER_PRESETS.find((preset) => preset.name === "翠露")!;
+    const kagegure = FILTER_PRESETS.find((preset) => preset.name === "影暮")!;
+    const senmei = FILTER_PRESETS.find((preset) => preset.name === "線明")!;
+    const presets = [suiro, kagegure, senmei];
+    expect(composeFilterCss(presets)).toContain(`${suiro.filter} ${kagegure.filter}`);
+    expect(composeVignette(presets)).toBe(kagegure.vignette);
+    expect(composeSharpen(presets)).toBe(senmei.sharpen);
   });
 
   it("翠露と土香は同時選択でトーンを完全に相殺する", () => {
