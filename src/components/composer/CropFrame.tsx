@@ -74,7 +74,7 @@ export default function CropFrame({ src, imgRef, initialCrop, filter, vignette =
     <div className="flex flex-col items-center gap-2">
       <ReactCrop
         crop={crop}
-        onChange={(pixelCrop) => setCrop(pixelCrop)}
+        onChange={(_pixelCrop, percentCrop) => setCrop(percentCrop)}
         onComplete={(pixelCrop) => commitCrop(pixelCrop, imgRef.current)}
         aspect={1}
         keepSelection
@@ -91,8 +91,12 @@ export default function CropFrame({ src, imgRef, initialCrop, filter, vignette =
         {vignette > 0 && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute"
             style={{
+              left: `${crop?.x ?? 0}%`,
+              top: `${crop?.y ?? 0}%`,
+              width: `${crop?.width ?? 0}%`,
+              height: `${crop?.height ?? 0}%`,
               background: `radial-gradient(circle at center, rgba(0,0,0,0) 34%, rgba(0,0,0,${vignette * 0.18}) 68%, rgba(0,0,0,${vignette * 0.72}) 100%)`,
             }}
           />
