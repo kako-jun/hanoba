@@ -156,10 +156,12 @@ describe("Composer", () => {
 
   it("複数写真を選び、各写真を焼き込んで複数 URL で投稿する", async () => {
     const user = userEvent.setup();
-    uploadImage
-      .mockReset()
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/one.jpg" })
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/two.jpg" });
+    // 並列アップロード（#167）では完了順が非決定なので、呼び出し順依存の mockResolvedValueOnce を
+    // やめ、ファイル名（hanoba-1.jpg…）でURLを決める。imageUrls は images 順（Promise.all 結果）で決定的。
+    uploadImage.mockReset();
+    uploadImage.mockImplementation((file: File) =>
+      Promise.resolve({ url: `https://image.nostr.build/${file.name}` }),
+    );
     render(<Composer />);
 
     const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
@@ -179,7 +181,7 @@ describe("Composer", () => {
     expect(uploadImage).toHaveBeenCalledTimes(2);
     expect(signAndPublishNote).toHaveBeenCalledWith({
       caption: "成長記録",
-      imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+      imageUrls: ["https://image.nostr.build/hanoba-1.jpg", "https://image.nostr.build/hanoba-2.jpg"],
     });
   });
 
@@ -230,12 +232,11 @@ describe("Composer", () => {
 
   it("4枚すべてを焼き込んで投稿する", async () => {
     const user = userEvent.setup();
-    uploadImage
-      .mockReset()
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/1.jpg" })
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/2.jpg" })
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/3.jpg" })
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/4.jpg" });
+    // 並列でも images 順で決定的になるよう、ファイル名（hanoba-N.jpg）でURLを決める（#167）。
+    uploadImage.mockReset();
+    uploadImage.mockImplementation((file: File) =>
+      Promise.resolve({ url: `https://image.nostr.build/${file.name}` }),
+    );
     render(<Composer />);
     const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
     await user.upload(input, [
@@ -256,20 +257,24 @@ describe("Composer", () => {
     expect(signAndPublishNote).toHaveBeenCalledWith({
       caption: "四枚記録",
       imageUrls: [
-        "https://image.nostr.build/1.jpg",
-        "https://image.nostr.build/2.jpg",
-        "https://image.nostr.build/3.jpg",
-        "https://image.nostr.build/4.jpg",
+        "https://image.nostr.build/hanoba-1.jpg",
+        "https://image.nostr.build/hanoba-2.jpg",
+        "https://image.nostr.build/hanoba-3.jpg",
+        "https://image.nostr.build/hanoba-4.jpg",
       ],
     });
   });
 
-  it("複数写真の投稿途中で失敗したらアップロード済み画像を削除する", async () => {
+  it("並列投稿で一部が失敗したら成功した分だけ削除し error 表示する（#167）", async () => {
     const user = userEvent.setup();
-    uploadImage
-      .mockReset()
-      .mockResolvedValueOnce({ url: "https://image.nostr.build/one.jpg" })
-      .mockRejectedValueOnce(new Error("upload failed"));
+    // 並列なので「N番目」ではなくファイル名で失敗を決める。2枚目（hanoba-2.jpg）だけ reject。
+    // 1枚目（hanoba-1.jpg）は成功 → その URL だけ deleteImage で巻き戻す。
+    uploadImage.mockReset();
+    uploadImage.mockImplementation((file: File) =>
+      file.name === "hanoba-2.jpg"
+        ? Promise.reject(new Error("upload failed"))
+        : Promise.resolve({ url: `https://image.nostr.build/${file.name}` }),
+    );
     render(<Composer />);
     const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
     await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
@@ -279,7 +284,9 @@ describe("Composer", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
     await user.click(screen.getByRole("button", { name: /投稿する/ }));
 
-    await waitFor(() => expect(deleteImage).toHaveBeenCalledWith("https://image.nostr.build/one.jpg"));
+    await waitFor(() => expect(deleteImage).toHaveBeenCalledWith("https://image.nostr.build/hanoba-1.jpg"));
+    // 失敗した 2枚目は URL を得ていないので deleteImage されない。
+    expect(deleteImage).not.toHaveBeenCalledWith("https://image.nostr.build/hanoba-2.jpg");
     expect(signAndPublishNote).not.toHaveBeenCalled();
     expect(await screen.findByRole("alert")).toHaveTextContent("upload failed");
   });

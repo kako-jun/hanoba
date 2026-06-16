@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PixelCrop } from "react-image-crop";
-import { buildToneLut, computeSquareCropRect } from "./crop.ts";
+import { MAX_OUTPUT_EDGE, buildToneLut, computeSquareCropRect, outputEdge } from "./crop.ts";
 
 function px(x: number, y: number, width: number, height: number): PixelCrop {
   return { unit: "px", x, y, width, height };
@@ -91,6 +91,37 @@ describe("computeSquareCropRect", () => {
       expect(rect.sx + rect.size).toBeLessThanOrEqual(naturalW);
       expect(rect.sy + rect.size).toBeLessThanOrEqual(naturalH);
     }
+  });
+});
+
+describe("outputEdge", () => {
+  it("MAX_OUTPUT_EDGE は 1440（長辺上限）", () => {
+    expect(MAX_OUTPUT_EDGE).toBe(1440);
+  });
+
+  it("上限未満はそのまま（1439→1439）", () => {
+    expect(outputEdge(1439)).toBe(1439);
+  });
+
+  it("上限ちょうどはそのまま（1440→1440）", () => {
+    expect(outputEdge(1440)).toBe(1440);
+  });
+
+  it("上限超過は 1440 にクランプ（1441→1440）", () => {
+    expect(outputEdge(1441)).toBe(1440);
+  });
+
+  it("巨大なクロップ実寸も 1440 に収まる（3000→1440）", () => {
+    expect(outputEdge(3000)).toBe(MAX_OUTPUT_EDGE);
+  });
+
+  it("小さい画像は拡大しない（800→800）", () => {
+    expect(outputEdge(800)).toBe(800);
+  });
+
+  it("カスタム max を尊重する（1000, max=512 → 512 / 400, max=512 → 400）", () => {
+    expect(outputEdge(1000, 512)).toBe(512);
+    expect(outputEdge(400, 512)).toBe(400);
   });
 });
 
