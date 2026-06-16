@@ -6,7 +6,7 @@ import TagPicker from "./TagPicker.tsx";
 /** ドリルダウンを開いて アガベ の品種一覧まで降りる。 */
 async function drillToAgave(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
-  await user.click(await screen.findByRole("button", { name: /多肉・塊根/ }));
+  await user.click(await screen.findByRole("button", { name: /多肉植物/ }));
   await user.click(await screen.findByRole("button", { name: /アガベ/ }));
 }
 
@@ -38,7 +38,7 @@ describe("TagPicker", () => {
 
     await drillToAgave(user);
     await user.click(await screen.findByRole("button", { name: "#チタノタ" }));
-    expect(onPick.mock.calls).toEqual([["多肉・塊根"], ["アガベ"], ["チタノタ"]]);
+    expect(onPick.mock.calls).toEqual([["多肉植物"], ["アガベ"], ["チタノタ"]]);
   });
 
   it("「#属 をこのまま使う」はカテゴリ＋属を入れる（品種は付けない）", async () => {
@@ -48,7 +48,7 @@ describe("TagPicker", () => {
 
     await drillToAgave(user);
     await user.click(await screen.findByRole("button", { name: /#アガベ をこのまま使う/ }));
-    expect(onPick.mock.calls).toEqual([["多肉・塊根"], ["アガベ"]]);
+    expect(onPick.mock.calls).toEqual([["多肉植物"], ["アガベ"]]);
   });
 
   it("人気の“属”をタップしたら挿入せず階層（品種一覧）に入る", async () => {
@@ -71,7 +71,7 @@ describe("TagPicker", () => {
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
     await user.click(await screen.findByRole("button", { name: /#グラキリス/ }));
-    expect(onPick.mock.calls).toEqual([["多肉・塊根"], ["パキポディウム"], ["グラキリス"]]);
+    expect(onPick.mock.calls).toEqual([["塊根植物"], ["パキポディウム"], ["グラキリス"]]);
   });
 
   it("検索はかな/カナ・大小・全半角を無視する（ぱきぽ→パキポディウム）", async () => {

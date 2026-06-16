@@ -1,13 +1,13 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,416件 / 120属 / 12カテゴリ・#143）。
+// 品種タグ辞書（カテゴリ→属→品種・1,416件 / 120属 / 15カテゴリ・#143）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
 // **TagPicker（#144）が開いた時に動的 import で code-split** されるよう、ここはデータ専用にする
 // （静的 import で初期 composer バンドルに載せない）。検索/ドリルダウンは全てクライアントで回る。
 //
+// カテゴリは意味の近いもの順（多肉→メセン→塊根→サボテン→着生→観葉→食虫→蘭→和もの→花→食用）。
 // 値は「本文 # に入るタグ文字列」（空白は insertTag 側で _ に正規化）。表記揺れ（赤猫 ↔
-// レッドキャットウィーズル 等）は調査が両形を別品種として持つため、そのまま両方を pickable に残す
-// （趣味家は同じ品種を複数表記でタグするため・#143 メモ1）。
+// レッドキャットウィーズル 等）は調査が両形を別品種として持つため、そのまま両方を pickable に残す。
 
 export interface Variety {
   /** 通称（本文 # に入るタグ文字列）。 */
@@ -37,7 +37,7 @@ export interface VarietyCategory {
 
 export const VARIETY_CATALOG: VarietyCategory[] = [
   {
-    label: "多肉・塊根",
+    label: "多肉植物",
     genera: [
       { name: "アガベ", pickable: true, varieties: [
         { name: "チタノタ" }, { name: "オテロイ" }, { name: "白鯨" }, { name: "黒鯨" },
@@ -59,6 +59,122 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "乱れ雪" }, { name: "吹上" }, { name: "ストリクタ" }, { name: "アテナータ" },
         { name: "アメリカーナ" }, { name: "オバティフォリア" }, { name: "パラサナ" }, { name: "モンタナ" },
       ] },
+      { name: "チレコドン", pickable: true, varieties: [
+        { name: "万物想" }, { name: "阿房宮" }, { name: "奇峰錦" }, { name: "砂夜叉姫" },
+        { name: "レティキュラータス" }, { name: "パニクラーツス" },
+      ] },
+      { name: "コチレドン", pickable: true, varieties: [
+        { name: "熊童子" }, { name: "熊童子錦" }, { name: "子猫の爪" }, { name: "福娘" },
+        { name: "だるま福娘" }, { name: "ふっくら娘" }, { name: "銀波錦" }, { name: "ペンデンス" },
+        { name: "オルビキュラータ" }, { name: "エリサエ" }, { name: "白美人" }, { name: "パピラリス" },
+        { name: "旭波の光" }, { name: "旭波錦" }, { name: "嫁入り娘" }, { name: "紅覆輪" },
+      ] },
+      { name: "セネシオ", pickable: true, varieties: [
+        { name: "グリーンネックレス" }, { name: "ドルフィンネックレス" }, { name: "ピーチネックレス" }, { name: "ルビーネックレス" },
+        { name: "三日月ネックレス" }, { name: "七宝樹" }, { name: "万宝" }, { name: "美空鉾" },
+        { name: "銀月" }, { name: "京童子" }, { name: "マサイの矢尻" }, { name: "新月" },
+        { name: "鉄錫杖" }, { name: "ヤコブセニー" }, { name: "エンジェルティアーズ" }, { name: "ハリアヌス" },
+      ] },
+      { name: "クラッスラ", pickable: true, varieties: [
+        { name: "火祭り" }, { name: "銀盃" }, { name: "神刀" }, { name: "茜の塔" },
+        { name: "星の王子" }, { name: "桜星" }, { name: "紅稚児" }, { name: "若緑" },
+        { name: "数珠星" }, { name: "南十字星" }, { name: "ゴーラム" }, { name: "宇宙の木" },
+        { name: "リトルミッシー" }, { name: "マネーメーカー" }, { name: "玉椿" }, { name: "呂千絵" },
+        { name: "舞乙女" }, { name: "緑塔" }, { name: "ブロウメアナ" }, { name: "ムスコーサ" },
+      ] },
+      { name: "カランコエ", pickable: true, varieties: [
+        { name: "月兎耳" }, { name: "福兎耳" }, { name: "黒兎耳" }, { name: "唐印" },
+        { name: "デザートローズ" }, { name: "仙女の舞" }, { name: "胡蝶の舞" }, { name: "白銀の舞" },
+        { name: "不死鳥" }, { name: "子宝草" }, { name: "朱蓮" }, { name: "ミロッティー" },
+        { name: "チョコレートソルジャー" }, { name: "ベハレンシス" }, { name: "ファング" },
+      ] },
+      { name: "アロエ", pickable: true, varieties: [
+        { name: "ディコトマ" }, { name: "ポリフィラ" }, { name: "不夜城" }, { name: "千代田錦" },
+        { name: "ハオルチオイデス" }, { name: "キダチアロエ" }, { name: "羅紋錦" }, { name: "鬼ヒトデ" },
+        { name: "プリカティリス" }, { name: "アロエベラ" }, { name: "ペグレラエ" }, { name: "綾錦" },
+        { name: "帝王錦" },
+      ] },
+      { name: "ガステリア", pickable: true, varieties: [
+        { name: "臥牛" }, { name: "グロメラータ" }, { name: "バイリシアナ" }, { name: "子宝錦" },
+      ] },
+      { name: "ハオルチア", pickable: true, varieties: [
+        { name: "オブツーサ" }, { name: "ブラックオブツーサ" }, { name: "雫石" }, { name: "レツーサ" },
+        { name: "コレクタ" }, { name: "京の舞" }, { name: "玉扇" }, { name: "万象" },
+        { name: "寿" }, { name: "ピクタ" }, { name: "スプレンデンス" }, { name: "クーペリー" },
+        { name: "ベヌスタ" }, { name: "ムチカ" }, { name: "十二の巻" }, { name: "竜鱗" },
+        { name: "宝草" },
+      ] },
+      { name: "エケベリア", pickable: true, varieties: [
+        { name: "ラウイ" }, { name: "七福神" }, { name: "桃太郎" }, { name: "パールフォンニュルンベルク" },
+        { name: "高砂の翁" }, { name: "ピンクザラゴーサ" }, { name: "ザラゴーサ" }, { name: "アガボイデス" },
+        { name: "リップスティック" }, { name: "静夜" }, { name: "花うらら" }, { name: "ローラ" },
+        { name: "デレッセーナ" }, { name: "アフターグロー" }, { name: "トップシータービー" }, { name: "沙羅姫牡丹" },
+        { name: "白鳳" }, { name: "エレガンス" }, { name: "シャビアナ" }, { name: "リラシナ" },
+        { name: "ロメオ" }, { name: "ロメオルビン" }, { name: "ラウリンゼ" }, { name: "ハムシー" },
+        { name: "チワワエンシス" }, { name: "モンロー" }, { name: "ブルードラゴン" }, { name: "スノーフェイス" },
+        { name: "アイスローズ" }, { name: "オンスロー" }, { name: "コロラータ" }, { name: "パープルクイーン" },
+        { name: "アイスバーグ" }, { name: "ルブラ" }, { name: "レモンローズ" }, { name: "水蜜桃" },
+        { name: "スポテッドディア" }, { name: "クリスマス" }, { name: "エボニー" }, { name: "ザラゴーサノヴァ" },
+        { name: "メキシカンジャイアント" },
+      ] },
+      { name: "グラプトペタルム", pickable: true, varieties: [
+        { name: "朧月" }, { name: "姫秋麗" }, { name: "ブロンズ姫" }, { name: "銀天女" },
+        { name: "秋麗" }, { name: "ダルマ秋麗" }, { name: "パラグアイエンセ" }, { name: "淡雪" },
+      ] },
+      { name: "セダム", pickable: true, varieties: [
+        { name: "虹の玉" }, { name: "オーロラ" }, { name: "乙女心" }, { name: "玉つづり" },
+        { name: "銘月" }, { name: "黄麗" }, { name: "春萌" }, { name: "万年草" },
+        { name: "レッドベリー" }, { name: "アトランティス" }, { name: "リトルミッシー" }, { name: "パープルヘイズ" },
+        { name: "新玉つづり" }, { name: "ヒスパニクム" },
+      ] },
+      { name: "パキフィツム", pickable: true, varieties: [
+        { name: "桃美人" }, { name: "星美人" }, { name: "月美人" }, { name: "群雀" },
+        { name: "ベビーフィンガー" }, { name: "千代田の松" }, { name: "京美人" }, { name: "フーケリー" },
+      ] },
+    ],
+  },
+  {
+    label: "メセン",
+    genera: [
+      { name: "コノフィツム", pickable: true, varieties: [
+        { name: "ウィッテベルゲンセ" }, { name: "ブルゲリ" }, { name: "オペラローズ" }, { name: "花園" },
+        { name: "ペルシダム" }, { name: "玉彦" }, { name: "マウガニー" }, { name: "群碧玉" },
+        { name: "寂光" }, { name: "円空玉" },
+      ] },
+      { name: "リトープス", pickable: true, varieties: [
+        { name: "日輪玉" }, { name: "福来玉" }, { name: "紫勲" }, { name: "大津絵" },
+        { name: "オリーブ玉" }, { name: "麗虹玉" }, { name: "招福玉" }, { name: "富貴玉" },
+        { name: "紅大内玉" }, { name: "巴里玉" }, { name: "花紋玉" }, { name: "李夫人" },
+      ] },
+      { name: "フェネストラリア", pickable: true, varieties: [
+        { name: "五十鈴玉" }, { name: "群玉" },
+      ] },
+      { name: "プレイオスピロス", pickable: true, varieties: [
+        { name: "帝玉" }, { name: "紫帝玉" }, { name: "鳳卵" },
+      ] },
+      { name: "フォーカリア", pickable: true, varieties: [
+        { name: "怒涛" }, { name: "四海波" }, { name: "雪波" },
+      ] },
+      { name: "チタノプシス", pickable: true, varieties: [
+        { name: "天女" }, { name: "カルカレア" },
+      ] },
+      { name: "アルギロデルマ", pickable: true, varieties: [
+        { name: "金鈴" }, { name: "国宝玉" },
+      ] },
+      { name: "ギバエウム", pickable: true, varieties: [
+        { name: "無比玉" }, { name: "銀光玉" },
+      ] },
+      { name: "ディンテランサス", pickable: true, varieties: [
+        { name: "南蛮玉" }, { name: "幻玉" },
+      ] },
+      { name: "フリチア", pickable: true, varieties: [
+        { name: "光玉" },
+      ] },
+    ],
+  },
+  {
+    label: "塊根植物",
+    genera: [
       { name: "パキポディウム", pickable: true, varieties: [
         { name: "グラキリス" }, { name: "象牙宮" }, { name: "恵比寿笑い" }, { name: "ブレビカウレ" },
         { name: "恵比寿大黒" }, { name: "デンシフローラム" }, { name: "ウィンゾリー" }, { name: "ラメリー" },
@@ -115,117 +231,6 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "オトンナ" }, { name: "キフォステンマ" }, { name: "フィカス ペティオラリス" }, { name: "ブーファン" },
         { name: "ウンカリーナ" }, { name: "パキコルムス" }, { name: "ゲラルダンサス" }, { name: "ヤトロファ" },
         { name: "センナ メリディオナリス" }, { name: "サンセベリア" }, { name: "スタッキー" },
-      ] },
-      { name: "チレコドン", pickable: true, varieties: [
-        { name: "万物想" }, { name: "阿房宮" }, { name: "奇峰錦" }, { name: "砂夜叉姫" },
-        { name: "レティキュラータス" }, { name: "パニクラーツス" },
-      ] },
-      { name: "コチレドン", pickable: true, varieties: [
-        { name: "熊童子" }, { name: "熊童子錦" }, { name: "子猫の爪" }, { name: "福娘" },
-        { name: "だるま福娘" }, { name: "ふっくら娘" }, { name: "銀波錦" }, { name: "ペンデンス" },
-        { name: "オルビキュラータ" }, { name: "エリサエ" }, { name: "白美人" }, { name: "パピラリス" },
-        { name: "旭波の光" }, { name: "旭波錦" }, { name: "嫁入り娘" }, { name: "紅覆輪" },
-      ] },
-      { name: "セネシオ", pickable: true, varieties: [
-        { name: "グリーンネックレス" }, { name: "ドルフィンネックレス" }, { name: "ピーチネックレス" }, { name: "ルビーネックレス" },
-        { name: "三日月ネックレス" }, { name: "七宝樹" }, { name: "万宝" }, { name: "美空鉾" },
-        { name: "銀月" }, { name: "京童子" }, { name: "マサイの矢尻" }, { name: "新月" },
-        { name: "鉄錫杖" }, { name: "ヤコブセニー" }, { name: "エンジェルティアーズ" }, { name: "ハリアヌス" },
-      ] },
-      { name: "クラッスラ", pickable: true, varieties: [
-        { name: "火祭り" }, { name: "銀盃" }, { name: "神刀" }, { name: "茜の塔" },
-        { name: "星の王子" }, { name: "桜星" }, { name: "紅稚児" }, { name: "若緑" },
-        { name: "数珠星" }, { name: "南十字星" }, { name: "ゴーラム" }, { name: "宇宙の木" },
-        { name: "リトルミッシー" }, { name: "マネーメーカー" }, { name: "玉椿" }, { name: "呂千絵" },
-        { name: "舞乙女" }, { name: "緑塔" }, { name: "ブロウメアナ" }, { name: "ムスコーサ" },
-      ] },
-      { name: "カランコエ", pickable: true, varieties: [
-        { name: "月兎耳" }, { name: "福兎耳" }, { name: "黒兎耳" }, { name: "唐印" },
-        { name: "デザートローズ" }, { name: "仙女の舞" }, { name: "胡蝶の舞" }, { name: "白銀の舞" },
-        { name: "不死鳥" }, { name: "子宝草" }, { name: "朱蓮" }, { name: "ミロッティー" },
-        { name: "チョコレートソルジャー" }, { name: "ベハレンシス" }, { name: "ファング" },
-      ] },
-      { name: "アロエ", pickable: true, varieties: [
-        { name: "ディコトマ" }, { name: "ポリフィラ" }, { name: "不夜城" }, { name: "千代田錦" },
-        { name: "ハオルチオイデス" }, { name: "キダチアロエ" }, { name: "羅紋錦" }, { name: "鬼ヒトデ" },
-        { name: "プリカティリス" }, { name: "アロエベラ" }, { name: "ペグレラエ" }, { name: "綾錦" },
-        { name: "帝王錦" },
-      ] },
-      { name: "ガステリア", pickable: true, varieties: [
-        { name: "臥牛" }, { name: "グロメラータ" }, { name: "バイリシアナ" }, { name: "子宝錦" },
-      ] },
-      { name: "ハオルチア", pickable: true, varieties: [
-        { name: "オブツーサ" }, { name: "ブラックオブツーサ" }, { name: "雫石" }, { name: "レツーサ" },
-        { name: "コレクタ" }, { name: "京の舞" }, { name: "玉扇" }, { name: "万象" },
-        { name: "寿" }, { name: "ピクタ" }, { name: "スプレンデンス" }, { name: "クーペリー" },
-        { name: "ベヌスタ" }, { name: "ムチカ" }, { name: "十二の巻" }, { name: "竜鱗" },
-        { name: "宝草" },
-      ] },
-    ],
-  },
-  {
-    label: "エケベリア・メセン",
-    genera: [
-      { name: "エケベリア", pickable: true, varieties: [
-        { name: "ラウイ" }, { name: "七福神" }, { name: "桃太郎" }, { name: "パールフォンニュルンベルク" },
-        { name: "高砂の翁" }, { name: "ピンクザラゴーサ" }, { name: "ザラゴーサ" }, { name: "アガボイデス" },
-        { name: "リップスティック" }, { name: "静夜" }, { name: "花うらら" }, { name: "ローラ" },
-        { name: "デレッセーナ" }, { name: "アフターグロー" }, { name: "トップシータービー" }, { name: "沙羅姫牡丹" },
-        { name: "白鳳" }, { name: "エレガンス" }, { name: "シャビアナ" }, { name: "リラシナ" },
-        { name: "ロメオ" }, { name: "ロメオルビン" }, { name: "ラウリンゼ" }, { name: "ハムシー" },
-        { name: "チワワエンシス" }, { name: "モンロー" }, { name: "ブルードラゴン" }, { name: "スノーフェイス" },
-        { name: "アイスローズ" }, { name: "オンスロー" }, { name: "コロラータ" }, { name: "パープルクイーン" },
-        { name: "アイスバーグ" }, { name: "ルブラ" }, { name: "レモンローズ" }, { name: "水蜜桃" },
-        { name: "スポテッドディア" }, { name: "クリスマス" }, { name: "エボニー" }, { name: "ザラゴーサノヴァ" },
-        { name: "メキシカンジャイアント" },
-      ] },
-      { name: "グラプトペタルム", pickable: true, varieties: [
-        { name: "朧月" }, { name: "姫秋麗" }, { name: "ブロンズ姫" }, { name: "銀天女" },
-        { name: "秋麗" }, { name: "ダルマ秋麗" }, { name: "パラグアイエンセ" }, { name: "淡雪" },
-      ] },
-      { name: "セダム", pickable: true, varieties: [
-        { name: "虹の玉" }, { name: "オーロラ" }, { name: "乙女心" }, { name: "玉つづり" },
-        { name: "銘月" }, { name: "黄麗" }, { name: "春萌" }, { name: "万年草" },
-        { name: "レッドベリー" }, { name: "アトランティス" }, { name: "リトルミッシー" }, { name: "パープルヘイズ" },
-        { name: "新玉つづり" }, { name: "ヒスパニクム" },
-      ] },
-      { name: "パキフィツム", pickable: true, varieties: [
-        { name: "桃美人" }, { name: "星美人" }, { name: "月美人" }, { name: "群雀" },
-        { name: "ベビーフィンガー" }, { name: "千代田の松" }, { name: "京美人" }, { name: "フーケリー" },
-      ] },
-      { name: "コノフィツム", pickable: true, varieties: [
-        { name: "ウィッテベルゲンセ" }, { name: "ブルゲリ" }, { name: "オペラローズ" }, { name: "花園" },
-        { name: "ペルシダム" }, { name: "玉彦" }, { name: "マウガニー" }, { name: "群碧玉" },
-        { name: "寂光" }, { name: "円空玉" },
-      ] },
-      { name: "リトープス", pickable: true, varieties: [
-        { name: "日輪玉" }, { name: "福来玉" }, { name: "紫勲" }, { name: "大津絵" },
-        { name: "オリーブ玉" }, { name: "麗虹玉" }, { name: "招福玉" }, { name: "富貴玉" },
-        { name: "紅大内玉" }, { name: "巴里玉" }, { name: "花紋玉" }, { name: "李夫人" },
-      ] },
-      { name: "フェネストラリア", pickable: true, varieties: [
-        { name: "五十鈴玉" }, { name: "群玉" },
-      ] },
-      { name: "プレイオスピロス", pickable: true, varieties: [
-        { name: "帝玉" }, { name: "紫帝玉" }, { name: "鳳卵" },
-      ] },
-      { name: "フォーカリア", pickable: true, varieties: [
-        { name: "怒涛" }, { name: "四海波" }, { name: "雪波" },
-      ] },
-      { name: "チタノプシス", pickable: true, varieties: [
-        { name: "天女" }, { name: "カルカレア" },
-      ] },
-      { name: "アルギロデルマ", pickable: true, varieties: [
-        { name: "金鈴" }, { name: "国宝玉" },
-      ] },
-      { name: "ギバエウム", pickable: true, varieties: [
-        { name: "無比玉" }, { name: "銀光玉" },
-      ] },
-      { name: "ディンテランサス", pickable: true, varieties: [
-        { name: "南蛮玉" }, { name: "幻玉" },
-      ] },
-      { name: "フリチア", pickable: true, varieties: [
-        { name: "光玉" },
       ] },
     ],
   },
@@ -284,7 +289,38 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     ],
   },
   {
-    label: "観葉",
+    label: "ビカクシダ",
+    genera: [
+      { name: "原種", pickable: false, varieties: [
+        { name: "ビカクシダ" }, { name: "コウモリラン" }, { name: "リドレイ" }, { name: "ウィリンキー" },
+        { name: "グランデ" }, { name: "コロナリウム" }, { name: "ビフルカツム" }, { name: "エレファントティス" },
+        { name: "ヴェイチー" }, { name: "ベイチー" }, { name: "ステマリア" }, { name: "ヒリー" },
+        { name: "スパーバム" }, { name: "マダガスカリエンセ" }, { name: "ワンダエ" }, { name: "アルシコルネ" },
+        { name: "ホルタミー" }, { name: "ワリチー" }, { name: "エリシー" }, { name: "クアドリディコトマム" },
+        { name: "アンゴレンセ" }, { name: "アンディナム" },
+      ] },
+      { name: "交配・著名個体", pickable: false, varieties: [
+        { name: "ネザーランド" }, { name: "ネザーランズ" }, { name: "グリフィン" }, { name: "キッチャクード" },
+        { name: "ホワイトホーク" }, { name: "ペドロ" }, { name: "ドラゴン" }, { name: "キリン" },
+        { name: "ギンガ" }, { name: "スザク" }, { name: "ジェイドガール" }, { name: "ペガサス" },
+      ] },
+    ],
+  },
+  {
+    label: "エアプランツ",
+    genera: [
+      { name: "チランジア", pickable: true, varieties: [
+        { name: "エアプランツ" }, { name: "イオナンタ" }, { name: "ウスネオイデス" }, { name: "キセログラフィカ" },
+        { name: "ストレプトフィラ" }, { name: "カピタータ" }, { name: "ブルボーサ" }, { name: "フックシー" },
+        { name: "フクシー" }, { name: "テクトラム" }, { name: "ハリシー" }, { name: "コットンキャンディ" },
+        { name: "ジュンセア" }, { name: "カプトメドゥーサエ" }, { name: "ブラキカウロス" }, { name: "ベルゲリ" },
+        { name: "ドゥラティ" }, { name: "パウシフォリア" }, { name: "セレリアナ" }, { name: "ファシクラータ" },
+        { name: "ストリクタ" }, { name: "レクルビフォリア" },
+      ] },
+    ],
+  },
+  {
+    label: "観葉植物",
     genera: [
       { name: "モンステラ", pickable: true, varieties: [
         { name: "デリシオサ" }, { name: "デリシオーサ" }, { name: "アダンソニー" }, { name: "ヒメモンステラ" },
@@ -338,37 +374,6 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ベンガレンシス" }, { name: "ペペロミア" }, { name: "ストレリチア" }, { name: "エバーフレッシュ" },
         { name: "ガジュマル" }, { name: "ストロマンテ" }, { name: "クテナンテ" }, { name: "ディスキディア" },
         { name: "サンスベリア" },
-      ] },
-    ],
-  },
-  {
-    label: "ビカクシダ",
-    genera: [
-      { name: "原種", pickable: false, varieties: [
-        { name: "ビカクシダ" }, { name: "コウモリラン" }, { name: "リドレイ" }, { name: "ウィリンキー" },
-        { name: "グランデ" }, { name: "コロナリウム" }, { name: "ビフルカツム" }, { name: "エレファントティス" },
-        { name: "ヴェイチー" }, { name: "ベイチー" }, { name: "ステマリア" }, { name: "ヒリー" },
-        { name: "スパーバム" }, { name: "マダガスカリエンセ" }, { name: "ワンダエ" }, { name: "アルシコルネ" },
-        { name: "ホルタミー" }, { name: "ワリチー" }, { name: "エリシー" }, { name: "クアドリディコトマム" },
-        { name: "アンゴレンセ" }, { name: "アンディナム" },
-      ] },
-      { name: "交配・著名個体", pickable: false, varieties: [
-        { name: "ネザーランド" }, { name: "ネザーランズ" }, { name: "グリフィン" }, { name: "キッチャクード" },
-        { name: "ホワイトホーク" }, { name: "ペドロ" }, { name: "ドラゴン" }, { name: "キリン" },
-        { name: "ギンガ" }, { name: "スザク" }, { name: "ジェイドガール" }, { name: "ペガサス" },
-      ] },
-    ],
-  },
-  {
-    label: "エアプランツ",
-    genera: [
-      { name: "チランジア", pickable: true, varieties: [
-        { name: "エアプランツ" }, { name: "イオナンタ" }, { name: "ウスネオイデス" }, { name: "キセログラフィカ" },
-        { name: "ストレプトフィラ" }, { name: "カピタータ" }, { name: "ブルボーサ" }, { name: "フックシー" },
-        { name: "フクシー" }, { name: "テクトラム" }, { name: "ハリシー" }, { name: "コットンキャンディ" },
-        { name: "ジュンセア" }, { name: "カプトメドゥーサエ" }, { name: "ブラキカウロス" }, { name: "ベルゲリ" },
-        { name: "ドゥラティ" }, { name: "パウシフォリア" }, { name: "セレリアナ" }, { name: "ファシクラータ" },
-        { name: "ストリクタ" }, { name: "レクルビフォリア" },
       ] },
     ],
   },
@@ -458,7 +463,17 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     ],
   },
   {
-    label: "山野草・盆栽",
+    label: "山野草",
+    genera: [
+      { name: "山野草", pickable: true, varieties: [
+        { name: "雪割草" }, { name: "福寿草" }, { name: "イワヒバ" }, { name: "春蘭" },
+        { name: "寒蘭" }, { name: "イワチドリ" }, { name: "ホトトギス" }, { name: "日本桜草" },
+        { name: "ダイモンジソウ" }, { name: "イワタバコ" }, { name: "高山植物" }, { name: "斑入り山野草" },
+      ] },
+    ],
+  },
+  {
+    label: "盆栽",
     genera: [
       { name: "盆栽樹種", pickable: false, varieties: [
         { name: "黒松" }, { name: "五葉松" }, { name: "赤松" }, { name: "錦松" },
@@ -477,15 +492,10 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "白光" }, { name: "暁天" }, { name: "松鏡" }, { name: "長寿宝" },
         { name: "鹿沼" },
       ] },
-      { name: "山野草", pickable: true, varieties: [
-        { name: "雪割草" }, { name: "福寿草" }, { name: "イワヒバ" }, { name: "春蘭" },
-        { name: "寒蘭" }, { name: "イワチドリ" }, { name: "ホトトギス" }, { name: "日本桜草" },
-        { name: "ダイモンジソウ" }, { name: "イワタバコ" }, { name: "高山植物" }, { name: "斑入り山野草" },
-      ] },
     ],
   },
   {
-    label: "バラ・草花",
+    label: "バラ",
     genera: [
       { name: "バラ", pickable: true, varieties: [
         { name: "ピエールドゥロンサール" }, { name: "ブランピエールドゥロンサール" }, { name: "ルージュピエールドゥロンサール" }, { name: "アイスバーグ" },
@@ -496,6 +506,11 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ガブリエル" }, { name: "オールドローズ" }, { name: "つるバラ" }, { name: "ミニバラ" },
         { name: "イングリッシュローズ" }, { name: "河本バラ" }, { name: "和ばら" },
       ] },
+    ],
+  },
+  {
+    label: "草花",
+    genera: [
       { name: "クレマチス", pickable: true, varieties: [
         { name: "モンタナ" }, { name: "モンタナルーベンス" }, { name: "ジャックマニー" }, { name: "テキセンシス" },
         { name: "ヴィチセラ" }, { name: "インテグリフォリア" }, { name: "ニオベ" }, { name: "ドクターラッペル" },

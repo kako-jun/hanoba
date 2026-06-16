@@ -53,8 +53,8 @@ describe("recent-tags", () => {
 
   describe("recordRecentTags（投稿成功後の一括記録）", () => {
     it("投稿のタグ群を記録する（先頭が最も新しく見える＝配列の並び順を保つ）", () => {
-      recordRecentTags(["多肉・塊根", "アガベ", "チタノタ"]);
-      expect(getRecentTags()).toEqual(["多肉・塊根", "アガベ", "チタノタ"]);
+      recordRecentTags(["多肉植物", "アガベ", "チタノタ"]);
+      expect(getRecentTags()).toEqual(["多肉植物", "アガベ", "チタノタ"]);
     });
 
     it("複数回の投稿で新しい投稿のタグが前に来る・重複は繰り上げ", () => {
