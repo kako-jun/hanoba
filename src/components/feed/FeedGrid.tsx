@@ -83,27 +83,15 @@ export default function FeedGrid() {
         activeTag !== null ? (
           <p className="py-12 text-center text-ha-ink/70">「#{activeTag}」の投稿はまだありません。</p>
         ) : (
-          // 空フィードは「夜の棚の入口」として見せる（AI生成の暗色ムード・/image）。
-          <div className="relative overflow-hidden rounded-2xl border border-white/10">
-            <img
-              src="/og/room-dark.webp"
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30"></div>
-            <div className="relative flex flex-col items-center gap-4 text-center px-6 py-16 sm:py-24">
-              <p className="font-display text-2xl font-extrabold text-ha-white">
-                まだ、なにも灯っていない棚。
-              </p>
-              <p className="text-ha-ink/80 max-w-sm">最初の1枚を置いて、この場所に灯りを。</p>
-              <a
-                href="/compose"
-                className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-              >
-                投稿する
-              </a>
-            </div>
+          // 投稿が無いときはプレーンな空状態（演出カードは廃止）。
+          <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <p className="text-ha-ink/70">まだ投稿がありません。</p>
+            <a
+              href="/compose"
+              className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+            >
+              投稿する
+            </a>
           </div>
         )
       ) : (
