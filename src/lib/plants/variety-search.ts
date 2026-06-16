@@ -156,5 +156,6 @@ export function tagsToUnpick(
   });
   if (!categoryRemains && captionHasTag(caption, category.label)) result.push(category.label);
 
-  return result;
+  // 品種名＝カテゴリ名/属名が一致するデータ（例: エアプランツ）でも重複を返さない。
+  return [...new Set(result)];
 }

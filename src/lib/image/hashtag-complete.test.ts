@@ -24,6 +24,10 @@ describe("removeTag", () => {
     expect(removeTag("#チタノタス ", "チタノタ")).toBe("#チタノタス ");
   });
 
+  it("無関係な散文の連続スペースは畳まない", () => {
+    expect(removeTag("hello  world #アガベ ", "アガベ")).toBe("hello  world ");
+  });
+
   it("無ければそのまま・insertTag と往復で戻る", () => {
     expect(removeTag("#アガベ ", "パキポディウム")).toBe("#アガベ ");
     const added = insertTag("メモ", "アガベ");

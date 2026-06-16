@@ -111,9 +111,8 @@ export function removeTag(caption: string, tag: string): string {
   const norm = normalizeTagForBody(tag);
   if (norm === "") return caption;
   const escaped = norm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // 直前の空白（あれば）ごと #tag を除去。語境界は後続の空白/終端で担保。
-  const re = new RegExp(`(^|\\s)#${escaped}(?=\\s|$)`, "gi");
-  const out = caption.replace(re, (_m, lead: string) => (lead === "" ? "" : lead));
-  // 置換で生じうる二重スペースだけ畳む（改行は保つ）。
-  return out.replace(/ {2,}/g, " ");
+  // 直前の境界（空白 or 先頭）ごと #tag を外す。語境界は後続の空白/終端で担保。
+  // 先頭の `(?:^|\s)` で隣の空白を一緒に飲むので二重空白は生じず、無関係な散文の
+  // 連続スペースには触れない（global collapse はしない）。
+  return caption.replace(new RegExp(`(?:^|\\s)#${escaped}(?=\\s|$)`, "gi"), "");
 }
