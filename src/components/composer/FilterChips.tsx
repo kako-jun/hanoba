@@ -11,7 +11,7 @@ interface FilterChipsProps {
 }
 
 export default function FilterChips({ selected, onChange }: FilterChipsProps) {
-  const chipClass = "flex w-[4.75rem] items-center justify-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-colors";
+  const chipClass = "flex w-[4.75rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-colors";
 
   function toggle(preset: FilterPreset) {
     const exists = selected.some((item) => item.name === preset.name);
@@ -19,7 +19,7 @@ export default function FilterChips({ selected, onChange }: FilterChipsProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="フィルタを重ねる">
+    <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="フィルタを重ねる">
       <button
         type="button"
         onClick={() => onChange([])}
