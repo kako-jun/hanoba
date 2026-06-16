@@ -6,7 +6,8 @@
 import { useState } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { computeSquareCropRect, type SquareCropRect } from "../../lib/image/crop.ts";
+import { computeSquareCropRect, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
+import { toneCurvePreviewCss } from "../../lib/image/presets.ts";
 
 interface CropFrameProps {
   /** 選択画像の Object URL。 */
@@ -23,6 +24,8 @@ interface CropFrameProps {
   sharpen?: number;
   /** プレビューに重ねる周辺ぼかしの強さ（0〜1）。中央はそのまま、外周だけぼかす。 */
   edgeBlur?: number;
+  /** トーンカーブ（翠露=S字/土香=逆S字）。焼き込みは canvas、プレビューは contrast() で近似。 */
+  toneCurve?: ToneCurve;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
 }
@@ -40,6 +43,7 @@ export default function CropFrame({
   vignette = 0,
   sharpen = 0,
   edgeBlur = 0,
+  toneCurve = null,
   onCropComplete,
 }: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
@@ -48,7 +52,8 @@ export default function CropFrame({
   const sharpenAmount = Math.min(Math.max(sharpen, 0), 1);
   const sharpenEdge = -1.5 * sharpenAmount;
   const sharpenCenter = 1 + 6 * sharpenAmount;
-  const previewFilter = [filter, sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
+  // トーンカーブ（翠露/土香）は焼き込みが canvas LUT、プレビューは従来どおり contrast() で近似する。
+  const previewFilter = [filter, toneCurvePreviewCss(toneCurve), sharpenAmount > 0 ? "url(#hanoba-sharpen-preview)" : null]
     .filter((item): item is string => item !== null && item !== "")
     .join(" ") || "none";
 
@@ -149,8 +154,9 @@ export default function CropFrame({
                 maxWidth: "none",
                 display: "block",
                 // 焼き込みは出力の2%（applyEdgeBlur）。プレビューも表示中のクロップ枠の2%に
-                // 合わせ、画像サイズに依らず焼き上がりと同じ強さで見せる。
-                filter: [filter, `blur(${(((crop.width / 100) * renderedW) * 0.02 * edgeBlur).toFixed(2)}px)`]
+                // 合わせ、画像サイズに依らず焼き上がりと同じ強さで見せる。トーン（翠露/土香）も
+                // 重ねて、外周リングが中央と同じ明暗になるようにする。
+                filter: [filter, toneCurvePreviewCss(toneCurve), `blur(${(((crop.width / 100) * renderedW) * 0.02 * edgeBlur).toFixed(2)}px)`]
                   .filter((item): item is string => item !== null && item !== "")
                   .join(" "),
               }}

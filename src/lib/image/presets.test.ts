@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { FILTER_PRESETS, composeEdgeBlur, composeFilterCss, composeSharpen, composeVignette } from "./presets.ts";
+import {
+  FILTER_PRESETS,
+  composeEdgeBlur,
+  composeFilterCss,
+  composeSharpen,
+  composeToneCurve,
+  composeVignette,
+  toneCurvePreviewCss,
+} from "./presets.ts";
 
 describe("FILTER_PRESETS", () => {
   it("畑で迷わない数に絞っている", () => {
@@ -27,6 +35,9 @@ describe("FILTER_PRESETS", () => {
         expect(preset.edgeBlur).toBeGreaterThan(0);
         expect(preset.edgeBlur).toBeLessThanOrEqual(1);
       }
+      if (preset.toneCurve !== undefined) {
+        expect(["s", "reverse-s"]).toContain(preset.toneCurve);
+      }
     }
   });
 
@@ -36,8 +47,9 @@ describe("FILTER_PRESETS", () => {
   });
 
   it("filter は CSS の filter 関数文字列（brightness/contrast 等）を含む", () => {
-    // 線明（シャープ）と霞幻（周辺ぼかし）は canvas 側だけで効く＝CSS tonal filter は持たない。
-    const canvasOnly = new Set(["線明", "霞幻"]);
+    // canvas 側だけで効くプリセットは CSS tonal filter を持たない＝"none"。
+    // 線明=シャープ / 霞幻=周辺ぼかし / 翠露・土香=トーンカーブ（#156 で contrast から移行）。
+    const canvasOnly = new Set(["線明", "霞幻", "翠露", "土香"]);
     for (const preset of FILTER_PRESETS) {
       if (canvasOnly.has(preset.name)) {
         expect(preset.filter).toBe("none");
@@ -76,22 +88,37 @@ describe("FILTER_PRESETS", () => {
   });
 
   it("複数プリセットを重ねがけ用に合成する", () => {
-    const suiro = FILTER_PRESETS.find((preset) => preset.name === "翠露")!;
+    const bika = FILTER_PRESETS.find((preset) => preset.name === "美華")!;
     const kagegure = FILTER_PRESETS.find((preset) => preset.name === "影暮")!;
     const senmei = FILTER_PRESETS.find((preset) => preset.name === "線明")!;
-    const presets = [suiro, kagegure, senmei];
-    expect(composeFilterCss(presets)).toContain(`${suiro.filter} ${kagegure.filter}`);
+    const presets = [bika, kagegure, senmei];
+    expect(composeFilterCss(presets)).toContain(`${bika.filter} ${kagegure.filter}`);
     expect(composeVignette(presets)).toBe(kagegure.vignette);
     expect(composeSharpen(presets)).toBe(senmei.sharpen);
+  });
+
+  it("翠露=S字・土香=逆S字のトーンカーブを持つ", () => {
+    expect(FILTER_PRESETS.find((preset) => preset.name === "翠露")!.toneCurve).toBe("s");
+    expect(FILTER_PRESETS.find((preset) => preset.name === "土香")!.toneCurve).toBe("reverse-s");
   });
 
   it("翠露と土香は同時選択でトーンを完全に相殺する", () => {
     const suiro = FILTER_PRESETS.find((preset) => preset.name === "翠露")!;
     const dokou = FILTER_PRESETS.find((preset) => preset.name === "土香")!;
-    expect(composeFilterCss([suiro, dokou])).toBeNull();
-    expect(composeFilterCss([suiro, dokou, FILTER_PRESETS.find((preset) => preset.name === "美華")!])).toBe(
-      "saturate(1.28)",
-    );
+    const bika = FILTER_PRESETS.find((preset) => preset.name === "美華")!;
+    expect(composeToneCurve([])).toBeNull();
+    expect(composeToneCurve([bika])).toBeNull();
+    expect(composeToneCurve([suiro])).toBe("s");
+    expect(composeToneCurve([dokou])).toBe("reverse-s");
+    expect(composeToneCurve([suiro, dokou])).toBeNull();
+    // トーンは canvas 側（filter は none）なので、CSS 合成は美華だけが残る。
+    expect(composeFilterCss([suiro, dokou, bika])).toBe("saturate(1.28)");
+  });
+
+  it("toneCurvePreviewCss は contrast() でトーンを近似する", () => {
+    expect(toneCurvePreviewCss("s")).toBe("contrast(1.16)");
+    expect(toneCurvePreviewCss("reverse-s")).toBe("contrast(0.86)");
+    expect(toneCurvePreviewCss(null)).toBeNull();
   });
 
   it("線明はシャープのみでCSSフィルタを足さない", () => {

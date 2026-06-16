@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag } from "../../lib/image/hashtag-complete.ts";
-import { composeEdgeBlur, composeFilterCss, composeSharpen, composeVignette, type FilterPreset } from "../../lib/image/presets.ts";
+import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneCurve, composeVignette, type FilterPreset } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
 import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
@@ -178,6 +178,7 @@ export default function Composer() {
           composeVignette(draft.filters),
           composeSharpen(draft.filters),
           composeEdgeBlur(draft.filters),
+          composeToneCurve(draft.filters),
         );
         const squareFile = new File([blob], `hanoba-${index + 1}.jpg`, { type: "image/jpeg" });
         const { url } = await uploadImage(squareFile);
@@ -248,6 +249,7 @@ export default function Composer() {
               vignette={composeVignette(currentImage.filters)}
               sharpen={composeSharpen(currentImage.filters)}
               edgeBlur={composeEdgeBlur(currentImage.filters)}
+              toneCurve={composeToneCurve(currentImage.filters)}
               onCropComplete={(crop) => updateCurrentImage({ crop })}
             />
           )}

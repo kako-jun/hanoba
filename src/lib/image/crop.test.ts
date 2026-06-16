@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PixelCrop } from "react-image-crop";
-import { computeSquareCropRect } from "./crop.ts";
+import { buildToneLut, computeSquareCropRect } from "./crop.ts";
 
 function px(x: number, y: number, width: number, height: number): PixelCrop {
   return { unit: "px", x, y, width, height };
@@ -90,6 +90,58 @@ describe("computeSquareCropRect", () => {
       expect(rect.sy).toBeGreaterThanOrEqual(0);
       expect(rect.sx + rect.size).toBeLessThanOrEqual(naturalW);
       expect(rect.sy + rect.size).toBeLessThanOrEqual(naturalH);
+    }
+  });
+});
+
+describe("buildToneLut", () => {
+  it("null は恒等 LUT（各段がそのまま）", () => {
+    const lut = buildToneLut(null);
+    expect(lut).toHaveLength(256);
+    expect(lut[0]).toBe(0);
+    expect(lut[128]).toBe(128);
+    expect(lut[255]).toBe(255);
+  });
+
+  it("両端は S字・逆S字とも固定（白飛び/黒つぶれを作らない）", () => {
+    for (const tone of ["s", "reverse-s"] as const) {
+      const lut = buildToneLut(tone);
+      expect(lut[0]).toBe(0);
+      expect(lut[255]).toBe(255);
+    }
+  });
+
+  it("中点はトーンに依らず保たれる（明るさを動かさない）", () => {
+    // x=127〜128 が中点。±1 段の丸め内で 128 付近に留まる。
+    for (const tone of ["s", "reverse-s", null] as const) {
+      const lut = buildToneLut(tone);
+      expect(Math.abs((lut[128] ?? 0) - 128)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("S字は暗部を落とし明部を上げる（コントラストを締める）", () => {
+    const lut = buildToneLut("s");
+    expect(lut[64]!).toBeLessThan(64); // 暗部はより暗く
+    expect(lut[192]!).toBeGreaterThan(192); // 明部はより明るく
+  });
+
+  it("逆S字は暗部を上げ明部を抑える（コントラストをやわらげる）", () => {
+    const lut = buildToneLut("reverse-s");
+    expect(lut[64]!).toBeGreaterThan(64); // 暗部を持ち上げ
+    expect(lut[192]!).toBeLessThan(192); // 明部を寝かせる
+  });
+
+  it("amount=0 はトーンに依らず恒等（カーブを混ぜない）", () => {
+    expect(Array.from(buildToneLut("s", 0))).toEqual(Array.from(buildToneLut(null)));
+    expect(Array.from(buildToneLut("reverse-s", 0))).toEqual(Array.from(buildToneLut(null)));
+  });
+
+  it("単調増加（順序を反転しない）", () => {
+    for (const tone of ["s", "reverse-s"] as const) {
+      const lut = buildToneLut(tone);
+      for (let i = 1; i < 256; i++) {
+        expect(lut[i]!).toBeGreaterThanOrEqual(lut[i - 1]!);
+      }
     }
   });
 });

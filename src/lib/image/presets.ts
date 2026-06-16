@@ -16,8 +16,10 @@ export type { FilterPreset };
  */
 export const FILTER_PRESETS: readonly FilterPreset[] = [
   { name: "淡陽", filter: "brightness(1.08)", color: "#d9b85f" },
-  { name: "翠露", filter: "contrast(1.16)", color: "#76b65a" },
-  { name: "土香", filter: "contrast(0.86)", color: "#9b7047" },
+  // 翠露/土香 は CSS contrast ではなく canvas のトーンカーブで焼き込む（#156）。
+  // 焼き込みは toneCurve、プレビューは toneCurvePreviewCss の contrast() で近似する。
+  { name: "翠露", filter: "none", color: "#76b65a", toneCurve: "s" },
+  { name: "土香", filter: "none", color: "#9b7047", toneCurve: "reverse-s" },
   { name: "美華", filter: "saturate(1.28)", color: "#d96d8b" },
   { name: "影暮", filter: "brightness(0.98) contrast(1.08)", color: "#2f4028", vignette: 0.82 },
   { name: "霞幻", filter: "none", color: "#aebfcb", edgeBlur: 0.6 },
@@ -25,13 +27,28 @@ export const FILTER_PRESETS: readonly FilterPreset[] = [
 ] as const;
 
 export function composeFilterCss(presets: readonly FilterPreset[]): string | null {
-  const names = new Set(presets.map((preset) => preset.name));
-  const toneCancels = names.has("翠露") && names.has("土香");
-  const filters = presets
-    .filter((preset) => !(toneCancels && (preset.name === "翠露" || preset.name === "土香")))
-    .map((preset) => preset.filter)
-    .filter((filter) => filter !== "none");
+  const filters = presets.map((preset) => preset.filter).filter((filter) => filter !== "none");
   return filters.length > 0 ? filters.join(" ") : null;
+}
+
+/**
+ * 重ねがけ後のトーンカーブを決める。S字（翠露）と逆S字（土香）を同時選択したときは、
+ * 相反するので完全に相殺して `null`（＝トーン処理なし）にする。複数同種は同じ向きへ。
+ */
+export function composeToneCurve(presets: readonly FilterPreset[]): "s" | "reverse-s" | null {
+  const hasS = presets.some((preset) => preset.toneCurve === "s");
+  const hasReverse = presets.some((preset) => preset.toneCurve === "reverse-s");
+  if (hasS && hasReverse) return null;
+  if (hasS) return "s";
+  if (hasReverse) return "reverse-s";
+  return null;
+}
+
+/** トーンカーブのプレビュー近似（焼き込みは canvas LUT、プレビューは従来の CSS contrast）。 */
+export function toneCurvePreviewCss(tone: "s" | "reverse-s" | null): string | null {
+  if (tone === "s") return "contrast(1.16)";
+  if (tone === "reverse-s") return "contrast(0.86)";
+  return null;
 }
 
 export function composeVignette(presets: readonly FilterPreset[]): number {
