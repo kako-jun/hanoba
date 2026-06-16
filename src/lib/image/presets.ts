@@ -19,12 +19,17 @@ export const FILTER_PRESETS: readonly FilterPreset[] = [
   { name: "土香", filter: "contrast(0.86)", color: "#9b7047" },
   { name: "美華", filter: "saturate(1.18)", color: "#d96d8b" },
   { name: "影暮", filter: "brightness(0.98) contrast(1.08)", color: "#2f4028", vignette: 0.82 },
-  { name: "線明", filter: "contrast(1.06)", color: "#5e807c", sharpen: 0.72 },
+  { name: "線明", filter: "none", color: "#5e807c", sharpen: 0.72 },
 ] as const;
 
 export function composeFilterCss(presets: readonly FilterPreset[]): string | null {
-  if (presets.length === 0) return null;
-  return presets.map((preset) => preset.filter).join(" ");
+  const names = new Set(presets.map((preset) => preset.name));
+  const toneCancels = names.has("翠露") && names.has("土香");
+  const filters = presets
+    .filter((preset) => !(toneCancels && (preset.name === "翠露" || preset.name === "土香")))
+    .map((preset) => preset.filter)
+    .filter((filter) => filter !== "none");
+  return filters.length > 0 ? filters.join(" ") : null;
 }
 
 export function composeVignette(presets: readonly FilterPreset[]): number {

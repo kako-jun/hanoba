@@ -33,7 +33,11 @@ describe("FILTER_PRESETS", () => {
 
   it("filter は CSS の filter 関数文字列（brightness/contrast 等）を含む", () => {
     for (const preset of FILTER_PRESETS) {
-      expect(preset.filter).toMatch(/(brightness|contrast|saturate|sepia|hue-rotate)\(/);
+      if (preset.name === "線明") {
+        expect(preset.filter).toBe("none");
+      } else {
+        expect(preset.filter).toMatch(/(brightness|contrast|saturate|sepia|hue-rotate)\(/);
+      }
       expect(preset.filter).not.toMatch(/grayscale\(/);
     }
   });
@@ -57,5 +61,20 @@ describe("FILTER_PRESETS", () => {
     expect(composeFilterCss(presets)).toContain(`${FILTER_PRESETS[0]!.filter} ${FILTER_PRESETS[3]!.filter}`);
     expect(composeVignette(presets)).toBe(FILTER_PRESETS[3]!.vignette);
     expect(composeSharpen(presets)).toBe(FILTER_PRESETS[4]!.sharpen);
+  });
+
+  it("翠露と土香は同時選択でトーンを完全に相殺する", () => {
+    const suiro = FILTER_PRESETS.find((preset) => preset.name === "翠露")!;
+    const dokou = FILTER_PRESETS.find((preset) => preset.name === "土香")!;
+    expect(composeFilterCss([suiro, dokou])).toBeNull();
+    expect(composeFilterCss([suiro, dokou, FILTER_PRESETS.find((preset) => preset.name === "美華")!])).toBe(
+      "saturate(1.18)",
+    );
+  });
+
+  it("線明はシャープのみでCSSフィルタを足さない", () => {
+    const senmei = FILTER_PRESETS.find((preset) => preset.name === "線明")!;
+    expect(composeFilterCss([senmei])).toBeNull();
+    expect(composeSharpen([senmei])).toBe(senmei.sharpen);
   });
 });
