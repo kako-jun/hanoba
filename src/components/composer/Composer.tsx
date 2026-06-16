@@ -66,6 +66,9 @@ export default function Composer() {
   const [imageNotice, setImageNotice] = useState<string | null>(null);
   const [pool, setPool] = useState<string[]>([]);
   const [popular, setPopular] = useState<RankedTag[]>([]);
+  // タグチップ挿入/解除のたびに increment し、CaptionInput にキャレットを末尾へ送る合図にする（#165）。
+  // 0 は初期値（発火しない）。手打ち補完（applyCandidate）はこの経路を通らず従来どおり。
+  const [focusEndSignal, setFocusEndSignal] = useState(0);
   // ユーザー名（#28）。AccountName が表示・保存を担い、現在名だけ受け取って投稿ゲートに使う。
   const [name, setName] = useState<string | null>(null);
 
@@ -265,14 +268,21 @@ export default function Composer() {
             />
           </section>
 
-          <CaptionInput value={caption} onChange={setCaption} pool={pool} />
+          <CaptionInput value={caption} onChange={setCaption} pool={pool} focusEndSignal={focusEndSignal} />
 
-          {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。 */}
+          {/* タグは手打ちせず選んで入れる（#22）。本文に #タグ テキストとして挿入される。
+              チップ挿入/解除の後はキャレットを本文末尾へ送る（#165・focusEndSignal を増やす）。 */}
           <TagPicker
             popular={popular}
             caption={caption}
-            onPick={(tag) => setCaption((c) => insertTag(c, tag))}
-            onRemove={(tag) => setCaption((c) => removeTag(c, tag))}
+            onPick={(tag) => {
+              setCaption((c) => insertTag(c, tag));
+              setFocusEndSignal((n) => n + 1);
+            }}
+            onRemove={(tag) => {
+              setCaption((c) => removeTag(c, tag));
+              setFocusEndSignal((n) => n + 1);
+            }}
           />
 
           {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
