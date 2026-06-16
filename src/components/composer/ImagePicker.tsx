@@ -81,7 +81,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
   );
 
   return (
-    <div className={compact ? "flex flex-col items-start gap-2" : "flex flex-col items-center gap-3"}>
+    <div className={compact ? "relative flex flex-col items-start gap-2" : "flex flex-col items-center gap-3"}>
       {compact ? (
         <button
           type="button"
@@ -97,25 +97,37 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
       )}
       {compact && compactOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-ha-ink/35 p-4"
+          className="glass-strong absolute left-0 top-full z-50 mt-2 flex w-52 flex-col gap-2 rounded-2xl p-2 shadow-2xl"
           role="dialog"
-          aria-modal="true"
           aria-label="写真を追加"
-          onClick={() => setCompactOpen(false)}
         >
-          <div
-            className="glass relative flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl p-4"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            type="button"
+            onClick={() => setCompactOpen(false)}
+            className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full text-ha-white/70 transition-colors hover:bg-ha-white/15"
+            aria-label="閉じる"
           >
+            <Icon name="close" className="h-4 w-4" />
+          </button>
+          <div className="flex flex-col gap-2 pt-7">
             <button
               type="button"
-              onClick={() => setCompactOpen(false)}
-              className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full text-ha-ink/70 transition-colors hover:bg-ha-white/30"
-              aria-label="閉じる"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={remaining <= 0}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-ha-green px-5 py-3 font-semibold text-ha-white transition-colors hover:brightness-110 disabled:opacity-40"
             >
-              <Icon name="close" className="h-4 w-4" />
+              <Icon name="camera" className="h-5 w-5" />
+              撮影
             </button>
-            <div className="pt-6">{controls}</div>
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={remaining <= 0}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-ha-white/25 bg-ha-white/90 px-5 py-3 font-semibold text-ha-ink transition-colors hover:border-ha-green/60 disabled:opacity-40"
+            >
+              <Icon name="image" className="h-5 w-5" />
+              アルバム
+            </button>
           </div>
         </div>
       )}

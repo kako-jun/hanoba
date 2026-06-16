@@ -210,7 +210,7 @@ export default function Composer() {
               <span className="text-xs text-ha-ink/55">{images.length}/{MAX_IMAGES}枚</span>
             </div>
             {imageNotice !== null && <p className="text-xs font-medium text-ha-pink">{imageNotice}</p>}
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="relative flex gap-2 overflow-visible pb-1">
               {images.map((image, index) => (
                 <button
                   key={image.id}
