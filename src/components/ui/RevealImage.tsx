@@ -22,10 +22,19 @@ export default function RevealImage({ src, alt, className = "", loading = "lazy"
   const [loaded, setLoaded] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
 
-  // キャッシュ済みは onLoad が発火しないことがあるので、マウント/src 変更時に complete を実測する。
   useEffect(() => {
-    if (ref.current?.complete) setLoaded(true);
+    // src が変わるたび complete を実測。キャッシュ済みなら即表示、未ロードなら隠して再リビール。
+    // true にするだけでなく false にも戻すことで、複数写真切替の2枚目以降も blur-up し直す。
+    setLoaded(ref.current?.complete ?? false);
   }, [src]);
+
+  const cls = [
+    className,
+    "transition-[opacity,filter] duration-700 ease-out motion-reduce:transition-none motion-reduce:blur-0",
+    loaded ? "opacity-100 blur-0" : "opacity-0 blur-md",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <img
@@ -37,9 +46,7 @@ export default function RevealImage({ src, alt, className = "", loading = "lazy"
       onLoad={() => setLoaded(true)}
       // 壊れた画像が永久に opacity-0 で消えないように、エラーでも表示状態にする。
       onError={() => setLoaded(true)}
-      className={`${className} transition-[opacity,filter] duration-700 ease-out motion-reduce:transition-none motion-reduce:blur-0 ${
-        loaded ? "opacity-100 blur-0" : "opacity-0 blur-md"
-      }`}
+      className={cls}
     />
   );
 }

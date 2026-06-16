@@ -57,6 +57,50 @@ describe("RevealImage（#145 blur-up リビール）", () => {
     }
   });
 
+  it("src 変更で再リビール：ロード済みの状態でも別 src に差し替えると opacity-0 blur-md に戻り、再 onLoad で復帰する", () => {
+    // jsdom/happy-dom では img.complete が既定 false。よって src 差し替え後の effect は
+    // loaded を false に戻し、2枚目以降も「隠して→onLoad でフェード」を踏むことを検証する。
+    const { rerender } = render(<RevealImage src="https://example.com/first.jpg" alt="1枚目" />);
+    const img = imgOf();
+    fireEvent.load(img);
+    expect(img).toHaveClass("opacity-100", "blur-0"); // 1枚目はリビール済み
+
+    // 別の未ロード src に差し替え＝effect が complete(=false) を実測して隠す。
+    rerender(<RevealImage src="https://example.com/second.jpg" alt="2枚目" />);
+    expect(img).toHaveClass("opacity-0", "blur-md");
+    expect(img).not.toHaveClass("opacity-100");
+    expect(img).not.toHaveClass("blur-0");
+
+    // 2枚目の onLoad で再びリビールする。
+    fireEvent.load(img);
+    expect(img).toHaveClass("opacity-100", "blur-0");
+    expect(img).not.toHaveClass("opacity-0");
+    expect(img).not.toHaveClass("blur-md");
+  });
+
+  it("src 変更でキャッシュ済み（complete=true）なら未 onLoad でも即表示に戻る", () => {
+    // complete をプロトタイプ getter で立て、差し替え後の effect が即 loaded=true にすることを見る。
+    // getter は finally で必ず復元する。
+    const proto = window.HTMLImageElement.prototype;
+    const original = Object.getOwnPropertyDescriptor(proto, "complete");
+    try {
+      const { rerender } = render(<RevealImage src="https://example.com/first.jpg" alt="1枚目" />);
+      const img = imgOf();
+      fireEvent.load(img);
+      expect(img).toHaveClass("opacity-100", "blur-0");
+
+      // ここでキャッシュ済みを模す。差し替え後の effect は complete=true を読み即表示にする。
+      Object.defineProperty(proto, "complete", { configurable: true, get: () => true });
+      rerender(<RevealImage src="https://example.com/cached-second.jpg" alt="2枚目" />);
+      // onLoad を一切発火させていないのに、cached 即表示で opacity-100 を保つ。
+      expect(img).toHaveClass("opacity-100", "blur-0");
+      expect(img).not.toHaveClass("opacity-0");
+    } finally {
+      if (original) Object.defineProperty(proto, "complete", original);
+      else delete (proto as { complete?: unknown }).complete;
+    }
+  });
+
   it("属性透過：decoding=async が付き、loading 既定は lazy", () => {
     render(<RevealImage src="https://example.com/plant.jpg" alt="植物" />);
     const img = imgOf();
