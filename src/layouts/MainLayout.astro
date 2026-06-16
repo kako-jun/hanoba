@@ -61,6 +61,10 @@ const jsonLd = {
     <!-- @vite-pwa/astro は manifest を生成するが <link rel="manifest"> は注入しないため明示する
          （これが無いとブラウザが manifest を発見できず PWA として install できない）。 -->
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- 同様に Service Worker 登録スクリプト（registerSW.js）も自動注入されないため明示する。
+         これが無いと sw.js が登録されず PWA がオフライン動作・install できない（#PWA）。
+         dev では registerSW.js が無く 404 になるが、本番ビルド（dist）でのみ生成・登録される。 -->
+    <script is:inline async src="/registerSW.js"></script>
     <!-- OGP / Twitter カード（共有時のサムネ）。画像は AI 生成の温室ヒーロー（/image スキル）。
          og:image は絶対 URL が要るので本番ドメインで固定する。 -->
     <meta property="og:type" content="website" />

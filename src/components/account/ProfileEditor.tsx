@@ -186,7 +186,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-ha-green text-ha-white px-3.5 py-1.5 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition"
+                  className="inline-flex items-center gap-[5px] rounded-full bg-ha-green text-ha-white px-3.5 py-1.5 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition"
                 >
                   <Icon name="image" className="w-4 h-4" />
                   {uploading ? "アップロード中…" : "画像を選ぶ"}
