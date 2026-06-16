@@ -47,20 +47,30 @@ describe("TagPicker", () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
-  it("品種を選ぶと上位（カテゴリ→属）も前置して #カテゴリ #属 #品種 の順で入れる", async () => {
+  it("品種を選ぶとその品種タグだけを入れる（カテゴリ・属を前置しない・1鉢1札 #166）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await drillToAgave(user);
     await user.click(await screen.findByRole("button", { name: "#チタノタ" }));
-    expect(onPick.mock.calls).toEqual([["多肉植物"], ["アガベ"], ["チタノタ"]]);
+    expect(onPick.mock.calls).toEqual([["チタノタ"]]);
   });
 
-  it("「#属 をこのまま使う」はカテゴリ＋属を入れる（品種は付けない）", async () => {
+  it("「#属 をこのまま使う」は属だけを入れる（カテゴリは入れない・#166）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await drillToAgave(user);
     await user.click(await screen.findByRole("button", { name: /#アガベ をこのまま使う/ }));
-    expect(onPick.mock.calls).toEqual([["多肉植物"], ["アガベ"]]);
+    expect(onPick.mock.calls).toEqual([["アガベ"]]);
+  });
+
+  it("本文に上位属タグがある状態で品種を選ぶと、葉を入れ上位属を外す（1鉢1札 #166）", async () => {
+    const user = userEvent.setup();
+    const { onPick, onRemove } = renderPicker({ caption: "今日の一鉢\n#パキポディウム" });
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
+    await user.click(await screen.findByRole("button", { name: /#グラキリス/ }));
+    expect(onPick.mock.calls).toEqual([["グラキリス"]]);
+    expect(onRemove.mock.calls).toEqual([["パキポディウム"]]);
   });
 
   it("人気の“属”をタップしたら挿入せず階層（品種一覧）に入る", async () => {
@@ -72,13 +82,26 @@ describe("TagPicker", () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
-  it("パネル内の検索で品種を引き、上位属を補って挿入する", async () => {
+  it("パネル内の検索で品種を引き、その品種タグだけを挿入する（#166）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
     await user.click(await screen.findByRole("button", { name: /#グラキリス/ }));
-    expect(onPick.mock.calls).toEqual([["塊根植物"], ["パキポディウム"], ["グラキリス"]]);
+    expect(onPick.mock.calls).toEqual([["グラキリス"]]);
+  });
+
+  it("どの経路でもカテゴリ名（多肉植物 等）を onPick しない（#166）", async () => {
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    // ドリルダウンで品種を選ぶ
+    await drillToAgave(user);
+    await user.click(await screen.findByRole("button", { name: "#チタノタ" }));
+    // 属を「このまま使う」
+    await user.click(await screen.findByRole("button", { name: /#アガベ をこのまま使う/ }));
+    const picked = onPick.mock.calls.map((c) => c[0]);
+    expect(picked).not.toContain("多肉植物");
+    expect(picked).not.toContain("塊根植物");
   });
 
   it("検索はかな/カナ・大小・全半角を無視する（ぐらきりす→グラキリス）", async () => {
