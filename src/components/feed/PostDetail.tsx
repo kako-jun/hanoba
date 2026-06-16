@@ -217,11 +217,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   <li key={p.id}>
                     <a
                       href={`/discover?q=${encodeURIComponent(`#${p.name}`)}`}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-[2px] border border-ha-green/35 bg-ha-white px-3 py-1.5 text-sm shadow-sm shadow-ha-green/10 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/55 hover:border-ha-green hover:bg-ha-yellow/25 hover:text-ha-green-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+                      className="glass inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-3 py-1.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                       title={`${p.sci}（${p.name}）で探す`}
                     >
                       <SciName sci={p.sci} className="font-display text-ha-green-deep" />
-                      <span className="text-ha-ink/70">{p.name}</span>
+                      <span className="font-medium text-ha-ink">{p.name}</span>
                     </a>
                   </li>
                 ))}
