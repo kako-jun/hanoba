@@ -11,7 +11,9 @@ import { insertTag } from "../../lib/image/hashtag-complete.ts";
 import { composeFilterCss, composeSharpen, composeVignette, type FilterPreset } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
 import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
+import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
+import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
 import CropFrame from "./CropFrame.tsx";
@@ -183,6 +185,8 @@ export default function Composer() {
         uploadedUrls.push(url);
       }
       await signAndPublishNote({ caption, imageUrls: uploadedUrls });
+      // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
+      recordRecentTags(extractHashtags(caption));
       resetAll();
       setStatus({ kind: "done" });
       // 投稿直後は「自分の植物」へ遷移し、増えた1枚を一番上に見せる（時系列降順）。

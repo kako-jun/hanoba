@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { VarietyCategory } from "./variety-catalog.ts";
-import { findPickableGenus, findVarietyGenus, searchCatalog } from "./variety-search.ts";
+import { findPickableGenus, findVarietyGenus, foldForSearch, searchCatalog } from "./variety-search.ts";
+
+describe("foldForSearch", () => {
+  it("カタカナをひらがなに寄せる", () => {
+    expect(foldForSearch("パキポ")).toBe(foldForSearch("ぱきぽ"));
+  });
+  it("大文字小文字・全角英数を無視する", () => {
+    expect(foldForSearch("ＰＡＣＨＹ")).toBe(foldForSearch("pachy"));
+    expect(foldForSearch("ＡＢ１２")).toBe("ab12");
+  });
+  it("半角カナも全角カナ→ひらがなに寄せる", () => {
+    expect(foldForSearch("ﾊﾟｷﾎﾟ")).toBe(foldForSearch("パキポ"));
+  });
+});
 
 const CATALOG: VarietyCategory[] = [
   {
@@ -87,6 +100,11 @@ describe("searchCatalog", () => {
       { label: "観葉", genera: [{ name: "モンステラ", pickable: true, varieties: [{ name: "Albo" }] }] },
     ];
     expect(searchCatalog(cat, "albo").map((h) => h.name)).toEqual(["Albo"]);
+  });
+
+  it("ひらがな入力でカタカナ品種に一致する（fold）", () => {
+    expect(searchCatalog(CATALOG, "ちたのた").map((h) => h.name)).toEqual(["チタノタ"]);
+    expect(searchCatalog(CATALOG, "あがべ").some((h) => h.name === "アガベ")).toBe(true);
   });
 
   it("品種ヒットは由来属と pickable を持つ（上位属の前置に使う）", () => {

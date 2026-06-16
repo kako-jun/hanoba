@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getRecentTags, pushRecentTag } from "./recent-tags.ts";
+import { getRecentTags, pushRecentTag, recordRecentTags } from "./recent-tags.ts";
 
 describe("recent-tags", () => {
   beforeEach(() => {
@@ -49,5 +49,18 @@ describe("recent-tags", () => {
   it("配列でない保存値も空配列に倒す", () => {
     window.localStorage.setItem("hanoba:recent-tags", JSON.stringify({ a: 1 }));
     expect(getRecentTags()).toEqual([]);
+  });
+
+  describe("recordRecentTags（投稿成功後の一括記録）", () => {
+    it("投稿のタグ群を記録する（先頭が最も新しく見える＝配列の並び順を保つ）", () => {
+      recordRecentTags(["多肉・塊根", "アガベ", "チタノタ"]);
+      expect(getRecentTags()).toEqual(["多肉・塊根", "アガベ", "チタノタ"]);
+    });
+
+    it("複数回の投稿で新しい投稿のタグが前に来る・重複は繰り上げ", () => {
+      recordRecentTags(["アガベ", "チタノタ"]);
+      recordRecentTags(["パキポディウム", "アガベ"]);
+      expect(getRecentTags()).toEqual(["パキポディウム", "アガベ", "チタノタ"]);
+    });
   });
 });

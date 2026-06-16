@@ -1,16 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { captionHasTag } from "../../lib/image/hashtag-complete.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
-import { getRecentTags, pushRecentTag } from "../../lib/plants/recent-tags.ts";
+import { getRecentTags } from "../../lib/plants/recent-tags.ts";
 import { TAG_CATEGORIES } from "../../lib/plants/tag-catalog.ts";
 import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts";
-import {
-  findPickableGenus,
-  findVarietyGenus,
-  searchCatalog,
-  SEARCH_LIMIT,
-  type VarietyHit,
-} from "../../lib/plants/variety-search.ts";
+import { findPickableGenus, findVarietyGenus, searchCatalog } from "../../lib/plants/variety-search.ts";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import Icon from "../ui/Icon.tsx";
 
@@ -120,18 +114,21 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
     }
   }
 
-  // タグ挿入＝本文末尾へ入れて最近使ったを更新する（全ピック経路で通す）。
-  // parent（pickable な上位属）があれば先に入れて `#属 #品種` の順にする。
-  function pick(name: string, parent?: string | null) {
-    if (parent) onPick(parent);
+  // タグ挿入＝本文末尾へ入れる（全ピック経路で通す）。
+  // ancestors（上位＝カテゴリ→属の順）があれば先に入れて `#カテゴリ #属 #品種` の順にする。
+  // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
+  // （タップしただけ・あとで消したタグは最近に残さない）。
+  function pick(name: string, ancestors: string[] = []) {
+    for (const a of ancestors) onPick(a);
     onPick(name);
-    let next = recent;
-    if (parent) next = pushRecentTag(parent);
-    next = pushRecentTag(name);
-    setRecent(next);
   }
 
-  // フラットなタグ（人気/最近）のタップ。属なら階層へ誘導、品種なら上位属を補って挿入。
+  // 品種の所在（カテゴリ・属）から上位タグ列を作る（カテゴリ→pickableな属 の順）。
+  function ancestorsOf(categoryLabel: string, g: Genus | null): string[] {
+    return [categoryLabel, ...(g !== null && g.pickable ? [g.name] : [])];
+  }
+
+  // フラットなタグ（人気/最近）のタップ。属なら階層へ誘導、品種なら上位（カテゴリ・属）を補って挿入。
   async function engage(name: string) {
     const loaded = await ensureCatalog();
     if (loaded === null) {
@@ -146,8 +143,8 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
       setGenus(asGenus.genus);
       return;
     }
-    const parent = findVarietyGenus(loaded, name);
-    pick(name, parent !== null && parent.genus.pickable ? parent.genus.name : null);
+    const at = findVarietyGenus(loaded, name);
+    pick(name, at !== null ? ancestorsOf(at.category.label, at.genus) : []);
   }
 
   function handleQueryChange(v: string) {
@@ -176,32 +173,13 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
   }
 
   const searching = query.trim() !== "";
-  const q = query.trim().toLowerCase();
 
-  // 検索: 品種カタログ＋世話/記録のクイックタグを横断（カタログ未読でもクイックは効く）。
-  // 前方一致を先に: クイックの前方一致 → カタログ（内部で前方一致優先済）→ クイックの部分一致。
-  const quickHits: VarietyHit[] = searching
-    ? TAG_CATEGORIES.flatMap((c) =>
-        c.tags
-          .filter((t) => t.toLowerCase().includes(q))
-          .map((t) => ({ name: t, category: c.label, kind: "variety" as const })),
-      )
-    : [];
-  const quickPrefix = quickHits.filter((h) => h.name.toLowerCase().startsWith(q));
-  const quickRest = quickHits.filter((h) => !h.name.toLowerCase().startsWith(q));
-  const catalogHits = searching ? searchCatalog(catalog ?? [], query) : [];
-
-  const hits: VarietyHit[] = [];
-  const seen = new Set<string>();
-  for (const h of [...quickPrefix, ...catalogHits, ...quickRest]) {
-    const key = h.name.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    hits.push(h);
-    if (hits.length >= SEARCH_LIMIT) break;
-  }
+  // 検索は**植物カタログだけ**に集中する（世話/記録などの概念は混ぜない・kako-jun 指示）。
+  // searchCatalog 内で fold（かな/カナ・大小・全半角無視）＋前方一致優先＋重複排除＋上限済み。
+  const hits = searching ? searchCatalog(catalog ?? [], query) : [];
   const freeform = query.trim().replace(/^#+/, "").trim();
-  const showFreeform = freeform !== "" && !hits.some((h) => h.name.toLowerCase() === freeform.toLowerCase());
+  const showFreeform =
+    freeform !== "" && !hits.some((h) => h.name.toLowerCase() === freeform.toLowerCase());
 
   return (
     <div className="flex flex-col gap-3">
@@ -320,7 +298,9 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
                       label={h.name}
                       context={h.genus ?? h.category}
                       active={has(h.name)}
-                      onClick={() => pick(h.name, h.genusPickable === true ? (h.genus ?? null) : null)}
+                      onClick={() =>
+                        pick(h.name, [h.category, ...(h.genusPickable === true && h.genus ? [h.genus] : [])])
+                      }
                     />
                   ),
                 )}
@@ -375,7 +355,7 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
               {genus.pickable && (
                 <button
                   type="button"
-                  onClick={() => pick(genus.name)}
+                  onClick={() => pick(genus.name, cat ? [cat.label] : [])}
                   aria-pressed={has(genus.name)}
                   className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                     has(genus.name)
@@ -391,7 +371,7 @@ export default function TagPicker({ popular, caption, onPick }: Props) {
                   key={v.name}
                   label={v.name}
                   active={has(v.name)}
-                  onClick={() => pick(v.name, genus.pickable ? genus.name : null)}
+                  onClick={() => pick(v.name, cat ? ancestorsOf(cat.label, genus) : genus.pickable ? [genus.name] : [])}
                 />
               ))}
             </div>

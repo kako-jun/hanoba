@@ -55,9 +55,19 @@ export interface VarietyHit {
   kind: "genus" | "variety";
 }
 
-/** 検索語の正規化（前後空白・先頭 # を落として小文字化）。 */
+/**
+ * 検索用フォールド: ひらがな/カタカナ・大文字小文字・全角/半角の違いを無視する。
+ * NFKC（全半角・半角カナを統一）→ 小文字化 → カタカナをひらがなへ寄せる。
+ * 例: 「パキポ」「ぱきぽ」「ﾊﾟｷﾎﾟ」「ＰＡＣＨＹ」「pachy」が同じ土俵で一致する。
+ */
+export function foldForSearch(s: string): string {
+  const nfkc = s.normalize("NFKC").toLowerCase();
+  return nfkc.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+}
+
+/** 検索語の正規化（前後空白・先頭 # を落としてフォールド）。 */
 function normalizeQuery(query: string): string {
-  return query.trim().replace(/^#+/, "").trim().toLowerCase();
+  return foldForSearch(query.trim().replace(/^#+/, "").trim());
 }
 
 /**
@@ -79,7 +89,7 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
     let matched = false;
     let isPrefix = false;
     for (const c of candidates) {
-      const lc = c.toLowerCase();
+      const lc = foldForSearch(c);
       if (lc.startsWith(q)) {
         matched = true;
         isPrefix = true;

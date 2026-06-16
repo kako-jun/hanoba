@@ -42,3 +42,14 @@ export function pushRecentTag(tag: string): string[] {
   getLS()?.setItem(KEY, JSON.stringify(next));
   return next;
 }
+
+/**
+ * 投稿に実際に含まれたタグ群を最近使ったへまとめて記録する（**投稿成功後**に呼ぶ）。
+ * タップしただけ・あとで消したタグは入らない＝「最近使った」＝直近の投稿で使ったタグ。
+ * tags の並び順を保つ（先頭が最も新しく見えるよう逆順に積む）。更新後の配列を返す。
+ */
+export function recordRecentTags(tags: string[]): string[] {
+  let out = getRecentTags();
+  for (const tag of [...tags].reverse()) out = pushRecentTag(tag);
+  return out;
+}
