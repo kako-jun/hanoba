@@ -27,6 +27,21 @@ function clampInt(value: number, min: number, max: number): number {
 }
 
 /**
+ * 出力 canvas の一辺の上限（#167）。クロップ正方形の実寸は最大 ~3000px に達するが、
+ * 1:1 フィードでは nostr.build が配信時にどうせ縮小するので長辺 1440px で十分。
+ * 巨大 JPEG の生成・CPU フィルタ・アップロードを短縮するためにここで上限を掛ける。
+ */
+export const MAX_OUTPUT_EDGE = 1440;
+
+/**
+ * 出力 canvas の一辺＝クロップ正方形の実寸を上限でクランプする（拡大はしない）純関数（#167）。
+ * rectSize が maxEdge 以下ならそのまま（小さい画像を引き伸ばさない）、超えるなら maxEdge に縮める。
+ */
+export function outputEdge(rectSize: number, maxEdge = MAX_OUTPUT_EDGE): number {
+  return Math.min(rectSize, maxEdge);
+}
+
+/**
  * react-image-crop の PixelCrop（表示 px）から、ソース画像内の正方形矩形を計算する純粋関数。
  *
  * @param crop  表示 px の x/y/width/height（aspect=1 なので原則 width≈height だが、非正方形でも安全）
@@ -86,7 +101,7 @@ export function renderSquareImage(
   edgeBlur = 0,
   tone: ToneCurve = null,
   type = "image/jpeg",
-  quality = 0.95,
+  quality = 0.85,
 ): Promise<Blob> {
   const naturalW = image.naturalWidth;
   const naturalH = image.naturalHeight;
@@ -103,6 +118,11 @@ export function renderSquareImage(
 /**
  * 自然座標系の正方形矩形から canvas に焼き込む。
  * 複数画像投稿では、表示中でない画像も Object URL から再ロードして同じ rect で処理する。
+ *
+ * 出力サイズは長辺 1440px 上限（outputEdge）に縮小する（#167）。クロップ実寸が大きくても
+ * out×out（out=min(rect.size, 1440)）の小 canvas に縮小描画し、フィルタもその小 canvas へ掛ける
+ * （CPU が軽くなる・相対強度なので見えは維持）。JPEG quality は既定 0.85（nostr.build がどうせ
+ * 縮小配信するため。生成と POST を短縮）。出力は引き続き正方形（out×out）＝1:1 保証は不変。
  */
 export function renderSquareImageFromRect(
   image: HTMLImageElement,
@@ -113,11 +133,13 @@ export function renderSquareImageFromRect(
   edgeBlur = 0,
   tone: ToneCurve = null,
   type = "image/jpeg",
-  quality = 0.95,
+  quality = 0.85,
 ): Promise<Blob> {
+  // 出力一辺はクロップ実寸を 1440px 上限でクランプ（拡大はしない）。
+  const out = outputEdge(rect.size);
   const canvas = document.createElement("canvas");
-  canvas.width = rect.size;
-  canvas.height = rect.size;
+  canvas.width = out;
+  canvas.height = out;
 
   const ctx = canvas.getContext("2d");
   if (ctx === null) {
@@ -126,14 +148,16 @@ export function renderSquareImageFromRect(
 
   // canvas は呼び出しごとに新規生成するため、filter のリセット（"none" へ戻す）は不要。
   ctx.filter = filterCss ?? "none";
-  ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, rect.size, rect.size);
+  // ソース矩形（rect.size）を出力一辺（out）へ縮小描画する。
+  ctx.drawImage(image, rect.sx, rect.sy, rect.size, rect.size, 0, 0, out, out);
+  // 以降のピクセル処理は縮小後の小 canvas（out）に掛ける（速い・相対強度なので見えは維持）。
   // トーンカーブ（翠露/土香）は CSS filter と同じ tonal 段として、シャープ/ぼかしより前に焼く。
-  applyToneCurve(ctx, rect.size, tone);
-  applySharpen(ctx, rect.size, sharpen);
+  applyToneCurve(ctx, out, tone);
+  applySharpen(ctx, out, sharpen);
   // 影暮（減光）の前に霞幻（周辺ぼかし）を合成する。中央はシャープのまま外周だけ柔らかくし、
   // その上から vignette が外周を暗く締める順にする。
-  applyEdgeBlur(ctx, rect.size, edgeBlur);
-  drawVignette(ctx, rect.size, vignette);
+  applyEdgeBlur(ctx, out, edgeBlur);
+  drawVignette(ctx, out, vignette);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

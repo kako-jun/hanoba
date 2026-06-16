@@ -170,25 +170,31 @@ export default function Composer() {
       return;
     }
     setStatus({ kind: "posting" });
+    // 複数枚は並列にアップロードする（#167・直列 for は枚数分だけ遅い）。
+    // orderedUrls は Promise.all の結果＝images 順（imageUrls の順序保証）。
+    // uploadedUrls は完了順に積む cleanup 専用（失敗時に成功分だけ deleteImage する）。
     const uploadedUrls: string[] = [];
     try {
-      for (const [index, draft] of images.entries()) {
-        if (draft.crop === null) throw new Error("クロップ範囲が未確定です。枠を調整してください。");
-        const image = await loadImage(draft.src);
-        const blob = await renderSquareImageFromRect(
-          image,
-          draft.crop,
-          composeFilterCss(draft.filters),
-          composeVignette(draft.filters),
-          composeSharpen(draft.filters),
-          composeEdgeBlur(draft.filters),
-          composeToneCurve(draft.filters),
-        );
-        const squareFile = new File([blob], `hanoba-${index + 1}.jpg`, { type: "image/jpeg" });
-        const { url } = await uploadImage(squareFile);
-        uploadedUrls.push(url);
-      }
-      await signAndPublishNote({ caption, imageUrls: uploadedUrls });
+      const orderedUrls = await Promise.all(
+        images.map(async (draft, index) => {
+          if (draft.crop === null) throw new Error("クロップ範囲が未確定です。枠を調整してください。");
+          const image = await loadImage(draft.src);
+          const blob = await renderSquareImageFromRect(
+            image,
+            draft.crop,
+            composeFilterCss(draft.filters),
+            composeVignette(draft.filters),
+            composeSharpen(draft.filters),
+            composeEdgeBlur(draft.filters),
+            composeToneCurve(draft.filters),
+          );
+          const squareFile = new File([blob], `hanoba-${index + 1}.jpg`, { type: "image/jpeg" });
+          const { url } = await uploadImage(squareFile);
+          uploadedUrls.push(url);
+          return url;
+        }),
+      );
+      await signAndPublishNote({ caption, imageUrls: orderedUrls });
       // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
       recordRecentTags(extractHashtags(caption));
       resetAll();
