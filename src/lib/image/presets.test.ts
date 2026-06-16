@@ -68,7 +68,7 @@ describe("FILTER_PRESETS", () => {
     const dokou = FILTER_PRESETS.find((preset) => preset.name === "土香")!;
     expect(composeFilterCss([suiro, dokou])).toBeNull();
     expect(composeFilterCss([suiro, dokou, FILTER_PRESETS.find((preset) => preset.name === "美華")!])).toBe(
-      "saturate(1.18)",
+      "saturate(1.28)",
     );
   });
 

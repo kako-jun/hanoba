@@ -52,27 +52,23 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
 
   const controls = (
     <>
-      <div className={compact ? "flex h-16 items-stretch gap-1" : "flex items-center gap-3"}>
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => cameraInputRef.current?.click()}
           disabled={remaining <= 0}
-          className={`flex items-center justify-center gap-2 bg-ha-green text-ha-white font-semibold hover:brightness-110 transition-colors disabled:opacity-40 ${
-            compact ? "h-16 w-16 rounded-lg px-1.5 text-[11px] leading-none" : "rounded-2xl px-6 py-3"
-          }`}
+          className="flex items-center justify-center gap-2 rounded-2xl bg-ha-green px-6 py-3 font-semibold text-ha-white transition-colors hover:brightness-110 disabled:opacity-40"
         >
-          <Icon name="camera" className={compact ? "h-4 w-4 shrink-0" : "w-5 h-5"} />
+          <Icon name="camera" className="h-5 w-5" />
           撮影
         </button>
         <button
           type="button"
           onClick={() => galleryInputRef.current?.click()}
           disabled={remaining <= 0}
-          className={`flex items-center justify-center gap-2 glass text-ha-ink font-semibold hover:border-ha-green/50 transition-colors disabled:opacity-40 ${
-            compact ? "h-16 w-16 rounded-lg px-1.5 text-[11px] leading-none" : "rounded-2xl px-6 py-3"
-          }`}
+          className="glass flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-semibold text-ha-ink transition-colors hover:border-ha-green/50 disabled:opacity-40"
         >
-          <Icon name="image" className={compact ? "h-4 w-4 shrink-0" : "w-5 h-5"} />
+          <Icon name="image" className="h-5 w-5" />
           アルバム
         </button>
       </div>
@@ -86,7 +82,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
 
   return (
     <div className={compact ? "flex flex-col items-start gap-2" : "flex flex-col items-center gap-3"}>
-      {compact && !compactOpen ? (
+      {compact ? (
         <button
           type="button"
           onClick={() => setCompactOpen(true)}
@@ -98,6 +94,30 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
         </button>
       ) : (
         controls
+      )}
+      {compact && compactOpen && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ha-ink/35 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="写真を追加"
+          onClick={() => setCompactOpen(false)}
+        >
+          <div
+            className="glass relative flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setCompactOpen(false)}
+              className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full text-ha-ink/70 transition-colors hover:bg-ha-white/30"
+              aria-label="閉じる"
+            >
+              <Icon name="close" className="h-4 w-4" />
+            </button>
+            <div className="pt-6">{controls}</div>
+          </div>
+        </div>
       )}
       <input
         ref={cameraInputRef}
