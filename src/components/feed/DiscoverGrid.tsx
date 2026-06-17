@@ -208,9 +208,11 @@ export default function DiscoverGrid() {
       {status === "error" && (
         <div className="py-12 flex flex-col items-center gap-4 text-center">
           <p className="text-ha-ink/70">読み込めませんでした。</p>
+          {/* 再試行は同じ語の再取得＝新規ナビゲーションではない。URL は既に ?q=query なので
+              書き換えず（navigate:"none"）、戻る対象に同語の余分な履歴エントリを積まない（#139）。 */}
           <button
             type="button"
-            onClick={() => void search(query, { navigate: "push" })}
+            onClick={() => void search(query, { navigate: "none" })}
             className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
           >
             再試行
