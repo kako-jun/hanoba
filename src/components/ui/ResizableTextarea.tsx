@@ -5,7 +5,8 @@
 //
 // 使い方:
 //   <ResizableTextarea id="hanoba-about" label="自己紹介" value={v} onValueChange={setV} placeholder="…" />
-//   // ↑ ラベルを内蔵する場合。ラベルを外で持つ（CaptionInput）なら labelledBy/aria-label を渡す。
+//   // ↑ label を渡すと内蔵 <label> で id と紐付ける（CaptionInput も label="ひとこと" を内蔵で渡す）。
+//   //   label を省くなら aria-label 等の a11y 名をネイティブ属性（{...rest}）で渡すこと。
 //
 // 高さは本部品が state で持つ。初期/最小/最大/キーボードのステップは props で上書きできる
 // （既定は CaptionInput 由来の 124/104/360/16）。クランプ計算は clampHeight に切り出してある。
