@@ -135,7 +135,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
     };
   }, []);
 
-  // 投稿の札（鉢の名前＝最も具体的な「属 品種」を1枚・#182）。caption は使わず hashtags のみ
+  // 投稿の札（鉢の名前＝学名＋最も有名な和名を1枚・#182/#23）。caption は使わず hashtags のみ
   // （#181 で属＋品種が tag に入る）。catalog 未ロード時は空＝札セクション非表示。
   const fuda: Fuda[] = catalog === null ? [] : buildFuda(post.hashtags, catalog);
 
@@ -226,8 +226,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
             <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{captionText}</p>
           )}
 
-          {/* 投稿の札（鉢の名前＝属＋品種を1枚・#182）。カテゴリ・属単独は札にしない。
-              学名が引ければ併記し、クリックで最も具体的な札の discover 検索へ。
+          {/* 投稿の札（鉢の名前＝学名＋最も有名な和名を1枚・#182/#23）。カテゴリ・属単独に畳む。
+              学名（catalog.sci → dictionary）が引ければイタリックで併記し、無ければ和名のみ
+              （グレースフル）。クリックで最も具体的な和名の discover 検索へ。
               catalog 未ロード時は出さない（hashtags のみで組み、caption の free-text 検出はしない）。 */}
           {fuda.length > 0 && (
             <div className="flex flex-col gap-1.5">
@@ -236,19 +237,18 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
               </span>
               <ul className="flex flex-wrap gap-2">
                 {fuda.map((f) => {
-                  const label = f.variety !== null ? `${f.genus} ${f.variety}` : f.genus;
-                  const query = `#${f.variety ?? f.genus}`;
+                  const query = `#${f.name}`;
                   return (
                     <li key={f.key}>
                       <a
                         href={`/discover?q=${encodeURIComponent(query)}`}
                         className="glass inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-3 py-1.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
-                        title={`${f.sci !== null ? `${f.sci}（${label}）` : label}で探す`}
+                        title={`${f.sci !== null ? `${f.sci}（${f.name}）` : f.name}で探す`}
                       >
                         {f.sci !== null && (
                           <SciName sci={f.sci} className="font-display text-ha-green-deep" />
                         )}
-                        <span className="font-medium text-ha-ink">{label}</span>
+                        <span className="font-medium text-ha-ink">{f.name}</span>
                       </a>
                     </li>
                   );
