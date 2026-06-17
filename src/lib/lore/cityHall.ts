@@ -79,7 +79,7 @@ const PAGE_2: BookPage = {
     { label: "あなたの植物", route: "/me" },
     { label: "投稿する", route: "/compose" },
     { label: "人気ランキング", route: "/ranking" },
-    { label: "住民投票", route: null, comingSoon: "近日開庁" },
+    { label: "住民投票", route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
     { label: "品評会（コンテスト）", route: null, comingSoon: "近日開庁" },
     { label: "市長ブログ", route: null, comingSoon: "近日開庁" },
     { label: "街の地図", route: null, comingSoon: "近日開庁" },
