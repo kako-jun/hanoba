@@ -175,12 +175,15 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
   // （概要→詳細の全階層・#181 で #166 のタグ部分を撤回。タグ=全階層／札=具体1つ は別概念）。
   // 属を選んだとき（findVarietyGenus が null）は #属 のみ＝現状維持。
   // **カテゴリはタグにしない**（pick 経路にカテゴリ名は来ない＝ドリルダウン見出し専用）。
-  // catalog 未ロード時は onPick(name) だけにフォールバック（null 安全）。
+  // catalog 未ロード時（engage のフォールバック経路＝ensureCatalog 失敗）は属を引けないので
+  // onPick(name) だけ＝属前置されない（null 安全・設計どおり。辞書が無ければ具体名のみ入る）。
   // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
   // （タップしただけ・あとで消したタグは最近に残さない）。
   function pick(name: string) {
     const loc = catalog === null ? null : findVarietyGenus(catalog, name);
-    // 品種なら先に #属 を入れる（pickable な見出し属のみ）。insertTag が二重挿入を防ぐ。
+    // 品種なら先に #属 を入れる（pickable な見出し属のみ）。onPick を属→品種の順に2連発する。
+    // 本文側 Composer.onPick は setCaption の関数型アップデータ＋insertTag（captionHasTag ガード）
+    // なので、2連発でも属は二重挿入されず `#属 #品種` の順で並ぶ（この契約は hashtag-complete テストで固定）。
     if (loc !== null && loc.genus.pickable) onPick(loc.genus.name);
     onPick(name);
   }
