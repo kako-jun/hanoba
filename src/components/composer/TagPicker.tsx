@@ -5,8 +5,8 @@ import { getRecentTags } from "../../lib/plants/recent-tags.ts";
 import { TAG_CATEGORIES } from "../../lib/plants/tag-catalog.ts";
 import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import {
-  ancestorTagsPresent,
   findPickableGenus,
+  findVarietyGenus,
   searchCatalog,
   tagsToUnpick,
 } from "../../lib/plants/variety-search.ts";
@@ -89,10 +89,11 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * 1,400件超の品種カタログ（variety-catalog）を**動的 import で code-split**し、
  * カテゴリ→属→品種の多段ドリルダウン＋インクリメンタル検索で少クリック選択する。
  *
- * 規約（kako-jun 指示・#166 1鉢1札）:
- * - タグは**最も具体的な1段だけ**入れる。品種を選べば `#品種` だけ・属止まりなら `#属` だけ。
- *   **上位（属）も分類（カテゴリ）も札にしない**。より具体的な品種を入れたら本文の上位タグは外す。
- *   集約は読み取り側の OR 検索（§6）が吸収するので葉だけでも属から辿れる。
+ * 規約（kako-jun 指示・#181 でタグと札を分離。#166 のタグ部分を撤回）:
+ * - タグ=Twitter式ハッシュタグ＝**概要→詳細の全階層**を付けてよい。品種を選んだら
+ *   `#属 #品種` の**両方**を入れる。属止まりなら `#属` だけ。
+ *   **カテゴリ（塊根植物/花木 等）はタグにしない**（ドリルダウンの見出し専用）。
+ *   札（鉢の名前＝具体1つ）はタグとは別概念（別 Issue）。
  * - 人気/最近/検索で**属をタップしたら階層に入る**（その属の品種一覧へ誘導）。属だけ欲しい時は
  *   ドリルダウン内の「#属 をこのまま使う」。
  * - 本文に入っているタグは**満たされた色**（緑塗り）にする。
@@ -170,12 +171,17 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
     }
   }
 
-  // タグ挿入＝本文末尾へ葉（最も具体的な1段）だけ入れる（全ピック経路で通す・#166 1鉢1札）。
-  // 入れた葉が品種/属なら、本文に既にある上位タグ（属・カテゴリ）を外す（1鉢1札の徹底）。
+  // タグ挿入＝Twitter式ハッシュタグ。品種を選んだら **#属 #品種 の両方**を本文末尾へ入れる
+  // （概要→詳細の全階層・#181 で #166 のタグ部分を撤回。タグ=全階層／札=具体1つ は別概念）。
+  // 属を選んだとき（findVarietyGenus が null）は #属 のみ＝現状維持。
+  // **カテゴリはタグにしない**（pick 経路にカテゴリ名は来ない＝ドリルダウン見出し専用）。
+  // catalog 未ロード時は onPick(name) だけにフォールバック（null 安全）。
   // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
   // （タップしただけ・あとで消したタグは最近に残さない）。
   function pick(name: string) {
-    for (const t of ancestorTagsPresent(caption, name, catalog)) onRemove(t);
+    const loc = catalog === null ? null : findVarietyGenus(catalog, name);
+    // 品種なら先に #属 を入れる（pickable な見出し属のみ）。insertTag が二重挿入を防ぐ。
+    if (loc !== null && loc.genus.pickable) onPick(loc.genus.name);
     onPick(name);
   }
 
