@@ -53,6 +53,8 @@ export interface VarietyHit {
   genus?: string;
   /** 由来属が pickable か（品種ヒットで上位属タグを前置できるか）。 */
   genusPickable?: boolean;
+  /** 学名（品種ヒットで catalog に sci があるとき・併記表示用 #200）。属ヒット・sci 無しでは undefined。 */
+  sci?: string;
   kind: "genus" | "variety";
 }
 
@@ -113,7 +115,7 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
       }
       for (const v of g.varieties) {
         consider(
-          { name: v.name, category: cat.label, genus: g.name, genusPickable: g.pickable, kind: "variety" },
+          { name: v.name, category: cat.label, genus: g.name, genusPickable: g.pickable, sci: v.sci, kind: "variety" },
           [v.name, ...(v.aliases ?? [])],
         );
       }

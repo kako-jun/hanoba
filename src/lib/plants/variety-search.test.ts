@@ -29,7 +29,7 @@ const CATALOG: VarietyCategory[] = [
         name: "アガベ",
         pickable: true,
         varieties: [
-          { name: "チタノタ" },
+          { name: "チタノタ", sci: "Agave titanota" },
           { name: "レッドキャットウィーズル" },
           { name: "赤猫" },
           { name: "モンタナ" },
@@ -118,6 +118,19 @@ describe("searchCatalog", () => {
     expect(hit).toMatchObject({ genus: "アガベ", genusPickable: true });
     const other = searchCatalog(CATALOG, "火星人")[0]!;
     expect(other).toMatchObject({ genus: "その他塊根", genusPickable: false });
+  });
+
+  it("品種ヒットは catalog の学名(sci)を持ち運ぶ（併記表示用・#200）", () => {
+    expect(searchCatalog(CATALOG, "チタノタ")[0]).toMatchObject({ name: "チタノタ", sci: "Agave titanota" });
+  });
+
+  it("sci の無い品種ヒットは sci を undefined にする（#200）", () => {
+    expect(searchCatalog(CATALOG, "赤猫")[0]!.sci).toBeUndefined();
+  });
+
+  it("属ヒットには sci を付けない（学名は品種だけ・#200）", () => {
+    const genus = searchCatalog(CATALOG, "アガベ").find((h) => h.kind === "genus")!;
+    expect(genus.sci).toBeUndefined();
   });
 });
 

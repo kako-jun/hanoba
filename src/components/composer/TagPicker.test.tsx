@@ -240,6 +240,54 @@ describe("TagPicker", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
+  it("ドリルダウンの品種チップに学名を併記する（チタノタ→Agave titanota・#200）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await drillToAgave(user);
+    const chip = await screen.findByRole("button", { name: "#チタノタ" });
+    // 学名は補助だが品種名(#label)と同じチップ内に併記される（#200）。
+    expect(chip).toHaveTextContent("Agave");
+    expect(chip).toHaveTextContent("titanota");
+    // 属チップ「#アガベ をこのまま使う」には学名を出さない（品種だけ・#200）。
+    const genusChip = await screen.findByRole("button", { name: /#アガベ をこのまま使う/ });
+    expect(genusChip).not.toHaveTextContent("Agave titanota");
+  });
+
+  it("パネル内検索の品種チップに学名を併記する（グラキリス→Pachypodium・#200）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
+    const chip = await screen.findByRole("button", { name: /#グラキリス/ });
+    expect(chip).toHaveTextContent("Pachypodium");
+  });
+
+  it("学名(sci)の無い品種チップには学名要素を出さない（苔玉・#200）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "苔玉");
+    const chip = await screen.findByRole("button", { name: /#苔玉/ });
+    // sci が無いので和名のみ＝チップ本文は「#苔玉」だけ（学名は付かない）。
+    expect(chip.querySelector(".italic")).toBeNull();
+  });
+
+  it("検索結果の“属”チップには学名を出さない（学名は品種だけ・#200）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "パキポディウム");
+    // 属ヒット（階層誘導の › 付き）には学名要素（italic）が無い。
+    const genusChip = await screen.findByRole("button", { name: /#パキポディウム\s*塊根植物/ });
+    expect(genusChip.querySelector(".italic")).toBeNull();
+  });
+
+  it("世話/記録のクイックタグには学名を出さない（品種だけ・#200）", () => {
+    renderPicker();
+    const careChip = screen.getByRole("button", { name: "#水やり" });
+    expect(careChip.querySelector(".italic")).toBeNull();
+  });
+
   it("「最近使った」は localStorage（過去の投稿）から読み、タップでは増やさない", async () => {
     const user = userEvent.setup();
     window.localStorage.setItem("hanoba:recent-tags", JSON.stringify(["チタノタ"]));

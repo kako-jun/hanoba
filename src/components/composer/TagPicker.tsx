@@ -12,6 +12,7 @@ import {
 } from "../../lib/plants/variety-search.ts";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import Icon from "../ui/Icon.tsx";
+import SciName from "../ui/SciName.tsx";
 
 interface Props {
   /** 人気タグ（relay 集計・上位）。空なら人気セクションは出さない。 */
@@ -47,28 +48,37 @@ function cloudSize(count: number, max: number): string {
 }
 
 /** タグチップ。active（本文に入っている）なら満たされた緑塗りに変える。 */
-function Chip({ label, onClick, sizeClass = "text-sm", context, active = false }: {
+function Chip({ label, onClick, sizeClass = "text-sm", context, sci, active = false }: {
   label: string;
   onClick: () => void;
   sizeClass?: string;
   /** 同名タグの曖昧さ回避に出す小さな文脈（属/カテゴリ）。 */
   context?: string;
+  /** 学名（品種チップのみ・#200）。和名(#label)が主、学名は小さく薄いイタリックで従に併記する。 */
+  sci?: string;
   active?: boolean;
 }) {
+  // 学名は補助情報なので 1 行に収め、長い学名は省略する（和名を押し出さない・#200）。
+  const subClass = `text-[10px] ${active ? "text-ha-white/70" : "text-ha-ink/40"}`;
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full px-3 py-1 ${sizeClass} transition-colors ${
+      className={`inline-flex max-w-full items-baseline rounded-full px-3 py-1 ${sizeClass} transition-colors ${
         active
           ? "border border-ha-green bg-ha-green text-ha-white"
           : "glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep"
       }`}
     >
-      #{label}
-      {context !== undefined && (
-        <span className={`ml-1 text-[10px] ${active ? "text-ha-white/70" : "text-ha-ink/40"}`}>{context}</span>
+      <span className="shrink-0">#{label}</span>
+      {context !== undefined && <span className={`ml-1 shrink-0 ${subClass}`}>{context}</span>}
+      {sci !== undefined && sci !== "" && (
+        // 学名は視覚的な補助（従）。アクセシブル名はタグ名(#label)＝主のままにするため
+        // aria-hidden にする（読み上げは #品種名 で完結・既存の exact-match 契約も保つ）。
+        <span aria-hidden className="ml-1 inline-block min-w-0 max-w-full truncate align-bottom">
+          <SciName sci={sci} className={subClass} />
+        </span>
       )}
     </button>
   );
@@ -444,6 +454,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                       key={`v-${h.name}`}
                       label={h.name}
                       context={h.genus ?? h.category}
+                      sci={h.sci}
                       active={has(h.name)}
                       onClick={() => toggle(h.name, () => pick(h.name))}
                     />
@@ -515,6 +526,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                 <Chip
                   key={v.name}
                   label={v.name}
+                  sci={v.sci}
                   active={has(v.name)}
                   onClick={() => toggle(v.name, () => pick(v.name))}
                 />
