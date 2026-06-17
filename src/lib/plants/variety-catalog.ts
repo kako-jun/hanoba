@@ -457,16 +457,16 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "パフィオ", sci: "Paphiopedilum" }, { name: "ロスチャイルディアナム", sci: "Paphiopedilum rothschildianum" }, { name: "デレナティ", sci: "Paphiopedilum delenatii" }, { name: "多花性パフィオ", sci: "Paphiopedilum" },
       ] },
       { name: "富貴蘭", pickable: true, varieties: [
-        { name: "フウラン", sci: "Vanda falcata" }, { name: "風蘭", sci: "Vanda falcata" }, { name: "建国殿", sci: "Vanda falcata '建国殿'" }, { name: "富貴殿", sci: "Vanda falcata '富貴殿'" },
-        { name: "金兜", sci: "Vanda falcata '金兜'" }, { name: "羽衣", sci: "Vanda falcata '羽衣'" }, { name: "御城覆輪", sci: "Vanda falcata '御城覆輪'" }, { name: "金牡丹", sci: "Vanda falcata '金牡丹'" },
-        { name: "朝日殿", sci: "Vanda falcata '朝日殿'" }, { name: "西出都", sci: "Vanda falcata '西出都'" }, { name: "豊明殿", sci: "Vanda falcata '豊明殿'" }, { name: "青海", sci: "Vanda falcata '青海'" },
-        { name: "金孔雀", sci: "Vanda falcata '金孔雀'" }, { name: "翡翠", sci: "Vanda falcata '翡翠'" }, { name: "羆", sci: "Vanda falcata '羆'" }, { name: "紅扇", sci: "Vanda falcata '紅扇'" },
-        { name: "湖東覆輪", sci: "Vanda falcata '湖東覆輪'" },
+        { name: "フウラン", sci: "Vanda falcata" }, { name: "風蘭", sci: "Vanda falcata" }, { name: "建国殿", sci: "Vanda falcata 'Kenkokuden'" }, { name: "富貴殿", sci: "Vanda falcata 'Fukiden'" },
+        { name: "金兜", sci: "Vanda falcata 'Kinkabuto'" }, { name: "羽衣", sci: "Vanda falcata 'Hagoromo'" }, { name: "御城覆輪", sci: "Vanda falcata 'Gojofukurin'" }, { name: "金牡丹", sci: "Vanda falcata 'Kinbotan'" },
+        { name: "朝日殿", sci: "Vanda falcata 'Asahiden'" }, { name: "西出都", sci: "Vanda falcata 'Nishidemiyako'" }, { name: "豊明殿", sci: "Vanda falcata 'Houmeiden'" }, { name: "青海", sci: "Vanda falcata 'Seikai'" },
+        { name: "金孔雀", sci: "Vanda falcata 'Kinkujaku'" }, { name: "翡翠", sci: "Vanda falcata 'Hisui'" }, { name: "羆", sci: "Vanda falcata 'Higuma'" }, { name: "紅扇", sci: "Vanda falcata 'Beniogi'" },
+        { name: "湖東覆輪", sci: "Vanda falcata 'Kotofukurin'" },
       ] },
       { name: "セッコク", pickable: true, varieties: [
-        { name: "石斛", sci: "Dendrobium moniliforme" }, { name: "長生蘭", sci: "Dendrobium moniliforme" }, { name: "金鶏閣", sci: "Dendrobium moniliforme '金鶏閣'" }, { name: "銀雪", sci: "Dendrobium moniliforme '銀雪'" },
-        { name: "紅苑", sci: "Dendrobium moniliforme '紅苑'" }, { name: "黄金丸", sci: "Dendrobium moniliforme '黄金丸'" }, { name: "金剛石", sci: "Dendrobium moniliforme '金剛石'" }, { name: "紅小町", sci: "Dendrobium moniliforme '紅小町'" },
-        { name: "雷山", sci: "Dendrobium moniliforme '雷山'" }, { name: "龍田", sci: "Dendrobium moniliforme '龍田'" }, { name: "燈麗", sci: "Dendrobium moniliforme '燈麗'" },
+        { name: "石斛", sci: "Dendrobium moniliforme" }, { name: "長生蘭", sci: "Dendrobium moniliforme" }, { name: "金鶏閣", sci: "Dendrobium moniliforme 'Kinkeikaku'" }, { name: "銀雪", sci: "Dendrobium moniliforme 'Ginsetsu'" },
+        { name: "紅苑", sci: "Dendrobium moniliforme 'Kouen'" }, { name: "黄金丸", sci: "Dendrobium moniliforme 'Koganemaru'" }, { name: "金剛石", sci: "Dendrobium moniliforme 'Kongoseki'" }, { name: "紅小町", sci: "Dendrobium moniliforme 'Benikomachi'" },
+        { name: "雷山", sci: "Dendrobium moniliforme 'Raizan'" }, { name: "龍田", sci: "Dendrobium moniliforme 'Tatsuta'" }, { name: "燈麗", sci: "Dendrobium moniliforme 'Tourei'" },
       ] },
       { name: "エビネ", pickable: true, varieties: [
         { name: "カランセ", sci: "Calanthe" }, { name: "ジエビネ", sci: "Calanthe discolor" }, { name: "キエビネ", sci: "Calanthe sieboldii" }, { name: "ニオイエビネ", sci: "Calanthe izu-insularis" },
@@ -508,9 +508,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ミニ盆栽" }, { name: "寄せ植え盆栽" },
       ] },
       { name: "さつき盆栽", pickable: false, aliases: ["皐月の銘"], varieties: [
-        { name: "大盃", sci: "Rhododendron indicum '大盃'" }, { name: "日光", sci: "Rhododendron indicum '日光'" }, { name: "月光", sci: "Rhododendron indicum '月光'" }, { name: "晃山", sci: "Rhododendron indicum '晃山'" },
-        { name: "白光", sci: "Rhododendron indicum '白光'" }, { name: "暁天", sci: "Rhododendron indicum '暁天'" }, { name: "松鏡", sci: "Rhododendron indicum '松鏡'" }, { name: "長寿宝", sci: "Rhododendron indicum '長寿宝'" },
-        { name: "鹿沼", sci: "Rhododendron indicum '鹿沼'" },
+        { name: "大盃", sci: "Rhododendron indicum 'Osakazuki'" }, { name: "日光", sci: "Rhododendron indicum 'Nikko'" }, { name: "月光", sci: "Rhododendron indicum 'Gekko'" }, { name: "晃山", sci: "Rhododendron indicum 'Kozan'" },
+        { name: "白光", sci: "Rhododendron indicum 'Hakko'" }, { name: "暁天", sci: "Rhododendron indicum 'Gyoten'" }, { name: "松鏡", sci: "Rhododendron indicum 'Matsukagami'" }, { name: "長寿宝", sci: "Rhododendron indicum 'Chojuho'" },
+        { name: "鹿沼", sci: "Rhododendron indicum 'Kanuma'" },
       ] },
     ],
   },
@@ -598,7 +598,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "温帯性スイレン", sci: "Nymphaea" }, { name: "熱帯性スイレン", sci: "Nymphaea" }, { name: "姫スイレン", sci: "Nymphaea tetragona" }, { name: "ヒツジグサ", sci: "Nymphaea tetragona" },
       ] },
       { name: "ハス", pickable: true, aliases: ["蓮"], varieties: [
-        { name: "茶碗蓮", sci: "Nelumbo nucifera" }, { name: "大賀蓮", sci: "Nelumbo nucifera '大賀'" }, { name: "舞妃蓮", sci: "Nelumbo 'Maihiren'" }, { name: "ミニ蓮", sci: "Nelumbo nucifera" },
+        { name: "茶碗蓮", sci: "Nelumbo nucifera" }, { name: "大賀蓮", sci: "Nelumbo nucifera 'Oga'" }, { name: "舞妃蓮", sci: "Nelumbo 'Maihiren'" }, { name: "ミニ蓮", sci: "Nelumbo nucifera" },
       ] },
       { name: "水生植物各種", pickable: false, varieties: [
         { name: "ホテイアオイ", sci: "Eichhornia crassipes" }, { name: "アサザ", sci: "Nymphoides peltata" }, { name: "ウォーターマッシュルーム", sci: "Hydrocotyle verticillata" }, { name: "ナガバオモダカ", sci: "Sagittaria graminea" },
@@ -784,7 +784,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "野菜",
     genera: [
       { name: "トマト", pickable: true, varieties: [
-        { name: "桃太郎", sci: "Solanum lycopersicum '桃太郎'" }, { name: "ホーム桃太郎", sci: "Solanum lycopersicum 'Home Momotaro'" }, { name: "麗夏", sci: "Solanum lycopersicum 'Reika'" }, { name: "りんか409", sci: "Solanum lycopersicum 'Rinka 409'" },
+        { name: "桃太郎", sci: "Solanum lycopersicum 'Momotaro'" }, { name: "ホーム桃太郎", sci: "Solanum lycopersicum 'Home Momotaro'" }, { name: "麗夏", sci: "Solanum lycopersicum 'Reika'" }, { name: "りんか409", sci: "Solanum lycopersicum 'Rinka 409'" },
         { name: "大玉トマト", sci: "Solanum lycopersicum" }, { name: "フルティカ", sci: "Solanum lycopersicum 'Frutica'" }, { name: "レッドオーレ", sci: "Solanum lycopersicum 'Red Ole'" }, { name: "中玉トマト", sci: "Solanum lycopersicum" },
         { name: "シシリアンルージュ", sci: "Solanum lycopersicum 'Sicilian Rouge'" }, { name: "アイコ", sci: "Solanum lycopersicum 'Aiko'" }, { name: "イエローアイコ", sci: "Solanum lycopersicum 'Yellow Aiko'" }, { name: "オレンジアイコ", sci: "Solanum lycopersicum 'Orange Aiko'" },
         { name: "千果", sci: "Solanum lycopersicum 'Senka'" }, { name: "ステラミニトマト", sci: "Solanum lycopersicum 'Stella'" }, { name: "ミニトマト", sci: "Solanum lycopersicum var. cerasiforme" }, { name: "サンマルツァーノ", sci: "Solanum lycopersicum 'San Marzano'" },
