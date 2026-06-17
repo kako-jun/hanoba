@@ -360,7 +360,8 @@ describe("Composer", () => {
   it("不足あり（D2）では不足理由 <p> が role=status・aria-live=polite・id=hanoba-compose-shortfall を持つ", async () => {
     const user = userEvent.setup();
     render(<Composer />);
-    // 画像1枚選択＋caption 空で missing 非空（crop 確定は不要＝写真枠は missing から外れる）。
+    // 画像1枚選択＋caption 空なら missing は非空（最低でも「ひとこと」）。この観点は missing 非空で足り、
+    // crop の確定状態には依存しないので fireEvent.load は不要。
     const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
     await user.upload(input, makeImageFile());
 
