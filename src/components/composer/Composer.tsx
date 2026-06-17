@@ -5,7 +5,7 @@
 //   - ロジック: buildNoteTemplate（signAndPublishNote 内）が空一言を throw
 // 出力 1:1 は renderSquareImageFromRect（canvas.width=height=size）で構造的に保証。
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
@@ -77,6 +77,9 @@ export default function Composer() {
   // 投稿時に綿毛を飛ばす単発エフェクト（#148）。投稿開始のたびに +1 して key を変え、
   // DandelionBurst を remount＝再生する。0 は未発火（描かない）。多重発火は disabled={posting} が防ぐ。
   const [burstKey, setBurstKey] = useState(0);
+  // 綿毛の種は burstKey ごとに1回だけ生成して固定する。JSX 内でインライン生成すると
+  // Composer の再レンダーごとに新しい乱数になり、飛行中の種の CSS 変数を揺さぶってしまう。
+  const burstSeeds = useMemo(() => makeSeeds(14), [burstKey]);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
@@ -338,7 +341,7 @@ export default function Composer() {
                 <Icon name="dandelion" className="h-5 w-5" />
                 {posting ? "投稿中…" : "投稿する"}
               </button>
-              {burstKey > 0 && <DandelionBurst key={burstKey} seeds={makeSeeds(14)} />}
+              {burstKey > 0 && <DandelionBurst key={burstKey} seeds={burstSeeds} />}
             </div>
           </div>
         </>
