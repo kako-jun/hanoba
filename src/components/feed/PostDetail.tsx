@@ -12,6 +12,7 @@ import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
 import SciName from "../ui/SciName.tsx";
 import Avatar from "./Avatar.tsx";
+import CommentSection from "./CommentSection.tsx";
 
 interface Props {
   post: FeedPost;
@@ -403,6 +404,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
               </ul>
             )}
           </div>
+
+          {/* コメント欄（#142）。著者バー/サイトリンクの後・スクロール領域（p-5・親は overflow-y-auto）
+              の中に置くので、長いコメント列はモーダル内でスクロールして辿れる。コメントは Nostr の
+              リプライ（kind:1・親を e タグ root・@呼びかけなし）として publish/読み取りする。 */}
+          <CommentSection postId={post.id} />
         </div>
       </div>
     </div>

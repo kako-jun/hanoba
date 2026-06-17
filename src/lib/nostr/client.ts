@@ -21,7 +21,13 @@ import { rankHashtags, type RankedTag } from "../feed/popular.ts";
 import { countLikes } from "../feed/reactions.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
-import { buildDeletionEvent, buildNoteTemplate, buildProfileEvent, type ProfileFields } from "./events.ts";
+import {
+  buildDeletionEvent,
+  buildNoteTemplate,
+  buildProfileEvent,
+  buildReplyTemplate,
+  type ProfileFields,
+} from "./events.ts";
 import {
   getProfileExtra,
   getPublicKeyHex,
@@ -188,6 +194,58 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
   } catch {
     return 0;
   }
+}
+
+/**
+ * 投稿（kind:1）へのコメント（kind:1 リプライ）を取得する（#142・表示用）。
+ * `#e` で親投稿に向けられた kind:1 を集める（NIP-10 のリプライ）。
+ *
+ * - `{kinds:[1], "#e":[eventId]}` で親投稿宛のリプライを取得
+ * - リレー間の重複を id で防御的に除去する（querySync 内で畳まれることもあるが念のため）
+ * - 失敗（オフライン等）は throw せず空配列にフォールバックする
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchReplies(eventId: string, limit = 500): Promise<NostrEvent[]> {
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [1],
+        "#e": [eventId],
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    // id でリレー間の重複を畳む（最初の1件を残す）。
+    const byId = new Map<string, NostrEvent>();
+    for (const ev of events) {
+      if (!byId.has(ev.id)) byId.set(ev.id, ev);
+    }
+    return [...byId.values()];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * コメント（kind:1 リプライ）を構築・署名・publish し、署名済みイベントを返す（#142）。
+ * テンプレートの組み立て（空チェック・タグ）は buildReplyTemplate の責務。
+ */
+export async function publishReply(input: { content: string; parentId: string }): Promise<NostrEvent> {
+  const signed = await signTemplate(buildReplyTemplate(input.content, input.parentId));
+  await publishEvent(signed);
+  return signed;
+}
+
+/**
+ * 自分のコメント（kind:1 リプライ）を削除する（#142・NIP-09 kind:5）。
+ * コメントは画像を持たないので、投稿削除（deletePost）と違い画像の実体削除はしない。
+ * kind:5 publish 失敗（全 relay 落ち）は throw（呼び出し側が UI に伝えられるように）。
+ */
+export async function deleteComment(commentId: string): Promise<void> {
+  const signed = await signTemplate(buildDeletionEvent([commentId]));
+  await publishEvent(signed);
 }
 
 /**

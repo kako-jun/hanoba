@@ -15,6 +15,8 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   deletePost: (...a: unknown[]) => deletePost(...a),
   fetchMyProfileResilient: (...a: unknown[]) => fetchMyProfileResilient(...a),
   fetchReactionCount: (...a: unknown[]) => fetchReactionCount(...a),
+  // コメント欄（#142）は検証対象外なので空（コメント0件）で固定。
+  fetchReplies: () => Promise.resolve([]),
 }));
 vi.mock("../../lib/nostr/keys.ts", () => ({
   getPublicKeyHex: (...a: unknown[]) => getPublicKeyHex(...a),
