@@ -295,7 +295,12 @@ export default function Composer() {
 
           {/* なぜ押せないかを明示（不足条件）。posting 中は出さない。 */}
           {!posting && missing.length > 0 && (
-            <p className="text-right text-xs text-ha-ink/55">
+            <p
+              id="hanoba-compose-shortfall"
+              role="status"
+              aria-live="polite"
+              className="text-right text-xs text-ha-ink/55"
+            >
               あと <span className="text-ha-pink font-medium">{missing.join("、")}</span>{" "}
               を入れると投稿できます
             </p>
@@ -316,6 +321,7 @@ export default function Composer() {
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
+              aria-describedby={!posting && missing.length > 0 ? "hanoba-compose-shortfall" : undefined}
               className="rounded-full bg-ha-pink text-ha-white px-6 py-3 font-semibold shadow-sm shadow-ha-pink/30 enabled:hover:opacity-90 enabled:hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {posting ? "投稿中…" : "投稿する"}
