@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { deleteComment, fetchReplies, publishReply } from "../../lib/nostr/client.ts";
 import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import { sortComments, toComments, type Comment, type CommentOrder } from "../../lib/feed/comments.ts";
@@ -28,6 +28,16 @@ export function useComments(postId: string): {
   const [order, setOrder] = useState<CommentOrder>("old");
   const [myPubkey, setMyPubkey] = useState<string | null>(null);
 
+  // unmount 後の setState を防ぐ生存フラグ（submit / remove は await 後に setComments するため、
+  // 公開中にモーダルを閉じると unmount 済みになり得る＝line 15 の alive ガード契約を守る）。
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // 自分の pubkey（自分のコメントに削除ボタンを出すため）。一度だけ解決する。失敗は null のまま。
   useEffect(() => {
     let alive = true;
@@ -48,7 +58,7 @@ export function useComments(postId: string): {
     let alive = true;
     setComments(null);
     fetchReplies(postId).then((events) => {
-      if (alive) setComments(sortComments(toComments(events), order));
+      if (alive) setComments(sortComments(toComments(events, postId), order));
     });
     return () => {
       alive = false;
@@ -63,17 +73,21 @@ export function useComments(postId: string): {
   }, [order]);
 
   // コメント投稿 → 成功後に refetch（最も単純で正しい・取りこぼし時も次回取得で揃う）。
-  // 失敗は throw して呼び出し側（UI）がエラー表示できるようにする。
+  // 失敗は throw して呼び出し側（UI）がエラー表示できるようにする（throw はガードしない）。
+  // setState は await 後なので unmount 済みなら捨てる（isMountedRef・setState-after-unmount 防止）。
   async function submit(content: string): Promise<void> {
     await publishReply({ content, parentId: postId });
     const events = await fetchReplies(postId);
-    setComments(sortComments(toComments(events), order));
+    if (isMountedRef.current) setComments(sortComments(toComments(events, postId), order));
   }
 
   // 自分のコメント削除 → 成功後にローカル一覧から落とす（refetch は relay に消えるまで間がある）。
+  // setState は await 後なので unmount 済みなら捨てる（isMountedRef）。
   async function remove(id: string): Promise<void> {
     await deleteComment(id);
-    setComments((prev) => (prev === null ? prev : prev.filter((c) => c.id !== id)));
+    if (isMountedRef.current) {
+      setComments((prev) => (prev === null ? prev : prev.filter((c) => c.id !== id)));
+    }
   }
 
   return {

@@ -29,28 +29,81 @@ describe("parseComment", () => {
 });
 
 describe("toComments", () => {
+  const PARENT = "p".repeat(64);
+
   it("各イベントを Comment に変換する", () => {
-    const result = toComments([
-      makeEvent({ id: "c1", content: "一つ目" }),
-      makeEvent({ id: "c2", content: "二つ目" }),
-    ]);
+    const result = toComments(
+      [
+        makeEvent({ id: "c1", content: "一つ目", tags: [["e", PARENT, "", "root"]] }),
+        makeEvent({ id: "c2", content: "二つ目", tags: [["e", PARENT, "", "reply"]] }),
+      ],
+      PARENT,
+    );
     expect(result.map((c) => c.id)).toEqual(["c1", "c2"]);
     expect(result.map((c) => c.content)).toEqual(["一つ目", "二つ目"]);
   });
 
   it("複数リレーから来た同一 id を重複除去する（最初の1件を残す）", () => {
-    const result = toComments([
-      makeEvent({ id: "dup", content: "relay A 版" }),
-      makeEvent({ id: "other", content: "別コメント" }),
-      makeEvent({ id: "dup", content: "relay B 版" }),
-    ]);
+    const result = toComments(
+      [
+        makeEvent({ id: "dup", content: "relay A 版", tags: [["e", PARENT, "", "root"]] }),
+        makeEvent({ id: "other", content: "別コメント", tags: [["e", PARENT, "", "root"]] }),
+        makeEvent({ id: "dup", content: "relay B 版", tags: [["e", PARENT, "", "root"]] }),
+      ],
+      PARENT,
+    );
     expect(result.map((c) => c.id)).toEqual(["dup", "other"]);
     // 最初に出会ったものを採用する。
     expect(result[0]!.content).toBe("relay A 版");
   });
 
   it("空入力は空配列", () => {
-    expect(toComments([])).toEqual([]);
+    expect(toComments([], PARENT)).toEqual([]);
+  });
+
+  it("引用リポスト（親を mention で印付ける e タグ＝NIP-18）は落とす", () => {
+    const result = toComments(
+      [
+        makeEvent({ id: "reply", content: "本物のコメント", tags: [["e", PARENT, "", "root"]] }),
+        makeEvent({ id: "quote", content: "引用リポスト", tags: [["e", PARENT, "", "mention"]] }),
+      ],
+      PARENT,
+    );
+    expect(result.map((c) => c.id)).toEqual(["reply"]);
+  });
+
+  it("root マーカー付きのリプライは残す", () => {
+    const result = toComments(
+      [makeEvent({ id: "r", content: "root reply", tags: [["e", PARENT, "", "root"]] })],
+      PARENT,
+    );
+    expect(result.map((c) => c.id)).toEqual(["r"]);
+  });
+
+  it("マーカー無し（位置指定）の e タグも残す", () => {
+    const result = toComments(
+      [makeEvent({ id: "u", content: "unmarked reply", tags: [["e", PARENT]] })],
+      PARENT,
+    );
+    expect(result.map((c) => c.id)).toEqual(["u"]);
+  });
+
+  it("ネストしたリプライ（root=親 + reply=他）も残す（フラット表示で会話を全部親の下に出す）", () => {
+    const OTHER = "o".repeat(64);
+    const result = toComments(
+      [
+        makeEvent({
+          id: "nested",
+          content: "孫コメント",
+          tags: [
+            ["e", PARENT, "", "root"],
+            ["e", OTHER, "", "reply"],
+          ],
+        }),
+      ],
+      PARENT,
+    );
+    expect(result.map((c) => c.id)).toEqual(["nested"]);
   });
 });
 

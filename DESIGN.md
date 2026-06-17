@@ -145,7 +145,7 @@ mypace と同じ Nostr 空間・同じタグ規約に準拠する（独自化し
   - **タグ**: `["e", <親投稿id>, "", "root"]`（親投稿を root に印付ける direct reply。relay ヒントは空）＋ `["t","mypace"]` ＋ `["client","hanoba"]`。
   - **`p` タグ（@呼びかけ）は付けない**: コメントは投稿者を名指しで呼び出す通知でなく「その投稿にそっと添える一言」（静かな観賞 SNS の posture・確定）。
   - **`t:hanoba` は付けない**: hanoba フィード/人気タグ集計は `#t:hanoba` で絞って**画像投稿だけ**を集める（`fetchHanobaFeed` / `fetchPopularHashtags`）。文章だけのコメントに `t:hanoba` を付けるとフィードのノイズ・タグ集計の汚染になる。コメントは親の `e` タグ経由（`{kinds:[1], "#e":[postId]}`＝`fetchReplies`）で読むので不要。
-  - **読み取り**: `{kinds:[1], "#e":[postId]}`（`fetchReplies`）。リレー間の重複は id で除去（`toComments`）、表示は古い順/新しい順を切り替え（`sortComments`）。**削除**は投稿と同じく NIP-09 `kind:5`（`deleteComment`。コメントは画像を持たないので実体削除は無い）。
+  - **読み取り**: `{kinds:[1], "#e":[postId]}`（`fetchReplies`）。このフィルタは親を `e` タグで参照する kind:1 を**全部**返すので、引用リポスト（NIP-18・`["e", postId, "", "mention"]`）が混ざる。`toComments(events, postId)` は**本物のリプライだけを残す**＝「値が `postId` に一致し marker（`tag[3]`）が `"mention"` でない `e` タグ」を1つでも持つもの（`"root"`/`"reply"`/マーカー無し＝残す、`"mention"`＝引用リポストは落とす）。あわせてリレー間の重複は id で除去。表示は古い順/新しい順を切り替え（`sortComments`）。**削除**は投稿と同じく NIP-09 `kind:5`（`deleteComment`。コメントは画像を持たないので実体削除は無い）。
   - ビルダーは `buildReplyTemplate`（純関数・空 content / 空 parentId は throw）、relay 呼び出しは `client.ts`（`fetchReplies` / `publishReply` / `deleteComment`）に集約（§3）。本文 `#` を `t` 化しない §6 契約は不変。
 
 ## 7. Non-goals
