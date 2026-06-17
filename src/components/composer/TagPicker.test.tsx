@@ -268,8 +268,8 @@ describe("TagPicker", () => {
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.type(await screen.findByLabelText("タグを検索"), "苔玉");
     const chip = await screen.findByRole("button", { name: /#苔玉/ });
-    // sci が無いので和名のみ＝チップ本文は「#苔玉」だけ（学名は付かない）。
-    expect(chip.querySelector(".italic")).toBeNull();
+    // sci が無いので和名のみ＝学名併記要素（data-sci）が付かない（SciName 内部クラスに結合しない・#200）。
+    expect(chip.querySelector("[data-sci]")).toBeNull();
   });
 
   it("検索結果の“属”チップには学名を出さない（学名は品種だけ・#200）", async () => {
@@ -277,15 +277,15 @@ describe("TagPicker", () => {
     renderPicker();
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.type(await screen.findByLabelText("タグを検索"), "パキポディウム");
-    // 属ヒット（階層誘導の › 付き）には学名要素（italic）が無い。
+    // 属ヒット（階層誘導の › 付き）には学名併記要素（data-sci）が無い。
     const genusChip = await screen.findByRole("button", { name: /#パキポディウム\s*塊根植物/ });
-    expect(genusChip.querySelector(".italic")).toBeNull();
+    expect(genusChip.querySelector("[data-sci]")).toBeNull();
   });
 
   it("世話/記録のクイックタグには学名を出さない（品種だけ・#200）", () => {
     renderPicker();
     const careChip = screen.getByRole("button", { name: "#水やり" });
-    expect(careChip.querySelector(".italic")).toBeNull();
+    expect(careChip.querySelector("[data-sci]")).toBeNull();
   });
 
   it("「最近使った」は localStorage（過去の投稿）から読み、タップでは増やさない", async () => {

@@ -76,7 +76,8 @@ function Chip({ label, onClick, sizeClass = "text-sm", context, sci, active = fa
       {sci !== undefined && sci !== "" && (
         // 学名は視覚的な補助（従）。アクセシブル名はタグ名(#label)＝主のままにするため
         // aria-hidden にする（読み上げは #品種名 で完結・既存の exact-match 契約も保つ）。
-        <span aria-hidden className="ml-1 inline-block min-w-0 max-w-full truncate align-bottom">
+        // data-sci はテストの安定 hook（SciName 内部クラスに結合しない・#200 レビュー nit）。
+        <span aria-hidden data-sci className="ml-1 inline-block min-w-0 max-w-full truncate">
           <SciName sci={sci} className={subClass} />
         </span>
       )}
