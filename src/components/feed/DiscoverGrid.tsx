@@ -63,9 +63,12 @@ function writeQueryToUrl(query: string, mode: "push" | "replace") {
  * のマージ。hanoba 投稿は #plantstr を強制せずとも t:hanoba 経由で「みんな」に出る。
  * 個別検索は本文 #タグ/キーワードで他クライアント横断（混ぜ込みは既定表示のみ）。
  *
- * - タグ入力＋検索ボタン。初期タグは URL の ?tag= から（クライアントのみ）。
- * - 検索確定 → fetchDiscoverByTag(tag)（client.ts に集約・二段構え＋画像ありのみ）。
- *   URL も ?tag= に replaceState で反映する。
+ * - 検索入力＋ボタン。初期語は URL の `?q=`（旧 `?tag=` は後方互換で読む）から（クライアントのみ）。
+ * - 検索確定 → fetchDiscover（client.ts に集約・二段構え＋画像ありのみ）。
+ * - **URL は `?q=` の deep-link（#139 段階1）**: 意図的な検索（フォーム送信・タグ再検索）は
+ *   `pushState` で履歴に積み、戻る/進む（`popstate`）で `?q=` を読み直して復元する（popstate 経路は
+ *   URL を書かない＝ループ防止）。初回マウントの `?tag=`→`?q=` 正規化・空クリア・error 再試行は
+ *   `replaceState`/無書き込みで履歴を汚さない。
  * - 正方形グリッド ＋ 詳細モーダルは PostGrid に委譲（FeedGrid と共有）。
  *   PostDetail のタグクリックは discover では「そのタグで再検索」に繋ぐ。
  * - 状態: idle（未検索）/loading/error/loaded。各状態に文言。
