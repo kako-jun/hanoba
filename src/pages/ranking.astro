@@ -1,0 +1,33 @@
+---
+import RankingBoard from "../components/feed/RankingBoard.tsx";
+import SiteHeader from "../components/SiteHeader.astro";
+import MainLayout from "../layouts/MainLayout.astro";
+
+// 人気ランキング（#162）。バックエンドレス（DESIGN §6）で、取得済みの t:hanoba 投稿だけを
+// クライアントで集計する「読むたびに数える」方式。集計サーバは持たない。
+// RankingBoard は relay 取得・カタログの動的 import を useEffect 内で行うため client:load
+// （SSR では取得しない・静的生成）。母集団がまばらでも壊れて見えない空/単週の正直な状態を持つ。
+---
+
+<MainLayout
+  title="人気ランキング — Hanōba"
+  description="Hanōba の投稿から、いま人気の植物品種を週次で集計。先週比（↑↓・NEW・RE）つき。"
+>
+  <SiteHeader wide />
+
+  <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
+    <section class="ha-rise flex flex-col gap-2">
+      <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
+        人気ランキング
+      </h1>
+      <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]">
+        Hanōba の投稿から、いま人気の植物品種を週ごとに集計します。先週との比較（↑↓・NEW・RE）つき。
+        みんなの投稿がそのままチャートを動かします。
+      </p>
+    </section>
+
+    <div class="ha-rise" style="--i:1">
+      <RankingBoard client:load />
+    </div>
+  </main>
+</MainLayout>
