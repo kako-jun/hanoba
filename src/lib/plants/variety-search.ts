@@ -124,40 +124,6 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
 }
 
 /**
- * 1鉢1札（#166）。`name`（葉＝最も具体的なタグ）を入れる前に、**本文に現在ある上位タグ**を返す
- * （挿入時に呼び出し側が onRemove する＝より具体的を入れたら上位は外す。逆方向＝広いタグを後から
- * 足したとき既存の具体を外すのは対象外）。
- * - catalog 未ロード → []（外せない）。
- * - name が**品種**: `genus.pickable` かつ本文に属タグがあれば属、本文にカテゴリタグがあればカテゴリ。
- * - name が**pickable な属**（品種では見つからず属で見つかる）: 本文にカテゴリタグがあればカテゴリ。
- * - それ以外（世話/記録など辞書外）→ []。
- * `caption` は挿入前の本文（上位タグの現存判定に使う）。
- */
-export function ancestorTagsPresent(
-  caption: string,
-  name: string,
-  catalog: VarietyCategory[] | null,
-): string[] {
-  if (catalog === null) return [];
-
-  const variety = findVarietyGenus(catalog, name);
-  if (variety !== null) {
-    const { category, genus } = variety;
-    const result: string[] = [];
-    if (genus.pickable && captionHasTag(caption, genus.name)) result.push(genus.name);
-    if (captionHasTag(caption, category.label)) result.push(category.label);
-    return result;
-  }
-
-  const asGenus = findPickableGenus(catalog, name);
-  if (asGenus !== null) {
-    return captionHasTag(caption, asGenus.category.label) ? [asGenus.category.label] : [];
-  }
-
-  return [];
-}
-
-/**
  * 選択済みの品種タグを外すとき、連動して外すタグ名の一覧を返す（兄弟ルール・#144）。
  * - name は必ず含む。
  * - name が**品種**で、外した後その属に**他の品種タグ**が本文に残らなければ、属タグも外す

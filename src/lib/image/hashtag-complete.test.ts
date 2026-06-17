@@ -128,6 +128,26 @@ describe("insertTag", () => {
     expect(c).toBe("我が家の株\n#多肉植物 #アガベ #チタノタ ");
   });
 
+  it("品種選択の 属→品種 2連挿入で属は重複しない（#181 #属 #品種 を入れる根拠）", () => {
+    // TagPicker.pick は onPick(属)→onPick(品種) の順で2回呼ぶ（#181）。本文側の insertTag が
+    // 順に通る。属が本文に未在なら #属 が入り、続けて #品種 が同じタグ行に積まれる。
+    let c = "今日の一鉢";
+    c = insertTag(c, "パキポディウム");
+    expect(c).toBe("今日の一鉢\n#パキポディウム ");
+    c = insertTag(c, "グラキリス");
+    expect(c).toBe("今日の一鉢\n#パキポディウム #グラキリス ");
+  });
+
+  it("属が既に本文にある状態で品種選択しても属を二重に足さない（#181 二重挿入防止）", () => {
+    // 別の品種を選んで既に #パキポディウム がある所へ、再度 onPick(属)→onPick(品種) が来ても
+    // 属は重複しない＝同属の2品種目を入れても #属 は1つ。
+    const base = "#パキポディウム #グラキリス ";
+    expect(insertTag(base, "パキポディウム")).toBe(base); // 属は据え置き（二重挿入防止）
+    expect(insertTag(insertTag(base, "パキポディウム"), "ブレビカウレ")).toBe(
+      "#パキポディウム #グラキリス #ブレビカウレ ",
+    );
+  });
+
   it("文字種（英・かな・CJK）いずれの散文でも改行で分けてタグ行を作る", () => {
     expect(insertTag("flowering", "Agave")).toBe("flowering\n#Agave ");
     expect(insertTag("みずやり", "あがべ")).toBe("みずやり\n#あがべ ");

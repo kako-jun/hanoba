@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { VarietyCategory } from "./variety-catalog.ts";
 import {
-  ancestorTagsPresent,
   findPickableGenus,
   findVarietyGenus,
   foldForSearch,
@@ -151,47 +150,6 @@ describe("findVarietyGenus", () => {
 
   it("無ければ null", () => {
     expect(findVarietyGenus(CATALOG, "存在しない")).toBeNull();
-  });
-});
-
-describe("ancestorTagsPresent（1鉢1札・#166）", () => {
-  it("品種で属タグが本文にあれば属を返す", () => {
-    expect(ancestorTagsPresent("#アガベ", "チタノタ", CATALOG)).toEqual(["アガベ"]);
-  });
-
-  it("品種で属タグが本文に無ければ空", () => {
-    expect(ancestorTagsPresent("写真だけ", "チタノタ", CATALOG)).toEqual([]);
-  });
-
-  it("品種で属とカテゴリ両方が本文にあれば両方を返す（属→カテゴリの順）", () => {
-    expect(ancestorTagsPresent("#多肉・塊根 #アガベ", "チタノタ", CATALOG)).toEqual([
-      "アガベ",
-      "多肉・塊根",
-    ]);
-  });
-
-  it("品種でカテゴリだけが本文にある稀ケースはカテゴリを返す", () => {
-    expect(ancestorTagsPresent("#多肉・塊根", "チタノタ", CATALOG)).toEqual(["多肉・塊根"]);
-  });
-
-  it("non-pickable 属の品種は属を外さない（属はタグにならない）が、カテゴリは外す", () => {
-    expect(ancestorTagsPresent("#多肉・塊根 #その他塊根", "火星人", CATALOG)).toEqual(["多肉・塊根"]);
-  });
-
-  it("pickable 属を入れるときカテゴリが本文にあればカテゴリを返す", () => {
-    expect(ancestorTagsPresent("#多肉・塊根", "アガベ", CATALOG)).toEqual(["多肉・塊根"]);
-  });
-
-  it("pickable 属でカテゴリが本文に無ければ空", () => {
-    expect(ancestorTagsPresent("写真だけ", "アガベ", CATALOG)).toEqual([]);
-  });
-
-  it("catalog 未ロード時は空（外せない）", () => {
-    expect(ancestorTagsPresent("#多肉・塊根 #アガベ", "チタノタ", null)).toEqual([]);
-  });
-
-  it("辞書外（世話/記録）のタグは空", () => {
-    expect(ancestorTagsPresent("#多肉・塊根 #アガベ", "水やり", CATALOG)).toEqual([]);
   });
 });
 

@@ -47,12 +47,12 @@ describe("TagPicker", () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
-  it("品種を選ぶとその品種タグだけを入れる（カテゴリ・属を前置しない・1鉢1札 #166）", async () => {
+  it("品種を選ぶと #属 #品種 の両方を 属→品種 の順で入れる（カテゴリは前置しない・#181）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await drillToAgave(user);
     await user.click(await screen.findByRole("button", { name: "#チタノタ" }));
-    expect(onPick.mock.calls).toEqual([["チタノタ"]]);
+    expect(onPick.mock.calls).toEqual([["アガベ"], ["チタノタ"]]);
   });
 
   it("「#属 をこのまま使う」は属だけを入れる（カテゴリは入れない・#166）", async () => {
@@ -63,14 +63,28 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["アガベ"]]);
   });
 
-  it("本文に上位属タグがある状態で品種を選ぶと、葉を入れ上位属を外す（1鉢1札 #166）", async () => {
+  it("品種選択で #属 #品種 の両方を入れる・本文の上位属は外さない（#181）", async () => {
     const user = userEvent.setup();
     const { onPick, onRemove } = renderPicker({ caption: "今日の一鉢\n#パキポディウム" });
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
     await user.click(await screen.findByRole("button", { name: /#グラキリス/ }));
-    expect(onPick.mock.calls).toEqual([["グラキリス"]]);
-    expect(onRemove.mock.calls).toEqual([["パキポディウム"]]);
+    expect(onPick.mock.calls).toEqual([["パキポディウム"], ["グラキリス"]]);
+    expect(onRemove).not.toHaveBeenCalled();
+  });
+
+  it("入れた品種を再タップ解除すると同属に兄弟が残らなければ属も連動して外れる（#181）", async () => {
+    // #181 で入れた #属 #品種 の本文を再現。品種チップを再タップ→兄弟不在なので属も外す。
+    const user = userEvent.setup();
+    const { onPick, onRemove } = renderPicker({ caption: "今日の一鉢\n#パキポディウム #グラキリス " });
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
+    // 本文にあるので満たされた色（再タップ＝解除）。
+    const chip = await screen.findByRole("button", { name: /#グラキリス/ });
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    await user.click(chip);
+    expect(onPick).not.toHaveBeenCalled();
+    expect(onRemove.mock.calls).toEqual([["グラキリス"], ["パキポディウム"]]);
   });
 
   it("人気の“属”をタップしたら挿入せず階層（品種一覧）に入る", async () => {
@@ -82,13 +96,34 @@ describe("TagPicker", () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
-  it("パネル内の検索で品種を引き、その品種タグだけを挿入する（#166）", async () => {
+  it("パネル内の検索で品種を引くと #属 #品種 の両方を 属→品種 の順で挿入する（#181）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.type(await screen.findByLabelText("タグを検索"), "グラキリス");
     await user.click(await screen.findByRole("button", { name: /#グラキリス/ }));
-    expect(onPick.mock.calls).toEqual([["グラキリス"]]);
+    expect(onPick.mock.calls).toEqual([["パキポディウム"], ["グラキリス"]]);
+  });
+
+  it("pickable=false の見出しグループ配下の品種は属を前置せず品種だけ挿入する（#181）", async () => {
+    // リドレイ は ビカクシダ › 原種（pickable:false）配下。pickable でない見出しは
+    // ドリルダウンの分類専用なのでタグにしない＝onPick は品種1回だけ。
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "リドレイ");
+    await user.click(await screen.findByRole("button", { name: /#リドレイ/ }));
+    expect(onPick.mock.calls).toEqual([["リドレイ"]]);
+  });
+
+  it("品種選択は onPick を 属→品種 の順に2回呼ぶ（順序固定・#181）", async () => {
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    await drillToAgave(user);
+    await user.click(await screen.findByRole("button", { name: "#チタノタ" }));
+    expect(onPick).toHaveBeenCalledTimes(2);
+    expect(onPick).toHaveBeenNthCalledWith(1, "アガベ");
+    expect(onPick).toHaveBeenNthCalledWith(2, "チタノタ");
   });
 
   it("どの経路でもカテゴリ名（多肉植物 等）を onPick しない（#166）", async () => {
