@@ -15,7 +15,7 @@
 // （呼び出し側が `await import("./variety-catalog.ts")` してから渡す）。学名は catalog の
 // variety.sci を最優先し、無ければ dictionary（属/著名種レベル）を lookup する（純データ）。
 
-import { PLANTS } from "./dictionary.ts";
+import { findPlantByTerm } from "./search.ts";
 import type { VarietyCategory } from "./variety-catalog.ts";
 
 /**
@@ -42,17 +42,12 @@ interface VarietyIndexEntry {
 }
 
 /**
- * dictionary を name/aliases で照合する学名ルックアップ（純関数）。
- * 完全一致（前後空白・大小無視）。無ければ null。
+ * dictionary から学名をルックアップ（純関数）。catalog に sci が無い品種/属の和名から
+ * 学名を引く。照合は #23 の `findPlantByTerm`（name/sci/aliases を完全一致・大小無視）に
+ * 一本化し、PLANTS の二重走査を避ける（drift 防止・nit #182 再レビュー）。無ければ null。
  */
 function lookupSci(name: string): string | null {
-  const n = name.trim().toLowerCase();
-  if (n === "") return null;
-  for (const p of PLANTS) {
-    const needles = [p.name, ...p.aliases].map((s) => s.trim().toLowerCase());
-    if (needles.includes(n)) return p.sci;
-  }
-  return null;
+  return findPlantByTerm(name)?.sci ?? null;
 }
 
 /**
