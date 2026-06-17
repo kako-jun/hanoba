@@ -71,7 +71,7 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
             // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
             aria-label={post.caption === "" ? "写真を拡大" : post.caption}
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
-            className="group relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            className="relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
             <ProgressiveImage
               src={post.imageUrl}
