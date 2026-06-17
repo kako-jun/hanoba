@@ -99,9 +99,11 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByRole("link", { name: /あなたの植物/ })).toHaveAttribute("href", "/me");
     expect(screen.getByRole("link", { name: /投稿する/ })).toHaveAttribute("href", "/compose");
     expect(screen.getByRole("link", { name: /みんなの植物/ })).toHaveAttribute("href", "/discover");
-    // 未開設は「近日開庁」でリンクにならない。
-    expect(screen.queryByRole("link", { name: /住民投票/ })).toBeNull();
-    expect(screen.getAllByText("近日開庁").length).toBeGreaterThanOrEqual(4);
+    // 住民投票（#160）は最初に開庁した役所＝/vote への実リンク。
+    expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
+    // 残る 3 役所（品評会/市長ブログ/街の地図）は「近日開庁」でリンクにならない（住民投票が開庁したので丁度 3）。
+    expect(screen.getAllByText("近日開庁").length).toBe(3);
+    expect(screen.queryByRole("link", { name: /品評会/ })).toBeNull();
     // 昇格の味付け。
     expect(screen.getByText(/移住、確かに受理した/)).toBeInTheDocument();
   });

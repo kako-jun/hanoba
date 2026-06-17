@@ -164,6 +164,10 @@ mypace と同じ Nostr 空間・同じタグ規約に準拠する（独自化し
   - **`t:hanoba` は付けない**: hanoba フィード/人気タグ集計は `#t:hanoba` で絞って**画像投稿だけ**を集める（`fetchHanobaFeed` / `fetchPopularHashtags`）。文章だけのコメントに `t:hanoba` を付けるとフィードのノイズ・タグ集計の汚染になる。コメントは親の `e` タグ経由（`{kinds:[1], "#e":[postId]}`＝`fetchReplies`）で読むので不要。
   - **読み取り**: `{kinds:[1], "#e":[postId]}`（`fetchReplies`）。このフィルタは親を `e` タグで参照する kind:1 を**全部**返すので、引用リポスト（NIP-18・`["e", postId, "", "mention"]`）が混ざる。`toComments(events, postId)` は**本物のリプライだけを残す**＝「値が `postId` に一致し marker（`tag[3]`）が `"mention"` でない `e` タグ」を1つでも持つもの（`"root"`/`"reply"`/マーカー無し＝残す、`"mention"`＝引用リポストは落とす）。あわせてリレー間の重複は id で除去。表示は古い順/新しい順を切り替え（`sortComments`）。**削除**は投稿と同じく NIP-09 `kind:5`（`deleteComment`。コメントは画像を持たないので実体削除は無い）。
   - ビルダーは `buildReplyTemplate`（純関数・空 content / 空 parentId は throw）、relay 呼び出しは `client.ts`（`fetchReplies` / `publishReply` / `deleteComment`）に集約（§3）。本文 `#` を `t` 化しない §6 契約は不変。
+- **住民投票＝Nostalgic BBS 埋め込み（#160・`/vote`）**: 市役所ハブ（#163）の最初に開庁する役所。投票（意見集約）は **kako-jun 自作のバックエンドレス掲示板 Nostalgic BBS**（外部ホスト・`https://nostalgic.llll-ll.com`）を web component で埋める＝hanoba 側にサーバ/DB を足さない（§7 non-goal 維持）。
+  - **埋め込み規約**: web component `<nostalgic-bbs id="..." theme="dark" width="100%">` ＋ ローダー `https://nostalgic.llll-ll.com/components/bbs.js`。`theme="dark"` が暗色シック（§5）に馴染む。`/vote` は専用 1 ページなのでローダーは `<script is:inline src=... defer>` で **1 度だけ**読む（多ページ footer の冪等注入は不要）。Astro は外部 src をバンドルせず、component はクライアントで upgrade（板＋投稿フォームを描画）＝SSG を壊さない。板の実描画・dark テーマ・投稿動線は**実ブラウザでのみ確認できる**（jsdom/build では見えない）。
+  - **3 板（公開 embed id）**: 品種並び順 `hanoba-16b82341`（品種の並び順・ランキングへの意見）／欲しい機能 `hanoba-76cf0aed`（機能リクエスト）／バグ報告 `hanoba-12e8672f`（不具合報告）。各板は glass 列で囲み（§5.0 原則2）、見出し＝h2・節は `aria-label` 付き。
+  - **開放範囲**: `/vote` は**全員に開放**（市民レベルのゲートなし）。ハブからは L1+ が辿るが、直接アクセス・投稿は無制限（名前は任意）。
 
 ## 7. Non-goals
 
