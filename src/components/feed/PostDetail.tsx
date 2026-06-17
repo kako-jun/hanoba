@@ -10,6 +10,7 @@ import { nextPhotoIndex, prevPhotoIndex, swipeDirection } from "../../lib/feed/c
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
+import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import SciName from "../ui/SciName.tsx";
 import Avatar from "./Avatar.tsx";
 import CommentSection from "./CommentSection.tsx";
@@ -207,8 +208,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
             >
-              <img
-                src={post.imageUrls[photoIndex] ?? post.imageUrls[0]}
+              <ProgressiveImage
+                // 写真切替で remount し1枚ごとに blur-up リビールを掛け直す（#145）。
+                key={photoIndex}
+                src={post.imageUrls[photoIndex] ?? post.imageUrls[0] ?? ""}
                 alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
                 className="max-w-full max-h-[70vh] select-none object-contain"
                 draggable={false}

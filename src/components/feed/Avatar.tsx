@@ -1,3 +1,5 @@
+import ProgressiveImage from "../ui/ProgressiveImage.tsx";
+
 interface Props {
   /** アバター画像 URL（無ければ頭文字フォールバック）。 */
   src: string | null;
@@ -13,13 +15,12 @@ interface Props {
  */
 export default function Avatar({ src, name, className = "w-6 h-6" }: Props) {
   if (src !== null) {
+    // img は読み込み完了まで opacity:0（blur-up リビール・#145）なので、その間も
+    // 暗緑の丸が見えるよう同サイズのプレースホルダ span で包む（白フラッシュを防ぐ）。
     return (
-      <img
-        src={src}
-        alt=""
-        loading="lazy"
-        className={`${className} shrink-0 rounded-full object-cover bg-ha-green-soft`}
-      />
+      <span className={`${className} shrink-0 block rounded-full bg-ha-green-soft overflow-hidden`}>
+        <ProgressiveImage src={src} alt="" className="w-full h-full rounded-full object-cover" />
+      </span>
     );
   }
   const initial = name.trim().charAt(0).toUpperCase() || "?";

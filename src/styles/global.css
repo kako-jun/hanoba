@@ -128,3 +128,28 @@ summary {
     animation: none;
   }
 }
+
+/* 画像の blur-up リビール（#145・ProgressiveImage）。
+   デコード完了まで opacity:0 で隠し（帯状の上からの描画を見せない）、
+   data-loaded で blur+わずかな scale を解きながらフェードインさせる。 */
+.ha-reveal {
+  opacity: 0;
+  filter: blur(12px);
+  transform: scale(1.04);
+  transition:
+    opacity 0.6s ease,
+    filter 0.6s ease,
+    transform 0.6s ease;
+}
+
+.ha-reveal[data-loaded="true"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ha-reveal {
+    transition: none;
+  }
+}
