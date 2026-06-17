@@ -76,7 +76,7 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
             <ProgressiveImage
               src={post.imageUrl}
               alt={post.caption}
-              className="w-full h-full object-cover group-hover:opacity-90"
+              className="w-full h-full object-cover"
             />
             {photoCount > 1 && (
               <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">

@@ -50,6 +50,9 @@ export default function ProgressiveImage({
       decoding="async"
       draggable={draggable}
       onLoad={() => setLoaded(true)}
+      // 読み込み失敗（リンク切れ等）でも reveal する。さもないと opacity:0 のまま永久に
+      // 見えず（素の <img> のブラウザ既定の代替表示すら出ない）レイアウトの穴になる。
+      onError={() => setLoaded(true)}
       data-loaded={loaded ? "true" : "false"}
       className={`${className} ha-reveal`.trim()}
     />
