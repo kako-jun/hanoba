@@ -25,10 +25,18 @@ function readQueryFromUrl(): string {
 }
 
 /**
- * 検索語を現在の URL に `?q=` で反映する（履歴は積まない＝ replaceState）。クライアントのみ。
+ * 検索語を現在の URL に `?q=` で反映する（クライアントのみ）。
  * 旧 `?tag=` は残さない（重複を避けて削除する）。
+ *
+ * - `mode==="push"`: 意図的な検索（フォーム送信・タグ再検索・再試行）。新しい履歴エントリを積み、
+ *   ブラウザの戻るで「前の検索語」へ戻れるようにする（#139 deep-link）。
+ * - `mode==="replace"`: 復元・正規化（初回マウントの `?tag=`→`?q=` 正規化、クリアでの `?q=` 削除）。
+ *   履歴を増やさない。
+ *
+ * 注意: pushState/replaceState はどちらも popstate を発火しないので、popstate 経路から
+ * これを呼ばない限りループしない（popstate 復元は navigate:"none" で URL を書かない）。
  */
-function writeQueryToUrl(query: string) {
+function writeQueryToUrl(query: string, mode: "push" | "replace") {
   try {
     const url = new URL(window.location.href);
     url.searchParams.delete("tag");
@@ -37,7 +45,11 @@ function writeQueryToUrl(query: string) {
     } else {
       url.searchParams.set("q", query);
     }
-    window.history.replaceState(null, "", url.toString());
+    if (mode === "push") {
+      window.history.pushState(null, "", url.toString());
+    } else {
+      window.history.replaceState(null, "", url.toString());
+    }
   } catch {
     // 履歴反映に失敗しても検索自体は通す（致命的でない）。
   }
@@ -71,14 +83,24 @@ export default function DiscoverGrid() {
   const latestRef = useRef(0);
 
   // raw はタグ（`#アガベ`）でもキーワード（`葉焼け`）でもよい。モード分岐は fetchDiscover 側（#24）。
-  // fromDefault=true は初回の自動既定検索（入力欄・URL を汚さない・0件は idle に戻す）。
-  async function search(raw: string, fromDefault = false) {
+  //
+  // オプション:
+  // - fromDefault=true: 初回の自動既定検索（#22）。入力欄・URL を汚さない・0件は idle に戻す。
+  // - navigate: URL 反映の仕方。"push"=履歴を積む（意図的検索・戻るで前の語へ）、
+  //   "replace"=履歴を増やさず正規化/クリア、"none"=URL を一切書かない（復元系＝マウント/popstate）。
+  //   既定は "push"（フォーム送信など意図的検索のため）。fromDefault は navigate を無視して URL を書かない。
+  async function search(
+    raw: string,
+    opts: { fromDefault?: boolean; navigate?: "push" | "replace" | "none" } = {},
+  ) {
+    const { fromDefault = false, navigate = "push" } = opts;
     const q = raw.trim();
     const token = ++latestRef.current;
     if (!fromDefault) {
       setInput(q);
       setQuery(q);
-      writeQueryToUrl(q);
+      // 空クリア（idle 化）は履歴を積まず replace で ?q= を消す（戻る対象にしない・#139）。
+      if (navigate !== "none") writeQueryToUrl(q, q === "" ? "replace" : navigate);
     } else {
       setQuery(q);
     }
@@ -114,21 +136,41 @@ export default function DiscoverGrid() {
     }
   }
 
-  // マウント時: URL の ?q=（旧 ?tag=）があればそれを、無ければ既定検索を自動で流す
-  // （開いた瞬間に写真が並ぶ＝Instagram explore 流・#22）。クライアントのみ・初回だけ。
-  // search は安定参照ではないが、依存は意図的に空（初回マウントのみ実行）。
-  useEffect(() => {
+  // URL の `?q=`（旧 `?tag=`）から検索状態を復元する（マウント・popstate 共用の単一ロジック）。
+  // URL は書き換えない方針だが、引数 navigate で「マウント時の正規化（?tag=→?q= の replace）」と
+  // 「popstate での無書き込み（none）」を切り替える。
+  // - q あり: その語で検索（入力欄も同期される＝search の非 fromDefault 経路）。
+  // - q 無し: 既定検索（#plantstr ∪ t:hanoba）に戻す。これは初回マウントの「q 無し」分岐と同一。
+  function restoreFromUrl(navigate: "replace" | "none") {
     const initial = readQueryFromUrl();
     if (initial !== "") {
-      void search(initial);
+      void search(initial, { navigate });
     } else {
-      void search(DEFAULT_DISCOVER_QUERY, true);
+      void search(DEFAULT_DISCOVER_QUERY, { fromDefault: true });
     }
+  }
+
+  // マウント時: URL の ?q=（旧 ?tag=）があればそれを、無ければ既定検索を自動で流す
+  // （開いた瞬間に写真が並ぶ＝Instagram explore 流・#22）。クライアントのみ・初回だけ。
+  // ?tag= で来たら ?q= に正規化（replace＝履歴は増やさない）。q 無し（既定検索）は URL を書かない。
+  // search/restoreFromUrl は安定参照ではないが、依存は意図的に空（初回マウントのみ実行）。
+  useEffect(() => {
+    restoreFromUrl("replace");
   }, []);
 
+  // 戻る/進む（popstate）で URL の ?q= を読み直して再検索する（#139 deep-link 復元）。
+  // URL は一切書き換えない（navigate:"none"）＝履歴を二重に積まない・ループしない。
+  // 連続した戻る/進むでも latestRef により最新応答だけが反映される（stale-response 破棄を維持）。
+  useEffect(() => {
+    const onPopState = () => restoreFromUrl("none");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // フォーム送信は意図的な検索＝履歴を積む（戻るで前の検索語に戻れる）。
   function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    void search(input);
+    void search(input, { navigate: "push" });
   }
 
   return (
@@ -168,7 +210,7 @@ export default function DiscoverGrid() {
           <p className="text-ha-ink/70">読み込めませんでした。</p>
           <button
             type="button"
-            onClick={() => void search(query)}
+            onClick={() => void search(query, { navigate: "push" })}
             className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
           >
             再試行
@@ -183,7 +225,8 @@ export default function DiscoverGrid() {
           </p>
         ) : (
           // 投稿詳細でタグをクリックしたら、そのタグで（# 付き＝タグモードで）再検索する。
-          <PostGrid posts={posts} onSelectHashtag={(tag) => void search(`#${tag}`)} />
+          // 意図的な検索＝履歴を積む（戻るで元の検索語へ・#139）。
+          <PostGrid posts={posts} onSelectHashtag={(tag) => void search(`#${tag}`, { navigate: "push" })} />
         ))}
     </section>
   );
