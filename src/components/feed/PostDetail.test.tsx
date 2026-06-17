@@ -84,6 +84,62 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
   });
 
+  it("複数画像は写真領域の左スワイプで次へ・右スワイプで前へ切り替えられる（#184）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({
+          id: "swipe1",
+          caption: "成長記録",
+          imageUrls: [
+            "https://image.nostr.build/one.jpg",
+            "https://image.nostr.build/two.jpg",
+            "https://image.nostr.build/three.jpg",
+          ],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // 写真領域＝画像の親（onTouchStart/End を載せた要素）。
+    const area = screen.getByRole("img", { name: "成長記録 1枚目" }).parentElement!;
+
+    // 左スワイプ（dx<0・水平優位）＝次へ。happy-dom 向けに touches/changedTouches を明示。
+    fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchEnd(area, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+    expect(screen.getByRole("img", { name: "成長記録 2枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/two.jpg",
+    );
+
+    // 右スワイプ（dx>0・水平優位）＝前へ＝1枚目へ戻る。
+    fireEvent.touchStart(area, { touches: [{ clientX: 80, clientY: 100 }] });
+    fireEvent.touchEnd(area, { changedTouches: [{ clientX: 200, clientY: 95 }] });
+    expect(screen.getByRole("img", { name: "成長記録 1枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/one.jpg",
+    );
+
+    // 縦優位スワイプは無視＝枚数は変わらない（縦スクロールと競合させない）。
+    fireEvent.touchStart(area, { touches: [{ clientX: 100, clientY: 60 }] });
+    fireEvent.touchEnd(area, { changedTouches: [{ clientX: 95, clientY: 220 }] });
+    expect(screen.getByRole("img", { name: "成長記録 1枚目" })).toBeInTheDocument();
+  });
+
+  it("単一画像はスワイプしても切り替わらない（スワイプ無効・#184）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(<PostDetail post={makePost({ id: "single1", caption: "一枚だけ" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    const img = screen.getByRole("img", { name: "一枚だけ" });
+    const area = img.parentElement!;
+    const src = img.getAttribute("src");
+    // 1枚はドットも矢印も無く、スワイプも index を動かさない（src 不変・例外を出さない）。
+    fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchEnd(area, { changedTouches: [{ clientX: 60, clientY: 100 }] });
+    expect(screen.getByRole("img", { name: "一枚だけ" })).toHaveAttribute("src", src!);
+    expect(screen.queryByRole("button", { name: "次の写真" })).toBeNull();
+  });
+
   it("本文 <p> から #タグ を除き、タグはチップにだけ出す（二重表示解消・#43）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(

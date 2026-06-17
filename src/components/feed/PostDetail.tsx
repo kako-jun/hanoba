@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { type TouchEvent as ReactTouchEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
 import { detectPlants } from "../../lib/plants/detect.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
+import { nextPhotoIndex, prevPhotoIndex, swipeDirection } from "../../lib/feed/carousel.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
@@ -36,6 +37,8 @@ interface Props {
 export default function PostDetail({ post, profile, onClose, onSelectHashtag }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const authorName = profile?.name ?? shortNpub(post.pubkey);
   // 著者の複数サイトリンク（#35 Piece 2）。kind:0 拡張 websites[] をアイコン列で出す。
   const siteLinks = toSiteLinks(profile?.websites ?? []);
@@ -67,12 +70,12 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
         return;
       }
       if (post.imageUrls.length > 1 && e.key === "ArrowLeft") {
-        setPhotoIndex((i) => (i === 0 ? post.imageUrls.length - 1 : i - 1));
+        setPhotoIndex((i) => prevPhotoIndex(i, post.imageUrls.length));
         e.preventDefault();
         return;
       }
       if (post.imageUrls.length > 1 && e.key === "ArrowRight") {
-        setPhotoIndex((i) => (i + 1) % post.imageUrls.length);
+        setPhotoIndex((i) => nextPhotoIndex(i, post.imageUrls.length));
         e.preventDefault();
         return;
       }
@@ -121,6 +124,26 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
   const captionText = stripHashtags(post.caption);
 
+  // 写真領域のタッチスワイプ（#184）。←→ボタン・キーボード矢印と同じ wrap で切り替える。
+  // 1枚のときは無効。水平優位＋しきい値（swipeDirection）のときだけ確定し、
+  // 縦スクロール・ピンチ・微小タップとは競合させない。
+  function onTouchStart(e: ReactTouchEvent) {
+    if (post.imageUrls.length <= 1) return;
+    const t = e.touches[0];
+    if (t === undefined) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }
+  function onTouchEnd(e: ReactTouchEvent) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (start === null || post.imageUrls.length <= 1) return;
+    const t = e.changedTouches[0];
+    if (t === undefined) return;
+    const dir = swipeDirection(t.clientX - start.x, t.clientY - start.y);
+    if (dir === "next") setPhotoIndex((i) => nextPhotoIndex(i, post.imageUrls.length));
+    else if (dir === "prev") setPhotoIndex((i) => prevPhotoIndex(i, post.imageUrls.length));
+  }
+
   // モーダルは body 直下にポータルする。さもないと島を包む `.ha-rise`（アニメ後も
   // 計算 transform が identity matrix で残る＝containing block を作る）の中に `position:fixed`
   // が閉じ込められ、長いページ（みんなの植物＝多数の投稿）では巨大ラッパの上端に貼り付いて
@@ -154,17 +177,25 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
           // flex 列（max-h-full・overflow-y-auto）の中で flex-shrink に潰されて横長化していたので
           // shrink-0 で写真の自然な高さを確保する（これが「正方形が確保できない」の原因だった）。
           <div className="w-full shrink-0 overflow-hidden rounded-t-xl bg-ha-green-soft">
-            <div className="relative flex items-center justify-center">
+            <div
+              className="relative flex items-center justify-center"
+              // 写真領域のタッチスワイプで前後切替（#184）。1枚なら無効（onTouchStart 内で弾く）。
+              // 縦スワイプはスクロール優先のため touch-action は触らず（pan-y を残す）、
+              // スワイプ中の画像ドラッグ/選択だけ select-none で抑止する。
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+            >
               <img
                 src={post.imageUrls[photoIndex] ?? post.imageUrls[0]}
                 alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
-                className="max-w-full max-h-[70vh] object-contain"
+                className="max-w-full max-h-[70vh] select-none object-contain"
+                draggable={false}
               />
               {post.imageUrls.length > 1 && (
                 <>
                   <button
                     type="button"
-                    onClick={() => setPhotoIndex((i) => (i === 0 ? post.imageUrls.length - 1 : i - 1))}
+                    onClick={() => setPhotoIndex((i) => prevPhotoIndex(i, post.imageUrls.length))}
                     aria-label="前の写真"
                     className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white backdrop-blur-md hover:bg-ha-green transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
@@ -172,7 +203,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPhotoIndex((i) => (i + 1) % post.imageUrls.length)}
+                    onClick={() => setPhotoIndex((i) => nextPhotoIndex(i, post.imageUrls.length))}
                     aria-label="次の写真"
                     className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white backdrop-blur-md hover:bg-ha-green transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
