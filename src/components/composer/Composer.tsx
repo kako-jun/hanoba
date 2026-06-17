@@ -222,7 +222,7 @@ export default function Composer() {
           <section className="flex flex-col gap-3">
             <div className="flex items-baseline gap-2">
               <h2 className="text-sm font-medium text-ha-green-deep">写真</h2>
-              <span className="text-xs text-ha-ink/55">{images.length}/{MAX_IMAGES}枚</span>
+              <span className="text-sm font-semibold text-ha-ink/70">{images.length}/{MAX_IMAGES}枚</span>
             </div>
             {imageNotice !== null && <p className="text-xs font-medium text-ha-pink">{imageNotice}</p>}
             <div className="relative flex gap-2 overflow-visible pb-1">

@@ -79,7 +79,7 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
               className="w-full h-full object-cover transition duration-300 group-hover:opacity-90"
             />
             {photoCount > 1 && (
-              <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-1 text-xs font-semibold text-ha-white backdrop-blur-sm">
+              <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">
                 {photoCount}枚
               </span>
             )}
