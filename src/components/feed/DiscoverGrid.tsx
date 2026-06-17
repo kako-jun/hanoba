@@ -146,6 +146,10 @@ export default function DiscoverGrid() {
     if (initial !== "") {
       void search(initial, { navigate });
     } else {
+      // q 無しの URL（既定検索）に戻ったら入力欄もクリアして URL と一致させる。
+      // 初回マウントは元から空だが、popstate で「検索済み → 既定」へ戻る場合は
+      // 直前の検索語が input に残ってしまうため、ここで明示的に空へ戻す（#139）。
+      setInput("");
       void search(DEFAULT_DISCOVER_QUERY, { fromDefault: true });
     }
   }
