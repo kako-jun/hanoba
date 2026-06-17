@@ -3,6 +3,7 @@ import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import ProfileEditor from "../account/ProfileEditor.tsx";
 import PostDetail from "./PostDetail.tsx";
+import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
@@ -141,7 +142,7 @@ export default function MyGrid() {
             {posts.map((post, i) => (
               <li
                 key={post.id}
-                className="ha-rise group relative aspect-square overflow-hidden rounded-md bg-ha-green-soft"
+                className="ha-rise relative aspect-square overflow-hidden rounded-md bg-ha-green-soft"
                 style={{ "--i": Math.min(i, 11) } as CSSProperties}
               >
                 {post.imageUrl !== null && (
@@ -151,10 +152,9 @@ export default function MyGrid() {
                     aria-label={post.caption === "" ? "写真を拡大" : post.caption}
                     className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
-                    <img
+                    <ProgressiveImage
                       src={post.imageUrl}
                       alt={post.caption}
-                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                     {post.imageUrls.length > 1 && (
