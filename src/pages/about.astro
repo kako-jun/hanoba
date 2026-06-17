@@ -1,14 +1,13 @@
 ---
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
-// #27: 道具棚（アフィリエイト）。最終 CTA の手前に 1 スロットだけ置く。
-// フィード/discover への配置は密度判断（kako-jun）待ちのため v1 では未配置。
+// #163: 「Hanōba とは」を市長ボタニクス・フォン・ハノーバの声の「市民手帳」（本）に作り替える。
+// = 市役所ハブ。すべての機能への単一の入口。市民レベル（Nostr 由来＝backendless）でページ解放。
+// 旧来の三人称 SaaS 説明（「Hanōba は…」「この街のかたち」）はこの本に置き換えた。
+// 本体は CityHallBook（client:load）。鍵・relay 取得はクライアントのみ（SSG セーフ）。
+// #27: 道具棚（アフィリエイト）は本の下に 1 スロットだけ残す。
 import AffiliateGrid from "../components/AffiliateGrid.astro";
-
-// Hanoba のコンセプト説明（#26）。世界観＝架空の植物好き都市ハノーバをみんなで作る。
-// 「なぜ既存 SNS で足りないか」は端的に。詳細は llll-ll のブログ記事へ誘導する。
-// 静的ページ（島なし）。トーンは暗色グラス（DESIGN §5）。
-const BLOG_URL = "https://llll-ll.com";
+import CityHallBook from "../components/lore/CityHallBook.tsx";
 ---
 
 <MainLayout
@@ -18,112 +17,8 @@ const BLOG_URL = "https://llll-ll.com";
   <SiteHeader current="about" wide />
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
-    <section class="ha-rise flex flex-col gap-3">
-      <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-ha-green-deep">
-        Hanōba とは
-      </h1>
-      <p class="text-lg leading-relaxed text-ha-ink/85 [word-break:auto-phrase]">
-        植物写真の SNS。みんなの1枚が集まって、<strong class="text-ha-ink"
-          >架空の植物好き都市ハノーバ（葉の場）</strong
-        >ができていきます。育てて、見せる。それだけの、静かで濃い場所。
-      </p>
-    </section>
-
-    <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:1">
-      {/* 彩り＝4カードで別々の被写体を 1:2 横長で右上にやや はみ出して重ねる（#彩り）。
-          1=室内（夜の温室＝ビカク/コーデックス/アガベ）/2=花/3=畑/4=果樹。生成写真（gpt-image-2）。
-          装飾なので aria-hidden・pointer-events-none。見出しは pr で画像を避けて折り返す。 */}
-      <img
-        src="/og/room-dark.webp"
-        alt=""
-        aria-hidden="true"
-        class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 -rotate-2"
-        style="object-position: 82% 72%"
-      />
-      <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">この街のかたち</h2>
-      <ul class="flex flex-col gap-2 text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
-        <li>・<strong class="text-ha-ink">正方形の写真1枚＋ひとこと</strong>。短くても、じっくり語っても。</li>
-        <li>・<strong class="text-ha-ink">植物だけ</strong>。畑もビカクも実生も塊根も、その枠の中なら何でも。</li>
-        <li>・動画は無し。背景や反射からの<strong class="text-ha-ink">身バレを避ける</strong>ための静止画専用。</li>
-        <li>
-          ・俗称で書いても、<strong class="text-ha-ink">学名と有名な呼び名を並べて</strong>表示。タップでその植物を辿れます。
-        </li>
-      </ul>
-    </section>
-
-    <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:2">
-      <img
-        src="/about/flower.webp"
-        alt=""
-        aria-hidden="true"
-        class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 rotate-2"
-        style="object-position: 58% 45%"
-      />
-      <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">なぜ、既存の SNS では足りないのか</h2>
-      <ul class="flex flex-col gap-2 text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
-        <li>・植物以外のノイズに埋もれ、同じ品種の投稿が散らばってしまう。</li>
-        <li>・俗称やカナ、英語、略称がバラバラで、同じ植物がひとつに集まらない。</li>
-        <li>・投稿までの手数が多く、ひとことのメモを添えにくい。</li>
-      </ul>
-      <p class="text-sm text-ha-ink/70 leading-relaxed [word-break:auto-phrase]">
-        Hanōba はこの三つを、植物に特化し、表記を自動でそろえ、投稿の手数を最短にすることで解こうとしています。
-        <a
-          href={BLOG_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-ha-green hover:text-ha-green-deep underline underline-offset-2"
-          >考え方の詳細は llll-ll のブログへ →</a
-        >
-      </p>
-    </section>
-
-    <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:3">
-      <img
-        src="/about/field.webp"
-        alt=""
-        aria-hidden="true"
-        class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 -rotate-2"
-        style="object-position: 50% 55%"
-      />
-      <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">あなたの投稿は、あなたのもの</h2>
-      <p class="text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
-        Hanōba は、特定の会社に囲い込まれないオープンな分散ネットワーク Nostr の上に建っています。
-        だから同じ1枚が、mypace でも他のクライアントでも生きて見られます。アカウントもブラウザの中で
-        完結し、誰かに預ける必要がありません。データはあなたの手の中に。
-      </p>
-    </section>
-
-    <section class="glass ha-rise relative rounded-2xl p-6 flex flex-col gap-3" style="--i:4">
-      <img
-        src="/about/fruit.webp"
-        alt=""
-        aria-hidden="true"
-        class="pointer-events-none absolute -top-4 -right-2 w-32 h-16 sm:w-40 sm:h-20 object-cover rounded-lg ring-1 ring-white/10 shadow-lg shadow-black/50 rotate-2"
-        style="object-position: 42% 52%"
-      />
-      <h2 class="font-display text-xl font-bold text-ha-green-deep pr-28 sm:pr-40">表記の誤りや別名を教えてください</h2>
-      <p class="text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
-        学名や呼び名の対応表は、みんなで育てていきます（投稿は後から直せないので、表示側を賢くしていく仕組みです）。
-        「この俗称はこの学名」「この別名が抜けている」といった指摘は、SNS を使っていない方でも
-        <a
-          href={BLOG_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-ha-green hover:text-ha-green-deep underline underline-offset-2"
-          >llll-ll のブログのコメント欄</a
-        >から送れます。kako-jun の SNS でも受け付けています。
-      </p>
-    </section>
+    <CityHallBook client:load />
 
     <AffiliateGrid />
-
-    <div class="ha-rise flex justify-center pt-2" style="--i:6">
-      <a
-        href="/compose"
-        class="rounded-full bg-ha-green text-ha-white px-7 py-3 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-      >
-        最初の1枚を置く
-      </a>
-    </div>
   </main>
 </MainLayout>
