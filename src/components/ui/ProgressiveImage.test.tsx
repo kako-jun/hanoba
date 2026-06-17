@@ -43,6 +43,14 @@ describe("ProgressiveImage（#145）", () => {
     expect(img).toHaveAttribute("data-loaded", "true");
   });
 
+  it("読み込み失敗（error）でも data-loaded='true' にして opacity:0 の穴を防ぐ", () => {
+    render(<ProgressiveImage src="https://example.com/broken.jpg" alt="x" />);
+    const img = screen.getByRole("img", { name: "x" });
+    expect(img).toHaveAttribute("data-loaded", "false");
+    fireEvent.error(img);
+    expect(img).toHaveAttribute("data-loaded", "true");
+  });
+
   it("マウント時に img.complete が true なら（キャッシュ済み）即 data-loaded='true' になる", () => {
     // happy-dom は img.complete を上書き可能。onLoad が発火しないキャッシュ経路を再現する。
     const originalComplete = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "complete");
