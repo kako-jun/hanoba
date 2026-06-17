@@ -3,9 +3,12 @@
 // detectHashtagQuery で「キャレット直前の #語」を見つけ、filterHashtagCandidates で pool から
 // 前方一致候補を出す。pool に無くても「そのまま #query を使う」を末尾に出す（freeform）。
 // 候補は ↑↓ で移動、Enter で確定、Esc で閉じる。
+//
+// glass・×クリア・下辺ドラッグバーで高さ調整、という見た目/操作は共通部品 ResizableTextarea
+// に委ね（自己紹介欄と同一・#188）、ここはハッシュタグ補完（一言専用）だけを上に載せる。
 
 import { useEffect, useRef, useState } from "react";
-import Icon from "../ui/Icon.tsx";
+import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import { detectHashtagQuery, filterHashtagCandidates } from "../../lib/image/hashtag-complete.ts";
 
 interface CaptionInputProps {
@@ -34,8 +37,6 @@ interface PopupState {
 
 export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0 }: CaptionInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
-  const [height, setHeight] = useState(124);
   const [popup, setPopup] = useState<PopupState | null>(null);
 
   // タグチップ挿入/解除後にキャレットを本文末尾へ送る（#165）。初期値 0 では発火しない。
@@ -52,10 +53,6 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
       node.setSelectionRange(end, end);
     });
   }, [focusEndSignal]);
-
-  function resizeCaption(nextHeight: number) {
-    setHeight(Math.min(Math.max(nextHeight, 104), 360));
-  }
 
   function buildItems(query: string): string[] {
     const candidates = filterHashtagCandidates(pool, query);
@@ -83,10 +80,11 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
     setPopup({ items, active: 0, start: detected.start, end: caret });
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    const text = e.target.value;
+  function handleValueChange(text: string) {
     onChange(text);
-    refreshPopup(text, e.target.selectionStart);
+    // 変更時のキャレット位置は textarea の現在値で取る（onChange は入力反映後に発火）。
+    const caret = textareaRef.current?.selectionStart ?? text.length;
+    refreshPopup(text, caret);
   }
 
   function handleSelect(e: React.SyntheticEvent<HTMLTextAreaElement>) {
@@ -135,76 +133,19 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
   }
 
   return (
-    <div className="relative flex flex-col gap-1">
-      <label htmlFor="hanoba-caption" className="text-sm font-medium text-ha-green-deep">
-        ひとこと
-      </label>
-      {/* キャレット/ハッシュタグ補完のため ClearableTextarea は使わず、× だけ共通の見た目で足す。
-          ハンドラ（onChange/onSelect/onKeyDown）は触らず、× は値を空にして補完ポップアップも閉じる。 */}
-      <div className="relative">
-        <textarea
-          ref={textareaRef}
-          id="hanoba-caption"
-          aria-required="true"
-          value={value}
-          onChange={handleChange}
-          onSelect={handleSelect}
-          onKeyDown={handleKeyDown}
-          onBlur={() => setPopup(null)}
-          rows={3}
-          placeholder="株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。"
-          className="w-full glass resize-none rounded-2xl px-3.5 py-2.5 pb-9 pr-10 text-ha-ink placeholder:text-ha-ink/45 focus:border-ha-green/60 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
-          style={{ height }}
-        />
-        {value !== "" && (
-          <button
-            type="button"
-            onClick={() => {
-              onChange("");
-              setPopup(null);
-              textareaRef.current?.focus();
-            }}
-            aria-label="入力をクリア"
-            className="absolute right-2.5 top-2.5 grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
-          >
-            <Icon name="close" className="w-4 h-4" />
-          </button>
-        )}
-        <div
-          role="separator"
-          tabIndex={0}
-          aria-label="入力欄の高さを調整"
-          aria-orientation="horizontal"
-          aria-valuemin={104}
-          aria-valuemax={360}
-          aria-valuenow={height}
-          onPointerDown={(e) => {
-            dragRef.current = { startY: e.clientY, startHeight: height };
-            e.currentTarget.setPointerCapture(e.pointerId);
-            e.preventDefault();
-          }}
-          onPointerMove={(e) => {
-            if (dragRef.current === null) return;
-            resizeCaption(dragRef.current.startHeight + e.clientY - dragRef.current.startY);
-          }}
-          onPointerUp={(e) => {
-            dragRef.current = null;
-            e.currentTarget.releasePointerCapture(e.pointerId);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              resizeCaption(height + 16);
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault();
-              resizeCaption(height - 16);
-            }
-          }}
-          className="absolute inset-x-4 bottom-2 flex h-7 cursor-ns-resize touch-none items-center justify-center rounded-full text-ha-green-deep/75 transition-colors hover:bg-ha-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green/40"
-        >
-          <span className="h-1.5 w-14 rounded-full bg-ha-green/45" aria-hidden="true" />
-        </div>
-      </div>
+    <ResizableTextarea
+      ref={textareaRef}
+      id="hanoba-caption"
+      label="ひとこと"
+      value={value}
+      onValueChange={handleValueChange}
+      onSelect={handleSelect}
+      onKeyDown={handleKeyDown}
+      onBlur={() => setPopup(null)}
+      aria-required="true"
+      rows={3}
+      placeholder="株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。"
+    >
       {popup !== null && (
         <ul
           role="listbox"
@@ -232,6 +173,6 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
           ))}
         </ul>
       )}
-    </div>
+    </ResizableTextarea>
   );
 }
