@@ -172,6 +172,19 @@ describe("TagPicker", () => {
     expect(within(dialog).getByRole("button", { name: "#断水" })).toBeTruthy();
   });
 
+  it("「その他」ポップアップにはインライン済みの定番（水やり）は出ない＝あふれ分だけ（#186）", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    // 水やり は世話の先頭＝インライン表示済み。インラインには出る。
+    expect(screen.getByRole("button", { name: "#水やり" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
+    const dialog = screen.getByRole("dialog", { name: "世話のタグ一覧" });
+    // ポップアップ内にはインライン済みの 水やり は出ない（重複させない・#186）。
+    expect(within(dialog).queryByRole("button", { name: "#水やり" })).toBeNull();
+    // あふれ分（断水）は出る。
+    expect(within(dialog).getByRole("button", { name: "#断水" })).toBeTruthy();
+  });
+
   it("ポップアップ内のチップを選ぶと onPick が呼ばれる（#169）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();

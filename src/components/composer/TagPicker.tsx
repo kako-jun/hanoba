@@ -486,13 +486,14 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
         </div>
       )}
 
-      {/* 「その他」ポップアップ（#169）: その行の全タグを幅でクロップせず一覧する。
-          ドリルダウンパネルの体裁を流用（glass・見出し・×閉じる・囲み外/Esc で閉じる）。
-          インラインに既出のタグも含めて全件出す＝定番を取りこぼさない（重複表示は許容）。 */}
+      {/* 「その他」ポップアップ（#169/#186）: インライン済み（先頭 INLINE_LIMIT 件）を除いた
+          **あふれ分だけ**を出す＝「その他」の名のとおり、既に見えている定番は重複させない（#186）。
+          ドリルダウンパネルの体裁を流用（glass・見出し・×閉じる・囲み外/Esc で閉じる）。 */}
       {overflowOpen !== null &&
         (() => {
           const c = TAG_CATEGORIES.find((x) => x.label === overflowOpen);
           if (c === undefined) return null;
+          const overflow = c.tags.slice(INLINE_LIMIT);
           return (
             <div
               ref={overflowRef}
@@ -501,7 +502,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
               className="glass flex flex-col gap-2 rounded-2xl p-3"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-ha-ink/55">{c.label}（全{c.tags.length}件）</span>
+                <span className="text-xs text-ha-ink/55">{c.label}（ほか{overflow.length}件）</span>
                 <button
                   type="button"
                   onClick={() => setOverflowOpen(null)}
@@ -512,7 +513,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {c.tags.map((tag) => (
+                {overflow.map((tag) => (
                   <Chip
                     key={`overflow-${c.label}-${tag}`}
                     label={tag}
