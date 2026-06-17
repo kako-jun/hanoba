@@ -1,20 +1,19 @@
-// 右端（input）/右上（textarea）に × クリアボタンを備えた共通入力（#98 フォローアップ）。
+// 右端に × クリアボタンを備えた共通単行入力（#98 フォローアップ）。
 // AccountName の name 入力・DiscoverGrid の検索欄に各々あった「アドホックな ×」を1箇所に集約し、
-// nsec・プロフィール URL/サイト・自己紹介/ひとこと まで横断で同じ操作感に揃える。
+// nsec・プロフィール URL/サイト まで横断で同じ操作感に揃える。
+// 複数行（自己紹介・ひとこと）は高さ調整つきの ResizableTextarea 側へ統一した（#188）。
 //
 // 使い方:
 //   <ClearableInput value={v} onValueChange={setV} aria-label="…" placeholder="…" className="rounded-full …" />
-//   <ClearableTextarea value={v} onValueChange={setV} rows={3} className="rounded-2xl … resize-y" />
 //
 // className には見た目（角丸・余白 pl-*/py-*・bg/border/focus）だけを渡す。`w-full` と
 // 右側の余白（pr-10）は ×ボタンの座席として本コンポーネントが必ず付ける（呼び出し側で重ねない）。
 
-import { useRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useRef, type InputHTMLAttributes } from "react";
 import Icon from "./Icon.tsx";
 
 // value/onChange/className は本コンポーネントが制御するので、ネイティブ属性からは除いて渡してもらう。
 type InputRest = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "className">;
-type TextareaRest = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange" | "className">;
 
 interface ClearableInputProps extends InputRest {
   value: string;
@@ -25,14 +24,7 @@ interface ClearableInputProps extends InputRest {
   className?: string;
 }
 
-interface ClearableTextareaProps extends TextareaRest {
-  value: string;
-  onValueChange: (v: string) => void;
-  clearLabel?: string;
-  className?: string;
-}
-
-// ×ボタン本体（input は縦中央、textarea は上寄せ）。値が空のときは描かない。
+// ×ボタン本体（input は縦中央）。値が空のときは描かない。
 function ClearButton({
   clearLabel,
   position,
@@ -76,38 +68,6 @@ export function ClearableInput({
         <ClearButton
           clearLabel={clearLabel}
           position="top-1/2 -translate-y-1/2"
-          onClear={() => {
-            onValueChange("");
-            ref.current?.focus();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-/** ×を右上に置く複数行入力。 */
-export function ClearableTextarea({
-  value,
-  onValueChange,
-  clearLabel = "入力をクリア",
-  className = "",
-  ...rest
-}: ClearableTextareaProps) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  return (
-    <div className="relative">
-      <textarea
-        ref={ref}
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-        className={`w-full pr-10 ${className}`}
-        {...rest}
-      />
-      {value !== "" && (
-        <ClearButton
-          clearLabel={clearLabel}
-          position="top-2.5"
           onClear={() => {
             onValueChange("");
             ref.current?.focus();

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
-import { ClearableInput, ClearableTextarea } from "../ui/ClearableInput.tsx";
+import { ClearableInput } from "../ui/ClearableInput.tsx";
+import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import Avatar from "../feed/Avatar.tsx";
 import { fetchMyProfileResilient, saveProfile } from "../../lib/nostr/client.ts";
 import {
@@ -229,23 +230,18 @@ export default function ProfileEditor({ bare = false }: Props) {
             {uploadError !== null && <p className="text-xs text-ha-pink">{uploadError}</p>}
           </div>
 
-          {/* 自己紹介 */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="hanoba-about" className="text-sm font-medium text-ha-green-deep">
-              自己紹介
-            </label>
-            <ClearableTextarea
-              id="hanoba-about"
-              value={about}
-              onValueChange={(v) => {
-                setAbout(v);
-                touch();
-              }}
-              rows={3}
-              placeholder="育てている植物のこと、好きな品種など"
-              className="rounded-2xl bg-white/10 border border-white/15 pl-3.5 py-2 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30 resize-y"
-            />
-          </div>
+          {/* 自己紹介（ひとこと入力欄と同一デザイン・glass＋下辺ドラッグバーで高さ調整・#188）。 */}
+          <ResizableTextarea
+            id="hanoba-about"
+            label="自己紹介"
+            value={about}
+            onValueChange={(v) => {
+              setAbout(v);
+              touch();
+            }}
+            rows={3}
+            placeholder="育てている植物のこと、好きな品種など"
+          />
 
           {/* 複数サイト */}
           <div className="flex flex-col gap-2">
