@@ -916,48 +916,48 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "ハーブ",
     genera: [
       { name: "バジル", pickable: true, varieties: [
-        { name: "スイートバジル" }, { name: "ホーリーバジル" }, { name: "レモンバジル" }, { name: "ジェノベーゼ" },
-        { name: "ダークオパール" }, { name: "ブッシュバジル" }, { name: "シナモンバジル" },
+        { name: "スイートバジル", sci: "Ocimum basilicum" }, { name: "ホーリーバジル", sci: "Ocimum tenuiflorum" }, { name: "レモンバジル", sci: "Ocimum × africanum" }, { name: "ジェノベーゼ", sci: "Ocimum basilicum 'Genovese'" },
+        { name: "ダークオパール", sci: "Ocimum basilicum 'Dark Opal'" }, { name: "ブッシュバジル", sci: "Ocimum basilicum var. minimum" }, { name: "シナモンバジル", sci: "Ocimum basilicum 'Cinnamon'" },
       ] },
       { name: "ミント", pickable: true, varieties: [
-        { name: "スペアミント" }, { name: "ペパーミント" }, { name: "アップルミント" }, { name: "パイナップルミント" },
-        { name: "モロッカンミント" }, { name: "オーデコロンミント" }, { name: "ブラックペパーミント" },
+        { name: "スペアミント", sci: "Mentha spicata" }, { name: "ペパーミント", sci: "Mentha × piperita" }, { name: "アップルミント", sci: "Mentha suaveolens" }, { name: "パイナップルミント", sci: "Mentha suaveolens 'Variegata'" },
+        { name: "モロッカンミント", sci: "Mentha spicata 'Moroccan'" }, { name: "オーデコロンミント", sci: "Mentha × piperita 'Citrata'" }, { name: "ブラックペパーミント", sci: "Mentha × piperita 'Black'" },
       ] },
       { name: "ローズマリー", pickable: true, varieties: [
-        { name: "立性ローズマリー" }, { name: "匍匐性ローズマリー" }, { name: "トスカナブルー" }, { name: "マリンブルー" },
-        { name: "モーツァルトブルー" }, { name: "プロストラータス" },
+        { name: "立性ローズマリー", sci: "Salvia rosmarinus" }, { name: "匍匐性ローズマリー", sci: "Salvia rosmarinus 'Prostratus'" }, { name: "トスカナブルー", sci: "Salvia rosmarinus 'Tuscan Blue'" }, { name: "マリンブルー", sci: "Salvia rosmarinus 'Marine Blue'" },
+        { name: "モーツァルトブルー", sci: "Salvia rosmarinus 'Mozart Blue'" }, { name: "プロストラータス", sci: "Salvia rosmarinus 'Prostratus'" },
       ] },
       { name: "タイム", pickable: true, varieties: [
-        { name: "コモンタイム" }, { name: "レモンタイム" }, { name: "クリーピングタイム" }, { name: "シルバータイム" },
+        { name: "コモンタイム", sci: "Thymus vulgaris" }, { name: "レモンタイム", sci: "Thymus citriodorus" }, { name: "クリーピングタイム", sci: "Thymus serpyllum" }, { name: "シルバータイム", sci: "Thymus vulgaris 'Silver Queen'" },
       ] },
       { name: "セージ", pickable: true, varieties: [
-        { name: "コモンセージ" }, { name: "パイナップルセージ" }, { name: "チェリーセージ" }, { name: "ホワイトセージ" },
-        { name: "ゴールデンセージ" }, { name: "パープルセージ" },
+        { name: "コモンセージ", sci: "Salvia officinalis" }, { name: "パイナップルセージ", sci: "Salvia elegans" }, { name: "チェリーセージ", sci: "Salvia microphylla" }, { name: "ホワイトセージ", sci: "Salvia apiana" },
+        { name: "ゴールデンセージ", sci: "Salvia officinalis 'Aurea'" }, { name: "パープルセージ", sci: "Salvia officinalis 'Purpurascens'" },
       ] },
       { name: "ラベンダー", pickable: true, varieties: [
-        { name: "イングリッシュラベンダー" }, { name: "フレンチラベンダー" }, { name: "グロッソ" }, { name: "ラバンディン" },
-        { name: "デンタータ" }, { name: "ストエカス" },
+        { name: "イングリッシュラベンダー", sci: "Lavandula angustifolia" }, { name: "フレンチラベンダー", sci: "Lavandula stoechas" }, { name: "グロッソ", sci: "Lavandula × intermedia 'Grosso'" }, { name: "ラバンディン", sci: "Lavandula × intermedia" },
+        { name: "デンタータ", sci: "Lavandula dentata" }, { name: "ストエカス", sci: "Lavandula stoechas" },
       ] },
       { name: "カモミール", pickable: true, varieties: [
-        { name: "ジャーマンカモミール" }, { name: "ローマンカモミール" },
+        { name: "ジャーマンカモミール", sci: "Matricaria chamomilla" }, { name: "ローマンカモミール", sci: "Chamaemelum nobile" },
       ] },
       { name: "オレガノ", pickable: true, varieties: [
-        { name: "ケントビューティー" }, { name: "コモンオレガノ" }, { name: "ゴールデンオレガノ" }, { name: "マジョラム" },
+        { name: "ケントビューティー", sci: "Origanum 'Kent Beauty'" }, { name: "コモンオレガノ", sci: "Origanum vulgare" }, { name: "ゴールデンオレガノ", sci: "Origanum vulgare 'Aureum'" }, { name: "マジョラム", sci: "Origanum majorana" },
       ] },
       { name: "パセリ", pickable: true, varieties: [
-        { name: "イタリアンパセリ" }, { name: "カーリーパセリ" }, { name: "モスカールドパセリ" },
+        { name: "イタリアンパセリ", sci: "Petroselinum crispum var. neapolitanum" }, { name: "カーリーパセリ", sci: "Petroselinum crispum var. crispum" }, { name: "モスカールドパセリ", sci: "Petroselinum crispum 'Moss Curled'" },
       ] },
       { name: "シソ", pickable: true, aliases: ["大葉", "紫蘇"], varieties: [
-        { name: "青じそ" }, { name: "赤じそ" }, { name: "ちりめんじそ" }, { name: "穂じそ" },
+        { name: "青じそ", sci: "Perilla frutescens var. crispa f. viridis" }, { name: "赤じそ", sci: "Perilla frutescens var. crispa f. purpurea" }, { name: "ちりめんじそ", sci: "Perilla frutescens var. crispa f. crispa" }, { name: "穂じそ", sci: "Perilla frutescens var. crispa" },
       ] },
       { name: "パクチー", pickable: true, aliases: ["コリアンダー", "香菜", "シャンツァイ"], varieties: [
-        { name: "コリアンダー" }, { name: "サイゴンパクチー" },
+        { name: "コリアンダー", sci: "Coriandrum sativum" }, { name: "サイゴンパクチー", sci: "Coriandrum sativum 'Saigon'" },
       ] },
       { name: "その他ハーブ", pickable: false, varieties: [
-        { name: "レモングラス" }, { name: "レモンバーム" }, { name: "ディル" }, { name: "チャイブ" },
-        { name: "タラゴン" }, { name: "フェンネル" }, { name: "チャービル" }, { name: "ルッコラ" },
-        { name: "ステビア" }, { name: "ナスタチウム" }, { name: "ボリジ" }, { name: "ヒソップ" },
-        { name: "コモンマロウ" }, { name: "キャットニップ" }, { name: "ワイルドストロベリー" },
+        { name: "レモングラス", sci: "Cymbopogon citratus" }, { name: "レモンバーム", sci: "Melissa officinalis" }, { name: "ディル", sci: "Anethum graveolens" }, { name: "チャイブ", sci: "Allium schoenoprasum" },
+        { name: "タラゴン", sci: "Artemisia dracunculus" }, { name: "フェンネル", sci: "Foeniculum vulgare" }, { name: "チャービル", sci: "Anthriscus cerefolium" }, { name: "ルッコラ", sci: "Eruca vesicaria" },
+        { name: "ステビア", sci: "Stevia rebaudiana" }, { name: "ナスタチウム", sci: "Tropaeolum majus" }, { name: "ボリジ", sci: "Borago officinalis" }, { name: "ヒソップ", sci: "Hyssopus officinalis" },
+        { name: "コモンマロウ", sci: "Malva sylvestris" }, { name: "キャットニップ", sci: "Nepeta cataria" }, { name: "ワイルドストロベリー", sci: "Fragaria vesca" },
       ] },
     ],
   },
