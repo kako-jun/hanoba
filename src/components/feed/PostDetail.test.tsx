@@ -253,24 +253,106 @@ describe("PostDetail いいね数表示", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("本文から植物を認識し 学名＋著名表記を並べ discover 検索へリンクする（#23）", async () => {
+  it("属タグから札を組み 学名＋和名を並べ discover 検索へリンクする（属単独・#182/#23）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(
       <PostDetail
-        post={makePost({ id: "p4", caption: "うちのパキポ、いい形" })}
+        post={makePost({ id: "p4", caption: "うちのパキポ、いい形", hashtags: ["パキポディウム"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,
     );
-    // 学名（フォーマル）と著名表記を両方表示。
+    // 札は hashtags から動的 import した catalog で組む（caption の free-text は使わない・#182）。
+    // #23: 学名（dictionary 由来）＋和名を並列表示。属単独なので和名は属名。
     expect(await screen.findByText("Pachypodium")).toBeInTheDocument();
     expect(screen.getByText("パキポディウム")).toBeInTheDocument();
-    // クリックでその植物の discover 検索へ。
+    // クリックでその札の discover 検索へ（最具体の和名＝属名）。
     const link = screen.getByRole("link", { name: /Pachypodium/ });
     // タグ集約モードで検索するため #（=%23）付きで discover へ。
     expect(link).toHaveAttribute(
       "href",
       "/discover?q=%23%E3%83%91%E3%82%AD%E3%83%9D%E3%83%87%E3%82%A3%E3%82%A6%E3%83%A0",
     );
+  });
+
+  it("属＋品種タグは品種1枚に畳み 学名＋品種和名を並べる（属単独札は出さない・#182/#23）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({
+          id: "p5",
+          caption: "開花",
+          // #181 で属＋品種が両方タグに入る。札は属単独を捨てて品種1枚に畳む。
+          hashtags: ["パキポディウム", "グラキリス"],
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // 札の和名は「グラキリス」1枚（属名「パキポディウム」は和名に出さない・属単独札も出ない）。
+    const label = await screen.findByText("グラキリス");
+    expect(label).toBeInTheDocument();
+    expect(screen.queryByText("パキポディウム")).toBeNull();
+    // 学名は catalog.sci / dictionary の品種（グラキリス）から引ける。SciName が空白で
+    // トークン分割するので、各トークン（直立の var. 含む）が出ていること＝学名併記を確認する。
+    const link = screen.getByRole("link", { name: /Pachypodium rosulatum var\. gracilius/ });
+    expect(link).toHaveTextContent("Pachypodium");
+    expect(link).toHaveTextContent("rosulatum");
+    expect(link).toHaveTextContent("gracilius");
+    // discover リンクは最も具体的な品種和名へ（#グラキリス）。
+    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#グラキリス")}`);
+  });
+
+  it("非 pickable 見出し属配下の品種は学名＋品種和名だけ・見出し語を出さない（should #1 回帰ガード・#182/#23）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({ id: "p7", caption: "胞子葉が展開", hashtags: ["リドレイ"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // リドレイは ビカクシダ › 原種(pickable:false) 配下。札は「リドレイ」だけ＝見出し語「原種」を
+    // 前置しない。catalog.sci も dictionary も無いので学名は出さず和名のみ（グレースフル）。
+    const label = await screen.findByText("リドレイ");
+    expect(label).toBeInTheDocument();
+    expect(screen.queryByText("原種")).toBeNull();
+    expect(screen.queryByText(/原種\s*リドレイ/)).toBeNull();
+    const link = screen.getByRole("link", { name: /リドレイ/ });
+    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#リドレイ")}`);
+  });
+
+  it("学名が引けない札は和名のみ描画する（グレースフル・#23）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({ id: "p8", caption: "脱皮した", hashtags: ["コノフィツム", "ブルゲリ"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // コノフィツム属・ブルゲリ品種はどちらも sci が無い＝学名トークンを出さず和名「ブルゲリ」のみ。
+    const link = await screen.findByRole("link", { name: "ブルゲリ" });
+    expect(link).toHaveTextContent("ブルゲリ");
+    // 学名（ラテン文字トークン）が出ていないこと＝SciName を描画していない。
+    expect(link.textContent).not.toMatch(/[A-Za-z]/);
+    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#ブルゲリ")}`);
+  });
+
+  it("カテゴリタグ（塊根植物）は札にしない（#182）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({ id: "p6", caption: "観察", hashtags: ["塊根植物", "水やり"] })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    // catalog ロードを待ってから（札セクションは出ないことを確認）。
+    await screen.findByLabelText("いいね 0");
+    // カテゴリ・世話タグは札にならない＝「この投稿の植物」見出しは出ない。
+    expect(screen.queryByText("この投稿の植物")).toBeNull();
+    // ハッシュタグチップは従来どおり出る。
+    expect(screen.getByRole("button", { name: "#塊根植物" })).toBeInTheDocument();
   });
 });
