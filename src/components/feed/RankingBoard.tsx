@@ -2,13 +2,13 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import SciName from "../ui/SciName.tsx";
 import { fetchRankingPosts } from "../../lib/nostr/client.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
-import { rankRunData, rankWithDeltas, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
+import { bucketByWeek, rankRunData, rankWithDeltas, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 
 type Status = "loading" | "error" | "loaded";
 
-// 推移チャートに重ねる上位件数（軽量さ・識別性優先で上位だけ＝RankRunChart の色数とも整合）。
-const CHART_TOP = 6;
+// 推移チャートに重ねる上位件数（軽量さ・識別性優先で上位だけ＝RankRunChart のトークン色 5 と整合）。
+const CHART_TOP = 5;
 
 // uPlot を使う推移チャートは遅延ロードする（チャートを出すときだけ uplot チャンクを取得＝初期描画を軽く）。
 const RankRunChart = lazy(() => import("./RankRunChart.tsx"));
@@ -84,9 +84,12 @@ export default function RankingBoard() {
     [posts, catalog, nowSec],
   );
 
-  // 先週（直前の過去週）が無い＝初週かどうか（全行 NEW のときの案内に使う）。
-  // rows が空でなく、かつ全行が NEW なら「先週比は来週から」の注記を出す。
-  const isFirstWeek = rows.length > 0 && rows.every((r) => r.delta.kind === "new");
+  // 投稿が落ちている「データのある週」の数。全 NEW を代理に使うと、後発の週がたまたま新規品種
+  // ばかりのときも初週と誤判定する。実際の週数で「集計の最初の週」を判定する（catalog 非依存）。
+  const dataWeekCount = useMemo(() => bucketByWeek(posts).size, [posts]);
+
+  // データのある週が実質 1 週以下なら初週＝「先週比は来週から」の注記を出す（rows が空のときは出さない）。
+  const isFirstWeek = rows.length > 0 && dataWeekCount <= 1;
 
   // 途中経過チャート用データ。現在のランキング上位 N の key を全週に整列した票数マトリクスにする。
   const runData = useMemo(
@@ -213,9 +216,11 @@ function deltaText(delta: Delta): string {
   }
 }
 
-/** 行全体の読み上げ要約（順位・品種・件数・先週比）。sparkline は aria-hidden なのでここに含める。 */
+/** 行全体の読み上げ要約（順位・品種・学名・件数・先週比）。sparkline は aria-hidden なのでここに含める。 */
 function rowSummary(row: RankRow): string {
-  return `${row.rank}位 ${row.name} ${row.count}件 ${deltaText(row.delta)}`;
+  // 学名があれば和名のあとに添える（SR 利用者にも学名を伝える・#162 N3）。
+  const sci = row.sci !== null ? ` ${row.sci}` : "";
+  return `${row.rank}位 ${row.name}${sci} ${row.count}件 ${deltaText(row.delta)}`;
 }
 
 /** 先週比バッジ（テキストで意味を持たせる＝色だけに頼らない・a11y）。 */

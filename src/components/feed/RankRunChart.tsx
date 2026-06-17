@@ -26,17 +26,15 @@ import "uplot/dist/uPlot.min.css";
  * （線にならない・潰れる）。RankingBoard 側でも同条件で gate するが、ここでも安全側に倒す。
  */
 
-// 系列の線色（パレット内/近傍で識別しやすい少数セット）。重い塗りはしない＝線のみ。
-// 緑（葉）→ オレンジ（照明）→ 黄（花）→ 明るい葉色 → ink を循環。8 系列まで識別できる。
+// 系列の線色＝**すべて global.css のトークン値**だけで構成する（新色を足さない・DESIGN §5.1）。
+// 緑（葉）→ オレンジ（照明）→ 黄（花）→ 明るい葉色 → ink の 5 色。暗いシック地で互いに識別しやすい
+// （RankingBoard の CHART_TOP=5 と整合＝上位 5 系列までに抑え循環せず使い切る）。
 const SERIES_COLORS = [
-  "#6cba38", // ha-green（葉）
-  "#e89a4c", // ha-orange（照明）
-  "#f2c84b", // ha-yellow（花）
-  "#aee07f", // ha-green-deep（明るい葉）
-  "#ece6da", // ha-ink（暖白）
-  "#3f8f4f", // 深い葉緑
-  "#c97f3a", // 深いオレンジ
-  "#8fb86a", // くすんだ葉
+  "#6cba38", // --color-ha-green（葉）
+  "#e89a4c", // --color-ha-orange（照明）
+  "#f2c84b", // --color-ha-yellow（花）
+  "#aee07f", // --color-ha-green-deep（明るい葉）
+  "#ece6da", // --color-ha-ink（暖白）
 ];
 
 // 暗いシック地に合わせた軸/グリッド/ラベル色（global.css のトークンに準拠）。

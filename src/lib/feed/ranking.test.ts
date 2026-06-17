@@ -4,6 +4,7 @@ import type { FeedPost } from "./parse.ts";
 import {
   bucketByWeek,
   isoWeekKey,
+  isoWeekMondayUtc,
   rankRunData,
   rankWithDeltas,
   tallyVarieties,
@@ -48,6 +49,25 @@ describe("isoWeekKey", () => {
     expect(isoWeekKey(Math.floor(new Date("2021-01-01T00:00:00Z").getTime() / 1000))).toBe("2020-W53");
     // 2016-01-01(金) は ISO で 2015-W53。
     expect(isoWeekKey(Math.floor(new Date("2016-01-01T00:00:00Z").getTime() / 1000))).toBe("2015-W53");
+  });
+});
+
+describe("isoWeekMondayUtc", () => {
+  it("週内のどの時刻でもその週の月曜 00:00 UTC を返す", () => {
+    const monday = Math.floor(new Date("2026-06-15T00:00:00Z").getTime() / 1000); // 2026-W25 の月曜
+    // 月曜00:00自身。
+    expect(isoWeekMondayUtc(monday)).toBe(monday);
+    // 同じ週の水曜12:00 も同じ月曜に丸まる。
+    expect(isoWeekMondayUtc(Math.floor(new Date("2026-06-17T12:00:00Z").getTime() / 1000))).toBe(monday);
+    // 同じ週の日曜23:59 も同じ月曜に丸まる。
+    expect(isoWeekMondayUtc(Math.floor(new Date("2026-06-21T23:59:59Z").getTime() / 1000))).toBe(monday);
+    // 翌週月曜はちょうど 7 日後。
+    expect(isoWeekMondayUtc(Math.floor(new Date("2026-06-22T00:00:00Z").getTime() / 1000))).toBe(monday + 7 * 24 * 60 * 60);
+  });
+
+  it("isoWeekKey はこの月曜から導出され整合する", () => {
+    const wed = Math.floor(new Date("2026-06-17T12:00:00Z").getTime() / 1000);
+    expect(isoWeekKey(isoWeekMondayUtc(wed))).toBe(isoWeekKey(wed));
   });
 });
 
@@ -284,6 +304,41 @@ describe("rankRunData", () => {
     const data = rankRunData(posts, catalog, [titanota]);
     expect(data.weeks).toEqual(["2026-W23", "2026-W24", "2026-W25"]);
     expect(data.series[0]?.counts).toHaveLength(data.weeks.length);
+  });
+
+  it("投稿の無い中間週も連続軸に補完して 0 で埋める（カレンダー連続・x 軸を歪めない）", () => {
+    // W23 と W25 にだけ投稿し、間の W24 には一切投稿しない（真ん中の週が空）。
+    // 前提: W23 と W25 は 2 週ぶん離れている（間に W24 が1つ挟まる）。
+    expect(isoWeekKey(W23)).toBe("2026-W23");
+    expect(isoWeekKey(W25)).toBe("2026-W25");
+    const titanota = keyOf("チタノタ");
+    const posts = [
+      makePost({ id: "a", hashtags: ["チタノタ"], createdAt: W23 }),
+      makePost({ id: "c", hashtags: ["チタノタ"], createdAt: W25 }),
+      // W24 には投稿が無い（bucketByWeek には現れない）。
+    ];
+    const data = rankRunData(posts, catalog, [titanota]);
+    // 連続した全週（空の W24 を含む）を古い→新しいで並べる。
+    expect(data.weeks).toEqual(["2026-W23", "2026-W24", "2026-W25"]);
+    // 空の中間週は 0 埋め（投稿のある両端は 1）。
+    expect(data.series[0]?.counts).toEqual([1, 0, 1]);
+  });
+
+  it("年またぎでも連続軸を月曜刻みで正しく作る（2025-W52 → 2026-W01）", () => {
+    // 2025-12-22(月) と 2026-01-05(月) に投稿（間に 2025-12-29 週＝2026-W01 が空で挟まる）。
+    const dec22 = Math.floor(new Date("2025-12-22T12:00:00Z").getTime() / 1000); // 2025-W52
+    const jan05 = Math.floor(new Date("2026-01-05T12:00:00Z").getTime() / 1000); // 2026-W02
+    expect(isoWeekKey(dec22)).toBe("2025-W52");
+    expect(isoWeekKey(jan05)).toBe("2026-W02");
+    const titanota = keyOf("チタノタ");
+    const posts = [
+      makePost({ id: "a", hashtags: ["チタノタ"], createdAt: dec22 }),
+      makePost({ id: "b", hashtags: ["チタノタ"], createdAt: jan05 }),
+    ];
+    const data = rankRunData(posts, catalog, [titanota]);
+    // 年をまたいでも欠けなく連続（空の 2026-W01 を含む）。
+    expect(data.weeks).toEqual(["2025-W52", "2026-W01", "2026-W02"]);
+    expect(data.series[0]?.counts).toEqual([1, 0, 1]);
   });
 
   it("単週なら weeks は1つ・counts も長さ1", () => {

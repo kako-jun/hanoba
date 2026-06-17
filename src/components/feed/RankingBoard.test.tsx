@@ -96,9 +96,27 @@ describe("RankingBoard", () => {
 
     const list = await screen.findByRole("list");
     const items = within(list).getAllByRole("listitem");
-    expect(items[0]).toHaveAttribute("aria-label", "1位 オベサ 3件 1ランクアップ");
-    expect(items[1]).toHaveAttribute("aria-label", "2位 チタノタ 2件 1ランクダウン");
+    // aria-label は和名のあとに学名も添える（#162 N3・SR 利用者に学名を伝える）。
+    expect(items[0]).toHaveAttribute("aria-label", "1位 オベサ Euphorbia obesa 3件 1ランクアップ");
+    expect(items[1]).toHaveAttribute("aria-label", "2位 チタノタ Agave titanota 2件 1ランクダウン");
     // 単週注記は出ない（複数週ある）。
+    expect(screen.queryByText(/先週との比較（↑↓）は来週から表示されます/)).not.toBeInTheDocument();
+  });
+
+  it("後発の週が全 NEW でも初週バナーを出さない（週数で判定・#162 Q2）", async () => {
+    // 直前週(W24)には別品種、今週(W25)は全て新規品種＝全行 NEW になるが、データ週は 2 週ある。
+    // 旧実装（全 NEW を初週の代理にする）だと誤って初週バナーを出すケース。
+    fetchRankingPosts.mockResolvedValue([
+      makePost({ id: "p1", hashtags: ["チタノタ"], createdAt: W24 }), // 直前週
+      makePost({ id: "c1", hashtags: ["オベサ"] }), // 今週（W25）＝過去に無い NEW
+      makePost({ id: "c2", hashtags: ["グラキリス"] }), // 今週（W25）＝過去に無い NEW
+    ]);
+    render(<RankingBoard />);
+
+    const list = await screen.findByRole("list");
+    // 今週の行は全て NEW（バッジは出る）。
+    expect(within(list).getAllByText("NEW")).toHaveLength(2);
+    // だが週は 2 週ぶんあるので初週バナーは出さない。
     expect(screen.queryByText(/先週との比較（↑↓）は来週から表示されます/)).not.toBeInTheDocument();
   });
 

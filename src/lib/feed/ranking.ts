@@ -29,8 +29,11 @@ export interface RankedVariety {
 /**
  * 先週比の差分。
  * - up/down/same: 先週との順位変化（by＝動いた順位数。same は by:0）。
- * - new: この週より前のどの週にも一度も載っていない（完全な新規）。
+ * - new: この週より前のどの週にも一度も載っていない（新規）。
  * - re: 過去に載ったことはあるが、直前の週には居なかった（再浮上）。
+ *
+ * NEW/RE は**取得済みの直近ウィンドウ内**での判定（`fetchRankingPosts` の上限＝現状およそ
+ * 直近 500 投稿）。全履歴に対する絶対判定ではない（過去にウィンドウ外で載っていれば NEW に出うる）。
  */
 export type Delta = { kind: "up" | "down" | "same"; by: number } | { kind: "new" } | { kind: "re" };
 
@@ -78,29 +81,43 @@ export function tallyVarieties(posts: FeedPost[], catalog: VarietyCategory[]): R
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** ISO 週は月曜始まり＝7 日。週ステップ（unix 秒）。 */
+const WEEK_SEC = 7 * 24 * 60 * 60;
+
+/**
+ * unix 秒（UTC）が属する ISO 週の**月曜 00:00 UTC**を unix 秒で返す純粋関数。
+ *
+ * 週は ISO 8601 の曜日規約（月曜始まり・UTC・タイムゾーンを持たない）で切る。週キーと週の範囲
+ * 生成（rankRunData の連続週軸）の双方をこの**月曜タイムスタンプ**に一本化する＝週番号の算術や
+ * 年またぎ補正を介さず 7 日（WEEK_SEC）刻みで安全に列挙できる（isoWeekKey もこの月曜から導出する）。
+ */
+export function isoWeekMondayUtc(unixSec: number): number {
+  const date = new Date(unixSec * 1000);
+  // その日の 00:00 UTC（日付のみに正規化）を unix 秒で。
+  const dayStart = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / 1000;
+  // ISO 曜日（月=1 … 日=7）。
+  const isoDow = date.getUTCDay() === 0 ? 7 : date.getUTCDay();
+  // 月曜まで巻き戻す（月曜=1 なので 0 日、日曜=7 なら 6 日ぶん）。
+  return dayStart - (isoDow - 1) * (DAY_MS / 1000);
+}
 
 /**
  * unix 秒（UTC）を ISO 週キー（例 "2026-W25"）に変換する純粋関数。
  *
- * 週は**月曜始まり・UTC**で切る（ISO 8601 の曜日規約に合わせる・タイムゾーンは持たない）。
+ * 週は**月曜始まり・UTC**で切る（ISO 8601 の曜日規約に合わせる・isoWeekMondayUtc と同じ月曜から導出）。
  * 年・週番号は ISO 8601 に従う（その週の**木曜が属する年**が ISO 年・年の最初の木曜を含む週を W01）。
  * 表示・比較はキーの**文字列としての昇順**が時系列昇順になるよう、週番号をゼロ埋め2桁にする。
  *
- * 実装は標準アルゴリズム: その週の木曜（ISO 年を決める日）にずらし、ISO 年の元日からの通日で
- * 週番号を割る。すべて UTC（Date.UTC）で計算するので DST の影響を受けない。
+ * 実装は標準アルゴリズム: 週の月曜から木曜（ISO 年を決める日）へ +3 日ずらし、ISO 年の元日からの
+ * 通日で週番号を割る。すべて UTC で計算するので DST の影響を受けない。
  */
 export function isoWeekKey(unixSec: number): string {
-  const date = new Date(unixSec * 1000);
-  // 日付のみ（UTC）に正規化する。
-  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  // ISO 曜日（月=1 … 日=7）。
-  const isoDow = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
-  // この週の木曜へずらす（ISO 年・週番号は木曜で決まる）。
-  d.setUTCDate(d.getUTCDate() + 4 - isoDow);
-  const isoYear = d.getUTCFullYear();
+  // この週の木曜（ISO 年・週番号を決める日）。月曜 + 3 日。
+  const thursday = new Date((isoWeekMondayUtc(unixSec) + 3 * (DAY_MS / 1000)) * 1000);
+  const isoYear = thursday.getUTCFullYear();
   // ISO 年の元日からの通日で週番号を割る。
   const yearStart = Date.UTC(isoYear, 0, 1);
-  const week = Math.ceil(((d.getTime() - yearStart) / DAY_MS + 1) / 7);
+  const week = Math.ceil(((thursday.getTime() - yearStart) / DAY_MS + 1) / 7);
   return `${isoYear}-W${String(week).padStart(2, "0")}`;
 }
 
@@ -126,9 +143,10 @@ export function bucketByWeek(posts: FeedPost[]): Map<string, FeedPost[]> {
  * `now`（unix 秒）が指す ISO 週を「現在の週」とする。現在の週に投稿が1件も無くても、
  * isoWeekKey(now) の週を現在週として扱い、その週の集計（＝空なら空ランキング）を返す。
  *
- * 差分（Delta）のルール:
- * - **NEW**: その品種が、現在週より前の**どの週にも**一度も載っていない（完全な新規）。
- * - **RE**: 過去に載ったことはあるが、**直前の週**には居なかった（再浮上）。
+ * 差分（Delta）のルール（NEW/RE はいずれも**取得済みの直近ウィンドウ内**＝`fetchRankingPosts` の
+ * 上限ぶん・現状およそ直近 500 投稿での判定。全履歴に対する絶対判定ではない）:
+ * - **NEW**: その品種が、現在週より前の（ウィンドウ内の）**どの週にも**一度も載っていない。
+ * - **RE**: （ウィンドウ内で）過去に載ったことはあるが、**直前の週**には居なかった（再浮上）。
  * - **up/down/same**: 直前の週にも居た品種の、直前週との順位変化（by＝順位差・same は 0）。
  * - **先週（直前の過去週）が存在しない**（データが現在週ぶんしか無い＝初週）なら、
  *   全行を NEW にする（偽の up/down を出さない）。
@@ -162,7 +180,7 @@ export function rankWithDeltas(
           return m;
         })();
 
-  // 「これまでに（現在週より前のどこかで）載ったことのある品種」の集合＝NEW/RE 判定用。
+  // 「これまでに（取得済みウィンドウ内・現在週より前のどこかで）載ったことのある品種」の集合＝NEW/RE 判定用。
   const everChartedBefore = new Set<string>();
   for (const week of pastWeeks) {
     for (const row of tallyVarieties(byWeek.get(week) ?? [], catalog)) {
@@ -205,7 +223,11 @@ export interface RankRunSeries {
 
 /** 推移チャート（uPlot）の入力。x 軸＝`weeks`（古い→新しい）、y 軸＝週次票数、1品種1系列。 */
 export interface RankRunData {
-  /** 投稿のある全週の ISO 週キー（古い→新しい・連続＝範囲内に欠けが無い）。 */
+  /**
+   * 最古〜最新の投稿週までを**カレンダー上で連続**させた ISO 週キー（古い→新しい）。
+   * 投稿のある週だけでなく、**間に投稿が無い空週も漏れなく**並べる（その週の各系列 `counts` は 0）。
+   * x 軸を等間隔の週ステップに保つため（空週を詰めると軸が歪み、まばらな launch 期に誤解を生む）。
+   */
   weeks: string[];
   /** 指定した品種ごとの系列（`counts` は `weeks` に整列）。 */
   series: RankRunSeries[];
@@ -214,12 +236,16 @@ export interface RankRunData {
 /**
  * 指定品種（keys）の週次票数マトリクスを、uPlot 推移チャート用に組む純粋関数（#162）。
  *
- * x 軸＝**投稿が存在する全週**（`isoWeekKey`・古い→新しい）。各系列の `counts` はこの週列に
- * 1:1 で整列し、その週に当該品種が居なければ 0 を入れる（**線が途切れず連続**＝出現の谷も 0 で埋める）。
- * `keys` の順序を `series` の順序として保つ（呼び出し側が上位 N の並びを決める）。
+ * x 軸＝最古〜最新の投稿週までの**連続した週列**（`isoWeekKey`・古い→新しい）。投稿のある週だけでなく、
+ * **間に投稿が無い空週も 0 埋めで補完**する＝チャートが週インデックス 0..N-1 に等間隔で点を打つので、
+ * 空週を詰めると 1 週ステップと複数週ギャップが同じ幅で描かれ軸が歪む（まばらな launch 期に顕著）。
+ * 連続軸は**月曜タイムスタンプ刻み**で作る（`isoWeekMondayUtc` で各投稿の週月曜を求め、最古〜最新を
+ * 7 日刻みで列挙＝週番号算術や年またぎ補正を避ける）。各系列の `counts` はこの週列に 1:1 で整列し、
+ * その週に当該品種が居なければ 0（**線が途切れず連続**）。`keys` の順序を `series` の順序として保つ。
  *
  * 旧・行ごとの sparkline（品種ごとに別系列）と違い、週列を全系列で共有するので、線同士を同じ x 軸で
- * 重ねられる（チャートの主目的）。投稿が無ければ `{weeks:[],series:[]}`。
+ * 重ねられる（チャートの主目的）。投稿が無ければ `{weeks:[],series:[]}`。now は使わず（純粋）、
+ * 範囲はすべて投稿のタイムスタンプから導く。
  *
  * catalog は引数で受ける（variety-catalog を静的 import せず code-split を壊さない・他関数と同方針）。
  */
@@ -229,21 +255,30 @@ export function rankRunData(
   keys: string[],
 ): RankRunData {
   const byWeek = bucketByWeek(posts); // 既に週キー昇順（古い→新しい）
-  const weeks = [...byWeek.keys()];
-  if (weeks.length === 0) return { weeks: [], series: [] };
+  if (byWeek.size === 0) return { weeks: [], series: [] };
 
-  // 週ごとに「key → 票数」を1回だけ集計してキャッシュする（系列×週で tally を呼び直さない）。
-  const countByWeek: Map<string, number>[] = weeks.map((week) => {
+  // 投稿のある各週の「月曜 unix 秒」を求め、最古〜最新を 7 日刻みで列挙して連続な週軸を作る。
+  // （週番号の算術や年またぎ補正を介さず、月曜タイムスタンプの加算だけで安全に連続させる。）
+  const mondays = posts.map((p) => isoWeekMondayUtc(p.createdAt));
+  const minMonday = Math.min(...mondays);
+  const maxMonday = Math.max(...mondays);
+  const weeks: string[] = [];
+  for (let m = minMonday; m <= maxMonday; m += WEEK_SEC) weeks.push(isoWeekKey(m));
+
+  // 投稿のある週だけ「key → 票数」を集計してキャッシュする（空週は当然 0）。
+  const countByWeek = new Map<string, Map<string, number>>();
+  for (const [week, weekPosts] of byWeek) {
     const m = new Map<string, number>();
-    for (const row of tallyVarieties(byWeek.get(week) ?? [], catalog)) m.set(row.key, row.count);
-    return m;
-  });
+    for (const row of tallyVarieties(weekPosts, catalog)) m.set(row.key, row.count);
+    countByWeek.set(week, m);
+  }
 
   const series: RankRunSeries[] = keys.map((key) => ({
     key,
     // 和名はその key が出た最初の週の tally から拾う（出なければ key を名前に使う＝フォールバック）。
     name: nameForKey(byWeek, catalog, key),
-    counts: countByWeek.map((m) => m.get(key) ?? 0),
+    // 連続週列に整列。投稿の無い週（countByWeek に無い）も 0 で埋める。
+    counts: weeks.map((week) => countByWeek.get(week)?.get(key) ?? 0),
   }));
 
   return { weeks, series };
