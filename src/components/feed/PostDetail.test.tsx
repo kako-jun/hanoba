@@ -312,8 +312,9 @@ describe("PostDetail いいね数表示", () => {
         onSelectHashtag={() => {}}
       />,
     );
-    // リドレイは ビカクシダ › 原種(pickable:false) 配下。札は「リドレイ」だけ＝見出し語「原種」を
-    // 前置しない。catalog.sci も dictionary も無いので学名は出さず和名のみ（グレースフル）。
+    // リドレイは ビカクシダ › 原種(pickable:false) 配下。札の name は「リドレイ」だけ＝見出し語
+    // 「原種」を前置しない（should#1）。学名 sci の有無は学名付与の進捗で変わるので、ここでは
+    // 見出し語が出ないこと（name＝リドレイ・「原種」非表示）だけを固定する。
     const label = await screen.findByText("リドレイ");
     expect(label).toBeInTheDocument();
     expect(screen.queryByText("原種")).toBeNull();
@@ -326,17 +327,19 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionCount.mockResolvedValue(0);
     render(
       <PostDetail
-        post={makePost({ id: "p8", caption: "脱皮した", hashtags: ["コノフィツム", "ブルゲリ"] })}
+        post={makePost({ id: "p8", caption: "玄関に飾った", hashtags: ["苔玉"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,
     );
-    // コノフィツム属・ブルゲリ品種はどちらも sci が無い＝学名トークンを出さず和名「ブルゲリ」のみ。
-    const link = await screen.findByRole("link", { name: "ブルゲリ" });
-    expect(link).toHaveTextContent("ブルゲリ");
+    // 「苔玉」は様式（グループ概念）の variety＝species でないので catalog.sci も dictionary も
+    // 恒久的に無い＝学名トークンを出さず和名「苔玉」のみ（グレースフル）。学名付与が進んでも
+    // 個別 species でない group 概念は sci が付かないため、このテストは実データ変化に強い。
+    const link = await screen.findByRole("link", { name: "苔玉" });
+    expect(link).toHaveTextContent("苔玉");
     // 学名（ラテン文字トークン）が出ていないこと＝SciName を描画していない。
     expect(link.textContent).not.toMatch(/[A-Za-z]/);
-    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#ブルゲリ")}`);
+    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#苔玉")}`);
   });
 
   it("カテゴリタグ（塊根植物）は札にしない（#182）", async () => {
