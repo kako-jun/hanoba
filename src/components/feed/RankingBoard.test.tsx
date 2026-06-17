@@ -10,6 +10,15 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchRankingPosts: (...args: unknown[]) => fetchRankingPosts(...args),
 }));
 
+// 途中経過チャート（uPlot）は happy-dom では描けない（canvas/window）。RankRunChart は薄いラッパなので
+// 内部（uPlot 構築）は検証せず、props として渡る系列の本数だけ見える軽量スタブに差し替える。
+// チャートを出すか/出さないかの gate（週が2未満なら出さない）と、上位 N の系列が渡ることを検証する。
+vi.mock("./RankRunChart.tsx", () => ({
+  default: ({ data }: { data: { series: { name: string }[] } }) => (
+    <div data-testid="rank-run-chart" data-series={data.series.map((s) => s.name).join(",")} />
+  ),
+}));
+
 import RankingBoard from "./RankingBoard.tsx";
 
 // 距離のある ISO 週（水曜 12:00 UTC）。now は W25 に固定する（Date.now をスタブ）。
@@ -121,5 +130,37 @@ describe("RankingBoard", () => {
     fetchRankingPosts.mockRejectedValue(new Error("relay down"));
     render(<RankingBoard />);
     expect(await screen.findByText(/ランキングを読み込めませんでした/)).toBeInTheDocument();
+  });
+
+  it("単週のみのときは途中経過チャートを出さない（週が2未満＝gate）", async () => {
+    fetchRankingPosts.mockResolvedValue([
+      makePost({ id: "1", hashtags: ["チタノタ"], createdAt: 1781697600 }),
+      makePost({ id: "2", hashtags: ["オベサ"], createdAt: 1781697600 }),
+    ]);
+    render(<RankingBoard />);
+    await screen.findByRole("list");
+    expect(screen.queryByTestId("rank-run-chart")).not.toBeInTheDocument();
+  });
+
+  it("複数週たまると途中経過チャートを出し、上位品種の系列を渡す", async () => {
+    fetchRankingPosts.mockResolvedValue([
+      // 先週(W24)
+      makePost({ id: "p1", hashtags: ["チタノタ"], createdAt: W24 }),
+      makePost({ id: "p2", hashtags: ["チタノタ"], createdAt: W24 }),
+      makePost({ id: "p3", hashtags: ["オベサ"], createdAt: W24 }),
+      // 今週(W25)
+      makePost({ id: "c1", hashtags: ["オベサ"] }),
+      makePost({ id: "c2", hashtags: ["オベサ"] }),
+      makePost({ id: "c3", hashtags: ["オベサ"] }),
+      makePost({ id: "c4", hashtags: ["チタノタ"] }),
+      makePost({ id: "c5", hashtags: ["チタノタ"] }),
+    ]);
+    render(<RankingBoard />);
+    await screen.findByRole("list");
+    const chart = await screen.findByTestId("rank-run-chart");
+    // 現在ランキング上位（オベサ・チタノタ）が系列として渡る。
+    const series = chart.getAttribute("data-series") ?? "";
+    expect(series).toContain("オベサ");
+    expect(series).toContain("チタノタ");
   });
 });

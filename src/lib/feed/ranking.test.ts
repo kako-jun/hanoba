@@ -4,9 +4,9 @@ import type { FeedPost } from "./parse.ts";
 import {
   bucketByWeek,
   isoWeekKey,
+  rankRunData,
   rankWithDeltas,
   tallyVarieties,
-  weeklyCountSeries,
 } from "./ranking.ts";
 
 // 実カタログを使う（buildFuda の同定・dedupe を本物で検証する）。fixture のタグは
@@ -233,25 +233,91 @@ describe("rankWithDeltas", () => {
   });
 });
 
-describe("weeklyCountSeries", () => {
-  it("品種の週次票数を古い→新しい順で返す（投稿のある週のみ）", () => {
+describe("rankRunData", () => {
+  // 各 fixture の key は tally で実際に引いて使う（buildFuda の canonical 名に依存しない）。
+  const keyOf = (tag: string) => tallyVarieties([makePost({ id: "k", hashtags: [tag] })], catalog)[0]!.key;
+
+  it("週を古い→新しい順に並べ、各系列の counts を週に整列する", () => {
+    const titanota = keyOf("チタノタ");
+    const obesa = keyOf("オベサ");
     const posts = [
+      // W23: チタノタ=2, オベサ=1
       makePost({ id: "a", hashtags: ["チタノタ"], createdAt: W23 }),
       makePost({ id: "b", hashtags: ["チタノタ"], createdAt: W23 }),
-      // W24 は別品種のみ（チタノタは 0 票だが投稿はある週）。
-      makePost({ id: "c", hashtags: ["オベサ"], createdAt: W24 }),
-      makePost({ id: "d", hashtags: ["チタノタ"], createdAt: W25 }),
+      makePost({ id: "c", hashtags: ["オベサ"], createdAt: W23 }),
+      // W24: チタノタ=1（オベサは 0）
+      makePost({ id: "d", hashtags: ["チタノタ"], createdAt: W24 }),
+      // W25: オベサ=3（チタノタは 0）
+      makePost({ id: "e", hashtags: ["オベサ"], createdAt: W25 }),
+      makePost({ id: "f", hashtags: ["オベサ"], createdAt: W25 }),
+      makePost({ id: "g", hashtags: ["オベサ"], createdAt: W25 }),
     ];
-    const key = tallyVarieties([posts[0]!], catalog)[0]!.key; // チタノタの key
-    const series = weeklyCountSeries(posts, catalog, key);
-    expect(series).toEqual([
-      { week: "2026-W23", count: 2 },
-      { week: "2026-W24", count: 0 },
-      { week: "2026-W25", count: 1 },
-    ]);
+    const data = rankRunData(posts, catalog, [titanota, obesa]);
+    // 週は古い→新しい。
+    expect(data.weeks).toEqual(["2026-W23", "2026-W24", "2026-W25"]);
+    // counts は週に整列・keys の順序を保つ。
+    expect(data.series.map((s) => s.key)).toEqual([titanota, obesa]);
+    expect(data.series[0]).toMatchObject({ name: "チタノタ", counts: [2, 1, 0] });
+    expect(data.series[1]).toMatchObject({ name: "オベサ", counts: [1, 0, 3] });
   });
 
-  it("空投稿は空シリーズ", () => {
-    expect(weeklyCountSeries([], catalog, "チタノタ")).toEqual([]);
+  it("ある週に居ない品種はその週 0（出現の谷を 0 で埋め、線が途切れない）", () => {
+    const grak = keyOf("グラキリス");
+    const posts = [
+      // W23 に出て、W24 は不在、W25 で復帰。間の W24 は 0 で埋まる。
+      makePost({ id: "a", hashtags: ["グラキリス"], createdAt: W23 }),
+      makePost({ id: "b", hashtags: ["チタノタ"], createdAt: W24 }), // W24 を成立させる別投稿
+      makePost({ id: "c", hashtags: ["グラキリス"], createdAt: W25 }),
+    ];
+    const data = rankRunData(posts, catalog, [grak]);
+    expect(data.weeks).toEqual(["2026-W23", "2026-W24", "2026-W25"]);
+    expect(data.series[0]?.counts).toEqual([1, 0, 1]); // 谷の W24 が 0
+  });
+
+  it("週列は範囲内に欠けが無い（投稿のある全週を漏れなく並べる）", () => {
+    const titanota = keyOf("チタノタ");
+    const posts = [
+      makePost({ id: "a", hashtags: ["チタノタ"], createdAt: W23 }),
+      makePost({ id: "b", hashtags: ["オベサ"], createdAt: W24 }),
+      makePost({ id: "c", hashtags: ["チタノタ"], createdAt: W25 }),
+    ];
+    const data = rankRunData(posts, catalog, [titanota]);
+    expect(data.weeks).toEqual(["2026-W23", "2026-W24", "2026-W25"]);
+    expect(data.series[0]?.counts).toHaveLength(data.weeks.length);
+  });
+
+  it("単週なら weeks は1つ・counts も長さ1", () => {
+    const titanota = keyOf("チタノタ");
+    const data = rankRunData(
+      [
+        makePost({ id: "a", hashtags: ["チタノタ"], createdAt: W25 }),
+        makePost({ id: "b", hashtags: ["チタノタ"], createdAt: W25 }),
+      ],
+      catalog,
+      [titanota],
+    );
+    expect(data.weeks).toEqual(["2026-W25"]);
+    expect(data.series[0]?.counts).toEqual([2]);
+  });
+
+  it("空投稿は {weeks:[], series:[]}", () => {
+    expect(rankRunData([], catalog, ["チタノタ"])).toEqual({ weeks: [], series: [] });
+  });
+
+  it("keys が空なら series は空（週列は出る）", () => {
+    const data = rankRunData([makePost({ id: "a", hashtags: ["チタノタ"], createdAt: W25 })], catalog, []);
+    expect(data.weeks).toEqual(["2026-W25"]);
+    expect(data.series).toEqual([]);
+  });
+
+  it("カタログに無い key はどの週でも 0（投稿はあるが票が無い）", () => {
+    const data = rankRunData(
+      [makePost({ id: "a", hashtags: ["チタノタ"], createdAt: W25 })],
+      catalog,
+      ["__not_a_real_key__"],
+    );
+    expect(data.weeks).toEqual(["2026-W25"]);
+    // 和名が引けない key は key 自体を name にフォールバックし、counts は全 0。
+    expect(data.series[0]).toMatchObject({ key: "__not_a_real_key__", name: "__not_a_real_key__", counts: [0] });
   });
 });

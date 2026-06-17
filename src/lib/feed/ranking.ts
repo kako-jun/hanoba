@@ -193,24 +193,67 @@ export function rankWithDeltas(
   });
 }
 
+/** 推移チャート（uPlot）用の1品種ぶんの系列。`counts` は `RankRunData.weeks` と同じ長さ・同じ順序に整列する。 */
+export interface RankRunSeries {
+  /** dedupe・凡例の安定キー（buildFuda の Fuda.key＝canonical 品種名 or 属名）。 */
+  key: string;
+  /** 凡例に出す和名（最も具体的な著名表記）。 */
+  name: string;
+  /** 週ごとの票数（`weeks[i]` の週の票数。その週に居なければ 0）。 */
+  counts: number[];
+}
+
+/** 推移チャート（uPlot）の入力。x 軸＝`weeks`（古い→新しい）、y 軸＝週次票数、1品種1系列。 */
+export interface RankRunData {
+  /** 投稿のある全週の ISO 週キー（古い→新しい・連続＝範囲内に欠けが無い）。 */
+  weeks: string[];
+  /** 指定した品種ごとの系列（`counts` は `weeks` に整列）。 */
+  series: RankRunSeries[];
+}
+
 /**
- * 1品種（key）の週ごとの票数の時系列（古い→新しい）を返す純粋関数（sparkline 用）。
+ * 指定品種（keys）の週次票数マトリクスを、uPlot 推移チャート用に組む純粋関数（#162）。
  *
- * 投稿のある週だけを並べる（票が無い週は飛ばす＝まばらでも素直な推移になる）。
- * その品種がその週に1票も無ければ count:0 ではなく、その週自体を結果に含めない
- * （投稿のある週で 0 なら 0 を出す）。具体的には「投稿が存在する週」を対象に、その週での
- * 当該 key の票数（0 を含む）を返す。
+ * x 軸＝**投稿が存在する全週**（`isoWeekKey`・古い→新しい）。各系列の `counts` はこの週列に
+ * 1:1 で整列し、その週に当該品種が居なければ 0 を入れる（**線が途切れず連続**＝出現の谷も 0 で埋める）。
+ * `keys` の順序を `series` の順序として保つ（呼び出し側が上位 N の並びを決める）。
+ *
+ * 旧・行ごとの sparkline（品種ごとに別系列）と違い、週列を全系列で共有するので、線同士を同じ x 軸で
+ * 重ねられる（チャートの主目的）。投稿が無ければ `{weeks:[],series:[]}`。
+ *
+ * catalog は引数で受ける（variety-catalog を静的 import せず code-split を壊さない・他関数と同方針）。
  */
-export function weeklyCountSeries(
+export function rankRunData(
   posts: FeedPost[],
   catalog: VarietyCategory[],
-  key: string,
-): { week: string; count: number }[] {
-  const byWeek = bucketByWeek(posts); // 既に週キー昇順
-  const series: { week: string; count: number }[] = [];
-  for (const [week, weekPosts] of byWeek) {
+  keys: string[],
+): RankRunData {
+  const byWeek = bucketByWeek(posts); // 既に週キー昇順（古い→新しい）
+  const weeks = [...byWeek.keys()];
+  if (weeks.length === 0) return { weeks: [], series: [] };
+
+  // 週ごとに「key → 票数」を1回だけ集計してキャッシュする（系列×週で tally を呼び直さない）。
+  const countByWeek: Map<string, number>[] = weeks.map((week) => {
+    const m = new Map<string, number>();
+    for (const row of tallyVarieties(byWeek.get(week) ?? [], catalog)) m.set(row.key, row.count);
+    return m;
+  });
+
+  const series: RankRunSeries[] = keys.map((key) => ({
+    key,
+    // 和名はその key が出た最初の週の tally から拾う（出なければ key を名前に使う＝フォールバック）。
+    name: nameForKey(byWeek, catalog, key),
+    counts: countByWeek.map((m) => m.get(key) ?? 0),
+  }));
+
+  return { weeks, series };
+}
+
+/** key に対応する和名を、投稿のある週の tally から探す（見つからなければ key 自体を返す）。 */
+function nameForKey(byWeek: Map<string, FeedPost[]>, catalog: VarietyCategory[], key: string): string {
+  for (const weekPosts of byWeek.values()) {
     const found = tallyVarieties(weekPosts, catalog).find((r) => r.key === key);
-    series.push({ week, count: found?.count ?? 0 });
+    if (found !== undefined) return found.name;
   }
-  return series;
+  return key;
 }

@@ -1,22 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import SciName from "../ui/SciName.tsx";
 import { fetchRankingPosts } from "../../lib/nostr/client.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
-import { rankWithDeltas, weeklyCountSeries, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
+import { rankRunData, rankWithDeltas, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 
 type Status = "loading" | "error" | "loaded";
 
-// sparkline を出す上位件数（軽量さ優先・上位だけ推移を見せる）。
-const SPARKLINE_TOP = 10;
+// 推移チャートに重ねる上位件数（軽量さ・識別性優先で上位だけ＝RankRunChart の色数とも整合）。
+const CHART_TOP = 6;
+
+// uPlot を使う推移チャートは遅延ロードする（チャートを出すときだけ uplot チャンクを取得＝初期描画を軽く）。
+const RankRunChart = lazy(() => import("./RankRunChart.tsx"));
 
 /**
  * 植物品種の人気ランキング島（#162・client:load）。
  *
  * バックエンドレス（DESIGN §6）。集計サーバを持たず、取得済みの **t:hanoba 投稿だけ** を
  * クライアントで数える（自分の投稿が見えてチャートが動く＝投稿の動機）。週次・先週比
- * （NEW/RE/↑↓）・週次 sparkline を出す。母集団がまばらでも壊れて見えないよう、空/単週/少数を
- * 正直に扱う（単週なら全 NEW・偽の矢印を出さない）。
+ * （NEW/RE/↑↓）の表と、上位 N 品種の **途中経過（変動）チャート**（uPlot・遅延ロード・client-only）を
+ * 出す。表が正本でチャートは補助。母集団がまばらでも壊れて見えないよう、空/単週/少数を
+ * 正直に扱う（単週なら全 NEW・偽の矢印を出さない／週が2未満ならチャートは注記に差し替える）。
  *
  * - マウントで品種カタログを動的 import（PostDetail と同型・初期バンドルに大データを載せない）。
  *   さらに fetchRankingPosts() で投稿を取得し、rankWithDeltas(posts, catalog, nowSec) を計算する。
@@ -83,6 +87,14 @@ export default function RankingBoard() {
   // 先週（直前の過去週）が無い＝初週かどうか（全行 NEW のときの案内に使う）。
   // rows が空でなく、かつ全行が NEW なら「先週比は来週から」の注記を出す。
   const isFirstWeek = rows.length > 0 && rows.every((r) => r.delta.kind === "new");
+
+  // 途中経過チャート用データ。現在のランキング上位 N の key を全週に整列した票数マトリクスにする。
+  const runData = useMemo(
+    () => (catalog === null ? { weeks: [], series: [] } : rankRunData(posts, catalog, rows.slice(0, CHART_TOP).map((r) => r.key))),
+    [posts, catalog, rows],
+  );
+  // 週が2つ以上たまっているか（チャートを出すか・ここでも gate して uplot チャンクを無駄に取らない）。
+  const showChart = runData.weeks.length >= 2 && runData.series.length > 0;
 
   if (status === "loading") {
     return <p className="py-12 text-center text-ha-ink/60">読み込み中…</p>;
@@ -163,11 +175,6 @@ export default function RankingBoard() {
               )}
             </div>
 
-            {/* sparkline（上位のみ）。装飾なので aria-hidden（意味は行の aria-label が持つ）。 */}
-            {i < SPARKLINE_TOP && catalog !== null && (
-              <Sparkline series={weeklyCountSeries(posts, catalog, row.key).map((s) => s.count)} />
-            )}
-
             {/* 投稿数（票） */}
             <span className="shrink-0 text-right tabular-nums text-ha-ink/80">
               <span className="font-semibold text-ha-ink">{row.count}</span>
@@ -176,6 +183,16 @@ export default function RankingBoard() {
           </li>
         ))}
       </ol>
+
+      {/* 途中経過（変動）チャート。表（上）が正本で、これはその補助。週が2つ以上たまったときだけ出す。
+          uPlot は遅延ロード（チャートを出すときだけ uplot チャンクを取得）。読み込み中は静かに空。 */}
+      {showChart && (
+        <div className="ha-rise glass rounded-xl px-4 py-4" style={{ "--i": 1 } as React.CSSProperties}>
+          <Suspense fallback={<p className="text-sm text-ha-ink/55">グラフを読み込み中…</p>}>
+            <RankRunChart data={runData} />
+          </Suspense>
+        </div>
+      )}
     </section>
   );
 }
@@ -227,51 +244,4 @@ function DeltaBadge({ delta }: { delta: Delta }) {
   }
   // down
   return <span className="shrink-0 text-xs font-medium text-ha-ink/55">↓{delta.by}</span>;
-}
-
-/**
- * 週次票数の sparkline（軽量インライン SVG polyline）。装飾なので aria-hidden で隠し
- * （数値と順位が意味を持つ）、行側に aria-label の要約を付ける。
- * 1点しか無い・全部同値のときは中央の水平線を引く（高さの基準が無いと潰れるため）。
- */
-function Sparkline({ series }: { series: number[] }) {
-  // データ点が無ければ何も描かない。
-  if (series.length === 0) return null;
-
-  const W = 56;
-  const H = 18;
-  const PAD = 2;
-  const max = Math.max(...series);
-  const min = Math.min(...series);
-  const span = max - min;
-
-  // x 座標は等間隔。1点のときは中央。
-  const xOf = (i: number) => (series.length === 1 ? W / 2 : PAD + (i * (W - PAD * 2)) / (series.length - 1));
-  // y は上が大（票数が多いほど上）。span が 0（全同値）なら中央線。
-  const yOf = (v: number) => (span === 0 ? H / 2 : H - PAD - ((v - min) * (H - PAD * 2)) / span);
-
-  const points = series.map((v, i) => `${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(" ");
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      width={W}
-      height={H}
-      className="shrink-0 hidden sm:block text-ha-green"
-      aria-hidden="true"
-    >
-      {series.length === 1 ? (
-        <circle cx={xOf(0)} cy={yOf(series[0]!)} r={2} fill="currentColor" />
-      ) : (
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-    </svg>
-  );
 }
