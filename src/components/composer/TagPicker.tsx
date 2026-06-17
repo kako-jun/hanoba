@@ -305,17 +305,55 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                   />
                 ))}
                 {hasOverflow && (
-                  <button
-                    type="button"
-                    onClick={() => setOverflowOpen((o) => (o === c.label ? null : c.label))}
-                    aria-haspopup="dialog"
-                    aria-expanded={overflowOpen === c.label}
-                    aria-label={`${c.label}のその他のタグ`}
-                    className="glass flex items-center gap-1 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
-                  >
-                    <Icon name="plus" className="h-3.5 w-3.5" />
-                    その他
-                  </button>
+                  // 「その他」ボタンを relative ラッパで包み、ポップアップをこのトリガーに
+                  // 縦方向で半分重なる位置（top-1/2 起点・上へ引き上げ）に absolute で被せる（#187）。
+                  <span className="relative inline-flex">
+                    <button
+                      type="button"
+                      onClick={() => setOverflowOpen((o) => (o === c.label ? null : c.label))}
+                      aria-haspopup="dialog"
+                      aria-expanded={overflowOpen === c.label}
+                      aria-label={`${c.label}のその他のタグ`}
+                      className="glass flex items-center gap-1 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                    >
+                      <Icon name="plus" className="h-3.5 w-3.5" />
+                      その他
+                    </button>
+                    {overflowOpen === c.label && (
+                      // あふれ分だけ出す（#186）。トリガーに半分重なる縦位置（#187）。
+                      // 横は left 基準＋max-w で画面端に収め、glass・×/Esc/囲み外 で閉じる体裁は不変。
+                      <div
+                        ref={overflowRef}
+                        role="dialog"
+                        aria-label={`${c.label}のタグ一覧`}
+                        className="glass absolute left-0 top-1/2 z-50 flex w-72 max-w-[calc(100vw-2rem)] -translate-y-6 flex-col gap-2 rounded-2xl p-3 shadow-2xl"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-ha-ink/55">
+                            {c.label}（ほか{c.tags.length - INLINE_LIMIT}件）
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setOverflowOpen(null)}
+                            aria-label="タグ一覧を閉じる"
+                            className="grid h-7 w-7 place-items-center rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
+                          >
+                            <Icon name="close" className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {c.tags.slice(INLINE_LIMIT).map((tag) => (
+                            <Chip
+                              key={`overflow-${c.label}-${tag}`}
+                              label={tag}
+                              active={has(tag)}
+                              onClick={() => toggle(tag, () => pick(tag))}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </span>
                 )}
               </ChipGroup>
             );
@@ -485,45 +523,6 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
           )}
         </div>
       )}
-
-      {/* 「その他」ポップアップ（#169）: その行の全タグを幅でクロップせず一覧する。
-          ドリルダウンパネルの体裁を流用（glass・見出し・×閉じる・囲み外/Esc で閉じる）。
-          インラインに既出のタグも含めて全件出す＝定番を取りこぼさない（重複表示は許容）。 */}
-      {overflowOpen !== null &&
-        (() => {
-          const c = TAG_CATEGORIES.find((x) => x.label === overflowOpen);
-          if (c === undefined) return null;
-          return (
-            <div
-              ref={overflowRef}
-              role="dialog"
-              aria-label={`${c.label}のタグ一覧`}
-              className="glass flex flex-col gap-2 rounded-2xl p-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-ha-ink/55">{c.label}（全{c.tags.length}件）</span>
-                <button
-                  type="button"
-                  onClick={() => setOverflowOpen(null)}
-                  aria-label="タグ一覧を閉じる"
-                  className="grid h-7 w-7 place-items-center rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
-                >
-                  <Icon name="close" className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {c.tags.map((tag) => (
-                  <Chip
-                    key={`overflow-${c.label}-${tag}`}
-                    label={tag}
-                    active={has(tag)}
-                    onClick={() => toggle(tag, () => pick(tag))}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })()}
     </div>
   );
 }
