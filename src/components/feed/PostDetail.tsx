@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
-import { detectPlants } from "../../lib/plants/detect.ts";
+import { buildFuda, type Fuda } from "../../lib/plants/fuda.ts";
+import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
@@ -43,6 +44,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
+
+  // 品種カタログは初期フィードバンドルに載せず、モーダル展開時に一度だけ動的 import する
+  // （TagPicker の ensureCatalog と同型・SSR では走らない）。失敗時は null のまま＝札セクション非表示。
+  const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
 
   // X シェアのメニュー開閉（複数パートのときだけ「全文／1/n…」を出す・#37）。
   const [shareOpen, setShareOpen] = useState(false);
@@ -114,9 +119,25 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
     };
   }, [post.id]);
 
-  // 本文＋タグから植物を認識（#23）。純粋・軽量なので描画ごとに計算してよい。
-  // 認識はタグ語も拾えるよう生の caption＋hashtags を渡す（表示は別途 strip する）。
-  const plants = detectPlants(`${post.caption} ${post.hashtags.join(" ")}`);
+  // 札（属＋品種）を組むために品種カタログを動的 import（モーダル展開時に一度・クライアントのみ）。
+  // 失敗時は null のまま＝札セクションは出さない（下のハッシュタグチップは従来どおり出る）。
+  useEffect(() => {
+    let alive = true;
+    import("../../lib/plants/variety-catalog.ts")
+      .then((mod) => {
+        if (alive) setCatalog(mod.VARIETY_CATALOG);
+      })
+      .catch(() => {
+        /* 札セクションを出さないだけ（catalog は null のまま）。 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // 投稿の札（鉢の名前＝最も具体的な「属 品種」を1枚・#182）。caption は使わず hashtags のみ
+  // （#181 で属＋品種が tag に入る）。catalog 未ロード時は空＝札セクション非表示。
+  const fuda: Fuda[] = catalog === null ? [] : buildFuda(post.hashtags, catalog);
 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
   const captionText = stripHashtags(post.caption);
@@ -205,26 +226,33 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
             <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{captionText}</p>
           )}
 
-          {/* 認識した植物を「学名 / 著名表記」で並列表示（#23）。本文・タグ どちらの語にも反応。
-              クリックでその植物の discover 検索へ。投稿は不変なので辞書を育てて精度を上げる。 */}
-          {plants.length > 0 && (
+          {/* 投稿の札（鉢の名前＝属＋品種を1枚・#182）。カテゴリ・属単独は札にしない。
+              学名が引ければ併記し、クリックで最も具体的な札の discover 検索へ。
+              catalog 未ロード時は出さない（hashtags のみで組み、caption の free-text 検出はしない）。 */}
+          {fuda.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-[11px] font-medium uppercase tracking-wider text-ha-ink/45">
                 この投稿の植物
               </span>
               <ul className="flex flex-wrap gap-2">
-                {plants.map((p) => (
-                  <li key={p.id}>
-                    <a
-                      href={`/discover?q=${encodeURIComponent(`#${p.name}`)}`}
-                      className="glass inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-3 py-1.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
-                      title={`${p.sci}（${p.name}）で探す`}
-                    >
-                      <SciName sci={p.sci} className="font-display text-ha-green-deep" />
-                      <span className="font-medium text-ha-ink">{p.name}</span>
-                    </a>
-                  </li>
-                ))}
+                {fuda.map((f) => {
+                  const label = f.variety !== null ? `${f.genus} ${f.variety}` : f.genus;
+                  const query = `#${f.variety ?? f.genus}`;
+                  return (
+                    <li key={f.key}>
+                      <a
+                        href={`/discover?q=${encodeURIComponent(query)}`}
+                        className="glass inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-3 py-1.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+                        title={`${f.sci !== null ? `${f.sci}（${label}）` : label}で探す`}
+                      >
+                        {f.sci !== null && (
+                          <SciName sci={f.sci} className="font-display text-ha-green-deep" />
+                        )}
+                        <span className="font-medium text-ha-ink">{label}</span>
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
