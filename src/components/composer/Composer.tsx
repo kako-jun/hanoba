@@ -5,7 +5,7 @@
 //   - ロジック: buildNoteTemplate（signAndPublishNote 内）が空一言を throw
 // 出力 1:1 は renderSquareImageFromRect（canvas.width=height=size）で構造的に保証。
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
@@ -14,8 +14,11 @@ import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "..
 import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
+import { makeSeeds } from "../../lib/composer/dandelion.ts";
+import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
+import DandelionBurst from "./DandelionBurst.tsx";
 import CropFrame from "./CropFrame.tsx";
 import FilterChips from "./FilterChips.tsx";
 import ImagePicker from "./ImagePicker.tsx";
@@ -71,6 +74,12 @@ export default function Composer() {
   const [focusEndSignal, setFocusEndSignal] = useState(0);
   // ユーザー名（#28）。AccountName が表示・保存を担い、現在名だけ受け取って投稿ゲートに使う。
   const [name, setName] = useState<string | null>(null);
+  // 投稿時に綿毛を飛ばす単発エフェクト（#148）。投稿開始のたびに +1 して key を変え、
+  // DandelionBurst を remount＝再生する。0 は未発火（描かない）。多重発火は disabled={posting} が防ぐ。
+  const [burstKey, setBurstKey] = useState(0);
+  // 綿毛の種は burstKey ごとに1回だけ生成して固定する。JSX 内でインライン生成すると
+  // Composer の再レンダーごとに新しい乱数になり、飛行中の種の CSS 変数を揺さぶってしまう。
+  const burstSeeds = useMemo(() => makeSeeds(14), [burstKey]);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
@@ -170,6 +179,8 @@ export default function Composer() {
       return;
     }
     setStatus({ kind: "posting" });
+    // 投稿開始の合図に綿毛を飛ばす（#148・投稿中のフィードバックも兼ねる）。
+    setBurstKey((k) => k + 1);
     // 複数枚は並列にアップロードする（#167・直列 for は枚数分だけ遅い）。
     // orderedUrls は Promise.all の結果＝images 順（imageUrls の順序保証）。
     // uploadedUrls は完了順に積む cleanup 専用（失敗時に成功分だけ deleteImage する）。
@@ -317,15 +328,21 @@ export default function Composer() {
             >
               {images.length > 1 ? "この写真を外す" : "写真を選び直す"}
             </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              aria-describedby={!posting && missing.length > 0 ? "hanoba-compose-shortfall" : undefined}
-              className="rounded-full bg-ha-pink text-ha-white px-6 py-3 font-semibold shadow-sm shadow-ha-pink/30 enabled:hover:opacity-90 enabled:hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {posting ? "投稿中…" : "投稿する"}
-            </button>
+            {/* 送信ボタンは relative なラッパで包み、綿毛オーバーレイ（#148）をボタンに重ねる。
+                オーバーレイは pointer-events:none・aria-hidden なのでクリックやレイアウトに干渉しない。 */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                aria-describedby={!posting && missing.length > 0 ? "hanoba-compose-shortfall" : undefined}
+                className="inline-flex items-center gap-2 rounded-full bg-ha-pink text-ha-white px-6 py-3 font-semibold shadow-sm shadow-ha-pink/30 enabled:hover:opacity-90 enabled:hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Icon name="dandelion" className="h-5 w-5" />
+                {posting ? "投稿中…" : "投稿する"}
+              </button>
+              {burstKey > 0 && <DandelionBurst key={burstKey} seeds={burstSeeds} />}
+            </div>
           </div>
         </>
       )}

@@ -20,6 +20,7 @@ export type IconName =
   | "camera"
   | "image"
   | "sprout"
+  | "dandelion"
   | "link"
   | "code"
   | "github"
@@ -133,6 +134,15 @@ export default function Icon({ name, className }: IconProps) {
           <path d="M12 21v-8" />
           <path d="M12 14c0-3.3-2.7-6-6-6 0 3.3 2.7 6 6 6Z" />
           <path d="M12 14c0-3.3 2.7-6 6-6 0 3.3-2.7 6-6 6Z" />
+        </svg>
+      );
+    case "dandelion":
+      // 綿毛（タンポポの種＝風に乗せて飛ばす）。投稿＝写真を世界へ放つメタファ（#148）。
+      // 小さな種頭（塗りの円）＋放射状に伸びる細い冠毛（線）。currentColor・線アイコン基調。
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
+          <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+          <path d="M12 12V3M12 12v9M12 12H3M12 12h9M12 12 5.6 5.6M12 12l6.4 6.4M12 12l6.4-6.4M12 12l-6.4 6.4" />
         </svg>
       );
     case "link":

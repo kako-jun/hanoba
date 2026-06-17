@@ -153,3 +153,28 @@ summary {
     transition: none;
   }
 }
+
+/* 綿毛が舞い上がるエフェクト（#148・投稿時のフィードバック）。
+   原点（送信ボタン中央）から、各粒の風（--dx）・上昇（--dy）・回転（--rot）へ
+   流れながらフェードアウトする単発アニメーション。控えめな白の差し色。 */
+@keyframes ha-seed-drift {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+  }
+}
+
+.ha-seed {
+  animation: ha-seed-drift var(--dur, 1200ms) cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* コンポーネント側でも null を返すが、念のため CSS でもアニメーションを止める。 */
+  .ha-seed {
+    animation: none;
+  }
+}

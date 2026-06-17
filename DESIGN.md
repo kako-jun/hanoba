@@ -96,13 +96,14 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 - **モーション**: ページロードの控えめな staggered reveal（`.ha-rise`＋`--i`・CSS-only・`prefers-reduced-motion` で無効）。**安っぽい装飾は禁止**（ホバーでロゴを傾ける等はダサいので不可）。
 - **画像リビール（#145）**: 画像は blur-up リビール（`ProgressiveImage`＋`.ha-reveal`）で出す。デコード完了まで `opacity:0` で隠し、`onLoad`（＋キャッシュ済みは `img.complete`）で `data-loaded="true"` を立てて blur＋わずかな scale を解きながらフェードインする。非プログレッシブ画像が上から帯状に描かれる生 `<img>` を置き換えたもの。`prefers-reduced-motion` では遷移なしで即時表示。3 箇所（カード写真＝object-cover 固定箱／拡大カルーセル＝object-contain／アバター＝rounded-full）で共有。WASM/Canvas の「現像」リビール（stage 3）は別途の将来フォローアップ。
 - **フローティング UI**: 右下に「一番上へ戻る」（`ScrollToTop`・全ページ共通・400px 超で出現・`prefers-reduced-motion` 時は smooth でなく即時・#110）。
+- **綿毛の送信エフェクト（#148）**: 送信ボタンに綿毛（タンポポの種）アイコン（`dandelion`）を付け、投稿開始時に綿毛が上へ舞い上がって毎回違う「風」に流れ、フェードアウトする。投稿フィードバック（投稿中…→飛んでいく→完了）も兼ねる。メタファは「自分の植物の写真を風に放つ」。種の生成は純関数 `lib/composer/dandelion.ts`（`makeSeeds`・風はバーストごとに1回決め全粒で共有しつつ粒ごとに散らす）、描画は `DandelionBurst`＋`.ha-seed-drift`。控えめな白の差し色（派手にしない）。`prefers-reduced-motion` では spawn せず無音（コンポーネントが null・CSS でも `animation:none`）。`pointer-events:none`・`aria-hidden` でクリック・レイアウト・支援技術に干渉しない。再生は親が `key` を変えて remount する単発。
 - **グリッド**: 写真は Instagram explore 流に**隙間を詰め（gap 0.5）角丸は小さく（rounded-md）フラット**（浮かせない）。
 
 ### 5.3 ワードマーク／アイコン
 
 - **ロゴ＝架空都市ハノーバの市旗（H 字）**。葉モチーフ（マンネリ）も丸も使わない。**4色に塗り分けて H に見せる**: 生成り地＋緑の左柱＋深緑の右柱＋ピンクの横棒。favicon / icon / maskable / apple-touch / ヘッダーで同型に統一（`scripts/generate-icons.mjs` で PNG 再生成）。
 - **ワードマークは `Hanoba` のみ**（国際的な印象・`font-display`）。**漢字「葉の場」はロゴ下に併記しない**。カッコ表記（`Hanoba（葉の場）` 等）も使わない。
-- **アイコン**: 寄せ集めの Unicode 記号（♡/×）を廃し、単一出自・統一線幅の SVG（`src/components/ui/Icon.tsx`）。**いいねは黄色い花（`flower`＝`text-ha-yellow`・#116。ハート/絵文字でなく SVG）**。投稿ボタンは発芽したての双葉（`sprout`＝育てる世界観・#48）。撮影/アルバムは `camera`/`image`（#29）。情報ページ（About）導線は `info`(円＋i・#106)。サービスリンク（#35 Piece 2）も同じ線スタイルで `link`(地球)/`code`/`x`/`youtube`/`instagram`/`writing`/`art`/`music`/`shopping`/`game`/`at`/`chat` をカテゴリ単位で持つ（ブランドロゴは作らない）。**塗りの例外は `flower`(いいね)・`heart`(Ko-fi)・`x`（X 公式ロゴ・#115）・`github`（公式 Octocat・#118）**＝ブランド識別性が高いものは線縛り（#21）の明示的例外として公式グリフを塗りで使う。**ヘッダとフッタのナビは同じ並び（About→みんなの植物→あなたの植物→投稿する）に揃え、About には `info` を付ける（#106）。フッタ外部リンクは mypace=公式マーク画像 `public/mypace-icon.webp`（汎用★記号でなく mypace 独自の丸み星・#105）/GitHub=`github`（#105）。インラインのアイコン付きリンクは `leading-none` で行高を詰め、`items-center` でアイコンがテキストと光学的に揃う（#105 follow-up）。**
+- **アイコン**: 寄せ集めの Unicode 記号（♡/×）を廃し、単一出自・統一線幅の SVG（`src/components/ui/Icon.tsx`）。**いいねは黄色い花（`flower`＝`text-ha-yellow`・#116。ハート/絵文字でなく SVG）**。投稿コンポーザの送信ボタンは綿毛（`dandelion`＝写真を風に放つ・#148。ナビ等の発芽双葉 `sprout`＝育てる世界観・#48 とは別アイコン）。撮影/アルバムは `camera`/`image`（#29）。情報ページ（About）導線は `info`(円＋i・#106)。サービスリンク（#35 Piece 2）も同じ線スタイルで `link`(地球)/`code`/`x`/`youtube`/`instagram`/`writing`/`art`/`music`/`shopping`/`game`/`at`/`chat` をカテゴリ単位で持つ（ブランドロゴは作らない）。**塗りの例外は `flower`(いいね)・`heart`(Ko-fi)・`x`（X 公式ロゴ・#115）・`github`（公式 Octocat・#118）**＝ブランド識別性が高いものは線縛り（#21）の明示的例外として公式グリフを塗りで使う。**ヘッダとフッタのナビは同じ並び（About→みんなの植物→あなたの植物→投稿する）に揃え、About には `info` を付ける（#106）。フッタ外部リンクは mypace=公式マーク画像 `public/mypace-icon.webp`（汎用★記号でなく mypace 独自の丸み星・#105）/GitHub=`github`（#105）。インラインのアイコン付きリンクは `leading-none` で行高を詰め、`items-center` でアイコンがテキストと光学的に揃う（#105 follow-up）。**
 
 ### 5.4 画像アセット（AI 生成・`/image`）
 
