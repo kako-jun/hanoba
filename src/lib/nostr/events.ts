@@ -1,5 +1,6 @@
 // イベントテンプレート構築の純粋関数。署名・送信はしない（keys / client の責務）。
 
+import { CLIENT_NAME, TAG_MYPACE } from "./constants.ts";
 import { buildAutoTags } from "./tags.ts";
 import type { EventTemplate } from "./types.ts";
 
@@ -45,6 +46,46 @@ export function buildNoteTemplate(input: {
     created_at: input.createdAt ?? nowSec(),
     tags: buildAutoTags(),
     content,
+  };
+}
+
+/**
+ * コメント（kind:1 リプライ）のテンプレートを構築する（#142）。
+ * 投稿へのコメントを Nostr のリプライ（NIP-10）として表現する。
+ *
+ * - content.trim() が空なら throw（空コメントは送らない）。
+ * - parentEventId が空なら throw（リプライ先が無い）。
+ * - kind:1・content は trim 済みのコメント本文。
+ * - tags:
+ *   - `["e", parentEventId, "", "root"]` … NIP-10 の direct reply。親投稿を root に印付ける
+ *     （コメントは投稿への1段リプライなので reply=root で十分。relay ヒントは空）。
+ *   - `["t","mypace"]` … mypace タイムラインに乗せる（hanoba の投稿と同じ Nostr 空間に出す）。
+ *   - `["client","hanoba"]` … 由来表示用（可視性には影響しない）。
+ *
+ * **`p` タグ（@呼びかけ）は付けない**: hanoba は静かな観賞 SNS で、コメントは投稿者を名指しで
+ * 呼び出す通知ではなく「その投稿にそっと添える一言」（仕様＝@呼びかけなし・p タグなし）。
+ * **`t:hanoba` も付けない**: hanoba フィード/ハッシュタグ分析は `#t:hanoba` で絞って画像投稿だけを
+ * 集める（fetchHanobaFeed / fetchPopularHashtags）ため、文章だけのコメントに t:hanoba を付けると
+ * フィードのノイズ・タグ集計の汚染になる。コメントは親投稿の `e` タグ経由（`{"#e":[postId]}`）で
+ * 読むので t:hanoba は不要。
+ */
+export function buildReplyTemplate(content: string, parentEventId: string, createdAt?: number): EventTemplate {
+  const trimmed = content.trim();
+  if (trimmed === "") {
+    throw new Error("コメントを入力してください");
+  }
+  if (parentEventId === "") {
+    throw new Error("コメント先の投稿がありません");
+  }
+  return {
+    kind: 1,
+    created_at: createdAt ?? nowSec(),
+    tags: [
+      ["e", parentEventId, "", "root"],
+      ["t", TAG_MYPACE],
+      ["client", CLIENT_NAME],
+    ],
+    content: trimmed,
   };
 }
 

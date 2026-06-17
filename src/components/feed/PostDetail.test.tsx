@@ -4,9 +4,13 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない・#12）。
 const fetchReactionCount = vi.fn();
+// コメント欄（#142）も同じ client を使う。PostDetail のテストはコメント機能の検証対象外なので、
+// fetchReplies は空（コメント0件）で固定し、いいね/シェア/札のテストに影響を与えない。
+const fetchReplies = vi.fn().mockResolvedValue([]);
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  fetchReplies: (...args: unknown[]) => fetchReplies(...args),
 }));
 
 import PostDetail from "./PostDetail.tsx";

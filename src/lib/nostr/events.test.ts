@@ -4,6 +4,7 @@ import {
   buildNip98AuthEvent,
   buildNoteTemplate,
   buildProfileEvent,
+  buildReplyTemplate,
 } from "./events.ts";
 
 describe("buildDeletionEvent", () => {
@@ -126,6 +127,50 @@ describe("buildNoteTemplate", () => {
 
   it("空白のみの caption は throw する", () => {
     expect(() => buildNoteTemplate({ caption: "   \n\t " })).toThrow();
+  });
+});
+
+describe("buildReplyTemplate", () => {
+  it("kind=1・content は trim・親を e タグの root に印付ける（#142）", () => {
+    const t = buildReplyTemplate("  いい色ですね  ", "parent123", 1700000000);
+    expect(t.kind).toBe(1);
+    expect(t.content).toBe("いい色ですね");
+    expect(t.created_at).toBe(1700000000);
+    expect(t.tags).toEqual([
+      ["e", "parent123", "", "root"],
+      ["t", "mypace"],
+      ["client", "hanoba"],
+    ]);
+  });
+
+  it("p タグ（@呼びかけ）を一切付けない（仕様・#142）", () => {
+    const t = buildReplyTemplate("こんにちは", "parent123");
+    expect(t.tags.some((tag) => tag[0] === "p")).toBe(false);
+  });
+
+  it("t:hanoba を付けない（コメントは hanoba フィード/タグ集計を汚さない・#142）", () => {
+    const t = buildReplyTemplate("コメント", "parent123");
+    expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "hanoba")).toBe(false);
+    // mypace と client は付く。
+    expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "mypace")).toBe(true);
+    expect(t.tags.some((tag) => tag[0] === "client" && tag[1] === "hanoba")).toBe(true);
+  });
+
+  it("createdAt 省略時は現在時刻（秒）を入れる", () => {
+    const before = Math.floor(Date.now() / 1000);
+    const t = buildReplyTemplate("x", "parent123");
+    const after = Math.floor(Date.now() / 1000);
+    expect(t.created_at).toBeGreaterThanOrEqual(before);
+    expect(t.created_at).toBeLessThanOrEqual(after);
+  });
+
+  it("空（空白のみ）の content は throw する", () => {
+    expect(() => buildReplyTemplate("", "parent123")).toThrow();
+    expect(() => buildReplyTemplate("   \n\t ", "parent123")).toThrow();
+  });
+
+  it("parentEventId が空なら throw する", () => {
+    expect(() => buildReplyTemplate("コメント", "")).toThrow();
   });
 });
 
