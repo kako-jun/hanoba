@@ -355,4 +355,54 @@ describe("Composer", () => {
     fireEvent.keyDown(handle, { key: "ArrowUp" });
     expect(caption).toHaveStyle({ height: "124px" });
   });
+
+  // #151 不足理由の a11y: role=status / aria-live=polite と describedby の dangling 防止。
+  it("不足あり（D2）では不足理由 <p> が role=status・aria-live=polite・id=hanoba-compose-shortfall を持つ", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    // 画像1枚選択＋caption 空なら missing は非空（最低でも「ひとこと」）。この観点は missing 非空で足り、
+    // crop の確定状態には依存しないので fireEvent.load は不要。
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+
+    const shortfall = await screen.findByText(/を入れると投稿できます/);
+    // 文言は span 分割なので、role=status を持つ告知ラッパ <p> を id 経由で取り直して属性を見る。
+    const region = document.getElementById("hanoba-compose-shortfall");
+    expect(region).not.toBeNull();
+    expect(region).toBe(shortfall.closest("p"));
+    expect(region).toHaveAttribute("role", "status");
+    expect(region).toHaveAttribute("aria-live", "polite");
+  });
+
+  it("不足あり（D2）では送信ボタンの aria-describedby が実在する不足理由 <p> を指す（dangling でない）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+
+    const submit = await screen.findByRole("button", { name: /投稿する/ });
+    expect(submit).toHaveAttribute("aria-describedby", "hanoba-compose-shortfall");
+    // 参照先 id が DOM に実在する（dangling reference でない）。
+    expect(document.getElementById("hanoba-compose-shortfall")).not.toBeNull();
+  });
+
+  it("不足解消（D2→D1）で不足理由 <p> が消え、かつ送信ボタンの aria-describedby も同時に外れる", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    // crop 確定（fireEvent.load）で写真枠を満たし、残る不足を「一言」だけにする。
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const submit = await screen.findByRole("button", { name: /投稿する/ });
+    // 入力前は D2: <p> と describedby が揃って存在。
+    expect(submit).toHaveAttribute("aria-describedby", "hanoba-compose-shortfall");
+    expect(document.getElementById("hanoba-compose-shortfall")).not.toBeNull();
+
+    // 一言を入れて missing を空に＝D1 へ遷移。<p> 消滅と describedby 除去が同時であること。
+    await user.type(screen.getByLabelText("ひとこと"), "開花した");
+    expect(screen.queryByText(/を入れると投稿できます/)).not.toBeInTheDocument();
+    expect(document.getElementById("hanoba-compose-shortfall")).toBeNull();
+    expect(submit).not.toHaveAttribute("aria-describedby");
+  });
 });

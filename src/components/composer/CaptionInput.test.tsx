@@ -142,3 +142,25 @@ describe("CaptionInput 手打ち補完のキャレット（focusEndSignal 経路
     expect(textarea.selectionEnd).toBe(7);
   });
 });
+
+describe("CaptionInput a11y: aria-required（#151）", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("textarea は aria-required=\"true\" を持つ（必須入力をスクリーンリーダーに伝える）", () => {
+    render(<CaptionInput value="" onChange={() => {}} pool={[]} />);
+    // label(htmlFor)→textarea の紐付けが健全なら getByLabelText で取得できる（CI-2 内包）。
+    const textarea = screen.getByLabelText("ひとこと");
+    expect(textarea).toHaveAttribute("aria-required", "true");
+  });
+
+  it("aria-required は value 空でも非空でも常に \"true\"（未入力時限定でない＝静的属性）", () => {
+    const { rerender } = render(<CaptionInput value="" onChange={() => {}} pool={[]} />);
+    expect(screen.getByLabelText("ひとこと")).toHaveAttribute("aria-required", "true");
+
+    // value を非空にしても aria-required は外れない（条件付きでない静的属性であることを固定）。
+    rerender(<CaptionInput value="開花した" onChange={() => {}} pool={[]} />);
+    expect(screen.getByLabelText("ひとこと")).toHaveAttribute("aria-required", "true");
+  });
+});

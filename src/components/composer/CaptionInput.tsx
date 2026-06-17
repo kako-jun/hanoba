@@ -145,6 +145,7 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
         <textarea
           ref={textareaRef}
           id="hanoba-caption"
+          aria-required="true"
           value={value}
           onChange={handleChange}
           onSelect={handleSelect}
