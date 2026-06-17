@@ -121,8 +121,8 @@ describe("composeFilterCss", () => {
     expect(composeFilterCss([])).toBeNull();
   });
 
-  it("美華中は saturate(1.28)", () => {
-    expect(composeFilterCss([sel("美華", 2)])).toBe("saturate(1.28)");
+  it("美華中は saturate(1.4)（#185 中をずらす）", () => {
+    expect(composeFilterCss([sel("美華", 2)])).toBe("saturate(1.4)");
   });
 
   it("淡陽は強度で値が変わる（弱1.04 / 中1.08 / 強1.13）", () => {
@@ -139,7 +139,7 @@ describe("composeFilterCss", () => {
   it("複数選択を join する（none は除外）", () => {
     // 美華(saturate) + 淡陽(brightness) + 線明(none) → saturate と brightness だけ。
     const css = composeFilterCss([sel("美華", 2), sel("淡陽", 2), sel("線明", 2)]);
-    expect(css).toContain("saturate(1.28)");
+    expect(css).toContain("saturate(1.4)");
     expect(css).toContain("brightness(1.08)");
     expect(css).not.toContain("none");
   });
@@ -186,7 +186,7 @@ describe("composeToneCurve", () => {
   it("翠露と土香の同時選択でトーンを完全に相殺する", () => {
     expect(composeToneCurve([sel("翠露", 3), sel("土香", 1)])).toBeNull();
     // トーンは canvas 側（filter は none）なので、CSS 合成は美華だけが残る。
-    expect(composeFilterCss([sel("翠露", 2), sel("土香", 2), sel("美華", 2)])).toBe("saturate(1.28)");
+    expect(composeFilterCss([sel("翠露", 2), sel("土香", 2), sel("美華", 2)])).toBe("saturate(1.4)");
   });
 });
 
@@ -196,11 +196,11 @@ describe("composeToneAmount", () => {
     expect(composeToneAmount([sel("美華", 2)])).toBe(0);
   });
 
-  it("残った向きの level の amount を返す（弱0.2 / 中0.32 / 強0.45）", () => {
+  it("残った向きの level の amount を返す（弱0.2 / 中0.42 / 強0.6・#185）", () => {
     expect(composeToneAmount([sel("翠露", 1)])).toBe(0.2);
-    expect(composeToneAmount([sel("翠露", 2)])).toBe(0.32);
-    expect(composeToneAmount([sel("翠露", 3)])).toBe(0.45);
-    expect(composeToneAmount([sel("土香", 3)])).toBe(0.45);
+    expect(composeToneAmount([sel("翠露", 2)])).toBe(0.42);
+    expect(composeToneAmount([sel("翠露", 3)])).toBe(0.6);
+    expect(composeToneAmount([sel("土香", 3)])).toBe(0.6);
   });
 
   it("相殺で 0（向きが残らない）", () => {
