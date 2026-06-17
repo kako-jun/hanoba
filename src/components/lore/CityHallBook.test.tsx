@@ -94,7 +94,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 既定ページ＝市役所ハブ。
     expect(await screen.findByText(/ここは市役所だ/)).toBeInTheDocument();
     // 実在ルートはリンクとして機能する。
-    const ranking = screen.getByRole("link", { name: /品種ランキング/ });
+    const ranking = screen.getByRole("link", { name: /人気ランキング/ });
     expect(ranking).toHaveAttribute("href", "/ranking");
     expect(screen.getByRole("link", { name: /あなたの植物/ })).toHaveAttribute("href", "/me");
     expect(screen.getByRole("link", { name: /投稿する/ })).toHaveAttribute("href", "/compose");
@@ -127,9 +127,14 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
 
     // 既定は 2p（奥は自動で開かない）。
     await screen.findByText(/ここは市役所だ/);
+    // 古参は 2p で移住受理の文言を出さない（長く居る市民に再掲しない）。
+    expect(screen.queryByText(/移住、確かに受理した/)).toBeNull();
+    // 古参歓迎の味付けも、まだ奥に達していない 2p では出さない。
+    expect(screen.queryByText(/諸君はもう、市の古い友人だ/)).toBeNull();
     // 3p 沿革へ。
     await user.click(screen.getByRole("button", { name: "次のページ" }));
     expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
+    // 古参歓迎は奥（3p）に初めて達したときだけ出す。
     expect(screen.getByText(/諸君はもう、市の古い友人だ/)).toBeInTheDocument();
     // 4p 条文へ。
     await user.click(screen.getByRole("button", { name: "次のページ" }));
@@ -139,12 +144,28 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
   });
 
-  it("名前ありで投稿取得が失敗しても L1（締め出さない・resilient）", async () => {
+  it("relay ダウン（投稿が空）でも名前があれば L1 に落ちてロックアウトしない", async () => {
+    // fetchMyPosts は client.ts 内で try/catch して [] を返す（reject しない）。
+    // よって relay ダウンの実経路は「[] が返る → citizenLevel(hasName, 0, null) → L1」。
     getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockRejectedValue(new Error("relay down"));
+    fetchMyPosts.mockResolvedValue([]);
     render(<CityHallBook />);
 
-    // 取得失敗でも市役所ハブ（2p）まで開く。
+    // 投稿ゼロでも市役所ハブ（2p）まで開く＝市民として扱う。
+    expect(await screen.findByText(/ここは市役所だ/)).toBeInTheDocument();
+    // L2 ではないので沿革（3p）はロックされ、次はティザー止まり。
+    const next = screen.getByRole("button", { name: "次のページ" });
+    expect(next).toBeEnabled();
+  });
+
+  it("鍵取得に失敗しても（NIP-07 reject 等）名前があれば L1 に落ちてロックアウトしない", async () => {
+    // 実 catch 経路は getPublicKeyHex() の throw（NIP-07 拡張が拒否する等）。
+    // deriveLevel の catch が hasName を尊重して L1 にフォールバックする。
+    getDisplayName.mockReturnValue("みどり");
+    getPublicKeyHex.mockRejectedValue(new Error("NIP-07 rejected"));
+    render(<CityHallBook />);
+
+    // 鍵が取れなくても市役所ハブ（2p）まで開く＝名乗った市民を締め出さない。
     expect(await screen.findByText(/ここは市役所だ/)).toBeInTheDocument();
   });
 
@@ -157,5 +178,49 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
 
     await user.click(screen.getByRole("button", { name: "前のページ" }));
     expect(await screen.findByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
+  });
+
+  it("←/→ キーで本をめくれる（前方ロックを尊重し、入力中は横取りしない）", async () => {
+    const user = userEvent.setup();
+    getDisplayName.mockReturnValue("みどり"); // L1: 2p まで解放。
+    fetchMyPosts.mockResolvedValue([]);
+    render(<CityHallBook />);
+    await screen.findByText(/ここは市役所だ/);
+
+    // → でティザー（3p）まで進める（前方ロックの上限の 1 枚先）。
+    await user.keyboard("{ArrowRight}");
+    expect(await screen.findByText("？？？")).toBeInTheDocument();
+    // その先（4p）へは → でも進めない（前方ロック）。
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByText("？？？")).toBeInTheDocument();
+    // ← で市役所（2p）へ戻る。
+    await user.keyboard("{ArrowLeft}");
+    expect(await screen.findByText(/ここは市役所だ/)).toBeInTheDocument();
+    // ← で移住案内（1p）へ。
+    await user.keyboard("{ArrowLeft}");
+    expect(await screen.findByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
+    // 1p より前（後方下限）には ← でも行かない。
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
+  });
+
+  it("←/→: 入力欄にフォーカスがあるときはページめくりを横取りしない", async () => {
+    const user = userEvent.setup();
+    getDisplayName.mockReturnValue("みどり");
+    fetchMyPosts.mockResolvedValue([]);
+    render(
+      <div>
+        <input aria-label="ダミー入力" />
+        <CityHallBook />
+      </div>,
+    );
+    await screen.findByText(/ここは市役所だ/);
+
+    const input = screen.getByRole("textbox", { name: "ダミー入力" });
+    input.focus();
+    await user.keyboard("{ArrowRight}");
+    // 入力中なので本はめくれず、2p 市役所のまま。
+    expect(screen.getByText(/ここは市役所だ/)).toBeInTheDocument();
+    expect(screen.queryByText("？？？")).toBeNull();
   });
 });

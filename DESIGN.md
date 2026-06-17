@@ -116,9 +116,8 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 
 ### 5.4 画像アセット（AI 生成・`/image`）
 
-- `public/og/room-dark.webp` … 夜のコレクター部屋（空フィード/discover の背景パネル。About カード1（室内）の**彩り**にも流用）。
-- `public/about/{flower,field,fruit}.webp` … About の説明カード2/3/4 の**彩り**（花/畑/果樹・gpt-image-2 生成・夜の温室と同じ暗色暖光トーン）。1:2 横長で各カード右上にやや はみ出して重ねる（装飾＝`aria-hidden`／見出しは `pr` で画像を避けて折り返す・#彩り）。室内(1)=room-dark／花(2)／畑(3)／果樹(4)。
-- `public/og/bg-blur.webp` … それをぼかし暗くした全面背景。
+- `public/og/bg-blur.webp` … ぼかして暗くした全面背景（`body` の `background-image`）。
+- ~~`public/og/room-dark.webp` / `public/about/{flower,field,fruit}.webp`~~ … 旧 About（三人称 SaaS 説明の 4 カード）の彩り画像。About を市民手帳（市役所ハブ・#163）へ作り替えた際にカードごと撤去し、画像も削除済み（孤児アセット整理）。
 - `public/og/og-image.jpg`（1200×630）… OGP/Twitter カード。
 - ソース PNG はリポに残さず、`/image`（codex/gpt-image-2）のプロンプトで再生成する。
 

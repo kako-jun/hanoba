@@ -78,7 +78,7 @@ const PAGE_2: BookPage = {
     { label: "みんなの植物（フィード）", route: "/discover" },
     { label: "あなたの植物", route: "/me" },
     { label: "投稿する", route: "/compose" },
-    { label: "品種ランキング", route: "/ranking" },
+    { label: "人気ランキング", route: "/ranking" },
     { label: "住民投票", route: null, comingSoon: "近日開庁" },
     { label: "品評会（コンテスト）", route: null, comingSoon: "近日開庁" },
     { label: "市長ブログ", route: null, comingSoon: "近日開庁" },
@@ -159,9 +159,9 @@ export const LOCKED_TEASER = {
 
 /** レベル昇格時に小さく添える市長のひとこと（味付け）。 */
 export const LEVEL_FLAVOR = {
-  /** L1 で 2p 目（市役所）を開いたとき。 */
+  /** L1 で 2p 目（市役所）を開いたとき。L2 以上では出さない（古参に移住受理を再掲しない）。 */
   citizen: "移住、確かに受理した。ようこそ、市民諸君。",
-  /** L2 で奥のページ（沿革・条文）が開いたとき。 */
+  /** L2 が初めて奥のページ（3p 沿革）に達したとき。 */
   tenured: "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
 } as const;
 

@@ -94,11 +94,39 @@ export default function CityHallBook() {
     if (canNext) setPage((p) => p + 1);
   }
 
-  // レベル昇格の味付け（小さく）。判定確定後、その本の入口で添える。
+  // ←/→ で本をめくる（本のメタファー・PostDetail のカルーセル操作に倣う）。
+  // ← = 前（後方オープン・1p 未満には行かない）／→ = 次（前方ロックを尊重し、
+  // ティザー上限より先へは進めない）。入力欄にフォーカスがあるときは横取りしない。
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // フォーム入力中・編集可能要素の上では矢印を奪わない（テキスト移動を妨げない）。
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable === true) {
+        return;
+      }
+      if (e.key === "ArrowLeft" && canPrev) {
+        setPage((p) => p - 1);
+        e.preventDefault();
+        return;
+      }
+      if (e.key === "ArrowRight" && canNext) {
+        setPage((p) => p + 1);
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canPrev, canNext]);
+
+  // レベル昇格の味付け（小さく）。判定確定後、その本の入口で一度だけ添える。
+  // - 市民歓迎: L1 が 2p（市役所）を開いたときだけ。古参（L2）には再掲しない
+  //   （長く居る市民に毎回「移住を受理した」と告げない）。
+  // - 古参歓迎: L2 が初めて奥（3p 沿革・古参専用ページの先頭）に達したときだけ。2p では出さない。
   const flavor =
-    resolved && level >= 1 && page === 2
+    resolved && level === 1 && page === 2
       ? LEVEL_FLAVOR.citizen
-      : resolved && level === 2 && page >= 3 && page <= maxUnlocked
+      : resolved && level === 2 && page === 3
         ? LEVEL_FLAVOR.tenured
         : null;
 
