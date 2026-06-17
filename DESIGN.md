@@ -87,6 +87,7 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 
 - **タイポ**: 見出し＝`Outfit`（geometric sans・欧/数字）×日本語 `Zen Maru Gothic`（丸ゴシック・角丸の世界観に合わせる #170）。本文＝Zen Maru Gothic。本文400↔見出し800/900でウェイト飛躍。汎用フォント（Inter/Roboto/system/Space Grotesk）禁止（Anthropic frontend aesthetics 準拠）。`--font-display` / `--font-sans`。
 - **モーション**: ページロードの控えめな staggered reveal（`.ha-rise`＋`--i`・CSS-only・`prefers-reduced-motion` で無効）。**安っぽい装飾は禁止**（ホバーでロゴを傾ける等はダサいので不可）。
+- **画像リビール（#145）**: 画像は blur-up リビール（`ProgressiveImage`＋`.ha-reveal`）で出す。デコード完了まで `opacity:0` で隠し、`onLoad`（＋キャッシュ済みは `img.complete`）で `data-loaded="true"` を立てて blur＋わずかな scale を解きながらフェードインする。非プログレッシブ画像が上から帯状に描かれる生 `<img>` を置き換えたもの。`prefers-reduced-motion` では遷移なしで即時表示。3 箇所（カード写真＝object-cover 固定箱／拡大カルーセル＝object-contain／アバター＝rounded-full）で共有。WASM/Canvas の「現像」リビール（stage 3）は別途の将来フォローアップ。
 - **フローティング UI**: 右下に「一番上へ戻る」（`ScrollToTop`・全ページ共通・400px 超で出現・`prefers-reduced-motion` 時は smooth でなく即時・#110）。
 - **グリッド**: 写真は Instagram explore 流に**隙間を詰め（gap 0.5）角丸は小さく（rounded-md）フラット**（浮かせない）。
 

@@ -1,6 +1,7 @@
 import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
+import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import Avatar from "./Avatar.tsx";
 
 interface Props {
@@ -72,11 +73,10 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
             className="group relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
-            <img
+            <ProgressiveImage
               src={post.imageUrl}
               alt={post.caption}
-              loading="lazy"
-              className="w-full h-full object-cover transition duration-300 group-hover:opacity-90"
+              className="w-full h-full object-cover group-hover:opacity-90"
             />
             {photoCount > 1 && (
               <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">
