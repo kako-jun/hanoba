@@ -168,6 +168,36 @@ export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
 }
 
 /**
+ * ランキング（#162）用に hanoba 投稿を取得する。fetchHanobaFeed と同形だが、
+ * 週次バケットの履歴を増やすため既定 limit を大きめ（500）にする。
+ *
+ * - `{"#t":["hanoba"], kinds:[1]}` で hanoba タグ持ちの投稿を取得
+ * - 各 event を parsePost → mergePostsById で id dedup・createdAt 降順
+ * - 画像 URL を持たない投稿（imageUrl === null）は除外する（写真 SNS の母集団に揃える）
+ * - 失敗（オフライン等）は throw せず空配列にフォールバックする
+ *
+ * 集計（品種の同定・週次・先週比）は純粋ロジック（feed/ranking.ts）の責務で、ここは取得のみ。
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchRankingPosts(limit = 500): Promise<FeedPost[]> {
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [1],
+        "#t": [TAG_HANOBA],
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    const posts = mergePostsById(events.map(parsePost));
+    return posts.filter((post) => post.imageUrl !== null);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * 投稿（kind:1）に対するいいね数を取得する。NIP-25 の kind:7 リアクションを
  * `#e` で対象投稿に絞って集計する（表示のみ・書き込みはこの Issue では作らない）。
  *
