@@ -34,28 +34,31 @@ export const FILTER_PRESETS: readonly FilterPreset[] = [
   {
     name: "翠露",
     color: "#76b65a",
+    // 強の効きを上げ・中もずらす・弱は据置（#185 kako-jun 実機）。
     levels: [
       { filter: "none", toneCurve: "s", toneAmount: 0.2 },
-      { filter: "none", toneCurve: "s", toneAmount: 0.32 },
-      { filter: "none", toneCurve: "s", toneAmount: 0.45 },
+      { filter: "none", toneCurve: "s", toneAmount: 0.42 },
+      { filter: "none", toneCurve: "s", toneAmount: 0.6 },
     ],
   },
   {
     name: "土香",
     color: "#9b7047",
+    // 翠露と対称に 強を上げ・中をずらす・弱は据置（#185）。
     levels: [
       { filter: "none", toneCurve: "reverse-s", toneAmount: 0.2 },
-      { filter: "none", toneCurve: "reverse-s", toneAmount: 0.32 },
-      { filter: "none", toneCurve: "reverse-s", toneAmount: 0.45 },
+      { filter: "none", toneCurve: "reverse-s", toneAmount: 0.42 },
+      { filter: "none", toneCurve: "reverse-s", toneAmount: 0.6 },
     ],
   },
   {
     name: "美華",
     color: "#d96d8b",
+    // 彩度も 強を上げ・中をずらす・弱は据置（#185）。
     levels: [
       { filter: "saturate(1.14)" },
-      { filter: "saturate(1.28)" },
-      { filter: "saturate(1.45)" },
+      { filter: "saturate(1.4)" },
+      { filter: "saturate(1.7)" },
     ],
   },
   {
