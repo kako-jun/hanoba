@@ -204,3 +204,247 @@ describe("DiscoverGrid", () => {
     await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
   });
 });
+
+// #139 段階1: 検索状態を pushState/popstate で戻る・進む復元できる deep-link 化。
+//
+// happy-dom 固有の申し送り（必ず守る）:
+// - history.back()/forward() は happy-dom で popstate を発火しない。popstate テストは必ず2手:
+//   (1) replaceState で URL を遷移先にセット → (2) dispatchEvent(new PopStateEvent("popstate"))。
+//   順序厳守（URL セット → dispatch）。
+// - push/replace の判別は history.length を使わず、pushState/replaceState の spy 呼び出し回数で行う
+//   （length はテストファイル内で累積し当てにならない）。
+// - spy は render ＋初回検索 await 後に mockClear() してから操作する（mount の restoreFromUrl("replace")
+//   が replaceState を1回呼ぶため除外）。afterEach で mockRestore()。
+// - URL 値比較は new URLSearchParams(window.location.search).get("q") 経由で行う
+//   （%23・日本語のエンコード表記差を避ける）。
+describe("DiscoverGrid deep-link (?q= pushState/popstate)", () => {
+  beforeEach(() => {
+    responses.clear();
+    fetchDiscover.mockReset();
+    fetchDiscover.mockImplementation((q: string) => Promise.resolve(responses.get(q) ?? []));
+    fetchHanobaFeed.mockReset();
+    fetchHanobaFeed.mockResolvedValue([]);
+    fetchReactionCount.mockReset();
+    fetchReactionCount.mockResolvedValue(0);
+    window.history.replaceState(null, "", "/discover");
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  // popstate 復元は2手必須（happy-dom は back/forward で popstate を発火しない）。
+  function popTo(url: string) {
+    window.history.replaceState(null, "", url); // (1) URL を遷移先にセット
+    window.dispatchEvent(new PopStateEvent("popstate")); // (2) popstate を発火
+  }
+
+  function currentQ(): string | null {
+    return new URLSearchParams(window.location.search).get("q");
+  }
+
+  it("popstate「戻る」で前の検索語に復元し、検索ボックスも同期する", async () => {
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
+    setResponse("パキポ", [makePost({ id: "p", caption: "パキポ" })]);
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+
+    popTo("/discover?q=パキポ");
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("パキポ"));
+    const box = screen.getByRole("textbox", { name: SEARCH_BOX }) as HTMLInputElement;
+    await waitFor(() => expect(box.value).toBe("パキポ"));
+  });
+
+  it("popstate「進む」で進み先の検索語に復元し、検索ボックスも同期する", async () => {
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
+    setResponse("新語", [makePost({ id: "n", caption: "新語" })]);
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+
+    // 進む先（新しい履歴エントリ側）の URL へ。観点は「戻る」と対称。
+    popTo("/discover?q=新語");
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("新語"));
+    const box = screen.getByRole("textbox", { name: SEARCH_BOX }) as HTMLInputElement;
+    await waitFor(() => expect(box.value).toBe("新語"));
+  });
+
+  it("q 無しの popstate は既定検索（#plantstr ∪ t:hanoba）に戻し、検索ボックスは空のまま", async () => {
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+    const box = screen.getByRole("textbox", { name: SEARCH_BOX }) as HTMLInputElement;
+    await waitFor(() => expect(box.value).toBe("アガベ"));
+
+    fetchDiscover.mockClear();
+    fetchHanobaFeed.mockClear();
+    popTo("/discover"); // q 削除 → 既定検索へ戻す
+
+    // 既定マージ（fromDefault）＝ #plantstr と t:hanoba の両方を呼ぶ。
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
+    expect(fetchHanobaFeed).toHaveBeenCalled();
+    // 既定検索は入力欄を汚さない。
+    expect(box.value).toBe("");
+  });
+
+  it("popstate 復元では URL を再書き込みしない（pushState・replaceState ともに 0 回・ループ防止）", async () => {
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
+    setResponse("X", [makePost({ id: "x", caption: "X" })]);
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+
+    // mount の restoreFromUrl("replace") 分を除外してから spy を設置する。
+    const pushSpy = vi.spyOn(window.history, "pushState");
+    const replaceSpy = vi.spyOn(window.history, "replaceState");
+    fetchDiscover.mockClear();
+
+    // (1) 遷移先 URL を replaceState でセット（これはテスト側の操作なので spy を再クリアして除外する）。
+    window.history.replaceState(null, "", "/discover?q=X");
+    pushSpy.mockClear();
+    replaceSpy.mockClear();
+    // (2) popstate を発火。ここから先の history 書き込みだけを数える。
+    window.dispatchEvent(new PopStateEvent("popstate"));
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("X"));
+    // popstate 経路は navigate:"none"＝URL を一切書かない。
+    expect(pushSpy).toHaveBeenCalledTimes(0);
+    expect(replaceSpy).toHaveBeenCalledTimes(0);
+  });
+
+  it("旧 ?tag= マウントは ?q= へ replaceState で正規化する（pushState は呼ばない）", async () => {
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
+    window.history.replaceState(null, "", "/discover?tag=アガベ");
+    const pushSpy = vi.spyOn(window.history, "pushState");
+    const replaceSpy = vi.spyOn(window.history, "replaceState");
+    render(<DiscoverGrid />);
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+    // ?tag= → ?q= に正規化（生文字列でなく get("q") で比較）。
+    await waitFor(() => expect(currentQ()).toBe("アガベ"));
+    expect(new URLSearchParams(window.location.search).get("tag")).toBeNull();
+    // 正規化は replace（履歴を増やさない）。push は使わない。
+    expect(replaceSpy).toHaveBeenCalled();
+    expect(pushSpy).toHaveBeenCalledTimes(0);
+  });
+
+  it("空クリア submit は ?q= を replace で消す（pushState は呼ばない・idle に戻る）", async () => {
+    const user = userEvent.setup();
+    setResponse("アガベ", [makePost({ id: "a", caption: "アガベ" })]);
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
+
+    const box = screen.getByRole("textbox", { name: SEARCH_BOX }) as HTMLInputElement;
+    await user.type(box, "アガベ");
+    await user.click(screen.getByRole("button", { name: "探す" }));
+    await waitFor(() => expect(currentQ()).toBe("アガベ"));
+
+    const pushSpy = vi.spyOn(window.history, "pushState");
+    const replaceSpy = vi.spyOn(window.history, "replaceState");
+    pushSpy.mockClear();
+    replaceSpy.mockClear();
+
+    // 検索ボックスを空にして submit（空クリア）。
+    await user.clear(box);
+    await user.click(screen.getByRole("button", { name: "探す" }));
+
+    // 空クリアは replace 強制で ?q= を消す（戻る対象にしない）。push は積まない。
+    await waitFor(() => expect(currentQ()).toBeNull());
+    expect(replaceSpy).toHaveBeenCalled();
+    expect(pushSpy).toHaveBeenCalledTimes(0);
+    // idle に戻り、グリッドは空。
+    await waitFor(() => expect(screen.queryByRole("img")).not.toBeInTheDocument());
+    expect(box.value).toBe("");
+  });
+
+  it("詳細のタグ再検索は push し、popstate で前の検索語へ戻れる", async () => {
+    const user = userEvent.setup();
+    setResponse("アガベ", [makePost({ id: "a", caption: "開花 #パキポ", hashtags: ["パキポ"] })]);
+    setResponse("#パキポ", [makePost({ id: "z", caption: "別のパキポ" })]);
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+    await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+    // 詳細を開いてタグ #パキポ をクリック（onSelectHashtag 経由・`#${tag}` を push）。
+    await user.click(screen.getByRole("button", { name: "開花 #パキポ" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "#パキポ" }));
+
+    await waitFor(() => expect(fetchDiscover).toHaveBeenLastCalledWith("#パキポ"));
+    // %23 エンコード表記差に依存せず get("q") で比較。
+    await waitFor(() => expect(currentQ()).toBe("#パキポ"));
+
+    // push が戻る対象になっている＝popstate で前の語（アガベ）へ復元できる。
+    popTo("/discover?q=アガベ");
+    await waitFor(() => expect(fetchDiscover).toHaveBeenLastCalledWith("アガベ"));
+    const box = screen.getByRole("textbox", { name: SEARCH_BOX }) as HTMLInputElement;
+    await waitFor(() => expect(box.value).toBe("アガベ"));
+  });
+
+  it("連続 popstate は最後の語の結果だけ描画する（先行の遅延応答は破棄・latestRef）", async () => {
+    const slowPost = makePost({ id: "slow", caption: "遅い語の結果" });
+    const fastPost = makePost({ id: "fast", caption: "速い語の結果" });
+    // 語ごとに遅延を変える: 遅い語は長め、速い語は即時。
+    fetchDiscover.mockReset();
+    fetchDiscover.mockImplementation((q: string) => {
+      if (q === "遅い語") {
+        return new Promise<FeedPost[]>((resolve) => setTimeout(() => resolve([slowPost]), 80));
+      }
+      if (q === "速い語") {
+        return Promise.resolve([fastPost]);
+      }
+      return Promise.resolve([]); // 既定検索 #plantstr 等
+    });
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
+
+    // 遅い語 → 直後に速い語（連続戻る/進む）。
+    popTo("/discover?q=遅い語");
+    popTo("/discover?q=速い語");
+
+    // 速い語の結果が描画される。
+    expect(await screen.findByRole("img")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "速い語の結果" })).toBeInTheDocument());
+    // 遅延していた遅い語の応答が後から来ても、上書きされない（stale 破棄）。
+    await new Promise((r) => setTimeout(r, 120));
+    expect(screen.getByRole("button", { name: "速い語の結果" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "遅い語の結果" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("img")).toHaveLength(1);
+  });
+
+  it("error 再試行は履歴を積まない（pushState・replaceState ともに 0 回・navigate:none）", async () => {
+    const user = userEvent.setup();
+    // 検索を1回 reject させて error 状態にする。
+    fetchDiscover.mockReset();
+    fetchDiscover.mockImplementation((q: string) => {
+      if (q === "#plantstr") return Promise.resolve([]); // 既定検索は空（idle）
+      return Promise.reject(new Error("relay down"));
+    });
+    window.history.replaceState(null, "", "/discover?q=アガベ");
+    render(<DiscoverGrid />);
+
+    // error 表示と再試行ボタンが出るまで待つ。
+    const retry = await screen.findByRole("button", { name: "再試行" });
+    expect(await screen.findByText(/読み込めませんでした/)).toBeInTheDocument();
+
+    // error 化後に spy を設置（mount の正規化 replace 分を除外）。
+    const pushSpy = vi.spyOn(window.history, "pushState");
+    const replaceSpy = vi.spyOn(window.history, "replaceState");
+    pushSpy.mockClear();
+    replaceSpy.mockClear();
+    fetchDiscover.mockClear();
+
+    await user.click(retry);
+
+    // 再試行は同語の再取得＝新規ナビゲーションでない。URL を一切書かない（navigate:none）。
+    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("アガベ"));
+    expect(pushSpy).toHaveBeenCalledTimes(0);
+    expect(replaceSpy).toHaveBeenCalledTimes(0);
+  });
+});
