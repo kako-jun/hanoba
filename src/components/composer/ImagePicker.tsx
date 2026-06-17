@@ -110,8 +110,11 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
         controls
       )}
       {compact && compactOpen && (
+        // トリガー（＋ボタン）に縦方向で半分重なる位置に出す（#187）。離れて真下に出すのでなく、
+        // ボタン中心（top-1/2）を起点にポップアップを上へ少し引き上げて被せる。横は left 基準だが
+        // 右端で見切れないよう max-w で内に収める。glass・z・閉じ挙動は不変。
         <div
-          className="glass-strong absolute left-0 top-full z-50 mt-2 flex w-52 flex-col gap-2 rounded-2xl p-2 shadow-2xl"
+          className="glass-strong absolute left-0 top-1/2 z-50 flex w-52 max-w-[calc(100vw-2rem)] -translate-y-8 flex-col gap-2 rounded-2xl p-2 shadow-2xl"
           role="dialog"
           aria-label="写真を追加"
         >
