@@ -15,6 +15,7 @@ import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import { makeSeeds } from "../../lib/composer/dandelion.ts";
+import { clearDraft, loadDraft, saveMeta, syncBlobs } from "../../lib/composer/draft.ts";
 import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
@@ -83,6 +84,68 @@ export default function Composer() {
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
+  // 下書きの自動保存・復元（#228）。復元完了までは保存系の effect を黙らせる（hydration ガード）。
+  // false の間に初期 images=[] / 空 caption が走って下書きを上書き消去するのを防ぐ race 回避。
+  const hydratedRef = useRef(false);
+
+  // マウント時に下書きを復元する（#228・非同期）。IndexedDB から blob＋メタを読み、
+  // blob から Object URL と File を再生成して DraftImage[] を組み直す。
+  // 成功/失敗どちらでも完了後に hydratedRef を立て、以降の保存 effect を解禁する。
+  useEffect(() => {
+    let alive = true;
+    void loadDraft()
+      .then((snapshot) => {
+        if (!alive || snapshot === null) return;
+        const restored: DraftImage[] = snapshot.images.map((img) => {
+          const file = new File([img.blob], img.name, { type: img.type });
+          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters };
+        });
+        if (restored.length === 0) return;
+        setImages(restored);
+        setCaption(snapshot.caption);
+        setCurrentId(snapshot.currentId ?? restored[0]!.id);
+      })
+      .catch(() => {})
+      .finally(() => {
+        // 復元の有無に関わらず保存系を解禁する（成功時は復元後の値から、失敗時は現状から保存される）。
+        if (alive) hydratedRef.current = true;
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // 保存（blobs・重い側）: 写真集合が変わったら blobs ストアを現在の集合へ一致させる（#228）。
+  // 復元前（hydration ガード）は何もしない。並び順は配列添字 i を order として焼く。
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    void syncBlobs(
+      images.map((img, i) => ({ id: img.id, blob: img.file, name: img.file.name, type: img.file.type, order: i })),
+    );
+  }, [images]);
+
+  // 保存（meta・軽い側）: 本文・各写真のクロップ枠/フィルタ・並び順・選択中 id が変わったら
+  // 約 1000ms デバウンスで meta を保存する（#228）。復元前（hydration ガード）は何もしない。
+  // 写真ゼロ かつ 本文空のときは保存しない（下の clearDraft 側に任せ、空 meta の遅延書き戻しで競合しない）。
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    if (images.length === 0 && caption.trim() === "") return;
+    const timer = setTimeout(() => {
+      void saveMeta({
+        caption,
+        currentId,
+        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters })),
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [caption, currentId, images]);
+
+  // 空になったら下書きを全消去する（#228）。写真ゼロ かつ 本文も空＝書きかけが無い状態。
+  // 「本文を自分で空にする」「最後の写真を外す」がこの経路。復元前は何もしない。
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    if (images.length === 0 && caption.trim() === "") void clearDraft();
+  }, [images, caption]);
 
   // マウント時に過去タグ（補完プール）と人気タグ（ピッカー）を取得（失敗は空のまま）。
   useEffect(() => {
@@ -210,6 +273,8 @@ export default function Composer() {
       // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
       recordRecentTags(extractHashtags(caption));
       resetAll();
+      // 投稿成功＝下書きの役目は終わり。永続化も消す（/me 遷移の前・#228）。
+      void clearDraft();
       setStatus({ kind: "done" });
       // 投稿直後は「自分の植物」へ遷移し、増えた1枚を一番上に見せる（時系列降順）。
       if (typeof window !== "undefined") window.location.href = "/me";
