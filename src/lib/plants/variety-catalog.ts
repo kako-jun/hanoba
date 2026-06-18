@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,795件 / 185属 / 22カテゴリ・#143 / #168）。
+// 品種タグ辞書（カテゴリ→属→品種・1,853件 / 193属 / 23カテゴリ・#143 / #168 / #214）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -6,7 +6,7 @@
 // （静的 import で初期 composer バンドルに載せない）。検索/ドリルダウンは全てクライアントで回る。
 //
 // カテゴリは意味の近いもの順（多肉→メセン→塊根→サボテン→着生→観葉→食虫→蘭→和もの→シダ→コケ→
-// 水草→水生→花→球根→花木→食用）。基本種・別ジャンル（水草等）は #168 で補完した。
+// 水草→水生→花→球根→花木→食用→穀物）。基本種・別ジャンル（水草等）は #168 で補完した。穀物は #214。
 // 値は「本文 # に入るタグ文字列」（空白は insertTag 側で _ に正規化）。表記揺れ（赤猫 ↔
 // レッドキャットウィーズル 等）は調査が両形を別品種として持つため、そのまま両方を pickable に残す。
 
@@ -1023,6 +1023,45 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ザクロ", sci: "Punica granatum" }, { name: "ジューンベリー", sci: "Amelanchier canadensis" }, { name: "ポポー", sci: "Asimina triloba" }, { name: "アケビ", sci: "Akebia quinata" },
         { name: "パッションフルーツ", sci: "Passiflora edulis" }, { name: "グミ", sci: "Elaeagnus" }, { name: "カシス", sci: "Ribes nigrum" }, { name: "グーズベリー", sci: "Ribes uva-crispa" },
         { name: "クランベリー", sci: "Vaccinium macrocarpon" }, { name: "桑", sci: "Morus" }, { name: "マルベリー", sci: "Morus" }, { name: "パイナップル", sci: "Ananas comosus" },
+      ] },
+    ],
+  },
+  {
+    label: "穀物",
+    genera: [
+      { name: "イネ", pickable: true, aliases: ["稲", "コメ", "米", "水稲", "陸稲"], varieties: [
+        { name: "コシヒカリ", sci: "Oryza sativa 'Koshihikari'" }, { name: "あきたこまち", sci: "Oryza sativa 'Akitakomachi'" }, { name: "ひとめぼれ", sci: "Oryza sativa 'Hitomebore'" }, { name: "ヒノヒカリ", sci: "Oryza sativa 'Hinohikari'" },
+        { name: "ななつぼし", sci: "Oryza sativa 'Nanatsuboshi'" }, { name: "ゆめぴりか", sci: "Oryza sativa 'Yumepirika'" }, { name: "つや姫", sci: "Oryza sativa 'Tsuyahime'" }, { name: "はえぬき", sci: "Oryza sativa 'Haenuki'" },
+        { name: "キヌヒカリ", sci: "Oryza sativa 'Kinuhikari'" }, { name: "ササニシキ", sci: "Oryza sativa 'Sasanishiki'" }, { name: "きぬむすめ", sci: "Oryza sativa 'Kinumusume'" }, { name: "にこまる", sci: "Oryza sativa 'Nikomaru'" },
+        { name: "森のくまさん", sci: "Oryza sativa 'Mori no Kumasan'" }, { name: "さがびより", sci: "Oryza sativa 'Sagabiyori'" }, { name: "新之助", sci: "Oryza sativa 'Shinnosuke'" }, { name: "いちほまれ", sci: "Oryza sativa 'Ichihomare'" },
+        { name: "青天の霹靂", sci: "Oryza sativa 'Seiten no Hekireki'" }, { name: "だて正夢", sci: "Oryza sativa 'Date Masayume'" }, { name: "ふっくりんこ", sci: "Oryza sativa 'Fukkurinko'" },
+        { name: "ヒメノモチ", sci: "Oryza sativa 'Himenomochi'" }, { name: "こがねもち", sci: "Oryza sativa 'Koganemochi'" }, { name: "ヒヨクモチ", sci: "Oryza sativa 'Hiyokumochi'" },
+        { name: "山田錦", sci: "Oryza sativa 'Yamada Nishiki'" }, { name: "五百万石", sci: "Oryza sativa 'Gohyakumangoku'" }, { name: "美山錦", sci: "Oryza sativa 'Miyama Nishiki'" }, { name: "雄町", sci: "Oryza sativa 'Omachi'" },
+        { name: "愛山", sci: "Oryza sativa 'Aiyama'" },
+        { name: "赤米", sci: "Oryza sativa" }, { name: "黒米", sci: "Oryza sativa" }, { name: "緑米", sci: "Oryza sativa" }, { name: "香米", sci: "Oryza sativa" },
+      ] },
+      { name: "コムギ", pickable: true, varieties: [
+        { name: "ゆめちから", sci: "Triticum aestivum 'Yumechikara'" }, { name: "きたほなみ", sci: "Triticum aestivum 'Kitahonami'" }, { name: "農林61号", sci: "Triticum aestivum 'Norin 61'" }, { name: "ニシノカオリ", sci: "Triticum aestivum 'Nishinokaori'" },
+        { name: "ハルユタカ", sci: "Triticum aestivum 'Haruyutaka'" }, { name: "デュラムコムギ", sci: "Triticum durum" },
+      ] },
+      { name: "オオムギ", pickable: true, varieties: [
+        { name: "二条大麦", sci: "Hordeum vulgare" }, { name: "六条大麦", sci: "Hordeum vulgare" }, { name: "はだか麦", sci: "Hordeum vulgare var. nudum" }, { name: "ビール麦", sci: "Hordeum vulgare" },
+      ] },
+      { name: "ライムギ", pickable: true, varieties: [
+        { name: "ライムギ", sci: "Secale cereale" },
+      ] },
+      { name: "エンバク", pickable: true, aliases: ["オートムギ", "オーツ麦", "えん麦"], varieties: [
+        { name: "エンバク", sci: "Avena sativa" },
+      ] },
+      { name: "ソバ", pickable: true, varieties: [
+        { name: "常陸秋そば", sci: "Fagopyrum esculentum 'Hitachi Akisoba'" }, { name: "信濃1号", sci: "Fagopyrum esculentum 'Shinano 1'" }, { name: "キタワセソバ", sci: "Fagopyrum esculentum 'Kitawasesoba'" }, { name: "ダッタンソバ", sci: "Fagopyrum tataricum" },
+      ] },
+      { name: "雑穀", pickable: false, varieties: [
+        { name: "アワ", sci: "Setaria italica" }, { name: "ヒエ", sci: "Echinochloa esculenta" }, { name: "キビ", sci: "Panicum miliaceum" }, { name: "タカキビ", sci: "Sorghum bicolor", aliases: ["モロコシ"] },
+        { name: "ハトムギ", sci: "Coix lacryma-jobi" }, { name: "アマランサス", sci: "Amaranthus" }, { name: "キヌア", sci: "Chenopodium quinoa" },
+      ] },
+      { name: "トウモロコシ（穀物用）", pickable: false, varieties: [
+        { name: "デントコーン", sci: "Zea mays" }, { name: "フリントコーン", sci: "Zea mays" }, { name: "ポップコーン", sci: "Zea mays" }, { name: "飼料用トウモロコシ", sci: "Zea mays" },
       ] },
     ],
   },
