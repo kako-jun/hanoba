@@ -358,6 +358,7 @@ export default function ProfileEditor({ bare = false }: Props) {
             <span className="text-sm font-medium text-ha-green-deep">秘密鍵（バックアップ）</span>
             <p className="text-xs text-ha-ink/55">
               この鍵を控えておかないと、端末を変えたりブラウザのデータを消すと二度と戻せません。
+              また、この鍵を知られると、あなたの投稿をすべて操作されます。人に見せたり貼り付けたりしないでください。
             </p>
             <code
               aria-label="秘密鍵（nsec）"
