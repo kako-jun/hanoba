@@ -3,6 +3,8 @@ import { TAG_CATEGORIES } from "./tag-catalog.ts";
 
 const care = TAG_CATEGORIES.find((c) => c.label === "世話")!;
 const record = TAG_CATEGORIES.find((c) => c.label === "記録")!;
+const trait = TAG_CATEGORIES.find((c) => c.label === "特徴")!;
+const form = TAG_CATEGORIES.find((c) => c.label === "仕立て")!;
 
 describe("tag-catalog", () => {
   it("世話・記録の2行を持つ", () => {
@@ -43,6 +45,19 @@ describe("tag-catalog", () => {
     for (const c of TAG_CATEGORIES) {
       expect(new Set(c.tags).size).toBe(c.tags.length);
     }
+  });
+
+  it("品種と別軸の横断タグ「特徴」「仕立て」を持つ（#221）", () => {
+    expect(trait).toBeTruthy();
+    expect(form).toBeTruthy();
+  });
+
+  it("特徴は斑入りを先頭に持つ（#221）", () => {
+    expect(trait.tags[0]).toBe("斑入り");
+  });
+
+  it("仕立ては水耕を先頭に持つ（#221）", () => {
+    expect(form.tags[0]).toBe("水耕");
   });
 
   it("分類語（多肉植物 等）は入れない（#166＝分類はタグにしない）", () => {
