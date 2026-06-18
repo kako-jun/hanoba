@@ -139,21 +139,11 @@ export default function CityHallBook() {
   return (
     <section className="ha-rise flex flex-col gap-5" aria-label={BOOK_TITLE}>
       {/* 手帳の表題（在世タイトル）。肩書はレベルで変わる（menu 語の差し替えは defer・本側で適応）。 */}
-      {/* 語り手＝市長ボタニクスの肖像（顔は秘密＝ジョウロ写真）を左に添える。隣の「語り手：…」が
-          Avatar の隣テキスト契約と a11y を満たし、ジョウロ＝市長の意味を伝える。 */}
-      <header className="flex items-center gap-3">
-        <Avatar
-          src={MAYOR_AVATAR_SRC}
-          name="ボタニクス"
-          className="w-14 h-14 ring-1 ring-white/10"
-        />
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-xs text-ha-ink/50">語り手：市長{MAYOR_NAME}</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-            {BOOK_TITLE}
-          </h1>
-          <p className="text-sm text-ha-ink/55">{LEVEL_SUBTITLE[level]}</p>
-        </span>
+      <header className="flex flex-col gap-1">
+        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
+          {BOOK_TITLE}
+        </h1>
+        <p className="text-sm text-ha-ink/55">{LEVEL_SUBTITLE[level]}</p>
       </header>
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。 */}
@@ -228,6 +218,12 @@ function PageContent({ page }: { page: BookPage }) {
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          {/* 移住案内の冒頭で市長ボタニクスが名乗る。顔は秘密＝ジョウロの肖像（#219①）。
+              Avatar は装飾扱い（alt 空）なので隣に市長名テキストを置き a11y を満たす。 */}
+          <div className="flex items-center gap-3">
+            <Avatar src={MAYOR_AVATAR_SRC} name="ボタニクス" className="w-16 h-16 ring-1 ring-white/10" />
+            <span className="text-sm text-ha-ink/60">市長{MAYOR_NAME}</span>
+          </div>
           {page.blocks.map((b, i) =>
             b.kind === "note" ? (
               <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
