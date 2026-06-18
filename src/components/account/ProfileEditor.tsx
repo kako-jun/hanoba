@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
@@ -166,6 +166,9 @@ export default function ProfileEditor({ bare = false }: Props) {
       // コピー失敗は黙って何もしない（[表示]で目視・手動コピーできる）。
     }
   }
+
+  // 表示中だけ exportNsec() を1回だけエンコードする（毎レンダーの bech32 を避ける・#213 レビュー nit）。
+  const nsecDisplay = useMemo(() => (nsecRevealed ? exportNsec() : "•".repeat(24)), [nsecRevealed]);
 
   const nameMissing = name === null || name.trim() === "";
 
@@ -360,7 +363,7 @@ export default function ProfileEditor({ bare = false }: Props) {
               aria-label="秘密鍵（nsec）"
               className="block break-all rounded-2xl bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-ha-ink/85 font-mono"
             >
-              {nsecRevealed ? exportNsec() : "•".repeat(24)}
+              {nsecDisplay}
             </code>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
               <button
