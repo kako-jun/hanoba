@@ -413,8 +413,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
               </ul>
             )}
 
-            {/* この人をフィードで「薄める」（#138）。著者ヘッダ直下に置く＝その人を指せる場所。
-                ミュートの手前の柔らかい手段。/me（自分の投稿）では出さない＝自分は薄めない。 */}
+            {/* この人をフィードで「減らす」（#138）。著者ヘッダ直下に置く＝その人を指せる場所。
+                ミュートの手前の柔らかい手段。既定は畳む（DilutionControl が自分で開閉）＝常駐させて
+                「減らすのが基本」と誤解させない。/me（自分の投稿）では出さない＝自分は減らさない。 */}
             {showDilution && <DilutionControl pubkey={post.pubkey} authorName={authorName} />}
           </div>
 
