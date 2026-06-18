@@ -322,7 +322,7 @@ export default function Composer() {
           <div className="flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => (images.length > 1 && currentImage ? removeImage(currentImage.id) : resetAll())}
+              onClick={() => (currentImage ? removeImage(currentImage.id) : resetAll())}
               disabled={posting}
               className="glass rounded-full text-ha-ink px-4 py-3 hover:border-ha-green/50 disabled:opacity-40 transition-colors"
             >
