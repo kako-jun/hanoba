@@ -123,16 +123,17 @@ describe("DiscoverGrid", () => {
     expect(box.value).toBe("");
   });
 
-  it("共有導線（#139 段階2）は既定では出さず、絞り込むと出す", async () => {
+  it("共有導線（#139 段階2）は絞り込みパネル内に、何か絞った時だけ出す", async () => {
     const user = userEvent.setup();
     setResponse({ keyword: "アガベ" }, [makePost({ id: "a", caption: "アガベ" })]);
     render(<DiscoverGrid />);
-
-    // 既定表示では共有ボタンは出ない。
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
+
+    // パネルを開いても、既定（何も絞っていない）では共有は出ない。
+    await user.click(screen.getByRole("button", { name: /絞り込み/ }));
     expect(screen.queryByRole("button", { name: /リンクをコピー/ })).not.toBeInTheDocument();
 
-    // 何か絞ると ShareFilter が現れる。
+    // 何か絞るとパネル内に共有が現れる（パネルは開いたまま）。
     await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "アガベ");
     await user.click(screen.getByRole("button", { name: "探す" }));
     expect(await screen.findByRole("button", { name: /リンクをコピー/ })).toBeInTheDocument();

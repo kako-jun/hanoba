@@ -187,21 +187,20 @@ export default function DiscoverGrid() {
         </button>
       </form>
 
-      {/* 多軸フィルタ（#131 / #139 段階2）。誰の×品種×期間×並び を折りたたみパネルで指定する。 */}
-      <DiscoverFilterPanel filter={filter} onChange={(next) => void applyFilter(next, "push")} />
-
-      {/* 名前付きビュー（#139 段階3）。「すべて」＋ 保存した自分専用チャンネルをチップで切替する。
-          active 判定は現在 filter の canonical 文字列（currentQuery）と一致するビュー。normalizeQuery で
-          旧形式の保存ビュー（`#実生` 等）も canonical 化して同一視する。 */}
-      <SavedViews
-        currentQuery={currentQuery}
-        onApply={applyView}
-        normalizeQuery={(q) => serializeFilter(parseFilterFromString(q))}
+      {/* 絞り込み（#131/#139）。絞り込み関係は全部この展開エリアに入れる（kako-jun 指示）:
+          保存した絞り込み（名前付き・最上部）→ 各軸（品種/投稿者/期間/並び）→ 共有（最下部）。 */}
+      <DiscoverFilterPanel
+        filter={filter}
+        onChange={(next) => void applyFilter(next, "push")}
+        savedFilters={
+          <SavedViews
+            currentQuery={currentQuery}
+            onApply={applyView}
+            normalizeQuery={(q) => serializeFilter(parseFilterFromString(q))}
+          />
+        }
+        share={<ShareFilter active={!isDefaultFilter(filter)} summary={summary} />}
       />
-
-      {/* 共有導線（#139 段階2）。何か絞っている時だけ、現在の絞り込み URL をコピー／X シェアできる。
-          多軸状態は canonical URL に載るので URL を渡せば相手も同じ絞り込みを開ける。 */}
-      <ShareFilter active={!isDefaultFilter(filter)} summary={summary} />
 
       {status === "loading" && (
         <p className="py-12 text-center text-ha-ink/60">「{summary}」を探しています…</p>

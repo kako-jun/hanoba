@@ -335,7 +335,12 @@ async function resolveAuthorPubkeys(author: string): Promise<string[]> {
   }
   const name = (mode === "author-name" ? term : a).replace(/^@+/, "").trim();
   if (name === "") return [];
-  const filter = { kinds: [0], search: name, limit: AUTHOR_NAME_PROFILE_LIMIT };
+  // NIP-50 全文検索は記号を演算子扱いするリレーがある（search.nos.today は実測で `kako-jun` が
+  // 0件・`kako` だけなら多数ヒット＝ハイフンが「除外」と解釈される）。検索語は英数字・CJK 以外を
+  // 空白に均してリレーへ渡し（`kako-jun`→`kako jun`＝トークン）、厳密な name 一致は client 側の
+  // selectAuthorsByName（元の name を含むか）で取る。均した結果が空なら元の name で投げる。
+  const searchTerm = name.replace(/[^\p{L}\p{N}]+/gu, " ").trim() || name;
+  const filter = { kinds: [0], search: searchTerm, limit: AUTHOR_NAME_PROFILE_LIMIT };
   const settled = await Promise.allSettled([
     getPool().querySync([...SEARCH_RELAYS], filter, { maxWait: QUERY_MAXWAIT }),
     getPool().querySync([...GENERAL_RELAYS], filter, { maxWait: QUERY_MAXWAIT }),
