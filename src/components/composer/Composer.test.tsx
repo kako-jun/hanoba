@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +28,20 @@ vi.mock("../../lib/image/crop.ts", () => ({
   renderSquareImageFromRect: (...args: unknown[]) => renderSquareImageFromRect(...args),
 }));
 
+// 下書きの永続化境界（#228）をスパイ化する。IndexedDB 実体には触れず、配線（呼び出し有無・引数・
+// hydration ガード・デバウンス）だけを検証する。loadDraft の既定は「下書き無し（null）」で、
+// 既存テスト（実 draft.ts も happy-dom では null を返す）と同じ振る舞いに揃える。
+const loadDraft = vi.fn();
+const syncBlobs = vi.fn();
+const saveMeta = vi.fn();
+const clearDraft = vi.fn();
+vi.mock("../../lib/composer/draft.ts", () => ({
+  loadDraft: (...args: unknown[]) => loadDraft(...args),
+  syncBlobs: (...args: unknown[]) => syncBlobs(...args),
+  saveMeta: (...args: unknown[]) => saveMeta(...args),
+  clearDraft: (...args: unknown[]) => clearDraft(...args),
+}));
+
 import Composer from "./Composer.tsx";
 
 function makeImageFile(): File {
@@ -52,6 +66,11 @@ describe("Composer", () => {
     fetchProfileName.mockReset().mockResolvedValue(null);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
     renderSquareImageFromRect.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    // 下書き境界（#228）: 既定は「下書き無し」。保存系は resolve する no-op スパイ。
+    loadDraft.mockReset().mockResolvedValue(null);
+    syncBlobs.mockReset().mockResolvedValue(undefined);
+    saveMeta.mockReset().mockResolvedValue(undefined);
+    clearDraft.mockReset().mockResolvedValue(undefined);
     vi.stubGlobal(
       "Image",
       class {
@@ -404,5 +423,320 @@ describe("Composer", () => {
     expect(screen.queryByText(/を入れると投稿できます/)).not.toBeInTheDocument();
     expect(document.getElementById("hanoba-compose-shortfall")).toBeNull();
     expect(submit).not.toHaveAttribute("aria-describedby");
+  });
+});
+
+// 下書きの自動保存・復元の配線（#228）。draft.ts はモック済み（呼び出し有無・引数・順序だけ見る）。
+describe("Composer 下書き配線（#228）", () => {
+  /** 手で resolve/reject できる Promise（loadDraft を未解決で止めるレース検証用）。 */
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  }
+
+  function snapshotWith(over: Partial<{
+    caption: string;
+    currentId: string | null;
+    images: Array<{ id: string; name: string }>;
+  }> = {}) {
+    const images = (over.images ?? [{ id: "img-1", name: "saved.jpg" }]).map((i) => ({
+      id: i.id,
+      blob: new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" }),
+      name: i.name,
+      type: "image/jpeg",
+      crop: { sx: 0, sy: 0, size: 100 },
+      filters: [],
+    }));
+    return {
+      caption: over.caption ?? "保存された本文",
+      currentId: over.currentId ?? null,
+      images,
+    };
+  }
+
+  beforeEach(() => {
+    loadDraft.mockReset().mockResolvedValue(null);
+    syncBlobs.mockReset().mockResolvedValue(undefined);
+    saveMeta.mockReset().mockResolvedValue(undefined);
+    clearDraft.mockReset().mockResolvedValue(undefined);
+    uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
+    deleteImage.mockReset().mockResolvedValue(true);
+    signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
+    fetchKnownHashtags.mockReset().mockResolvedValue([]);
+    fetchPopularHashtags.mockReset().mockResolvedValue([]);
+    fetchProfileName.mockReset().mockResolvedValue(null);
+    saveDisplayName.mockReset().mockResolvedValue(undefined);
+    renderSquareImageFromRect.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = 100;
+        naturalHeight = 100;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+    localStorage.setItem("hanoba:name", "テスト栽培家");
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("復元完了前（loadDraft 未解決）は保存系を一切呼ばない（hydration ガード）", async () => {
+    // loadDraft を未解決のまま止め、復元前に初期 images=[]/空 caption が走っても
+    // clearDraft / syncBlobs / saveMeta が呼ばれないこと（race で下書きを上書き消去しない）。
+    const d = deferred<null>();
+    loadDraft.mockReturnValue(d.promise);
+
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+    // 復元待ちのまま少し回しても保存系は沈黙する。
+    await Promise.resolve();
+    expect(clearDraft).not.toHaveBeenCalled();
+    expect(syncBlobs).not.toHaveBeenCalled();
+    expect(saveMeta).not.toHaveBeenCalled();
+
+    // 後片付け（dangling promise を解消）。
+    d.resolve(null);
+  });
+
+  it("loadDraft が null 解決でも hydratedRef は立つ（その後の写真追加で syncBlobs が呼ばれる）", async () => {
+    const user = userEvent.setup();
+    loadDraft.mockResolvedValue(null);
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+
+    // 復元が解禁済みなので、写真集合の変化で blobs 同期が走る。
+    await waitFor(() => expect(syncBlobs).toHaveBeenCalled());
+  });
+
+  it("loadDraft が画像1件+本文を返すと、サムネ・本文・投稿ボタンが復元表示される", async () => {
+    loadDraft.mockResolvedValue(snapshotWith({ caption: "復元された一言", images: [{ id: "img-1", name: "saved.jpg" }] }));
+    render(<Composer />);
+
+    // サムネ（1枚目）と投稿ボタンが出る＝写真ありの UI に切り替わっている。
+    expect(await screen.findByAltText("1枚目")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /投稿する/ })).toBeInTheDocument();
+    // 本文も復元されている。
+    expect((screen.getByLabelText("ひとこと") as HTMLTextAreaElement).value).toBe("復元された一言");
+  });
+
+  it("snapshot.images が空なら復元せずピッカーのまま（写真ゼロは下書き扱いしない）", async () => {
+    loadDraft.mockResolvedValue(snapshotWith({ images: [] }));
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    // 写真が無いので投稿 UI に切り替わらない＝ピッカーのまま。
+    expect(screen.getByRole("button", { name: /アルバム/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /投稿する/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("ひとこと")).not.toBeInTheDocument();
+  });
+
+  it("復元時 currentId=null なら先頭画像を選択状態にする", async () => {
+    loadDraft.mockResolvedValue(
+      snapshotWith({ currentId: null, images: [{ id: "img-1", name: "a.jpg" }, { id: "img-2", name: "b.jpg" }] }),
+    );
+    render(<Composer />);
+
+    const firstThumb = (await screen.findByAltText("1枚目")).closest("button");
+    expect(firstThumb).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByAltText("2枚目").closest("button")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("写真を追加すると order を振った blobs を syncBlobs に渡す", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+
+    await waitFor(() => expect(syncBlobs).toHaveBeenCalled());
+    // 最後の sync は 2 枚で order 0,1。
+    const lastCall = syncBlobs.mock.calls.at(-1)![0] as Array<{ name: string; order: number }>;
+    expect(lastCall.map((r) => r.order)).toEqual([0, 1]);
+    expect(lastCall.map((r) => r.name)).toEqual(["one.jpg", "two.jpg"]);
+  });
+
+  it("crop / filters の変更では syncBlobs を呼ばない（blob 再書き込み回避）が、saveMeta は呼ばれる", async () => {
+    // 写真追加・crop 確定までは実タイマーで進める（userEvent + 全 timer fake の相互デッドロックを避ける）。
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    // 写真追加で 1 回 syncBlobs（集合が変わった）。
+    await waitFor(() => expect(syncBlobs).toHaveBeenCalledTimes(1));
+    const cropImg = await screen.findByAltText("クロップ対象の写真");
+
+    // デバウンス窓だけ setTimeout を fake する（他は実時間のまま＝Promise/microtask は通常どおり）。
+    // crop 変更より前に fake へ切り替え、meta デバウンスタイマーを fake 上で発火できるようにする。
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    saveMeta.mockClear();
+    // crop を確定（fireEvent.load → 初期正方形 crop が親に入る＝crop 変更）。
+    act(() => {
+      fireEvent.load(cropImg);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1100);
+    });
+
+    // crop 変更では blob 集合キー（id 列）は不変＝syncBlobs は増えない。
+    expect(syncBlobs).toHaveBeenCalledTimes(1);
+    // 一方、meta（crop を含む軽い側）はデバウンス後に保存される。
+    expect(saveMeta).toHaveBeenCalled();
+  });
+
+  it("本文入力は約1000msデバウンスされる（経過前0回・経過後1回・最終値で保存）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    const caption = (await screen.findByLabelText("ひとこと")) as HTMLTextAreaElement;
+
+    // デバウンス窓だけ setTimeout を fake にして、本文変更を fireEvent.change で 1 回入れる。
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    saveMeta.mockClear();
+    act(() => {
+      fireEvent.change(caption, { target: { value: "開花" } });
+    });
+
+    // 1000ms 未満では meta 保存はまだ走らない。
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(900);
+    });
+    expect(saveMeta).not.toHaveBeenCalled();
+
+    // 1000ms 経過で 1 回だけ走り、最終値が渡る。
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(saveMeta).toHaveBeenCalledTimes(1);
+    expect(saveMeta.mock.calls.at(-1)![0]).toMatchObject({ caption: "開花" });
+  });
+
+  it("投稿成功で clearDraft を呼ぶ（下書きの役目終わり）", async () => {
+    const user = userEvent.setup();
+    const orig = Object.getOwnPropertyDescriptor(window, "location");
+    Object.defineProperty(window, "location", { configurable: true, value: { href: "" } as Location });
+    try {
+      render(<Composer />);
+      await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+      const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+      await user.upload(input, makeImageFile());
+      fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+      await user.type(screen.getByLabelText("ひとこと"), "開花した");
+      await user.click(await screen.findByRole("button", { name: /投稿する/ }));
+
+      await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
+      expect(clearDraft).toHaveBeenCalled();
+    } finally {
+      if (orig) Object.defineProperty(window, "location", orig);
+    }
+  });
+
+  it("写真ゼロ＋本文空になったら clearDraft で下書きを自動消去する", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    // 1枚入れてから「写真を選び直す」で写真ゼロへ戻す（本文は空のまま）。
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    await screen.findByAltText("1枚目");
+    clearDraft.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "写真を選び直す" }));
+    // 写真ゼロ かつ 本文空＝書きかけ無し → clearDraft。
+    await waitFor(() => expect(clearDraft).toHaveBeenCalled());
+  });
+
+  it("1枚で「写真を選び直す」しても本文は保持する（clearDraft しない・挙動変更の核心）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    await user.type(await screen.findByLabelText("ひとこと"), "残したい本文");
+    clearDraft.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "写真を選び直す" }));
+
+    // 写真は消えてピッカーへ戻るが、本文が残っているので下書きは消さない。
+    await waitFor(() => expect(screen.getByRole("button", { name: /アルバム/ })).toBeInTheDocument());
+    expect(clearDraft).not.toHaveBeenCalled();
+  });
+
+  it("2枚で「この写真を外す」と current の1枚だけ除去し、本文は保持する", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+    await user.type(screen.getByLabelText("ひとこと"), "成長記録");
+    clearDraft.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "この写真を外す" }));
+
+    // 1枚に減るが本文は残る・全消去はしない。
+    expect(screen.getByText((_, el) => el?.textContent === "1/4枚")).toBeInTheDocument();
+    expect((screen.getByLabelText("ひとこと") as HTMLTextAreaElement).value).toBe("成長記録");
+    expect(clearDraft).not.toHaveBeenCalled();
+  });
+
+  it("本文だけ × で消すと写真サムネは残り、投稿ボタンは disabled になる（退行確認）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+    const caption = await screen.findByLabelText("ひとこと");
+    await user.type(caption, "消す本文");
+    await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
+
+    await user.clear(caption);
+
+    // 写真サムネは残り、本文が空になったので投稿は不可。
+    expect(screen.getByAltText("1枚目")).toBeInTheDocument();
+    expect((caption as HTMLTextAreaElement).value).toBe("");
+    expect(screen.getByRole("button", { name: /投稿する/ })).toBeDisabled();
+  });
+
+  it("新 effect で act 警告 / console.error を増やさない", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+    loadDraft.mockResolvedValue(snapshotWith({ caption: "復元", images: [{ id: "img-1", name: "a.jpg" }] }));
+    render(<Composer />);
+    // 復元 → 写真追加 → 本文編集まで一通り触る。
+    await screen.findByAltText("1枚目");
+    const add = screen.getByRole("button", { name: "写真を追加" });
+    await user.click(add);
+    await user.upload(screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement, makeNamedImageFile("two.jpg"));
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });
