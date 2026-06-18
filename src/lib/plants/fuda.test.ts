@@ -143,4 +143,68 @@ describe("buildFuda", () => {
     expect(buildFuda(["グラキリス"], VARIETY_CATALOG)[0]!.key).toBe("グラキリス");
     expect(buildFuda(["アガベ"], VARIETY_CATALOG)[0]!.key).toBe("アガベ");
   });
+
+  // 穀物カテゴリ（#214）。イネは alias（稲/コメ/米/水稲/陸稲）を持つ pickable 属。
+  // alias でも属単独札が出ない＝#214/#162 二重計上防止の核心を畳み込みで守る。
+  it("穀物: 属＋品種は品種1枚に畳む（イネ＋コシヒカリ）", () => {
+    const fuda = buildFuda(["イネ", "コシヒカリ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "コシヒカリ" });
+  });
+
+  it("穀物: 属 alias＋品種でも genus 単独札が出ず品種に畳む（稲＋コシヒカリ・二重計上防止）", () => {
+    const fuda = buildFuda(["稲", "コシヒカリ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "コシヒカリ" });
+  });
+
+  it("穀物: 複数 alias が並んでも品種1枚に畳む（稲＋コメ＋コシヒカリ）", () => {
+    const fuda = buildFuda(["稲", "コメ", "コシヒカリ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "コシヒカリ" });
+  });
+
+  it("穀物: alias 単独は canonical 属名の属単独札になる（稲→イネ）", () => {
+    const fuda = buildFuda(["稲"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "イネ" });
+  });
+
+  it("穀物: 同属の複数品種はそれぞれ札になり属単独は出ない（catalog 出現順＝コシヒカリ→ササニシキ）", () => {
+    const fuda = buildFuda(["イネ", "コシヒカリ", "ササニシキ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.name)).toEqual(["コシヒカリ", "ササニシキ"]);
+  });
+
+  it("穀物: 非 pickable 見出し属（雑穀）配下の品種は品種和名で札にし見出し語を出さない", () => {
+    const fuda = buildFuda(["雑穀", "アワ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "アワ" });
+  });
+
+  it("穀物: 非 pickable 見出し属（雑穀）はタグしても札にしない", () => {
+    expect(buildFuda(["雑穀"], VARIETY_CATALOG)).toEqual([]);
+  });
+
+  it("穀物: 非 pickable 見出し属（トウモロコシ（穀物用））配下の品種は品種和名で札にする", () => {
+    const fuda = buildFuda(["トウモロコシ（穀物用）", "デントコーン"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "デントコーン" });
+  });
+
+  it("穀物: 非 pickable 見出し属（トウモロコシ（穀物用））はタグしても札にしない", () => {
+    expect(buildFuda(["トウモロコシ（穀物用）"], VARIETY_CATALOG)).toEqual([]);
+  });
+
+  it("穀物: 属名＝品種名のデータ（ライムギ）でも品種1枚＝学名 Secale cereale を持つ", () => {
+    const fuda = buildFuda(["ライムギ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "ライムギ", sci: "Secale cereale" });
+  });
+
+  it("穀物: デントコーンは野菜トウモロコシと別属で独立する（Zea mays 同名でも混ざらない）", () => {
+    const fuda = buildFuda(["デントコーン"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "デントコーン" });
+  });
 });

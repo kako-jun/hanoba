@@ -44,6 +44,24 @@ describe("基本種・別ジャンルの存在確認（#168）", () => {
   }
 });
 
+describe("穀物カテゴリ・代表品種の検索到達性（#214）", () => {
+  // 穀物カテゴリの代表品種が searchCatalog で拾えること（マス層の検索からの収束を担保）。
+  const grains = ["コシヒカリ", "山田錦", "ダッタンソバ", "デントコーン"];
+  for (const term of grains) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // イネ属の alias（表記揺れ）でも pickable 属として拾えること。
+  const grainAliasTerms = ["稲", "コメ"];
+  for (const term of grainAliasTerms) {
+    it(`alias「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+});
+
 describe("カタログの健全性", () => {
   it("カテゴリ label がユニーク", () => {
     const labels = VARIETY_CATALOG.map((c) => c.label);
