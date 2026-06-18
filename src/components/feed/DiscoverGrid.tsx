@@ -4,6 +4,7 @@ import { ClearableInput } from "../ui/ClearableInput.tsx";
 import { fetchDiscover, fetchHanobaFeed } from "../../lib/nostr/client.ts";
 import { mergePostsById, type FeedPost } from "../../lib/feed/parse.ts";
 import PostGrid from "./PostGrid.tsx";
+import SavedViews from "./SavedViews.tsx";
 
 type Status = "idle" | "loading" | "error" | "loaded";
 
@@ -81,6 +82,12 @@ export default function DiscoverGrid() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [query, setQuery] = useState("");
 
+  // 現在 URL の `?q=` が持つ値の鏡（名前付きビューの active 判定用・#139 段階3）。
+  // 既定検索（fromDefault・?q= 無し）は空文字＝「すべて」がアクティブ。ユーザー検索はその語。
+  // query と別に持つのは、既定検索では query に DEFAULT_DISCOVER_QUERY(#plantstr) が入り
+  // ?q= の実値（空）と食い違うため。SavedViews へはこの鏡を渡す（?q= と一致＝二重情報源を作らない）。
+  const [reflectedQuery, setReflectedQuery] = useState("");
+
   // 直近の検索リクエストのトークン。連続検索で古い応答が新しい結果を上書きしないよう、
   // await 後にトークンが最新でなければ反映を捨てる（stale-response レース対策）。
   const latestRef = useRef(0);
@@ -102,10 +109,12 @@ export default function DiscoverGrid() {
     if (!fromDefault) {
       setInput(q);
       setQuery(q);
+      setReflectedQuery(q); // ?q= に乗る実値（空クリアも空＝「すべて」へ）
       // 空クリア（idle 化）は履歴を積まず replace で ?q= を消す（戻る対象にしない・#139）。
       if (navigate !== "none") writeQueryToUrl(q, q === "" ? "replace" : navigate);
     } else {
       setQuery(q);
+      setReflectedQuery(""); // 既定検索は ?q= 無し＝「すべて」がアクティブ
     }
     if (q === "") {
       setStatus("idle");
@@ -174,6 +183,23 @@ export default function DiscoverGrid() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
+  // 名前付きビューのチップ tap でビューを適用する（#139 段階3）。意図的操作＝履歴を積む
+  // （pushState・戻るで前のビュー/検索へ戻れる）＝既存の `?q=` 反映経路にそのまま乗せる。
+  // - 「すべて」（query 空）: 既定検索（#plantstr ∪ t:hanoba）に戻す。?q= を push で消し（戻る対象）、
+  //   入力欄も空に同期してから既定検索を流す（q 無しの URL ＝既定表示 と URL/状態を一致させる）。
+  //   ※ 既存の空クリアは replace（戻る対象にしない）だが、ビュー切替は意図的ナビなので push にする。
+  // - 保存ビュー（query 非空）: その query で search（input/?q= も同期＝search の非 fromDefault 経路）。
+  function applyView(query: string) {
+    const q = query.trim();
+    if (q === "") {
+      writeQueryToUrl("", "push");
+      setInput("");
+      void search(DEFAULT_DISCOVER_QUERY, { fromDefault: true });
+    } else {
+      void search(q, { navigate: "push" });
+    }
+  }
+
   // フォーム送信は意図的な検索＝履歴を積む（戻るで前の検索語に戻れる）。
   function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -204,6 +230,10 @@ export default function DiscoverGrid() {
           探す
         </button>
       </form>
+
+      {/* 名前付きビュー（#139 段階3）。「すべて」＋ 保存した自分専用チャンネルをチップで切替する。
+          active 判定は現在 ?q= の鏡（reflectedQuery）と一致するビュー。切替は既存 ?q= 反映経路（applyView）に乗る。 */}
+      <SavedViews currentQuery={reflectedQuery} onApply={applyView} />
 
       {/* idle（初期/クリア後/既定検索が空）は何も出さない。マウント時に既定検索を自動で流すので
           「探すを押すと…」の案内は不要・矛盾するため撤去（#102）。検索の説明は placeholder に一本化。 */}
