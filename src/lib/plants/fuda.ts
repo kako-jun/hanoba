@@ -54,6 +54,12 @@ function lookupSci(name: string): string | null {
  * `hashtags` から札（学名＋和名）を組む。catalog に無いタグ（カテゴリ label・
  * 非 pickable 見出し属・辞書外の任意タグ）は札にしない。属に品種があれば属単独は畳む。
  *
+ * #223 属コンテキスト解決: 別属に同名の品種があり得る（アボカドの「ハス」⇔蓮属、ボタンの
+ * 「太陽」⇔サボテン/スモモ）ので、品種名は **先勝ちで捨てず全候補を持つ**。投稿のタグ集合から
+ * 先に「存在する属の集合 genusPresent」（＝pickableGenus で引けた属名）を求め、品種タグは親属が
+ * 同一投稿にある時だけ品種解決する。これで「ハスアボカド」改名・「太陽」ドロップの妥協を外す。
+ * 親属が無い素の品種タグは catalog 先頭候補（既定）に倒す（本質的に決められず、それ以上は諦める）。
+ *
  * 学名 sci の解決順:
  * - 品種札: `catalog の variety.sci` ?? `lookupSci(品種名)` ?? `lookupSci(属名)` ?? null
  * - 属単独札: `lookupSci(属名)` ?? null
@@ -68,8 +74,9 @@ export function buildFuda(
   hashtags: readonly string[],
   catalog: VarietyCategory[],
 ): Fuda[] {
-  // catalog を一度走査して索引を作る: 品種名(+alias)→所在 / pickable な属名(+alias)→属表示名。
-  const varietyIndex = new Map<string, VarietyIndexEntry>();
+  // catalog を一度走査して索引を作る: 品種名(+alias)→全候補 / pickable な属名(+alias)→属表示名。
+  // #223: varietyIndex は同名の全候補を配列で保持する（先勝ちで捨てない＝属共起で解決するため）。
+  const varietyIndex = new Map<string, VarietyIndexEntry[]>();
   const pickableGenus = new Map<string, string>(); // 照合キー(小文字) → 属表示名
 
   for (const category of catalog) {
@@ -83,9 +90,11 @@ export function buildFuda(
       for (const v of genus.varieties) {
         for (const key of [v.name, ...(v.aliases ?? [])]) {
           const k = key.trim().toLowerCase();
-          if (k !== "" && !varietyIndex.has(k)) {
-            varietyIndex.set(k, { genus: genus.name, varietyName: v.name, sci: v.sci });
-          }
+          if (k === "") continue;
+          const entry: VarietyIndexEntry = { genus: genus.name, varietyName: v.name, sci: v.sci };
+          const list = varietyIndex.get(k);
+          if (list === undefined) varietyIndex.set(k, [entry]);
+          else list.push(entry);
         }
       }
     }
@@ -108,22 +117,37 @@ export function buildFuda(
     return s;
   };
 
+  // 1パス目: 投稿に存在する属の集合を求める（#223）。品種タグの親属は来た時点では未確定なので、
+  // genusPresent は「pickableGenus で引けたタグ＝明示された属名/alias」だけで作る（これが正解）。
+  const genusPresent = new Set<string>();
   for (const tag of hashtags) {
     const k = tag.trim().toLowerCase();
     if (k === "") continue;
-    // 品種を優先（品種名が属名/カテゴリ名と重なるデータでも具体側を札にする）。
-    const vloc = varietyIndex.get(k);
-    if (vloc !== undefined) {
-      // 和名は catalog の canonical 品種名を使う（alias で来ても表記を canonical に寄せる）。
-      stateFor(vloc.genus).varieties.add(vloc.varietyName);
-      continue;
-    }
     const genusName = pickableGenus.get(k);
-    if (genusName !== undefined) {
-      stateFor(genusName).genusOnly = true;
-      continue;
+    if (genusName !== undefined) genusPresent.add(genusName);
+  }
+
+  // 2パス目: 各タグを属コンテキストで解決する（#223）。
+  for (const tag of hashtags) {
+    const k = tag.trim().toLowerCase();
+    if (k === "") continue;
+    const cands = varietyIndex.get(k) ?? [];
+    const gmatch = pickableGenus.get(k);
+    // 親属が同一投稿にある候補だけを品種解決する（別属の同名は混ざらない）。
+    const active = cands.filter((c) => genusPresent.has(c.genus));
+    if (active.length > 0) {
+      // 通常は1件。属共起で確定した品種を該当属に立てる（和名は canonical を使う）。
+      for (const c of active) stateFor(c.genus).varieties.add(c.varietyName);
+    } else if (gmatch !== undefined) {
+      // 品種解決できず、タグ自体が属名/alias なら属単独札にする（蓮・イネ alias 等）。
+      stateFor(gmatch).genusOnly = true;
+    } else if (cands.length > 0) {
+      // 親属タグ無しの素の曖昧タグ＝既定（catalog 先頭候補＝出現順の最初）に倒す。
+      // 単一候補（コシヒカリ等）も親属無しでここで解決される。それ以上は諦める（#223 kako-jun 決定）。
+      const def = cands[0]!;
+      stateFor(def.genus).varieties.add(def.varietyName);
     }
-    // カテゴリ label・非 pickable 見出し属・辞書外タグ（世話/記録等）は札にしない。
+    // else: カテゴリ label・非 pickable 見出し属・辞書外タグ（世話/記録等）は札にしない。
   }
 
   // catalog 出現順で安定化しつつ Fuda を組む（品種を優先・品種が無い属だけ属単独）。
