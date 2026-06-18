@@ -207,4 +207,63 @@ describe("buildFuda", () => {
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ name: "デントコーン" });
   });
+
+  // #223 属コンテキスト解決。同名品種を別属に自然名で共存させ、#属#品種 併記で曖昧解決する。
+  // データ巻き戻し: アボカドの「ハス」復活（ハスアボカド→ハス）/ ボタンの「太陽」復活。
+  it("#223 属共起で品種確定: アボカド＋ハス→アボカドのハス（蓮に化けない）", () => {
+    const fuda = buildFuda(["アボカド", "ハス"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "ハス", sci: "Persea americana 'Hass'" });
+  });
+
+  it("#223 ハス単独は蓮属の属単独札になる（親属アボカド無し→属名一致＝水生の蓮）", () => {
+    const fuda = buildFuda(["ハス"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "ハス" });
+    expect(fuda[0]!.sci).not.toBe("Persea americana 'Hass'"); // アボカドのハスに化けない
+  });
+
+  it("#223 属共起で品種確定: ボタン＋太陽→ボタンの太陽（サボテン/スモモに化けない）", () => {
+    const fuda = buildFuda(["ボタン", "太陽"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "太陽", sci: "Paeonia suffruticosa 'Taiyo'" });
+  });
+
+  it("#223 太陽単独は既定（catalog 先頭候補）の1枚に倒す（親属タグ無し＝それ以上はやらない）", () => {
+    // 太陽は サボテン(Ferocactus echidne) → スモモ(Prunus 'Taiyo') → ボタン の順で catalog に出る。
+    // 親属タグが無いので既定＝先頭候補（サボテンの太陽）に倒す。1枚だけ・二重計上しない。
+    const fuda = buildFuda(["太陽"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "太陽", sci: "Ferocactus echidne" });
+  });
+
+  it("#223 属共起で品種確定: ユッカ＋エレファンティペス→ユッカ側の札（亀甲竜に化けない）", () => {
+    const fuda = buildFuda(["ユッカ", "エレファンティペス"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "エレファンティペス", sci: "Yucca gigantea" });
+  });
+
+  it("#223 属共起で品種確定: ディオスコレア＋エレファンティペス→亀甲竜系（塊根側・Dioscorea）", () => {
+    const fuda = buildFuda(["ディオスコレア", "エレファンティペス"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "エレファンティペス", sci: "Dioscorea elephantipes" });
+  });
+
+  it("#223 variety-variety も属共起で確定: アエオニウム＋夕映→アエオニウムの夕映", () => {
+    const fuda = buildFuda(["アエオニウム", "夕映"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "夕映", sci: "Aeonium decorum f. variegata" });
+  });
+
+  it("#223 variety-variety も属共起で確定: シャクヤク＋夕映→シャクヤクの夕映", () => {
+    const fuda = buildFuda(["シャクヤク", "夕映"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "夕映", sci: "Paeonia lactiflora 'Yubae'" });
+  });
+
+  it("#223 単一候補は親属タグ無しでも解決する（コシヒカリ単独＝既定で1枚）", () => {
+    const fuda = buildFuda(["コシヒカリ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "コシヒカリ" });
+  });
 });

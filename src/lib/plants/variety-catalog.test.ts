@@ -62,6 +62,72 @@ describe("穀物カテゴリ・代表品種の検索到達性（#214）", () => 
   }
 });
 
+describe("熱帯果樹カテゴリ・代表品種の検索到達性（#216）", () => {
+  // 熱帯果樹の代表属・品種が searchCatalog で拾えること（マス層の検索からの収束を担保）。
+  const tropical = ["マンゴー", "バナナ", "ドラゴンフルーツ", "甲州"];
+  for (const term of tropical) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // ドラゴンフルーツ属の alias（表記揺れ）でも拾えること。
+  it(`alias「ピタヤ」が検索で 1 件以上ヒットする`, () => {
+    expect(searchCatalog(VARIETY_CATALOG, "ピタヤ").length).toBeGreaterThan(0);
+  });
+});
+
+describe("芍薬・牡丹カテゴリ・代表品種の検索到達性（#217）", () => {
+  // 芍薬・牡丹の代表属・品種が searchCatalog で拾えること。
+  const peony = ["シャクヤク", "ボタン", "サラ・ベルナール"];
+  for (const term of peony) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // ボタン属の alias（表記揺れ）でも拾えること。
+  it(`alias「牡丹」が検索で 1 件以上ヒットする`, () => {
+    expect(searchCatalog(VARIETY_CATALOG, "牡丹").length).toBeGreaterThan(0);
+  });
+});
+
+describe("山菜・野草カテゴリ・代表品種の検索到達性（#218）", () => {
+  // 山菜・野草の代表属が searchCatalog で拾えること。
+  const wild = ["フキ", "ミョウガ", "ウド", "タラの芽"];
+  for (const term of wild) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+});
+
+describe("属取りこぼし救済・代表種の検索到達性（#220）", () => {
+  // 取りこぼしていた属・品種が searchCatalog で拾えること。
+  const rescued = [
+    "ユッカ",
+    "黒法師",
+    "カンナ",
+    "ゴールドクレスト",
+    "コキア",
+    "アーティチョーク",
+    "サルミアナ",
+    "こんぺいとう",
+    "ヴァッセイ",
+    "アンブリッジローズ",
+  ];
+  for (const term of rescued) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // コキア属の品種名「ホウキギ」（標準和名）でも拾えること。
+  it(`「ホウキギ」が検索で 1 件以上ヒットする`, () => {
+    expect(searchCatalog(VARIETY_CATALOG, "ホウキギ").length).toBeGreaterThan(0);
+  });
+});
+
 describe("カタログの健全性", () => {
   it("カテゴリ label がユニーク", () => {
     const labels = VARIETY_CATALOG.map((c) => c.label);
