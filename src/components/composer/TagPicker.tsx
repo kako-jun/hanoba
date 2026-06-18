@@ -18,12 +18,20 @@ import SciName from "../ui/SciName.tsx";
 interface Props {
   /** 人気タグ（relay 集計・上位）。空なら人気セクションは出さない。 */
   popular: RankedTag[];
-  /** 現在の一言（選択済みタグ＝満たされた色 の判定に使う）。 */
+  /** 現在の一言（選択済みタグ＝満たされた色 の判定に使う）。filter モードでは選択タグを `#a #b` で渡す。 */
   caption: string;
-  /** チップを選んだとき（本文末尾へ挿入する）。 */
+  /** チップを選んだとき（compose=本文末尾へ挿入／filter=絞り込みタグに追加）。 */
   onPick: (tag: string) => void;
-  /** 選択済みチップを再タップしたとき（本文から外す）。 */
+  /** 選択済みチップを再タップしたとき（本文/絞り込みから外す）。 */
   onRemove: (tag: string) => void;
+  /**
+   * 用途（#239）。既定 `compose`＝投稿画面（従来どおり）。`filter`＝discover の品種絞り込み:
+   * - 投稿専用セクション（最近/人気/世話・記録/リクエスト）を畳んだ状態で出さない＝品種ドリルダウン＋検索だけ。
+   * - 品種を選んでも **#属を前置しない（葉タグのみ）**。絞り込みは AND なので属を足すと過剰に絞る（属タグの無い投稿が落ちる）。
+   * - 解除は連動撤去（兄弟チェック）でなく **そのタグ1つだけ外す**（filter は葉のみ入れているため）。
+   * - 見出しを「品種で絞る」にする。
+   */
+  mode?: "compose" | "filter";
 }
 
 /**
@@ -111,7 +119,8 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * - 本文に入っているタグは**満たされた色**（緑塗り）にする。
  * - 値は本文に `#タグ` テキストとして末尾挿入されるだけ（DESIGN §6・t 化しない）。
  */
-export default function TagPicker({ popular, caption, onPick, onRemove }: Props) {
+export default function TagPicker({ popular, caption, onPick, onRemove, mode = "compose" }: Props) {
+  const isFilter = mode === "filter";
   const max = popular.length > 0 ? Math.max(...popular.map((t) => t.count)) : 1;
   const panelRef = useRef<HTMLDivElement>(null);
   // 「その他」ポップアップ（世話/記録の行ごと）。ドリルダウンの open とは独立に管理する（#169）。
@@ -198,11 +207,14 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
   // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
   // （タップしただけ・あとで消したタグは最近に残さない）。
   function pick(name: string) {
-    const loc = catalog === null ? null : findVarietyGenus(catalog, name);
-    // 品種なら先に #属 を入れる（pickable な見出し属のみ）。onPick を属→品種の順に2連発する。
-    // 本文側 Composer.onPick は setCaption の関数型アップデータ＋insertTag（captionHasTag ガード）
-    // なので、2連発でも属は二重挿入されず `#属 #品種` の順で並ぶ（この契約は hashtag-complete テストで固定）。
-    if (loc !== null && loc.genus.pickable) onPick(loc.genus.name);
+    // filter は葉タグのみ（AND 絞り込みで属を足すと、属タグを持たない投稿が落ちて過剰に絞るため）。
+    // compose は品種を選んだら先に #属 を入れる（pickable な見出し属のみ）。onPick を属→品種の順に2連発。
+    // 本文側 Composer.onPick は setCaption の関数型アップデータ＋insertTag（captionHasTag ガード）なので、
+    // 2連発でも属は二重挿入されず `#属 #品種` の順で並ぶ（この契約は hashtag-complete テストで固定）。
+    if (!isFilter) {
+      const loc = catalog === null ? null : findVarietyGenus(catalog, name);
+      if (loc !== null && loc.genus.pickable) onPick(loc.genus.name);
+    }
     onPick(name);
   }
 
@@ -210,7 +222,9 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
   // 未選択なら add()（通常の挿入/階層誘導）を実行する。
   function toggle(name: string, add: () => void) {
     if (has(name)) {
-      for (const t of tagsToUnpick(caption, name, catalog)) onRemove(t);
+      // filter は葉のみ入れるので、そのタグ1つだけ外す。compose は兄弟が残らなければ上位も連動撤去。
+      if (isFilter) onRemove(name);
+      else for (const t of tagsToUnpick(caption, name, catalog)) onRemove(t);
     } else {
       add();
     }
@@ -270,7 +284,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium text-ha-green-deep">タグを選ぶ</span>
+      <span className="text-sm font-medium text-ha-green-deep">{isFilter ? "品種で絞る" : "タグを選ぶ"}</span>
 
       {!open ? (
         // ── 畳んだ状態: ドリルダウン入口を最上段に・最近・人気・世話/記録（0〜1タップ） ──────
@@ -286,6 +300,10 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
             <span aria-hidden className="text-ha-ink/40">›</span>
           </button>
 
+          {/* 投稿専用のクイック行（最近/人気/世話・記録/リクエスト）は filter モードでは出さない＝
+              品種ドリルダウン＋検索だけにする（#239・kako-jun 指示）。 */}
+          {!isFilter && (
+            <>
           {recent.length > 0 && (
             <ChipGroup label="最近使った">
               {recent.map((t) => (
@@ -394,6 +412,8 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
           >
             この植物が無い → 追加をリクエスト
           </a>
+            </>
+          )}
         </>
       ) : (
         // ── 展開状態: 検索（パネル内・全件横断）＋ カテゴリ→属→品種 ドリルダウン ──────
