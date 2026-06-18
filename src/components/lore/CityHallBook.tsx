@@ -175,7 +175,6 @@ export default function CityHallBook() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundColor: "#13161e",
-          marginLeft: "-3px", // 本の左端（背）を約3px 左へ寄せる（kako-jun 指示）。
         }}
       >
         {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。 */}
