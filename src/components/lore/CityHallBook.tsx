@@ -167,7 +167,7 @@ export default function CityHallBook() {
       <div
         className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
         style={{
-          // あなたが「かなりいい」と言った版に戻す：最初の AI 和綴じ枠（綴じ込み）。
+          // 最初の AI 和綴じ枠（綴じ込み）。左（背）は綴じを見せるため厚い（slice 150）。
           borderImageSource: "url('/book-frame-washi-v1.webp')",
           borderImageSlice: "120 120 120 150",
           borderImageRepeat: "stretch",
@@ -175,7 +175,9 @@ export default function CityHallBook() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundColor: "#13161e",
-          marginLeft: "-3px", // 本の左端（背）を約3px 左へ寄せる（kako-jun 指示）。
+          // 地（台紙）の縁を全周ふんわりぼかす＝枠との境界を曖昧にし、各辺の事情の違い
+          //（左=綴じ／上下右=マット）で隙間の見え方が揃わない問題を目立たなくする（kako-jun 案）。
+          boxShadow: "inset 0 0 18px 5px #13161e",
         }}
       >
         {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。 */}
