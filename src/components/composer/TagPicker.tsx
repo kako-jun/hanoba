@@ -32,11 +32,11 @@ interface Props {
 const INLINE_LIMIT = 7;
 
 /**
- * タグ追加リクエストの宛先。当面は hanoba リポの新規 Issue 作成 URL に飛ばす。
- * 将来 #163 市役所ハブ / #164 市長運用が整ったらここを差し替える（#169）。
+ * 品種追加リクエストの宛先（#169/#232）。市役所ハブ（#163）が整ったので GitHub をやめ、
+ * `/vote` の「品種への要望」板（住民投票 BBS の先頭・Nostalgic）へ集約する。
+ * 品種に関する要望（並び順・追加・その他）は全部この板で受ける＝一般ユーザーを GitHub に飛ばさない。
  */
-const REQUEST_TAG_URL =
-  "https://github.com/kako-jun/hanoba/issues/new?labels=tagging&title=%E3%82%BF%E3%82%B0%E8%BF%BD%E5%8A%A0%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%EF%BC%9A&body=%E8%BF%BD%E5%8A%A0%E3%81%97%E3%81%A6%E3%81%BB%E3%81%97%E3%81%84%E6%A4%8D%E7%89%A9%EF%BC%9A%0A%E5%B1%9E%2F%E5%93%81%E7%A8%AE%E5%90%8D%EF%BC%9A%0A%E5%8F%82%E8%80%83URL%EF%BC%9A";
+const REQUEST_TAG_URL = "/vote";
 
 /** 人気タグの出現回数を 3 段階の文字サイズに割り当てる（タグクラウドの強弱）。 */
 function cloudSize(count: number, max: number): string {
