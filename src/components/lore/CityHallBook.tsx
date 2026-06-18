@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Avatar from "../feed/Avatar.tsx";
 import Icon from "../ui/Icon.tsx";
 import { fetchMyPosts } from "../../lib/nostr/client.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
@@ -15,7 +16,12 @@ import {
   LEVEL_FLAVOR,
   LEVEL_SUBTITLE,
   LOCKED_TEASER,
+  MAYOR_NAME,
 } from "../../lib/lore/cityHall.ts";
+
+// 市長ボタニクス・フォン・ハノーバの肖像（語り手アイコン）。
+// 顔は秘密という世界観のため、肖像の代わりにジョウロの写真を掲げる（public 直下の静的アセット）。
+const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
 // = 市役所ハブ。すべての機能への単一の入口。
@@ -133,11 +139,21 @@ export default function CityHallBook() {
   return (
     <section className="ha-rise flex flex-col gap-5" aria-label={BOOK_TITLE}>
       {/* 手帳の表題（在世タイトル）。肩書はレベルで変わる（menu 語の差し替えは defer・本側で適応）。 */}
-      <header className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-          {BOOK_TITLE}
-        </h1>
-        <p className="text-sm text-ha-ink/55">{LEVEL_SUBTITLE[level]}</p>
+      {/* 語り手＝市長ボタニクスの肖像（顔は秘密＝ジョウロ写真）を左に添える。隣の「語り手：…」が
+          Avatar の隣テキスト契約と a11y を満たし、ジョウロ＝市長の意味を伝える。 */}
+      <header className="flex items-center gap-3">
+        <Avatar
+          src={MAYOR_AVATAR_SRC}
+          name="ボタニクス"
+          className="w-14 h-14 ring-1 ring-white/10"
+        />
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-xs text-ha-ink/50">語り手：市長{MAYOR_NAME}</span>
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
+            {BOOK_TITLE}
+          </h1>
+          <p className="text-sm text-ha-ink/55">{LEVEL_SUBTITLE[level]}</p>
+        </span>
       </header>
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。 */}

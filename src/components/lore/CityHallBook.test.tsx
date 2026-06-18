@@ -59,6 +59,22 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳" })).toBeInTheDocument();
   });
 
+  it("ヘッダに市長ボタニクスの語り手アイコン（ジョウロ写真）を出す", async () => {
+    const { container } = render(<CityHallBook />);
+    // Avatar は装飾扱いで alt="" ＝ presentational なので role=img では拾えない。
+    // 素の <img> を走査し src でジョウロ写真を絞り込む。
+    const imgs = Array.from(container.querySelectorAll("img"));
+    const mayor = imgs.find((el) =>
+      (el.getAttribute("src") ?? "").includes("mayor-botanics-watering-can.webp"),
+    );
+    expect(mayor).toBeDefined();
+  });
+
+  it("語り手として市長ボタニクス・フォン・ハノーバの名を添える", async () => {
+    render(<CityHallBook />);
+    expect(screen.getByText(/市長ボタニクス・フォン・ハノーバ/)).toBeInTheDocument();
+  });
+
   it("L0 訪問者（名前なし）: 1p 移住案内のみ・次はティザー止まり", async () => {
     getDisplayName.mockReturnValue(null);
     render(<CityHallBook />);
