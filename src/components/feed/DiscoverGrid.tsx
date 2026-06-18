@@ -18,6 +18,7 @@ import { type FeedPost } from "../../lib/feed/parse.ts";
 import PostGrid from "./PostGrid.tsx";
 import SavedViews from "./SavedViews.tsx";
 import DiscoverFilterPanel from "./DiscoverFilterPanel.tsx";
+import ShareFilter from "./ShareFilter.tsx";
 
 type Status = "idle" | "loading" | "error" | "loaded";
 
@@ -197,6 +198,10 @@ export default function DiscoverGrid() {
         onApply={applyView}
         normalizeQuery={(q) => serializeFilter(parseFilterFromString(q))}
       />
+
+      {/* 共有導線（#139 段階2）。何か絞っている時だけ、現在の絞り込み URL をコピー／X シェアできる。
+          多軸状態は canonical URL に載るので URL を渡せば相手も同じ絞り込みを開ける。 */}
+      <ShareFilter active={!isDefaultFilter(filter)} summary={summary} />
 
       {status === "loading" && (
         <p className="py-12 text-center text-ha-ink/60">「{summary}」を探しています…</p>

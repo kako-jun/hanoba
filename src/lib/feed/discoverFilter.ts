@@ -302,14 +302,20 @@ export function sortPosts(
   return arr.sort((a, b) => b.createdAt - a.createdAt);
 }
 
+const SORT_LABEL: Record<DiscoverSort, string> = { new: "新着順", old: "古い順", popular: "人気順" };
+
 /**
- * フィルタを人間可読の短い要約にする（loading/empty 文言・チップ説明用）。
- * 例: "トマト・実生 / @kako / 葉焼け"。既定（空）は "みんなの植物"。
+ * フィルタを人間可読の短い要約にする（loading/empty 文言・共有テキスト用）。
+ * 例: "トマト・実生 / @kako / 葉焼け / 2026-01-01〜2026-03-31 / 人気順"。
+ * 期間（since/until）と既定でない並び（old/popular）も含めるので、sort/期間だけの絞り込みでも
+ * "みんなの植物" に退化しない（共有テキストが実態と食い違わない）。全軸が既定なら "みんなの植物"。
  */
 export function filterSummary(f: DiscoverFilter): string {
   const parts: string[] = [];
   if (f.tags.length > 0) parts.push(f.tags.join("・"));
   if (f.author !== "") parts.push(f.author);
   if (f.keyword !== "") parts.push(f.keyword);
+  if (f.since !== null || f.until !== null) parts.push(`${unixToDate(f.since)}〜${unixToDate(f.until)}`);
+  if (f.sort !== "new") parts.push(SORT_LABEL[f.sort]);
   return parts.length > 0 ? parts.join(" / ") : "みんなの植物";
 }
