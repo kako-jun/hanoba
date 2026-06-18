@@ -14,6 +14,7 @@ import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import SciName from "../ui/SciName.tsx";
 import Avatar from "./Avatar.tsx";
 import CommentSection from "./CommentSection.tsx";
+import DilutionControl from "./DilutionControl.tsx";
 
 interface Props {
   post: FeedPost;
@@ -23,6 +24,11 @@ interface Props {
   onClose: () => void;
   /** ハッシュタグをクリックしたとき（クライアント側絞り込み）。閉じてから絞り込む。 */
   onSelectHashtag: (tag: string) => void;
+  /**
+   * 「フィードで薄める」コントロールを出すか（#138）。
+   * フィード/discover（他人を薄める）では true、/me（自分の投稿）では false＝自分は薄めない。
+   */
+  showDilution?: boolean;
 }
 
 /**
@@ -37,7 +43,7 @@ interface Props {
  *
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
  */
-export default function PostDetail({ post, profile, onClose, onSelectHashtag }: Props) {
+export default function PostDetail({ post, profile, onClose, onSelectHashtag, showDilution = false }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
@@ -406,6 +412,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag }: 
                 ))}
               </ul>
             )}
+
+            {/* この人をフィードで「薄める」（#138）。著者ヘッダ直下に置く＝その人を指せる場所。
+                ミュートの手前の柔らかい手段。/me（自分の投稿）では出さない＝自分は薄めない。 */}
+            {showDilution && <DilutionControl pubkey={post.pubkey} authorName={authorName} />}
           </div>
 
           {/* コメント欄（#142）。著者バー/サイトリンクの後・スクロール領域（p-5・親は overflow-y-auto）
