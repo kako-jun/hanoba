@@ -4,16 +4,22 @@ import { useSavedViews } from "./useSavedViews.ts";
 
 interface Props {
   /**
-   * 現在の discover 検索文字列（`?q=` の値）。空＝既定検索（「すべて」がアクティブ）。
-   * DiscoverGrid の単一情報源（query state）を素通しで受ける（二重管理しない）。
+   * 現在の多軸フィルタの canonical 文字列（`serializeFilter`・#131）。空＝既定表示（「すべて」がアクティブ）。
+   * DiscoverGrid の単一情報源（filter state）を素通しで受ける（二重管理しない）。
    */
   currentQuery: string;
   /**
-   * チップ tap でビューを適用する（DiscoverGrid の既存 `?q=` 反映経路に乗せる）。
-   * - 「すべて」は空文字＝既定検索へ戻す。
+   * チップ tap でビューを適用する（DiscoverGrid の filter 反映経路に乗せる）。
+   * - 「すべて」は空文字＝既定表示へ戻す。
    * - 保存ビューはその query を渡す（意図的操作なので呼び出し側で pushState 相当を行う）。
    */
   onApply: (query: string) => void;
+  /**
+   * 保存された query 文字列を比較用に正規化する（任意・既定は恒等）。多軸化前に保存された旧形式
+   * （`#実生` 等）と現在の canonical（`tags=実生`）を同一視して active 判定するために DiscoverGrid が
+   * `serializeFilter(parseFilterFromString(q))` を渡す（views.ts の opaque 性は保ったまま比較だけ正規化）。
+   */
+  normalizeQuery?: (query: string) => string;
 }
 
 /**
@@ -28,15 +34,18 @@ interface Props {
  * - 削除: 「編集」トグルで各チップに × を出す（編集モード）。
  *
  * 状態の真実は localStorage（views.ts）。本島は購読（useSavedViews）と描画・入力だけを担う（§3 単一責務）。
- * 多軸フィルタ UI（tags/author/since/sort 同時指定）は #131 待ちで作らない＝query 文字列を丸ごと扱う前方互換。
+ * 多軸フィルタ（tags/author/since/until/sort・#131）の状態は DiscoverGrid が `serializeFilter` で
+ * canonical 文字列にして `currentQuery` に渡す＝本島は中身を解釈せず query 文字列を丸ごと扱う（前方互換）。
  *
  * a11y: チップ列は `role="group"`／各チップは通常の `<button>`＋`aria-pressed`（FilterChips に揃える。
  * tabpanel 紐付けも roving tabindex も持たないため WAI-ARIA の tab 契約は満たせない＝group+pressed が正）。
  * 編集・保存ボタンは aria-label。
  */
-export default function SavedViews({ currentQuery, onApply }: Props) {
+export default function SavedViews({ currentQuery, onApply, normalizeQuery }: Props) {
   const { views, add, remove } = useSavedViews();
   const q = currentQuery.trim();
+  // 保存 query を比較用に正規化（既定は恒等）。currentQuery は既に canonical なのでこちらだけ通す。
+  const norm = normalizeQuery ?? ((x: string) => x);
 
   // 編集モード（× を出す）。保存ビューが0件なら編集する対象が無いので自動で閉じる。
   const [editing, setEditing] = useState(false);
@@ -55,8 +64,8 @@ export default function SavedViews({ currentQuery, onApply }: Props) {
     if (naming) labelInputRef.current?.focus();
   }, [naming]);
 
-  // 現在の query が既に保存済みか（保存導線の出し分け・active 判定に使う）。
-  const alreadySaved = q !== "" && views.some((v) => v.query === q);
+  // 現在の query が既に保存済みか（保存導線の出し分け・active 判定に使う）。正規化して旧形式とも一致させる。
+  const alreadySaved = q !== "" && views.some((v) => norm(v.query) === q);
 
   function confirmSave() {
     const l = label.trim();
@@ -104,7 +113,7 @@ export default function SavedViews({ currentQuery, onApply }: Props) {
         </button>
 
         {views.map((v) => {
-          const active = v.query === q;
+          const active = norm(v.query) === q;
           return (
             <span key={v.id} className="inline-flex items-center">
               <button

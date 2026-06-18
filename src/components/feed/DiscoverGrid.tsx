@@ -1,139 +1,91 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
-import { fetchDiscover, fetchHanobaFeed } from "../../lib/nostr/client.ts";
-import { mergePostsById, type FeedPost } from "../../lib/feed/parse.ts";
+import { fetchDiscoverFiltered } from "../../lib/nostr/client.ts";
+import { classifyDiscoverQuery } from "../../lib/feed/discover.ts";
+import {
+  EMPTY_FILTER,
+  addTag,
+  applyFilterToParams,
+  filterSummary,
+  isDefaultFilter,
+  parseFilter,
+  parseFilterFromString,
+  serializeFilter,
+  type DiscoverFilter,
+} from "../../lib/feed/discoverFilter.ts";
+import { type FeedPost } from "../../lib/feed/parse.ts";
 import PostGrid from "./PostGrid.tsx";
 import SavedViews from "./SavedViews.tsx";
+import DiscoverFilterPanel from "./DiscoverFilterPanel.tsx";
 
 type Status = "idle" | "loading" | "error" | "loaded";
 
-// 初回（?q= 無し）に自動で流す既定検索。開いた瞬間から写真が並ぶようにする（Instagram の explore 流・#22）。
-// Nostr の植物界隈で最も広く使われるタグ。結果ゼロのときだけ案内（温室）を出す。
-const DEFAULT_DISCOVER_QUERY = "#plantstr";
-
 /**
- * 現在の URL の検索語を読む（クライアントのみ）。SSR では呼ばない。
- * `?q=`（#24・タグ/キーワード両対応）を優先し、旧 `?tag=` リンクも後方互換で拾う。
+ * 現在の URL から多軸フィルタを読む（クライアントのみ）。SSR では呼ばない。
+ * 構造化（tags/author/q/since/until/sort）＋旧 `?q=`/`?tag=` を parseFilter が吸収する（#131/#139）。
  */
-function readQueryFromUrl(): string {
+function readFilterFromUrl(): DiscoverFilter {
   try {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("q") ?? params.get("tag") ?? "";
+    return parseFilter(new URLSearchParams(window.location.search));
   } catch {
-    return "";
-  }
-}
-
-/**
- * 検索語を現在の URL に `?q=` で反映する（クライアントのみ）。
- * 旧 `?tag=` は残さない（重複を避けて削除する）。
- *
- * - `mode==="push"`: 意図的な検索（フォーム送信・タグ再検索・再試行）。新しい履歴エントリを積み、
- *   ブラウザの戻るで「前の検索語」へ戻れるようにする（#139 deep-link）。
- * - `mode==="replace"`: 復元・正規化（初回マウントの `?tag=`→`?q=` 正規化、クリアでの `?q=` 削除）。
- *   履歴を増やさない。
- *
- * 注意: pushState/replaceState はどちらも popstate を発火しないので、popstate 経路から
- * これを呼ばない限りループしない（popstate 復元は navigate:"none" で URL を書かない）。
- */
-function writeQueryToUrl(query: string, mode: "push" | "replace") {
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("tag");
-    if (query === "") {
-      url.searchParams.delete("q");
-    } else {
-      url.searchParams.set("q", query);
-    }
-    if (mode === "push") {
-      window.history.pushState(null, "", url.toString());
-    } else {
-      window.history.replaceState(null, "", url.toString());
-    }
-  } catch {
-    // 履歴反映に失敗しても検索自体は通す（致命的でない）。
+    return { ...EMPTY_FILTER };
   }
 }
 
 /**
  * クロスクライアント discover の島（client:load・DESIGN §6 二段構え）。
  *
- * トップ（#4・FeedGrid・t:hanoba 限定＝葉の場）とは住み分ける（#52）。
- * 既定表示（みんなの植物）は **#plantstr（Nostr 全体の植物界隈）∪ t:hanoba（葉の場）**
- * のマージ。hanoba 投稿は #plantstr を強制せずとも t:hanoba 経由で「みんな」に出る。
- * 個別検索は本文 #タグ/キーワードで他クライアント横断（混ぜ込みは既定表示のみ）。
+ * トップ（#4・FeedGrid・t:hanoba 限定＝葉の場）とは住み分ける（#52）。既定表示（みんなの植物）は
+ * **#plantstr（Nostr 全体の植物界隈）∪ t:hanoba（葉の場）** のマージ（取得は fetchDiscoverFiltered）。
  *
- * - 検索入力＋ボタン。初期語は URL の `?q=`（旧 `?tag=` は後方互換で読む）から（クライアントのみ）。
- * - 検索確定 → fetchDiscover（client.ts に集約・二段構え＋画像ありのみ）。
- * - **URL は `?q=` の deep-link（#139 段階1）**: 意図的な検索（フォーム送信・タグ再検索）は
- *   `pushState` で履歴に積み、戻る/進む（`popstate`）で `?q=` を読み直して復元する（popstate 経路は
- *   URL を書かない＝ループ防止）。初回マウントの `?tag=`→`?q=` 正規化・空クリア・error 再試行は
- *   `replaceState`/無書き込みで履歴を汚さない。
- * - 正方形グリッド ＋ 詳細モーダルは PostGrid に委譲（FeedGrid と共有）。
- *   PostDetail のタグクリックは discover では「そのタグで再検索」に繋ぐ。
- * - 状態: idle（未検索）/loading/error/loaded。各状態に文言。
- * - relay 取得・window/history 参照は useEffect/イベント内（クライアント）のみ。
+ * - **多軸フィルタ（#131 / #139 段階2）**: 「誰の × どの品種(タグ) × いつ × 並び」を同時指定できる。
+ *   状態は単一の `filter`（DiscoverFilter）。検索ボックスは keyword 軸（#タグ/@名前/npub は classify で
+ *   tags/author 軸へ振り分け）、構造化指定は折りたたみパネル（DiscoverFilterPanel）から。
+ * - **URL は filter の deep-link**: 意図的操作（検索・パネル変更・タグクリック・ビュー切替）は
+ *   `pushState`、復元（マウント/popstate）は `replaceState`/無書き込み（ループ防止）。filter は
+ *   serializeFilter で canonical 文字列にして SavedViews（#139 段階3）へ渡す＝views.ts 無改変で多軸保存。
+ * - 正方形グリッド＋詳細モーダルは PostGrid に委譲（FeedGrid と共有）。
+ * - 状態: idle（既定で0件）/loading/error/loaded。relay 取得・window/history 参照はクライアントのみ。
  */
 export default function DiscoverGrid() {
-  // input は入力欄の現在値、query は検索を確定して取得に使った語（タグ/キーワード）。
+  // 検索ボックスの現在値（keyword 軸の鏡＝復元時に filter.keyword を映す）。
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<DiscoverFilter>(EMPTY_FILTER);
 
-  // 現在 URL の `?q=` が持つ値の鏡（名前付きビューの active 判定用・#139 段階3）。
-  // 既定検索（fromDefault・?q= 無し）は空文字＝「すべて」がアクティブ。ユーザー検索はその語。
-  // query と別に持つのは、既定検索では query に DEFAULT_DISCOVER_QUERY(#plantstr) が入り
-  // ?q= の実値（空）と食い違うため。SavedViews へはこの鏡を渡す（?q= と一致＝二重情報源を作らない）。
-  const [reflectedQuery, setReflectedQuery] = useState("");
-
-  // 直近の検索リクエストのトークン。連続検索で古い応答が新しい結果を上書きしないよう、
+  // 直近の取得リクエストのトークン。連続操作で古い応答が新しい結果を上書きしないよう、
   // await 後にトークンが最新でなければ反映を捨てる（stale-response レース対策）。
   const latestRef = useRef(0);
 
-  // raw はタグ（`#アガベ`）でもキーワード（`葉焼け`）でもよい。モード分岐は fetchDiscover 側（#24）。
-  //
-  // オプション:
-  // - fromDefault=true: 初回の自動既定検索（#22）。入力欄・URL を汚さない・0件は idle に戻す。
-  // - navigate: URL 反映の仕方。"push"=履歴を積む（意図的検索・戻るで前の語へ）、
-  //   "replace"=履歴を増やさず正規化/クリア、"none"=URL を一切書かない（復元系＝マウント/popstate）。
-  //   既定は "push"（フォーム送信など意図的検索のため）。fromDefault は navigate を無視して URL を書かない。
-  async function search(
-    raw: string,
-    opts: { fromDefault?: boolean; navigate?: "push" | "replace" | "none" } = {},
-  ) {
-    const { fromDefault = false, navigate = "push" } = opts;
-    const q = raw.trim();
+  /**
+   * 多軸フィルタを適用する（URL 反映＋取得）。意図的操作は navigate:"push"（戻るで前の絞り込みへ）、
+   * 復元は "replace"（履歴を増やさず正規化）、popstate は "none"（URL を書かない＝ループ防止）。
+   * - URL は applyFilterToParams で filter キーだけ書き換える（旧 ?tag= は削除・他パラメータは温存）。
+   * - 取得は fetchDiscoverFiltered（既定＝#plantstr ∪ t:hanoba／制約軸ありはその AND）。
+   * - 既定（空）で0件なら idle（温室案内）、それ以外は loaded（0件は「見つからない」文言）。
+   */
+  async function applyFilter(next: DiscoverFilter, navigate: "push" | "replace" | "none") {
+    if (navigate !== "none") {
+      try {
+        const url = new URL(window.location.href);
+        applyFilterToParams(url.searchParams, next);
+        if (navigate === "push") window.history.pushState(null, "", url.toString());
+        else window.history.replaceState(null, "", url.toString());
+      } catch {
+        // 履歴反映に失敗しても取得自体は通す（致命的でない）。
+      }
+    }
+    setFilter(next);
+
     const token = ++latestRef.current;
-    if (!fromDefault) {
-      setInput(q);
-      setQuery(q);
-      setReflectedQuery(q); // ?q= に乗る実値（空クリアも空＝「すべて」へ）
-      // 空クリア（idle 化）は履歴を積まず replace で ?q= を消す（戻る対象にしない・#139）。
-      if (navigate !== "none") writeQueryToUrl(q, q === "" ? "replace" : navigate);
-    } else {
-      setQuery(q);
-      setReflectedQuery(""); // 既定検索は ?q= 無し＝「すべて」がアクティブ
-    }
-    if (q === "") {
-      setStatus("idle");
-      setPosts([]);
-      return;
-    }
     setStatus("loading");
     try {
-      // 既定表示（みんなの植物）＝ #plantstr（Nostr 全体の植物界隈）∪ t:hanoba（葉の場）の
-      // マージ（#52）。hanoba は #plantstr を強制しないが、t:hanoba 経由で自分の投稿も
-      // 「みんな」に必ず出るようにする。個別検索（fromDefault=false）は横断検索のみ。
-      const result = fromDefault
-        ? mergePostsById(
-            ...(await Promise.all([fetchDiscover(q).catch(() => []), fetchHanobaFeed().catch(() => [])])),
-          )
-        : await fetchDiscover(q);
-      if (token !== latestRef.current) return; // 新しい検索が走っていたら古い応答は捨てる
-      // 既定検索が空振りなら、空グリッドでなく idle 案内（温室）に戻す。
-      if (fromDefault && result.length === 0) {
+      const result = await fetchDiscoverFiltered(next);
+      if (token !== latestRef.current) return; // 新しい操作が走っていたら古い応答は捨てる
+      // 既定（みんなの植物）の空振りは空グリッドでなく idle 案内（温室）に戻す。
+      if (isDefaultFilter(next) && result.length === 0) {
         setStatus("idle");
         setPosts([]);
         return;
@@ -142,69 +94,72 @@ export default function DiscoverGrid() {
       setStatus("loaded");
     } catch {
       if (token !== latestRef.current) return;
-      // fetchDiscover は基本フォールバックするが、念のため error 状態も持つ。
-      // 既定検索の失敗は idle に戻す（エラー画面を出さない）。
-      setStatus(fromDefault ? "idle" : "error");
+      // 既定の失敗は idle に倒す（エラー画面を出さない）。絞り込み中の失敗は error。
+      setStatus(isDefaultFilter(next) ? "idle" : "error");
     }
   }
 
-  // URL の `?q=`（旧 `?tag=`）から検索状態を復元する（マウント・popstate 共用の単一ロジック）。
-  // URL は書き換えない方針だが、引数 navigate で「マウント時の正規化（?tag=→?q= の replace）」と
-  // 「popstate での無書き込み（none）」を切り替える。
-  // - q あり: その語で検索（入力欄も同期される＝search の非 fromDefault 経路）。
-  // - q 無し: 既定検索（#plantstr ∪ t:hanoba）に戻す。これは初回マウントの「q 無し」分岐と同一。
+  // URL から filter を復元する（マウント・popstate 共用）。マウントは "replace"（旧 ?tag= 等の正規化）、
+  // popstate は "none"（URL を書き換えない＝二重に履歴を積まない・ループしない）。
   function restoreFromUrl(navigate: "replace" | "none") {
-    const initial = readQueryFromUrl();
-    if (initial !== "") {
-      void search(initial, { navigate });
-    } else {
-      // q 無しの URL（既定検索）に戻ったら入力欄もクリアして URL と一致させる。
-      // 初回マウントは元から空だが、popstate で「検索済み → 既定」へ戻る場合は
-      // 直前の検索語が input に残ってしまうため、ここで明示的に空へ戻す（#139）。
-      setInput("");
-      void search(DEFAULT_DISCOVER_QUERY, { fromDefault: true });
-    }
+    const next = readFilterFromUrl();
+    setInput(next.keyword); // 検索ボックスは keyword 軸の鏡
+    void applyFilter(next, navigate);
   }
 
-  // マウント時: URL の ?q=（旧 ?tag=）があればそれを、無ければ既定検索を自動で流す
-  // （開いた瞬間に写真が並ぶ＝Instagram explore 流・#22）。クライアントのみ・初回だけ。
-  // ?tag= で来たら ?q= に正規化（replace＝履歴は増やさない）。q 無し（既定検索）は URL を書かない。
-  // search/restoreFromUrl は安定参照ではないが、依存は意図的に空（初回マウントのみ実行）。
+  // マウント時: URL の filter を復元して自動で取得する（開いた瞬間に写真が並ぶ＝explore 流・#22）。
+  // クライアントのみ・初回だけ。依存は意図的に空。
   useEffect(() => {
     restoreFromUrl("replace");
   }, []);
 
-  // 戻る/進む（popstate）で URL の ?q= を読み直して再検索する（#139 deep-link 復元）。
-  // URL は一切書き換えない（navigate:"none"）＝履歴を二重に積まない・ループしない。
-  // 連続した戻る/進むでも latestRef により最新応答だけが反映される（stale-response 破棄を維持）。
+  // 戻る/進む（popstate）で URL から filter を読み直して再取得する（#139 deep-link 復元）。
+  // URL は書き換えない（"none"）。latestRef で最新応答だけ反映（stale 破棄を維持）。
   useEffect(() => {
     const onPopState = () => restoreFromUrl("none");
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // 名前付きビューのチップ tap でビューを適用する（#139 段階3）。意図的操作＝履歴を積む
-  // （pushState・戻るで前のビュー/検索へ戻れる）＝既存の `?q=` 反映経路にそのまま乗せる。
-  // - 「すべて」（query 空）: 既定検索（#plantstr ∪ t:hanoba）に戻す。?q= を push で消し（戻る対象）、
-  //   入力欄も空に同期してから既定検索を流す（q 無しの URL ＝既定表示 と URL/状態を一致させる）。
-  //   ※ 既存の空クリアは replace（戻る対象にしない）だが、ビュー切替は意図的ナビなので push にする。
-  // - 保存ビュー（query 非空）: その query で search（input/?q= も同期＝search の非 fromDefault 経路）。
+  // 名前付きビューのチップ tap でビューを適用する（#139 段階3）。意図的操作＝pushState。
+  // ビューの query は serializeFilter の canonical 文字列（旧・単一クエリも parseFilterFromString が吸収）。
+  // 「すべて」（空）は EMPTY_FILTER＝既定表示へ戻す。
   function applyView(query: string) {
-    const q = query.trim();
-    if (q === "") {
-      writeQueryToUrl("", "push");
+    void applyFilter(parseFilterFromString(query), "push");
+  }
+
+  // 検索ボックス送信は keyword 軸への意図的指定＝pushState。#タグ/@名前/npub は classify で
+  // tags/author 軸へ振り分け（パワーユーザー向け）、その場合はボックスを空にする（チップ/欄へ移った）。
+  function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const raw = input.trim();
+    if (raw === "") {
       setInput("");
-      void search(DEFAULT_DISCOVER_QUERY, { fromDefault: true });
+      // keyword を消す。他軸も無く既定へ畳まれるなら replace（戻る対象にしない・#139）、
+      // 他軸が残るなら状態変更として push。
+      const next = { ...filter, keyword: "" };
+      void applyFilter(next, isDefaultFilter(next) ? "replace" : "push");
+      return;
+    }
+    const { mode, term } = classifyDiscoverQuery(raw);
+    if (mode === "tag") {
+      setInput("");
+      void applyFilter({ ...filter, tags: addTag(filter.tags, term) }, "push");
+    } else if (mode === "author") {
+      setInput("");
+      void applyFilter({ ...filter, author: term }, "push");
+    } else if (mode === "author-name") {
+      setInput("");
+      void applyFilter({ ...filter, author: `@${term}` }, "push");
     } else {
-      void search(q, { navigate: "push" });
+      setInput(term);
+      void applyFilter({ ...filter, keyword: term }, "push");
     }
   }
 
-  // フォーム送信は意図的な検索＝履歴を積む（戻るで前の検索語に戻れる）。
-  function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    void search(input, { navigate: "push" });
-  }
+  // SavedViews / DilutionControl と揃えた、現在 filter の canonical 文字列（active 判定・保存キー）。
+  const currentQuery = serializeFilter(filter);
+  const summary = filterSummary(filter);
 
   return (
     <section className="flex flex-col gap-4">
@@ -231,25 +186,30 @@ export default function DiscoverGrid() {
         </button>
       </form>
 
-      {/* 名前付きビュー（#139 段階3）。「すべて」＋ 保存した自分専用チャンネルをチップで切替する。
-          active 判定は現在 ?q= の鏡（reflectedQuery）と一致するビュー。切替は既存 ?q= 反映経路（applyView）に乗る。 */}
-      <SavedViews currentQuery={reflectedQuery} onApply={applyView} />
+      {/* 多軸フィルタ（#131 / #139 段階2）。誰の×品種×期間×並び を折りたたみパネルで指定する。 */}
+      <DiscoverFilterPanel filter={filter} onChange={(next) => void applyFilter(next, "push")} />
 
-      {/* idle（初期/クリア後/既定検索が空）は何も出さない。マウント時に既定検索を自動で流すので
-          「探すを押すと…」の案内は不要・矛盾するため撤去（#102）。検索の説明は placeholder に一本化。 */}
+      {/* 名前付きビュー（#139 段階3）。「すべて」＋ 保存した自分専用チャンネルをチップで切替する。
+          active 判定は現在 filter の canonical 文字列（currentQuery）と一致するビュー。normalizeQuery で
+          旧形式の保存ビュー（`#実生` 等）も canonical 化して同一視する。 */}
+      <SavedViews
+        currentQuery={currentQuery}
+        onApply={applyView}
+        normalizeQuery={(q) => serializeFilter(parseFilterFromString(q))}
+      />
 
       {status === "loading" && (
-        <p className="py-12 text-center text-ha-ink/60">「{query}」を探しています…</p>
+        <p className="py-12 text-center text-ha-ink/60">「{summary}」を探しています…</p>
       )}
 
       {status === "error" && (
         <div className="py-12 flex flex-col items-center gap-4 text-center">
           <p className="text-ha-ink/70">読み込めませんでした。</p>
-          {/* 再試行は同じ語の再取得＝新規ナビゲーションではない。URL は既に ?q=query なので
-              書き換えず（navigate:"none"）、戻る対象に同語の余分な履歴エントリを積まない（#139）。 */}
+          {/* 再試行は同条件の再取得＝新規ナビゲーションではない。URL は既に現在 filter なので
+              書き換えず（"none"）、戻る対象に余分な履歴エントリを積まない（#139）。 */}
           <button
             type="button"
-            onClick={() => void search(query, { navigate: "none" })}
+            onClick={() => void applyFilter(filter, "none")}
             className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
           >
             再試行
@@ -260,12 +220,17 @@ export default function DiscoverGrid() {
       {status === "loaded" &&
         (posts.length === 0 ? (
           <p className="py-12 text-center text-ha-ink/70">
-            「{query}」の投稿は見つかりませんでした。別のことばで試してみましょう。
+            「{summary}」の投稿は見つかりませんでした。別の条件で試してみましょう。
           </p>
         ) : (
-          // 投稿詳細でタグをクリックしたら、そのタグで（# 付き＝タグモードで）再検索する。
-          // 意図的な検索＝履歴を積む（戻るで元の検索語へ・#139）。
-          <PostGrid posts={posts} onSelectHashtag={(tag) => void search(`#${tag}`, { navigate: "push" })} />
+          // 投稿詳細でタグをクリックしたら、そのタグに絞り込む（他軸はリセット・並びは維持＝
+          // 「このタグを見る」ナビ。多軸の組み立ては絞り込みパネルの役割）。意図的操作＝pushState・#139。
+          <PostGrid
+            posts={posts}
+            onSelectHashtag={(tag) =>
+              void applyFilter({ ...EMPTY_FILTER, tags: addTag([], tag), sort: filter.sort }, "push")
+            }
+          />
         ))}
     </section>
   );

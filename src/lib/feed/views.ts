@@ -1,13 +1,13 @@
 // 名前付きビュー（#139 段階3）。discover（みんなの植物）の検索状態を名前付きで保存し、
 // 上部のチップでワンタップ切替できるようにする「自分専用チャンネル」。
 //
-// ビュー＝`{ id, label, query }`。query は **現在の discover の検索文字列（`?q=` の値）を丸ごと**
-// 持つ。今は単一語だが、将来 URL が多軸化（tags/author/since/sort・#131）しても「現在の query を
-// そのまま保存」する作りなので前方互換に活きる（views.ts は query 文字列の中身を解釈しない）。
+// ビュー＝`{ id, label, query }`。query は **現在の多軸フィルタの canonical 文字列**
+// （`serializeFilter`＝例 `tags=実生&sort=old`・#131）を丸ごと持つ。views.ts は query 文字列の
+// 中身を解釈しないので、多軸化前の単一クエリ（`#実生` 等）も同じ仕組みで保存・適用できる（後方互換）。
 //
 // これは taxonomy（不変の Def）でなく**実行時状態**＝表示の好み。フィードの取得・パースには
-// 触らず、既存の `?q=` 反映経路（DiscoverGrid）に「切替＝query を適用」として乗せるだけ
-// （DESIGN の Def/状態分離・単一責務）。
+// 触らず、DiscoverGrid の filter 反映経路（`applyView`＝`parseFilterFromString` で filter に戻す）に
+// 「切替＝query を適用」として乗せるだけ（DESIGN の Def/状態分離・単一責務）。
 // SSR 安全: localStorage は必ず関数内で参照する（recent-tags.ts / dilution.ts の getLS パターン）。
 
 /** 名前付きビューを保存する localStorage キー（storage リスナの絞り込みにも使う）。 */

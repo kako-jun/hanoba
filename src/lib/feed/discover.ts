@@ -1,5 +1,5 @@
 // クロスクライアント discover（DESIGN §6 二段構え読み取り）の純粋関数。
-// relay 呼び出しはしない（取得は client.ts の fetchDiscoverByTag の責務）。
+// relay 呼び出しはしない（取得は client.ts の fetchDiscoverFiltered の責務）。
 //
 // 狙い: hanoba 限定フィード（#4・t:hanoba）と違い、本文 #タグで mypace 等
 // 他クライアントの植物投稿も集約する。書き込み側で本文 # を t 化しない契約
@@ -96,50 +96,7 @@ export function selectAuthorsByName(events: NostrEvent[], name: string, max = 20
     .map((ev) => ev.pubkey);
 }
 
-/** discoverTagFilters が返す二段構えフィルタ。①=#t タグ／②=NIP-50 本文検索。 */
-export interface DiscoverFilters {
-  /** ① t タグ持ちを拾うフィルタ（一般リレー向け）。 */
-  tagFilter: { kinds: number[]; "#t": string[]; limit: number };
-  /** ② NIP-50 本文全文検索フィルタ（検索リレー向け）。search は "#tag"。 */
-  searchFilter: { kinds: number[]; search: string; limit: number };
-}
-
-/**
- * 二段構えの取得フィルタ（DESIGN §6）を組み立てる純粋関数。
- * タグは normalizeTag で正規化してから使う（前後空白 trim・先頭 # 除去）。
- *
- * - tagFilter:    {kinds:[1], "#t":[tag], limit}             … t タグ持ち
- * - searchFilter: {kinds:[1], search:"#"+tag, limit}         … 本文 #タグ全文検索（NIP-50）
- *
- * 空タグの判定・relay 振り分け・マージは呼び出し側（client.ts）の責務。
- */
-export function discoverTagFilters(tag: string, limit: number): DiscoverFilters {
-  const normalized = normalizeTag(tag);
-  return {
-    tagFilter: { kinds: [1], "#t": [normalized], limit },
-    searchFilter: { kinds: [1], search: `#${normalized}`, limit },
-  };
-}
-
-/** discoverKeywordFilters が返すフィルタ。①=本文全文検索／②=タグも一応拾う。 */
-export interface KeywordFilters {
-  /** ① NIP-50 本文全文検索（# を付けない素の語＝本文中の単語を拾う・検索リレー向け）。 */
-  keywordFilter: { kinds: number[]; search: string; limit: number };
-  /** ② 同じ語が `t` タグでも使われていれば拾う（#t:[語]・一般リレー向け）。 */
-  tagFilter: { kinds: number[]; "#t": string[]; limit: number };
-}
-
-/**
- * キーワード（本文全文検索）モードの取得フィルタを組み立てる純粋関数（#24）。
- * tag モードと違い search に `#` を付けない＝本文中に普通に書かれた語（`#` 無し・例
- * 「葉焼け」「徒長」）を拾う。あわせて同語の `t` タグ持ちも拾い、取りこぼしを減らす。
- *
- * relay 振り分け・マージは呼び出し側（client.ts）の責務。
- */
-export function discoverKeywordFilters(keyword: string, limit: number): KeywordFilters {
-  const term = keyword.trim();
-  return {
-    keywordFilter: { kinds: [1], search: term, limit },
-    tagFilter: { kinds: [1], "#t": [normalizeTag(term)], limit },
-  };
-}
+// 取得フィルタ（#t / NIP-50 search）の組み立ては多軸化（#131）で fetchDiscoverFiltered（client.ts）
+// に集約した。旧 discoverTagFilters / discoverKeywordFilters（単一軸の二段構え）は撤去。
+// この純粋モジュールは入力分類（classifyDiscoverQuery）・正規化（normalizeTag）・著者選定
+// （selectAuthorsByName）に責務を絞る。

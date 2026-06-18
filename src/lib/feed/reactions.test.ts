@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countLikes, isLike } from "./reactions.ts";
+import { countLikes, countLikesByTarget, isLike } from "./reactions.ts";
 import type { NostrEvent } from "../nostr/types.ts";
 
 // テスト用の最小 kind:7 イベント。集計は pubkey と content しか参照しない。
@@ -96,5 +96,50 @@ describe("countLikes", () => {
       makeReaction({ pubkey: "a", content: "+" }),
     ];
     expect(countLikes(reactions)).toBe(1);
+  });
+});
+
+describe("countLikesByTarget", () => {
+  it("対象投稿（e タグ）ごとにいいね数を畳む（#131 popular）", () => {
+    const reactions = [
+      makeReaction({ pubkey: "a", content: "+", tags: [["e", "post1"]] }),
+      makeReaction({ pubkey: "b", content: "+", tags: [["e", "post1"]] }),
+      makeReaction({ pubkey: "c", content: "+", tags: [["e", "post2"]] }),
+    ];
+    const counts = countLikesByTarget(reactions);
+    expect(counts.get("post1")).toBe(2);
+    expect(counts.get("post2")).toBe(1);
+  });
+
+  it("投稿ごとに 1 人 1 票・dislike 除外を適用する", () => {
+    const reactions = [
+      makeReaction({ pubkey: "a", content: "+", tags: [["e", "post1"]] }),
+      makeReaction({ pubkey: "a", content: "🌸", tags: [["e", "post1"]] }), // 同一 pubkey → 1 票
+      makeReaction({ pubkey: "b", content: "-", tags: [["e", "post1"]] }), // dislike → 除外
+    ];
+    expect(countLikesByTarget(reactions).get("post1")).toBe(1);
+  });
+
+  it("e タグの無いイベントは無視する", () => {
+    const reactions = [
+      makeReaction({ pubkey: "a", content: "+", tags: [["p", "somepk"]] }),
+      makeReaction({ pubkey: "b", content: "+", tags: [["e", "post1"]] }),
+    ];
+    const counts = countLikesByTarget(reactions);
+    expect(counts.has("post1")).toBe(true);
+    expect(counts.size).toBe(1);
+  });
+
+  it("複数 e タグ（リプライ等）は最後の e を対象にする（NIP-25）", () => {
+    const reactions = [
+      makeReaction({ pubkey: "a", content: "+", tags: [["e", "root"], ["e", "reacted"]] }),
+    ];
+    const counts = countLikesByTarget(reactions);
+    expect(counts.get("reacted")).toBe(1);
+    expect(counts.has("root")).toBe(false);
+  });
+
+  it("空配列は空 Map", () => {
+    expect(countLikesByTarget([]).size).toBe(0);
   });
 });

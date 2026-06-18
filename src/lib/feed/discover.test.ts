@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  classifyDiscoverQuery,
-  discoverKeywordFilters,
-  discoverTagFilters,
-  normalizeTag,
-  selectAuthorsByName,
-} from "./discover.ts";
+import { classifyDiscoverQuery, normalizeTag, selectAuthorsByName } from "./discover.ts";
 import type { NostrEvent } from "../nostr/types.ts";
 
 /** テスト用の最小 kind:0 イベント。 */
@@ -47,28 +41,6 @@ describe("normalizeTag", () => {
     expect(normalizeTag("   ")).toBe("");
     expect(normalizeTag("#")).toBe("");
     expect(normalizeTag("  #  ")).toBe("");
-  });
-});
-
-describe("discoverTagFilters", () => {
-  it("tagFilter は #t に正規化タグ・kinds:[1]・limit を持つ", () => {
-    const { tagFilter } = discoverTagFilters("  #アガベ ", 50);
-    expect(tagFilter).toEqual({ kinds: [1], "#t": ["アガベ"], limit: 50 });
-  });
-
-  it("searchFilter は search が '#'+正規化タグ・kinds:[1]・limit を持つ", () => {
-    const { searchFilter } = discoverTagFilters("#アガベ", 50);
-    expect(searchFilter).toEqual({ kinds: [1], search: "#アガベ", limit: 50 });
-  });
-
-  it("limit を両フィルタに反映する", () => {
-    const { tagFilter, searchFilter } = discoverTagFilters("パキポ", 7);
-    expect(tagFilter.limit).toBe(7);
-    expect(searchFilter.limit).toBe(7);
-  });
-
-  it("正規化済みのタグは search で二重 # にならない（先頭 # は1つ）", () => {
-    expect(discoverTagFilters("##agave", 10).searchFilter.search).toBe("#agave");
   });
 });
 
@@ -163,28 +135,5 @@ describe("selectAuthorsByName (#68)", () => {
 
   it("空の検索語は空配列", () => {
     expect(selectAuthorsByName([profileEvent("pk1", "カコ")], "  ")).toEqual([]);
-  });
-});
-
-describe("discoverKeywordFilters", () => {
-  it("keywordFilter は search に # を付けない素の語を持つ（本文全文検索）", () => {
-    const { keywordFilter } = discoverKeywordFilters("葉焼け", 50);
-    expect(keywordFilter).toEqual({ kinds: [1], search: "葉焼け", limit: 50 });
-  });
-
-  it("tagFilter は同語を #t でも拾う（取りこぼし対策）", () => {
-    const { tagFilter } = discoverKeywordFilters("葉焼け", 50);
-    expect(tagFilter).toEqual({ kinds: [1], "#t": ["葉焼け"], limit: 50 });
-  });
-
-  it("前後空白は trim する", () => {
-    const { keywordFilter } = discoverKeywordFilters("  徒長 ", 10);
-    expect(keywordFilter.search).toBe("徒長");
-  });
-
-  it("limit を両フィルタに反映する", () => {
-    const { keywordFilter, tagFilter } = discoverKeywordFilters("実生", 9);
-    expect(keywordFilter.limit).toBe(9);
-    expect(tagFilter.limit).toBe(9);
   });
 });
