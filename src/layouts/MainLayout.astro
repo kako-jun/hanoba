@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import SiteFooter from "../components/SiteFooter.astro";
 import ScrollToTop from "../components/ui/ScrollToTop.tsx";
+import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
 
 interface Props {
   title?: string;
@@ -90,5 +91,8 @@ const jsonLd = {
     </div>
     <SiteFooter />
     <ScrollToTop client:idle />
+    {/* PWA「ホーム画面に追加」促し（#230）。全ページ共通。window/localStorage は
+        マウント後 useEffect で参照するため SSR 安全。初期描画を妨げないよう idle で読む。 */}
+    <InstallPrompt client:idle />
   </body>
 </html>
