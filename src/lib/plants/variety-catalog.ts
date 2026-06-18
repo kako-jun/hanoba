@@ -1016,10 +1016,35 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "フラントイオ", sci: "Olea europaea 'Frantoio'" }, { name: "コロネイキ", sci: "Olea europaea 'Koroneiki'" }, { name: "マンザニロ", sci: "Olea europaea 'Manzanillo'" }, { name: "シプレッシーノ", sci: "Olea europaea 'Cipressino'" },
         { name: "ピクアル", sci: "Olea europaea 'Picual'" },
       ] },
+      { name: "マンゴー", pickable: true, varieties: [
+        { name: "アーウィン", sci: "Mangifera indica 'Irwin'", aliases: ["アップルマンゴー"] }, { name: "キーツ", sci: "Mangifera indica 'Keitt'" }, { name: "ナンドクマイ", sci: "Mangifera indica 'Nam Dok Mai'" }, { name: "金煌", sci: "Mangifera indica 'Jin Huang'" },
+        { name: "太陽のタマゴ", sci: "Mangifera indica 'Irwin'" }, { name: "玉文", sci: "Mangifera indica 'Yu Wen'" },
+      ] },
+      { name: "アボカド", pickable: true, varieties: [
+        { name: "ハスアボカド", sci: "Persea americana 'Hass'" }, { name: "ベーコン", sci: "Persea americana 'Bacon'" }, { name: "ズタノ", sci: "Persea americana 'Zutano'" }, { name: "ピンカートン", sci: "Persea americana 'Pinkerton'" },
+        { name: "フエルテ", sci: "Persea americana 'Fuerte'" }, { name: "メキシコーラ", sci: "Persea americana 'Mexicola'" },
+      ] },
+      { name: "バナナ", pickable: true, varieties: [
+        { name: "三尺バナナ", sci: "Musa acuminata 'Dwarf Cavendish'", aliases: ["ドワーフバナナ"] }, { name: "アイスクリームバナナ", sci: "Musa 'Blue Java'" }, { name: "モンキーバナナ", sci: "Musa acuminata 'Señorita'" }, { name: "島バナナ", sci: "Musa 'Shima Banana'" },
+      ] },
+      { name: "パパイヤ", pickable: true, varieties: [
+        { name: "サンライズ", sci: "Carica papaya 'Sunrise'" }, { name: "レッドレディ", sci: "Carica papaya 'Red Lady'" }, { name: "台農2号", sci: "Carica papaya 'Tainung No.2'" },
+      ] },
+      { name: "ドラゴンフルーツ", pickable: true, aliases: ["ピタヤ"], varieties: [
+        { name: "レッドピタヤ", sci: "Hylocereus polyrhizus" }, { name: "ホワイトピタヤ", sci: "Hylocereus undatus" }, { name: "イエローピタヤ", sci: "Selenicereus megalanthus" },
+      ] },
+      { name: "グァバ", pickable: true, varieties: [
+        { name: "赤肉グァバ", sci: "Psidium guajava" }, { name: "白肉グァバ", sci: "Psidium guajava" }, { name: "ストロベリーグァバ", sci: "Psidium cattleyanum", aliases: ["テリハバンジロウ"] },
+      ] },
+      { name: "フェイジョア", pickable: true, varieties: [
+        { name: "クーリッジ", sci: "Acca sellowiana 'Coolidge'" }, { name: "アポロ", sci: "Acca sellowiana 'Apollo'" }, { name: "マンモス", sci: "Acca sellowiana 'Mammoth'" }, { name: "トライアンフ", sci: "Acca sellowiana 'Triumph'" },
+      ] },
+      { name: "ライチ", pickable: true, varieties: [
+        { name: "玉荷包", sci: "Litchi chinensis 'Yu He Bao'" }, { name: "黒葉", sci: "Litchi chinensis 'Hak Ip'" },
+      ] },
       { name: "その他果樹", pickable: false, varieties: [
         { name: "茂木", sci: "Eriobotrya japonica 'Mogi'" }, { name: "田中", sci: "Eriobotrya japonica 'Tanaka'" }, { name: "長崎早生", sci: "Eriobotrya japonica 'Nagasaki Wase'", aliases: ["びわ"] }, { name: "丹波栗", sci: "Castanea crenata 'Tamba'" },
-        { name: "利平", sci: "Castanea crenata 'Rihei'" }, { name: "クーリッジ", sci: "Acca sellowiana 'Coolidge'", aliases: ["フェイジョア"] }, { name: "アーウィン", sci: "Mangifera indica 'Irwin'", aliases: ["マンゴー"] }, { name: "ベーコン", sci: "Persea americana 'Bacon'", aliases: ["アボカド"] },
-        { name: "ハス", sci: "Persea americana 'Hass'", aliases: ["アボカド"] }, { name: "ズタノ", sci: "Persea americana 'Zutano'", aliases: ["アボカド"] }, { name: "ラズベリー", sci: "Rubus idaeus" }, { name: "ブラックベリー", sci: "Rubus fruticosus" },
+        { name: "利平", sci: "Castanea crenata 'Rihei'" }, { name: "ラズベリー", sci: "Rubus idaeus" }, { name: "ブラックベリー", sci: "Rubus fruticosus" },
         { name: "ザクロ", sci: "Punica granatum" }, { name: "ジューンベリー", sci: "Amelanchier canadensis" }, { name: "ポポー", sci: "Asimina triloba" }, { name: "アケビ", sci: "Akebia quinata" },
         { name: "パッションフルーツ", sci: "Passiflora edulis" }, { name: "グミ", sci: "Elaeagnus" }, { name: "カシス", sci: "Ribes nigrum" }, { name: "グーズベリー", sci: "Ribes uva-crispa" },
         { name: "クランベリー", sci: "Vaccinium macrocarpon" }, { name: "桑", sci: "Morus" }, { name: "マルベリー", sci: "Morus" }, { name: "パイナップル", sci: "Ananas comosus" },
