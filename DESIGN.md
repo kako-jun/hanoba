@@ -122,6 +122,7 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 - `public/og/bg-blur.webp` … ぼかして暗くした全面背景（`body` の `background-image`）。
 - ~~`public/og/room-dark.webp` / `public/about/{flower,field,fruit}.webp`~~ … 旧 About（三人称 SaaS 説明の 4 カード）の彩り画像。About を市民手帳（市役所ハブ・#163）へ作り替えた際にカードごと撤去し、画像も削除済み（孤児アセット整理）。
 - `public/og/og-image.jpg`（1200×630）… OGP/Twitter カード。
+- `public/book-frame-washi-v1.webp` / `public/book-page-washi-v1.webp` / `public/mayor-botanics-watering-can.webp` … 市民手帳（#163・#219）の和綴じ枠（`border-image` 9 スライス）・和紙ページ地・市長ボタニクスの語り手アイコン（顔は秘密＝ジョウロ）。**ロック頁（？？？）の「読めない頁」は画像でなく CSS**＝いろは歌を流し `filter: blur()` で潰した崩し字＋中央 scrim で「頁はあるが今は読めない」図鑑的示唆を出す（#219 ③・`LOCKED_PAGE_VEIL` / `LockedTeaser`・装飾なので `aria-hidden`）。
 - ソース PNG はリポに残さず、`/image`（codex/gpt-image-2）のプロンプトで再生成する。
 
 ### 5.5 SEO / OGP（#107）

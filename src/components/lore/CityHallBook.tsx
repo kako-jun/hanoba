@@ -15,6 +15,7 @@ import {
   type BookPage,
   LEVEL_FLAVOR,
   LEVEL_SUBTITLE,
+  LOCKED_PAGE_VEIL,
   LOCKED_TEASER,
   MAYOR_NAME,
 } from "../../lib/lore/cityHall.ts";
@@ -228,17 +229,47 @@ export default function CityHallBook() {
   );
 }
 
-/** ロックされたページのティザー（？？？・開けない枠）。 */
+/**
+ * ロックされたページのティザー（？？？・開けない枠）。
+ * 「？？？」＋ひとことは残しつつ、背後に「読めない頁」＝ぼかした崩し字を敷き、
+ * 「頁はあるが今は読めない」図鑑的な示唆を出す（#219 ③）。
+ * blur は静的（アニメ無し）なので reduced-motion 懸念なし。暗地に沈めた低グレア（§5）。
+ */
 function LockedTeaser() {
   return (
     <div
-      className="flex flex-col items-center justify-center gap-3 py-10 text-center select-none"
+      className="relative isolate flex min-h-[360px] flex-col items-center justify-center gap-3 overflow-hidden py-10 text-center select-none"
       aria-disabled="true"
     >
-      <p className="font-display text-4xl font-extrabold tracking-widest text-ha-ink/25">
+      {/* 読めない頁＝ぼかした崩し字（純粋な装飾）。仮名を流し blur で潰して不可読にする。
+          支援技術・コピーからは隠す（aria-hidden / select-none / pointer-events-none）。 */}
+      <div
+        data-testid="lore-veil"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 flex flex-col justify-center gap-3 px-7 [filter:blur(5px)]"
+      >
+        {LOCKED_PAGE_VEIL.map((line, i) => (
+          <span
+            key={i}
+            className="block text-base leading-relaxed tracking-[0.2em] text-ha-ink/15 [word-break:break-all]"
+          >
+            {line}
+          </span>
+        ))}
+      </div>
+      {/* 中央を少し沈める scrim＝ぼかし頁の上で「？？？」を読みやすく（低グレア・地と同色 #13161e）。 */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(60% 55% at 50% 45%, rgba(19,22,30,0.72) 0%, rgba(19,22,30,0) 78%)",
+        }}
+      />
+      <p className="font-display text-4xl font-extrabold tracking-widest text-ha-ink/30">
         {LOCKED_TEASER.title}
       </p>
-      <p className="text-sm text-ha-ink/45 [word-break:auto-phrase]">{LOCKED_TEASER.note}</p>
+      <p className="text-sm text-ha-ink/50 [word-break:auto-phrase]">{LOCKED_TEASER.note}</p>
     </div>
   );
 }
