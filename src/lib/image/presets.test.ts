@@ -156,7 +156,7 @@ describe("composeVignette / composeSharpen / composeEdgeBlur", () => {
     expect(composeVignette([sel("影暮", 1)])).toBe(0.5);
     expect(composeVignette([sel("影暮", 2)])).toBe(0.82);
     expect(composeVignette([sel("影暮", 3)])).toBe(1.0);
-    expect(composeSharpen([sel("線明", 2)])).toBe(0.5);
+    expect(composeSharpen([sel("線明", 2)])).toBe(0.3); // 中（#244 で 0.5→0.3）
     expect(composeEdgeBlur([sel("霞幻", 2)])).toBe(0.6);
   });
 
@@ -167,7 +167,7 @@ describe("composeVignette / composeSharpen / composeEdgeBlur", () => {
 
   it("重ねがけは Max 合成（影暮強 + 線明 → vignette は影暮強）", () => {
     expect(composeVignette([sel("影暮", 3), sel("線明", 2)])).toBe(1.0);
-    expect(composeSharpen([sel("影暮", 2), sel("線明", 3)])).toBe(0.7);
+    expect(composeSharpen([sel("影暮", 2), sel("線明", 3)])).toBe(0.5); // 強（#244 で 0.7→0.5）
     expect(composeEdgeBlur([sel("線明", 3), sel("霞幻", 3)])).toBe(0.85);
   });
 });
