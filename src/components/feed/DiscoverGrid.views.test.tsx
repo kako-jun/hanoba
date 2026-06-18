@@ -3,23 +3,22 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { addSavedView } from "../../lib/feed/views.ts";
+import { EMPTY_FILTER, serializeFilter, type DiscoverFilter } from "../../lib/feed/discoverFilter.ts";
 
-// #139 段階3 統合: 名前付きビューのチップ tap が DiscoverGrid の既存 ?q= 反映経路（applyView →
-// search → writeQueryToUrl → pushState）に正しく乗ることを、DiscoverGrid.test.tsx の流儀
-// （client.ts モック・responses マップ・history は replaceState で初期化）に揃えて確認する。
+// #139 段階3 × #131 段階2 統合: 名前付きビューのチップ tap が DiscoverGrid の多軸フィルタ反映経路
+// （applyView → applyFilter → pushState）に正しく乗ることを確認する。多軸化後、ビューの query は
+// serializeFilter の canonical 文字列（例 "tags=実生"）。旧・単一クエリ（"#実生"）も後方互換で適用できる。
 //
 // happy-dom 申し送り（DiscoverGrid.test.tsx に準拠）:
-// - URL 値比較は new URLSearchParams(window.location.search).get("q") で行う（%23・日本語エンコード差回避）。
-// - push/replace 判別は history.length でなく pushState/replaceState の spy 呼び出し回数で行う。
-// - spy は render ＋初回検索 await 後に mockClear() してから操作する（mount の正規化分を除外）。afterEach で restore。
+// - URL 値比較は new URLSearchParams(window.location.search).get(key) で行う（エンコード差回避）。
+// - push/replace 判別は pushState/replaceState の spy 呼び出し回数で行う。
+// - spy は render ＋初回取得 await 後に mockClear() してから操作する。afterEach で restore。
 
-const fetchDiscover = vi.fn();
-const fetchHanobaFeed = vi.fn();
+const fetchDiscoverFiltered = vi.fn();
 const fetchReactionCount = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
-  fetchDiscover: (...args: unknown[]) => fetchDiscover(...args),
-  fetchHanobaFeed: (...args: unknown[]) => fetchHanobaFeed(...args),
+  fetchDiscoverFiltered: (...args: unknown[]) => fetchDiscoverFiltered(...args),
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
@@ -28,8 +27,11 @@ vi.mock("../../lib/nostr/client.ts", () => ({
 import DiscoverGrid from "./DiscoverGrid.tsx";
 
 const responses = new Map<string, FeedPost[]>();
-function setResponse(query: string, posts: FeedPost[]) {
-  responses.set(query, posts);
+function keyOf(f: DiscoverFilter): string {
+  return serializeFilter(f) || "default";
+}
+function setResponse(partial: Partial<DiscoverFilter>, posts: FeedPost[]) {
+  responses.set(keyOf({ ...EMPTY_FILTER, ...partial }), posts);
 }
 
 function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
@@ -44,21 +46,18 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
   };
 }
 
-function currentQ(): string | null {
-  return new URLSearchParams(window.location.search).get("q");
+function param(key: string): string | null {
+  return new URLSearchParams(window.location.search).get(key);
 }
 
-describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 段階3）", () => {
+describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 段階3 / #131 段階2）", () => {
   beforeEach(() => {
     responses.clear();
-    fetchDiscover.mockReset();
-    fetchDiscover.mockImplementation((q: string) => Promise.resolve(responses.get(q) ?? []));
-    fetchHanobaFeed.mockReset();
-    fetchHanobaFeed.mockResolvedValue([]);
+    fetchDiscoverFiltered.mockReset();
+    fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter) => Promise.resolve(responses.get(keyOf(f)) ?? []));
     fetchReactionCount.mockReset();
     fetchReactionCount.mockResolvedValue(0);
     window.history.replaceState(null, "", "/discover");
-    // 名前付きビューは localStorage が真実。チップを出すため毎回クリアして仕込む。
     window.localStorage.clear();
   });
 
@@ -67,50 +66,57 @@ describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 
     vi.restoreAllMocks();
   });
 
-  it("保存ビューのチップ tap で ?q= がそのビューの query になり、pushState で履歴に積まれる", async () => {
-    addSavedView("実生", "#実生");
-    setResponse("#実生", [makePost({ id: "m", caption: "実生っ子" })]);
+  it("保存ビューのチップ tap でそのビューの多軸フィルタが適用され、pushState で履歴に積まれる", async () => {
+    addSavedView("実生", serializeFilter({ ...EMPTY_FILTER, tags: ["実生"] }));
+    setResponse({ tags: ["実生"] }, [makePost({ id: "m", caption: "実生っ子" })]);
     render(<DiscoverGrid />);
-    // 初回の既定検索（#plantstr）が走り終えるのを待ってから操作する。
-    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
 
-    // mount の正規化分を除外してから spy を設置。
     const pushSpy = vi.spyOn(window.history, "pushState");
     pushSpy.mockClear();
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "実生" }));
 
-    // そのビューの query で検索が走る（applyView → search の非 fromDefault 経路）。
-    await waitFor(() => expect(fetchDiscover).toHaveBeenLastCalledWith("#実生"));
-    // ?q= が #実生 になる（%23 エンコード差は get("q") で吸収）。
-    await waitFor(() => expect(currentQ()).toBe("#実生"));
-    // ビュー切替は意図的ナビ＝pushState で積む（戻るで前へ戻れる）。
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(expect.objectContaining({ tags: ["実生"] })));
+    await waitFor(() => expect(param("tags")).toBe("実生"));
     expect(pushSpy).toHaveBeenCalled();
   });
 
-  it("「すべて」チップ tap で ?q= が消え、既定検索（#plantstr ∪ t:hanoba）へ戻る", async () => {
-    addSavedView("実生", "#実生");
-    setResponse("#実生", [makePost({ id: "m", caption: "実生っ子" })]);
-    // ?q=#実生 の状態から開始（あるビューが選ばれている）。
-    window.history.replaceState(null, "", "/discover?q=" + encodeURIComponent("#実生"));
+  it("旧形式（#タグ）の保存ビューも後方互換で適用され、active 表示になる（normalizeQuery）", async () => {
+    addSavedView("旧実生", "#実生"); // 多軸化前の単一クエリ形式
+    setResponse({ tags: ["実生"] }, [makePost({ id: "m", caption: "実生っ子" })]);
     render(<DiscoverGrid />);
-    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#実生"));
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
 
-    fetchDiscover.mockClear();
-    fetchHanobaFeed.mockClear();
+    const user = userEvent.setup();
+    const chip = screen.getByRole("button", { name: "旧実生" });
+    expect(chip).toHaveAttribute("aria-pressed", "false");
+    await user.click(chip);
+
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(expect.objectContaining({ tags: ["実生"] })));
+    await waitFor(() => expect(param("tags")).toBe("実生"));
+    // 旧形式 "#実生" と現在 filter の canonical "tags=実生" を normalizeQuery で同一視 → チップが active。
+    await waitFor(() => expect(screen.getByRole("button", { name: "旧実生" })).toHaveAttribute("aria-pressed", "true"));
+  });
+
+  it("「すべて」チップ tap でフィルタが空に戻り、既定表示へ（pushState で積む）", async () => {
+    addSavedView("実生", serializeFilter({ ...EMPTY_FILTER, tags: ["実生"] }));
+    setResponse({ tags: ["実生"] }, [makePost({ id: "m", caption: "実生っ子" })]);
+    // ?tags=実生 の状態（あるビューが選ばれている）から開始。
+    window.history.replaceState(null, "", "/discover?tags=" + encodeURIComponent("実生"));
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(expect.objectContaining({ tags: ["実生"] })));
+
+    fetchDiscoverFiltered.mockClear();
     const pushSpy = vi.spyOn(window.history, "pushState");
     pushSpy.mockClear();
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "すべて" }));
 
-    // 既定検索（fromDefault）＝ #plantstr と t:hanoba の両方を呼ぶ。
-    await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
-    expect(fetchHanobaFeed).toHaveBeenCalled();
-    // ?q= は消える。
-    await waitFor(() => expect(currentQ()).toBeNull());
-    // 「すべて」も意図的ナビ＝pushState で積む（既存空クリアの replace と違い戻る対象にする）。
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
+    await waitFor(() => expect(param("tags")).toBeNull());
     expect(pushSpy).toHaveBeenCalled();
   });
 });
