@@ -165,16 +165,17 @@ export default function CityHallBook() {
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。 */}
       <div
-        className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] p-5 sm:p-7 min-h-[520px]"
+        className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
         style={{
-          // 最初の AI 和綴じ枠（綴じ込み）。枠幅・slice は4辺均一にして、内側の枠帯（ベタ塗り）が
-          // 左だけ太く見えないようにする（左 border/slice を厚くしていた版を均一化）。
+          // 最初の AI 和綴じ枠（綴じ込み）。左（背）は綴じを見せるため厚い（border-l/slice 150）。
           borderImageSource: "url('/book-frame-washi-v1.webp')",
-          borderImageSlice: "120",
+          borderImageSlice: "120 120 120 150",
           borderImageRepeat: "stretch",
           backgroundImage: "url('/book-page-washi-v1.webp')",
           backgroundSize: "cover",
           backgroundPosition: "center",
+          // 和紙の地を border 下まで広げる＝枠の内側に地が届かず残る数pxの隙間（特に左）を埋める。
+          backgroundOrigin: "border-box",
           backgroundColor: "#13161e",
         }}
       >
