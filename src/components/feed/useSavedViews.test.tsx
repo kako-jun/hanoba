@@ -86,21 +86,6 @@ describe("useSavedViews（名前付きビューの購読フック・#139 段階3
     expect(result.current.views[0]!.label).toBe("胴切り");
   });
 
-  it("rename(id,label) でラベルが付け替わる（query は変えない）", () => {
-    const { result } = renderHook(() => useSavedViews());
-
-    act(() => result.current.add("実生", "#実生"));
-    const target = result.current.views[0]!;
-
-    act(() => result.current.rename(target.id, "実生っ子"));
-
-    expect(result.current.views[0]!).toMatchObject({
-      id: target.id,
-      label: "実生っ子",
-      query: "#実生", // query は不変
-    });
-  });
-
   it("アンマウント後にイベントが来ても setState せず警告を増やさない（リスナ cleanup）", () => {
     // unmount 後のイベントで setState すると React が console.error で警告する。
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});

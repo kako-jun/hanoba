@@ -30,7 +30,9 @@ interface Props {
  * 状態の真実は localStorage（views.ts）。本島は購読（useSavedViews）と描画・入力だけを担う（§3 単一責務）。
  * 多軸フィルタ UI（tags/author/since/sort 同時指定）は #131 待ちで作らない＝query 文字列を丸ごと扱う前方互換。
  *
- * a11y: チップ列は `role="tablist"`／各チップは `role="tab"`＋`aria-selected`。編集・保存ボタンは aria-label。
+ * a11y: チップ列は `role="group"`／各チップは通常の `<button>`＋`aria-pressed`（FilterChips に揃える。
+ * tabpanel 紐付けも roving tabindex も持たないため WAI-ARIA の tab 契約は満たせない＝group+pressed が正）。
+ * 編集・保存ボタンは aria-label。
  */
 export default function SavedViews({ currentQuery, onApply }: Props) {
   const { views, add, remove } = useSavedViews();
@@ -90,12 +92,11 @@ export default function SavedViews({ currentQuery, onApply }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <div role="tablist" aria-label="保存したビュー" className="flex flex-wrap items-center gap-1.5">
+      <div role="group" aria-label="保存したビュー" className="flex flex-wrap items-center gap-1.5">
         {/* 「すべて」＝既定検索（?q= 無し）。現在 query が空ならアクティブ。 */}
         <button
           type="button"
-          role="tab"
-          aria-selected={q === ""}
+          aria-pressed={q === ""}
           onClick={() => onApply("")}
           className={chipClass(q === "")}
         >
@@ -108,14 +109,13 @@ export default function SavedViews({ currentQuery, onApply }: Props) {
             <span key={v.id} className="inline-flex items-center">
               <button
                 type="button"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
                 onClick={() => onApply(v.query)}
                 className={chipClass(active)}
               >
                 {v.label}
                 {editing && (
-                  // 編集モードでは × を同じチップ内に出す（削除）。tab の選択とは別操作なので
+                  // 編集モードでは × を同じチップ内に出す（削除）。切替（onApply）とは別操作なので
                   // span（クリックで stopPropagation）にして親ボタンの onApply を発火させない。
                   <span
                     role="button"

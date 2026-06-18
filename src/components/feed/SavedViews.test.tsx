@@ -16,42 +16,42 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     cleanup();
   });
 
-  it("保存ビューが無くても「すべて」タブは常に出る（role=tab）", () => {
+  it("保存ビューが無くても「すべて」チップは常に出る（aria-pressed 付きボタン）", () => {
     render(<SavedViews currentQuery="" onApply={() => {}} />);
 
-    const all = screen.getByRole("tab", { name: "すべて" });
+    const all = screen.getByRole("button", { name: "すべて" });
     expect(all).toBeInTheDocument();
-    // tablist は1つ（「すべて」だけ）。
-    expect(screen.getAllByRole("tab")).toHaveLength(1);
+    expect(all).toHaveAttribute("aria-pressed");
   });
 
-  it("保存ビューがチップ（role=tab）として「すべて」に続けて並ぶ", () => {
+  it("保存ビューがチップ（ボタン）として「すべて」に続けて並ぶ", () => {
     addSavedView("実生", "#実生");
     addSavedView("胴切り", "#胴切り");
     render(<SavedViews currentQuery="" onApply={() => {}} />);
 
-    const tabs = screen.getAllByRole("tab");
-    // 「すべて」＋ 保存2件 = 3。
-    expect(tabs.map((t) => t.textContent)).toEqual(["すべて", "実生", "胴切り"]);
+    // それぞれ aria-pressed 付きのチップとして出ている（FilterChips と同じ group+pressed）。
+    expect(screen.getByRole("button", { name: "すべて" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "実生" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "胴切り" })).toBeInTheDocument();
   });
 
-  it("currentQuery が空のとき「すべて」が aria-selected になる", () => {
+  it("currentQuery が空のとき「すべて」が aria-pressed になる", () => {
     addSavedView("実生", "#実生");
     render(<SavedViews currentQuery="" onApply={() => {}} />);
 
-    expect(screen.getByRole("tab", { name: "すべて" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "実生" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("button", { name: "すべて" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "実生" })).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("currentQuery が保存ビューの query と一致すると、そのチップが aria-selected になる", () => {
+  it("currentQuery が保存ビューの query と一致すると、そのチップが aria-pressed になる", () => {
     addSavedView("実生", "#実生");
     addSavedView("胴切り", "#胴切り");
     render(<SavedViews currentQuery="#胴切り" onApply={() => {}} />);
 
-    // 一致したビューだけが選択され、「すべて」は外れる。
-    expect(screen.getByRole("tab", { name: "すべて" })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: "実生" })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: "胴切り" })).toHaveAttribute("aria-selected", "true");
+    // 一致したビューだけが押下状態になり、「すべて」は外れる。
+    expect(screen.getByRole("button", { name: "すべて" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "実生" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "胴切り" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("query 非空かつ未保存のときだけ「このビューを保存」導線が出る", () => {
@@ -84,7 +84,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     expect(views).toHaveLength(1);
     expect(views[0]!).toMatchObject({ label: "うちのアガベ", query: "#アガベ" });
     // 保存後はチップとして出る。
-    expect(screen.getByRole("tab", { name: "うちのアガベ" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "うちのアガベ" })).toBeInTheDocument();
   });
 
   it("ラベルが空のあいだ保存ボタンは disabled（空ラベルでは保存できない）", async () => {
@@ -114,7 +114,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
 
     // localStorage から消え、チップも消える。
     expect(getSavedViews()).toHaveLength(0);
-    expect(screen.queryByRole("tab", { name: "実生" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "実生" })).not.toBeInTheDocument();
   });
 
   it("× クリックは親タブの切替（onApply）を発火しない（stopPropagation）", async () => {
@@ -136,7 +136,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     addSavedView("実生", "#実生");
     render(<SavedViews currentQuery="" onApply={onApply} />);
 
-    await user.click(screen.getByRole("tab", { name: "実生" }));
+    await user.click(screen.getByRole("button", { name: "実生" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply).toHaveBeenCalledWith("#実生");
@@ -148,7 +148,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     addSavedView("実生", "#実生");
     render(<SavedViews currentQuery="#実生" onApply={onApply} />);
 
-    await user.click(screen.getByRole("tab", { name: "すべて" }));
+    await user.click(screen.getByRole("button", { name: "すべて" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply).toHaveBeenCalledWith("");

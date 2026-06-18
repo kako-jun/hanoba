@@ -4,7 +4,6 @@ import {
   getSavedViews,
   KEY as VIEWS_KEY,
   removeSavedView as persistRemove,
-  renameSavedView as persistRename,
   type SavedView,
 } from "../../lib/feed/views.ts";
 
@@ -19,17 +18,16 @@ function isViewsStorageEvent(e: StorageEvent): boolean {
 }
 
 /**
- * 保存済みビュー（配列）の状態を購読し、追加・削除・改名を行うフック（#139 段階3）。
+ * 保存済みビュー（配列）の状態を購読し、追加・削除を行うフック（#139 段階3）。
  *
  * - `views`: 現在の全ビュー（live な購読・配列順）。SSR では空、マウント後に実値へ寄せる。
- * - `add` / `remove` / `rename`: localStorage を更新し、同タブ（カスタムイベント）・別タブ（storage）
+ * - `add` / `remove`: localStorage を更新し、同タブ（カスタムイベント）・別タブ（storage）
  *   の両方へ変更を通知する。状態の真実は localStorage（views.ts）。このフックはその薄い React ビュー。
  */
 export function useSavedViews(): {
   views: SavedView[];
   add: (label: string, query: string) => void;
   remove: (id: string) => void;
-  rename: (id: string, label: string) => void;
 } {
   const [views, setViews] = useState<SavedView[]>([]);
 
@@ -64,10 +62,5 @@ export function useSavedViews(): {
     notify();
   }, [notify]);
 
-  const rename = useCallback((id: string, label: string) => {
-    persistRename(id, label);
-    notify();
-  }, [notify]);
-
-  return { views, add, remove, rename };
+  return { views, add, remove };
 }

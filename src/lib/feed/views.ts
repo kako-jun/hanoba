@@ -85,22 +85,3 @@ export function removeSavedView(id: string): SavedView[] {
   if (next.length === views.length) return views; // 変化なしなら書かない
   return writeSavedViews(next);
 }
-
-/**
- * 指定 id のビューのラベルを付け替える。更新後の全ビューを返す。
- * - 空ラベル（trim 後 ""）・無い id は無視（現状を返す）。query は変えない。
- */
-export function renameSavedView(id: string, label: string): SavedView[] {
-  const l = label.trim();
-  if (l === "") return getSavedViews();
-  const views = getSavedViews();
-  let changed = false;
-  const next = views.map((v) => {
-    if (v.id === id && v.label !== l) {
-      changed = true;
-      return { ...v, label: l };
-    }
-    return v;
-  });
-  return changed ? writeSavedViews(next) : views;
-}

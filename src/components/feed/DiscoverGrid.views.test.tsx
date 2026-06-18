@@ -79,7 +79,7 @@ describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 
     pushSpy.mockClear();
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("tab", { name: "実生" }));
+    await user.click(screen.getByRole("button", { name: "実生" }));
 
     // そのビューの query で検索が走る（applyView → search の非 fromDefault 経路）。
     await waitFor(() => expect(fetchDiscover).toHaveBeenLastCalledWith("#実生"));
@@ -103,7 +103,7 @@ describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 
     pushSpy.mockClear();
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("tab", { name: "すべて" }));
+    await user.click(screen.getByRole("button", { name: "すべて" }));
 
     // 既定検索（fromDefault）＝ #plantstr と t:hanoba の両方を呼ぶ。
     await waitFor(() => expect(fetchDiscover).toHaveBeenCalledWith("#plantstr"));
