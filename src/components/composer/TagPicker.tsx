@@ -370,7 +370,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
             );
           })}
 
-          {/* この植物が無い → 追加をリクエスト（控えめなテキストリンク・#169）。 */}
+          {/* この植物が無い → 追加をリクエスト（控えめなテキストリンク・#169/#232・宛先は /vote の品種要望板）。 */}
           <a
             href={REQUEST_TAG_URL}
             target="_blank"
