@@ -123,6 +123,21 @@ describe("DiscoverGrid", () => {
     expect(box.value).toBe("");
   });
 
+  it("共有導線（#139 段階2）は既定では出さず、絞り込むと出す", async () => {
+    const user = userEvent.setup();
+    setResponse({ keyword: "アガベ" }, [makePost({ id: "a", caption: "アガベ" })]);
+    render(<DiscoverGrid />);
+
+    // 既定表示では共有ボタンは出ない。
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
+    expect(screen.queryByRole("button", { name: /リンクをコピー/ })).not.toBeInTheDocument();
+
+    // 何か絞ると ShareFilter が現れる。
+    await user.type(screen.getByRole("textbox", { name: SEARCH_BOX }), "アガベ");
+    await user.click(screen.getByRole("button", { name: "探す" }));
+    expect(await screen.findByRole("button", { name: /リンクをコピー/ })).toBeInTheDocument();
+  });
+
   it("0 件なら見つからない文言を出す（フィルタ要約つき）", async () => {
     const user = userEvent.setup();
     render(<DiscoverGrid />); // サボテンは未登録＝[]

@@ -302,4 +302,12 @@ describe("filterSummary", () => {
       "トマト・実生 / @kako / 葉焼け",
     );
   });
+  it("期間と既定でない並びも含める（sort/期間だけでも退化しない）", () => {
+    expect(filterSummary({ ...EMPTY_FILTER, sort: "old" })).toBe("古い順");
+    expect(filterSummary({ ...EMPTY_FILTER, since: SINCE, until: UNTIL })).toBe("2026-01-01〜2026-03-31");
+    expect(filterSummary({ ...EMPTY_FILTER, since: SINCE })).toBe("2026-01-01〜");
+    expect(filterSummary({ ...EMPTY_FILTER, tags: ["トマト"], since: SINCE, until: UNTIL, sort: "popular" })).toBe(
+      "トマト / 2026-01-01〜2026-03-31 / 人気順",
+    );
+  });
 });
