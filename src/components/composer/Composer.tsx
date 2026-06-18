@@ -117,12 +117,20 @@ export default function Composer() {
 
   // 保存（blobs・重い側）: 写真集合が変わったら blobs ストアを現在の集合へ一致させる（#228）。
   // 復元前（hydration ガード）は何もしない。並び順は配列添字 i を order として焼く。
+  //
+  // 発火条件は「写真集合（id 列と並び順）が変わった時だけ」に絞る。crop/filters は images 配列内の
+  // DraftImage で変わるが blob 自体には無関係なので、これらの編集で全 blob（数MB×最大4枚）を IndexedDB に
+  // 書き直すのは無駄（仕様: blob の書き込みは写真の追加/削除時だけ。crop/filters は meta 側のデバウンス保存に任せる）。
+  // そのため依存配列を images 全体でなく id 列キーだけにする（並び替え UI は今は無いので id 列が変われば order も自動で振り直される）。
+  const blobSetKey = images.map((img) => img.id).join(" ");
   useEffect(() => {
     if (!hydratedRef.current) return;
     void syncBlobs(
       images.map((img, i) => ({ id: img.id, blob: img.file, name: img.file.name, type: img.file.type, order: i })),
     );
-  }, [images]);
+    // 依存は集合キーのみ（images 全体に依存しない＝crop/filter 変更で再書き込みしない）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blobSetKey]);
 
   // 保存（meta・軽い側）: 本文・各写真のクロップ枠/フィルタ・並び順・選択中 id が変わったら
   // 約 1000ms デバウンスで meta を保存する（#228）。復元前（hydration ガード）は何もしない。
