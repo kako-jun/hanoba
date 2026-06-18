@@ -1,11 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getDilution } from "../../lib/feed/dilution.ts";
 import DilutionControl from "./DilutionControl.tsx";
 
 // happy-dom の localStorage を毎回クリアし、設定の持ち越しを防ぐ。
-describe("DilutionControl（人ごとに薄めるコントロール・#138）", () => {
+describe("DilutionControl（人ごとに減らすスライダ・#138）", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
@@ -14,49 +14,78 @@ describe("DilutionControl（人ごとに薄めるコントロール・#138）", 
     cleanup();
   });
 
-  it("未設定なら『なし』が checked・他段は unchecked（現在 level の反映）", () => {
+  it("既定は畳む＝中立な入口だけ出る・スライダは出ない（減らすのが基本だと誤解させない）", () => {
     render(<DilutionControl pubkey="alice" authorName="アリス" />);
-    expect(screen.getByRole("radio", { name: "なし" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("radio", { name: "1/2" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("radio", { name: "1/5" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("radio", { name: "1/10" })).toHaveAttribute("aria-checked", "false");
+    // 未設定なら中立文言の入口（"減らす"誘導にしない）。
+    expect(
+      screen.getByRole("button", { name: /アリスさんの表示を調整/ }),
+    ).toBeInTheDocument();
+    // 畳まれているのでスライダは存在しない。
+    expect(screen.queryByRole("slider")).toBeNull();
   });
 
-  it("保存済みの level がその段の aria-checked に反映される", () => {
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 5 }));
-    render(<DilutionControl pubkey="alice" authorName="アリス" />);
-    expect(screen.getByRole("radio", { name: "1/5" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("radio", { name: "なし" })).toHaveAttribute("aria-checked", "false");
-  });
-
-  it("『1/5』をクリックすると getDilution が 5 になり、その段が checked になる", async () => {
+  it("入口を開くとスライダ（役割 slider）と人に明示した見出しが出る", async () => {
     const user = userEvent.setup();
     render(<DilutionControl pubkey="alice" authorName="アリス" />);
 
-    await user.click(screen.getByRole("radio", { name: "1/5" }));
+    await user.click(screen.getByRole("button", { name: /アリスさんの表示を調整/ }));
 
-    expect(getDilution("alice")).toBe(5);
-    expect(screen.getByRole("radio", { name: "1/5" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("radio", { name: "なし" })).toHaveAttribute("aria-checked", "false");
+    const slider = screen.getByRole("slider", {
+      name: "アリスさんの投稿をフィードで減らす量",
+    });
+    expect(slider).toBeInTheDocument();
+    // 未設定＝段は「なし」を指す（0〜3 の生 index でなく言葉で読み上げる）。
+    expect(slider).toHaveAttribute("aria-valuetext", "なし");
+    // 見出しは人に明示（植物でなく人を減らすと一目で分かる）。
+    expect(screen.getByText("アリスさんの投稿をフィードで減らす")).toBeInTheDocument();
   });
 
-  it("『なし』をクリックすると設定が解除される（getDilution→null）", async () => {
+  it("保存済みの level は入口の文言とスライダ位置に反映される", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 5 }));
+    render(<DilutionControl pubkey="alice" authorName="アリス" />);
+
+    // 設定中は現在の減量を入口に出す（active な状態を見せる）。
+    await user.click(screen.getByRole("button", { name: /アリスさんを 1\/5 に減らし中/ }));
+
+    const slider = screen.getByRole("slider");
+    expect(slider).toHaveAttribute("aria-valuetext", "1/5");
+    // STOPS=[null,2,5,10] なので 5 の index は 2。
+    expect((slider as HTMLInputElement).value).toBe("2");
+  });
+
+  it("スライダを動かすと getDilution が更新される（index 2 → 1/5）", async () => {
+    const user = userEvent.setup();
+    render(<DilutionControl pubkey="alice" authorName="アリス" />);
+    await user.click(screen.getByRole("button", { name: /アリスさんの表示を調整/ }));
+
+    const slider = screen.getByRole("slider");
+    fireEvent.change(slider, { target: { value: "2" } });
+
+    expect(getDilution("alice")).toBe(5);
+    expect(slider).toHaveAttribute("aria-valuetext", "1/5");
+  });
+
+  it("スライダを左端（なし）へ戻すと設定が解除される（getDilution→null）", async () => {
     const user = userEvent.setup();
     window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 2 }));
     render(<DilutionControl pubkey="alice" authorName="アリス" />);
-    expect(screen.getByRole("radio", { name: "1/2" })).toHaveAttribute("aria-checked", "true");
+    await user.click(screen.getByRole("button", { name: /アリスさんを 1\/2 に減らし中/ }));
 
-    await user.click(screen.getByRole("radio", { name: "なし" }));
+    const slider = screen.getByRole("slider");
+    fireEvent.change(slider, { target: { value: "0" } });
 
     expect(getDilution("alice")).toBeNull();
-    expect(screen.getByRole("radio", { name: "なし" })).toHaveAttribute("aria-checked", "true");
+    expect(slider).toHaveAttribute("aria-valuetext", "なし");
   });
 
-  it("a11y: radiogroup（著者名入りラベル）の中に なし/1/2・1/5・1/10 の4 radio が並ぶ", () => {
+  it("a11y: 開くと なし／1/2／1/5／1/10 の段目盛りが並ぶ", async () => {
+    const user = userEvent.setup();
     render(<DilutionControl pubkey="alice" authorName="アリス" />);
-    const group = screen.getByRole("radiogroup", { name: "アリス の投稿をフィードで薄める" });
-    expect(group).toBeInTheDocument();
-    const radios = screen.getAllByRole("radio");
-    expect(radios.map((r) => r.textContent)).toEqual(["なし", "1/2", "1/5", "1/10"]);
+    await user.click(screen.getByRole("button", { name: /アリスさんの表示を調整/ }));
+
+    for (const tick of ["なし", "1/2", "1/5", "1/10"]) {
+      expect(screen.getByText(tick)).toBeInTheDocument();
+    }
   });
 });

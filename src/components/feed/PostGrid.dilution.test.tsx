@@ -86,8 +86,10 @@ describe("PostGrid × 薄める設定（取得後・表示前の間引き段・#
 
     // モーダルが開く（selected を間引き前 posts から id 引きできている）。
     const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
-    // フィード経由なので薄めるコントロールが出て、現在 level（1/2）が checked。
-    expect(within(dialog).getByRole("radio", { name: "1/2" })).toHaveAttribute("aria-checked", "true");
+    // フィード経由なので減らすコントロールが出て、入口に現在 level（1/2）が反映される（既定は畳む）。
+    expect(
+      within(dialog).getByRole("button", { name: /1\/2 に減らし中/ }),
+    ).toBeInTheDocument();
   });
 
   it("間引きで完全に消えた著者でも、間引き前 posts に居れば selected として開ける（PostGrid は間引き前から id 引き）", async () => {
