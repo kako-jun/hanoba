@@ -1098,5 +1098,34 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
     ],
   },
+  {
+    label: "山菜・野草",
+    genera: [
+      { name: "フキ", pickable: true, aliases: ["ふき", "蕗", "ふきのとう"], varieties: [
+        { name: "愛知早生フキ", sci: "Petasites japonicus 'Aichi Wase'" }, { name: "水ふき", sci: "Petasites japonicus" }, { name: "山ふき", sci: "Petasites japonicus" }, { name: "秋田ふき", sci: "Petasites japonicus subsp. giganteus" },
+      ] },
+      { name: "ヨモギ", pickable: true, aliases: ["よもぎ"], varieties: [
+        { name: "ヨモギ", sci: "Artemisia indica var. maximowiczii" },
+      ] },
+      { name: "ウド", pickable: true, aliases: ["うど", "独活"], varieties: [
+        { name: "山ウド", sci: "Aralia cordata", aliases: ["ヤマウド"] }, { name: "軟白ウド", sci: "Aralia cordata", aliases: ["白ウド"] }, { name: "赤ウド", sci: "Aralia cordata" },
+      ] },
+      { name: "ミョウガ", pickable: true, aliases: ["みょうが", "茗荷"], varieties: [
+        { name: "陣田早生", sci: "Zingiber mioga 'Jinda Wase'" }, { name: "夏みょうが", sci: "Zingiber mioga" }, { name: "秋みょうが", sci: "Zingiber mioga" }, { name: "みょうがたけ", sci: "Zingiber mioga" },
+      ] },
+      { name: "セリ", pickable: true, aliases: ["せり", "芹"], varieties: [
+        { name: "セリ", sci: "Oenanthe javanica" },
+      ] },
+      { name: "ミツバ", pickable: true, aliases: ["みつば", "三つ葉"], varieties: [
+        { name: "糸三つ葉", sci: "Cryptotaenia japonica" }, { name: "根三つ葉", sci: "Cryptotaenia japonica" }, { name: "切り三つ葉", sci: "Cryptotaenia japonica" },
+      ] },
+      { name: "サンショウ", pickable: true, aliases: ["山椒", "さんしょう", "実山椒", "葉山椒"], varieties: [
+        { name: "朝倉山椒", sci: "Zanthoxylum piperitum 'Asakura'" }, { name: "ぶどう山椒", sci: "Zanthoxylum piperitum 'Budo'" },
+      ] },
+      { name: "タラノキ", pickable: true, aliases: ["タラの芽", "たらの芽"], varieties: [
+        { name: "新駒", sci: "Aralia elata 'Shinkoma'" }, { name: "駒みどり", sci: "Aralia elata 'Komamidori'" }, { name: "夕映え", sci: "Aralia elata 'Yubae'" }, { name: "メダラ", sci: "Aralia elata" },
+      ] },
+    ],
+  },
 ];
 
