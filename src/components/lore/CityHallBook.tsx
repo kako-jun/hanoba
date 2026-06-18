@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import Avatar from "../feed/Avatar.tsx";
 import Icon from "../ui/Icon.tsx";
 import { fetchMyPosts } from "../../lib/nostr/client.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
@@ -15,7 +16,12 @@ import {
   LEVEL_FLAVOR,
   LEVEL_SUBTITLE,
   LOCKED_TEASER,
+  MAYOR_NAME,
 } from "../../lib/lore/cityHall.ts";
+
+// 市長ボタニクス・フォン・ハノーバの肖像（語り手アイコン）。
+// 顔は秘密という世界観のため、肖像の代わりにジョウロの写真を掲げる（public 直下の静的アセット）。
+const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
 // = 市役所ハブ。すべての機能への単一の入口。
@@ -32,6 +38,10 @@ import {
 // SSR では window/localStorage を触らない（keys.ts が SSR 安全・取得は useEffect 内）。
 
 const TOTAL_PAGES = BOOK_PAGES.length; // 4
+
+// SSR では useLayoutEffect が警告を出す（サーバに layout フェーズが無い）。
+// クライアントでのみ layout（ペイント前）に走らせ、サーバでは no-op の effect に落とす。
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
  * 名前・投稿から市民レベルを判定する（クライアント専用）。
@@ -58,21 +68,34 @@ async function deriveLevel(): Promise<CitizenLevel> {
 
 export default function CityHallBook() {
   // 判定中は安全側＝L0（1p のみ）で始め、ロック状態を実市民に見せない。
-  // 確定したら defaultPage（L1/L2 → 2p）へ寄せる。
+  // 名乗り済みなら下の useIsoLayoutEffect がペイント前に L1/2p へ寄せる（フラッシュ防止）。
   const [level, setLevel] = useState<CitizenLevel>(0);
   const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
   const aliveRef = useRef(true);
+
+  // 名乗り済みユーザーの「一瞬1ページ目→2ページ目」フラッシュを消す。
+  // deriveLevel はネットワーク（fetchMyPosts）を待つので、それで page を寄せると 1p が一瞬見える。
+  // getDisplayName は同期（localStorage）で読めるので、ペイント前（layout）に初期ページと
+  // 最低レベルを確定する。名乗り済みは deriveLevel が必ず L1 以上を返す（取得失敗でも L1）ため、
+  // 暫定 L1（maxUnlocked=2）にしておけば 2p が即解放され ??? ティザーのちらつきも出ない。
+  // 正確な L1/L2 は下の deriveLevel が後から確定して解放範囲を更新する。
+  useIsoLayoutEffect(() => {
+    if (getDisplayName() !== null) {
+      setLevel(1);
+      setPage(defaultPage(1)); // = 2p
+    }
+  }, []);
 
   useEffect(() => {
     aliveRef.current = true;
     void (async () => {
       const lv = await deriveLevel();
       if (!aliveRef.current) return;
+      // 初期 page・最低レベルは useIsoLayoutEffect が同期確定済み。ここでは正確な L1/L2 を
+      // 確定して maxUnlocked（解放範囲）を更新するだけ＝page は触らない（ユーザー操作を奪わない）。
       setLevel(lv);
       setResolved(true);
-      // 既定ページへ寄せる（解放されたばかりの市民に最初に見せるページ）。
-      setPage(defaultPage(lv));
     })();
     return () => {
       aliveRef.current = false;
@@ -141,7 +164,20 @@ export default function CityHallBook() {
       </header>
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。 */}
-      <div className="glass rounded-2xl p-6 sm:p-8 flex flex-col gap-5">
+      <div
+        className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
+        style={{
+          // あなたが「かなりいい」と言った版に戻す：最初の AI 和綴じ枠（綴じ込み）。
+          borderImageSource: "url('/book-frame-washi-v1.webp')",
+          borderImageSlice: "120 120 120 150",
+          borderImageRepeat: "stretch",
+          backgroundImage: "url('/book-page-washi-v1.webp')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundColor: "#13161e",
+          marginLeft: "-3px", // 本の左端（背）を約3px 左へ寄せる（kako-jun 指示）。
+        }}
+      >
         {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。 */}
         <div key={page} className="ha-rise flex flex-col gap-4" aria-live="polite">
           {isLockedView ? (
@@ -212,6 +248,12 @@ function PageContent({ page }: { page: BookPage }) {
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          {/* 移住案内の冒頭で市長ボタニクスが名乗る。顔は秘密＝ジョウロの肖像（#219①）。
+              Avatar は装飾扱い（alt 空）なので隣に市長名テキストを置き a11y を満たす。 */}
+          <div className="flex items-center gap-3">
+            <Avatar src={MAYOR_AVATAR_SRC} name="ボタニクス" className="w-16 h-16 ring-1 ring-white/10" />
+            <span className="text-sm text-ha-ink/60">市長{MAYOR_NAME}</span>
+          </div>
           {page.blocks.map((b, i) =>
             b.kind === "note" ? (
               <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">

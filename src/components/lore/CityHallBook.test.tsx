@@ -59,6 +59,49 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳" })).toBeInTheDocument();
   });
 
+  it("移住案内（1p）の冒頭に市長ボタニクスのアイコン（ジョウロ写真）を出す", async () => {
+    const { container } = render(<CityHallBook />);
+    // L0（名前なし）の既定は 1p 移住案内。歓迎の辞が出るのを待ってから走査する。
+    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
+    // Avatar は装飾扱いで alt="" ＝ presentational なので role=img では拾えない。
+    // 素の <img> を走査し src でジョウロ写真を絞り込む。
+    const imgs = Array.from(container.querySelectorAll("img"));
+    const mayor = imgs.find((el) =>
+      (el.getAttribute("src") ?? "").includes("mayor-botanics-watering-can.webp"),
+    );
+    expect(mayor).toBeDefined();
+  });
+
+  it("移住案内の冒頭に語り手として市長ボタニクス・フォン・ハノーバの名を添える", async () => {
+    render(<CityHallBook />);
+    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
+    expect(screen.getByText(/市長ボタニクス・フォン・ハノーバ/)).toBeInTheDocument();
+  });
+
+  it("市役所（2p・hub）では市長アイコンを出さない（語り手肖像は移住案内専用）", async () => {
+    getDisplayName.mockReturnValue("みどり"); // L1: 既定 2p（市役所ハブ）。
+    fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
+    const { container } = render(<CityHallBook />);
+    await screen.findByText(/ここは市役所だ/);
+    const imgs = Array.from(container.querySelectorAll("img"));
+    const mayor = imgs.find((el) =>
+      (el.getAttribute("src") ?? "").includes("mayor-botanics-watering-can.webp"),
+    );
+    expect(mayor).toBeUndefined();
+  });
+
+  it("名乗り済み（L1/L2）は最初から2ページ目を出す（1ページ目フラッシュ・???ちらつきなし）", async () => {
+    getDisplayName.mockReturnValue("みどり");
+    fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
+    render(<CityHallBook />);
+    // useIsoLayoutEffect が同期で 2p・最低 L1 を確定するので、最初の描画から:
+    // ・1p 移住案内の歓迎の辞は出ない（page-1 フラッシュなし）
+    expect(screen.queryByText(/ようこそ、緑の市へ/)).toBeNull();
+    // ・2p 市役所が即出る（maxUnlocked=2 なので ??? ティザーのちらつきもない）
+    expect(screen.getByText(/ここは市役所だ/)).toBeInTheDocument();
+    expect(screen.queryByText("？？？")).toBeNull();
+  });
+
   it("L0 訪問者（名前なし）: 1p 移住案内のみ・次はティザー止まり", async () => {
     getDisplayName.mockReturnValue(null);
     render(<CityHallBook />);
