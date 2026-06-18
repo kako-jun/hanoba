@@ -230,12 +230,13 @@ describe("TagPicker", () => {
     expect(screen.queryByRole("dialog", { name: "世話のタグ一覧" })).toBeNull();
   });
 
-  it("追加リクエストリンクが github issues/new・labels=tagging で存在する（#169）", () => {
+  it("追加リクエストリンクが /vote（市役所の品種要望板）に向く・GitHub に飛ばさない（#169/#232）", () => {
     renderPicker();
     const link = screen.getByRole("link", { name: /追加をリクエスト/ });
     const href = link.getAttribute("href")!;
-    expect(href).toContain("https://github.com/kako-jun/hanoba/issues/new");
-    expect(href).toContain("labels=tagging");
+    expect(href).toBe("/vote");
+    expect(href).not.toContain("github.com");
+    // 合成中の下書きを保つため新規タブで開く（draft 自動保存 #228 とも両立）。
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
