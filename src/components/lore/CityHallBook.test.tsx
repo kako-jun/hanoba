@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { TENURE_DAYS, TENURE_POSTS } from "../../lib/lore/citizen.ts";
+import { LOCKED_PAGE_VEIL } from "../../lib/lore/cityHall.ts";
 
 // ネットワーク・鍵はモック境界で止める（実 relay・localStorage を呼ばない）。
 const fetchMyPosts = vi.fn();
@@ -113,6 +114,8 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 前は不可、次（ティザー）へは進める。
     expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
+    // 解放済みページ（1p 本文）にはロック頁のぼかし装飾は出ない。
+    expect(screen.queryByTestId("lore-veil")).toBeNull();
   });
 
   it("L0: 次を押すと？？？ティザー、その先へは進めない", async () => {
@@ -123,6 +126,10 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
 
     await user.click(screen.getByRole("button", { name: "次のページ" }));
     expect(screen.getByText("？？？")).toBeInTheDocument();
+    // ③ ロック頁: 「？？？」の背後に「読めない頁」（ぼかし崩し字）が装飾として敷かれる。
+    const veil = screen.getByTestId("lore-veil");
+    expect(veil).toHaveAttribute("aria-hidden", "true");
+    expect(veil).toHaveTextContent(LOCKED_PAGE_VEIL[0]!);
     // ティザーの先（市役所中身）には行けない。
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
     // 後方には戻れる。
