@@ -8,7 +8,7 @@
 // Object.defineProperty / vi.stubGlobal / 合成 Event で環境を作って検証する
 // （ScrollToTop の matchMedia/window モック流儀に合わせる）。
 
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import InstallPrompt from "./InstallPrompt.tsx";
 import { getInstallDismissedAt, setInstallDismissedAt } from "../../lib/pwa/install.ts";

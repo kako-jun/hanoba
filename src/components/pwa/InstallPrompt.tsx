@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import {
   getInstallDismissedAt,
@@ -49,8 +49,13 @@ export default function InstallPrompt() {
   // 表示する種類（prompt=beforeinstallprompt あり / ios=手動手順 / null=出さない）。
   const [variant, setVariant] = useState<Variant>(null);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  // ネイティブダイアログ待機中（install() の await 中）にアンマウントされたら、
+  // 復帰後の setState を止めるための生存フラグ。effect 本体先頭で true に戻し
+  // （StrictMode の再マウント・島再利用に備える）、cleanup で false を立てる。
+  const aliveRef = useRef(true);
 
   useEffect(() => {
+    aliveRef.current = true;
     // 既設置・抑制中なら何もしない（リスナも張らない）。
     if (isStandalone()) return;
     if (isDismissActive(getInstallDismissedAt(), Date.now())) return;
@@ -73,6 +78,7 @@ export default function InstallPrompt() {
     if (isIosSafari()) setVariant("ios");
 
     return () => {
+      aliveRef.current = false;
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       window.removeEventListener("appinstalled", onAppInstalled);
     };
@@ -91,11 +97,15 @@ export default function InstallPrompt() {
     if (!deferred) return;
     try {
       await deferred.prompt();
+      // ネイティブダイアログ待機中にアンマウントされていたら setState を打たない。
+      if (!aliveRef.current) return;
       const choice = await deferred.userChoice;
+      if (!aliveRef.current) return;
       if (choice.outcome === "dismissed") setInstallDismissedAt(Date.now());
     } catch {
       // prompt が二重呼び等で弾かれても黙って閉じる（うるさくしない）。
     }
+    if (!aliveRef.current) return;
     setVariant(null);
     setDeferred(null);
   }
