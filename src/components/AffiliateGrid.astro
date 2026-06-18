@@ -26,7 +26,8 @@ const show = AFFILIATE_ENABLED && AFFILIATE_PRODUCTS.length > 0;
         </p>
       </header>
 
-      <ul class="grid grid-cols-3 gap-3 sm:gap-4">
+      {/* 3列グリッドは max-w で中サイズ頭打ち＋中央寄せ＝広い親で商品画像が巨大化しない（#242）。 */}
+      <ul class="mx-auto grid w-full max-w-sm grid-cols-3 gap-3 sm:gap-4">
         {AFFILIATE_PRODUCTS.map((p) => (
           <li>
             <a
