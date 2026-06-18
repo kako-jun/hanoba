@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getAllDilutions,
   getDilution,
+  KEY as DILUTION_KEY,
   setDilution as persistDilution,
   type DilutionLevel,
   type DilutionMap,
@@ -12,19 +13,22 @@ import {
 // storage イベントは「別タブ」でしか発火しないので、同タブ内の即時反映には自前イベントを使う。
 const DILUTION_EVENT = "hanoba:dilution-changed";
 
+// 別タブの storage イベントは「あらゆる」localStorage 変更で飛んでくる。間引きキー
+// （または clear() を表す key===null）だけに反応し、無関係な書き込みでは再同期しない。
+function isDilutionStorageEvent(e: StorageEvent): boolean {
+  return e.key === null || e.key === DILUTION_KEY;
+}
+
 /**
  * 間引き設定（pubkey → level）の状態を購読するフック（#138）。
  *
- * - `map`: 現在の全設定。
- * - `setDilution(pubkey, level|null)`: 設定を保存し、同ページの全購読者へ即時通知する。
+ * - `map`: 現在の全設定（live な購読・読み取り専用ビュー）。
  * - 別タブでの変更（storage イベント）も拾って同期する。
  *
+ * 書き込みは {@link useDilutionFor} 経由で行う（このフックは購読のみ）。
  * 状態の真実は localStorage（dilution.ts）。このフックはその薄い React ビュー。
  */
-export function useDilution(): {
-  map: DilutionMap;
-  setDilution: (pubkey: string, level: DilutionLevel | null) => void;
-} {
+export function useDilution(): { map: DilutionMap } {
   // SSR では localStorage が無く空。マウント後に sync で実値へ寄せる。
   const [map, setMap] = useState<DilutionMap>({});
 
@@ -33,22 +37,18 @@ export function useDilution(): {
   useEffect(() => {
     sync();
     const onChange = () => sync();
+    const onStorage = (e: StorageEvent) => {
+      if (isDilutionStorageEvent(e)) sync();
+    };
     window.addEventListener(DILUTION_EVENT, onChange);
-    window.addEventListener("storage", onChange);
+    window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(DILUTION_EVENT, onChange);
-      window.removeEventListener("storage", onChange);
+      window.removeEventListener("storage", onStorage);
     };
   }, [sync]);
 
-  const setDilution = useCallback((pubkey: string, level: DilutionLevel | null) => {
-    persistDilution(pubkey, level);
-    sync();
-    // 同タブの他購読者（開いているグリッド等）へ通知する。
-    window.dispatchEvent(new Event(DILUTION_EVENT));
-  }, [sync]);
-
-  return { map, setDilution };
+  return { map };
 }
 
 // 単独の pubkey の level だけが欲しい場合の薄いラッパ（モーダルのコントロール用）。
@@ -64,11 +64,14 @@ export function useDilutionFor(pubkey: string): {
   useEffect(() => {
     sync();
     const onChange = () => sync();
+    const onStorage = (e: StorageEvent) => {
+      if (isDilutionStorageEvent(e)) sync();
+    };
     window.addEventListener(DILUTION_EVENT, onChange);
-    window.addEventListener("storage", onChange);
+    window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(DILUTION_EVENT, onChange);
-      window.removeEventListener("storage", onChange);
+      window.removeEventListener("storage", onStorage);
     };
   }, [sync]);
 

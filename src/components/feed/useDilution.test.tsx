@@ -47,13 +47,18 @@ describe("useDilution / useDilutionFor（間引き設定の購読フック・#13
     expect(result.current.map).toEqual({ bob: 10 });
   });
 
-  it("level=null（なし）で設定を解除すると map からその人が消える", () => {
-    const { result } = renderHook(() => useDilution());
-    act(() => result.current.setDilution("alice", 2));
-    expect(result.current.map).toEqual({ alice: 2 });
+  it("useDilutionFor.setLevel(null) で解除すると useDilution の map からその人が消える（同タブ同期）", () => {
+    // 書き込みは useDilutionFor、購読は useDilution。別フックの解除が map に反映されることを見る。
+    const grid = renderHook(() => useDilution());
+    const control = renderHook(() => useDilutionFor("alice"));
 
-    act(() => result.current.setDilution("alice", null));
-    expect(result.current.map).toEqual({});
+    act(() => control.result.current.setLevel(2));
+    expect(grid.result.current.map).toEqual({ alice: 2 });
+    expect(control.result.current.level).toBe(2);
+
+    act(() => control.result.current.setLevel(null));
+    expect(grid.result.current.map).toEqual({});
+    expect(control.result.current.level).toBeNull();
     expect(getDilution("alice")).toBeNull();
   });
 

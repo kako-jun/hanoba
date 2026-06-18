@@ -9,7 +9,8 @@
 
 import type { FeedPost } from "./parse.ts";
 
-const KEY = "hanoba:dilution";
+/** 間引き設定を保存する localStorage キー（storage リスナの絞り込みにも使う）。 */
+export const KEY = "hanoba:dilution";
 
 /**
  * 間引き度合い。`N` は「その人の投稿を N 分の 1 だけ残す」。
@@ -17,7 +18,8 @@ const KEY = "hanoba:dilution";
  */
 export type DilutionLevel = 2 | 5 | 10;
 
-/** UI で選べる間引き段（離散・小→大）。`null`＝なし（解除）。 */
+// UI で選べる間引き段（離散・小→大）。解除（なし）は値の不在で表すので、ここには null を含めない。
+// 解除は呼び出し側で `setDilution(pubkey, null)` を使う（DilutionControl の関心）。
 export const DILUTION_LEVELS: readonly DilutionLevel[] = [2, 5, 10];
 
 /** pubkey(hex) → 間引き度合い。 */
@@ -84,9 +86,10 @@ function hashId(id: string): number {
   let h = 0x811c9dc5; // FNV offset basis
   for (let i = 0; i < id.length; i++) {
     h ^= id.charCodeAt(i);
-    // FNV prime 16777619 を Math.imul で 32bit 乗算（>>> 0 で符号なしに保つ）。
+    // FNV prime 16777619 を Math.imul で 32bit 乗算する（途中は符号付き 32bit のまま回す）。
     h = Math.imul(h, 0x01000193);
   }
+  // 最後に >>> 0 で符号なし 32bit 整数へ畳んで返す（負数を避ける）。
   return h >>> 0;
 }
 
