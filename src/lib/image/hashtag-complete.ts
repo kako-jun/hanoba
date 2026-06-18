@@ -64,8 +64,12 @@ export function filterHashtagCandidates(pool: string[], query: string, limit = 8
   return result;
 }
 
-/** タグを本文挿入用に正規化（前後 trim・先頭 `#` 除去・内部空白→`_`）。空なら ""。 */
-function normalizeTagForBody(tag: string): string {
+/**
+ * タグを本文挿入用に正規化（前後 trim・先頭 `#` 除去・内部空白→`_`）。空なら ""。
+ * 投稿本文（insertTag）と discover の絞り込みタグ（VarietyFilter・#239）で**同じ正規化**を共有する
+ * ＝複数語の品種名（例「フィカス ペティオラリス」→`フィカス_ペティオラリス`）が両経路で一致する。
+ */
+export function normalizeTagForBody(tag: string): string {
   return tag
     .trim()
     .replace(/^#+/, "")
