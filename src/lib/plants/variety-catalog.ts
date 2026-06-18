@@ -696,6 +696,10 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ケイトウ", pickable: true, aliases: ["セロシア"], varieties: [
         { name: "久留米ケイトウ", sci: "Celosia argentea var. cristata" }, { name: "ノゲイトウ", sci: "Celosia argentea" }, { name: "羽毛ケイトウ", sci: "Celosia argentea var. plumosa" }, { name: "ヤリゲイトウ", sci: "Celosia argentea var. spicata" },
       ] },
+      { name: "シャクヤク", pickable: true, aliases: ["芍薬", "しゃくやく"], varieties: [
+        { name: "サラ・ベルナール", sci: "Paeonia lactiflora 'Sarah Bernhardt'" }, { name: "滝の粧", sci: "Paeonia lactiflora 'Taki-no-yosooi'" }, { name: "夕映", sci: "Paeonia lactiflora 'Yubae'" }, { name: "春の粧", sci: "Paeonia lactiflora 'Haru-no-yosooi'" },
+        { name: "コーラルチャーム", sci: "Paeonia 'Coral Charm'" }, { name: "火祭", sci: "Paeonia lactiflora 'Himatsuri'" }, { name: "バロネスシュローダー", sci: "Paeonia lactiflora 'Baroness Schroeder'" },
+      ] },
       { name: "その他人気草花", pickable: false, varieties: [
         { name: "プリムラ", sci: "Primula" }, { name: "多年草" }, { name: "宿根草" }, { name: "原種チューリップ", sci: "Tulipa" },
         { name: "ダリア", sci: "Dahlia" }, { name: "花菖蒲", sci: "Iris ensata var. ensata" }, { name: "君子蘭", sci: "Clivia miniata" },
@@ -777,6 +781,10 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "サクラ", pickable: true, aliases: ["桜"], varieties: [
         { name: "ソメイヨシノ", sci: "Cerasus × yedoensis 'Somei-yoshino'" }, { name: "枝垂れ桜", sci: "Cerasus spachiana" }, { name: "八重桜", sci: "Cerasus serrulata 'Sekiyama'" }, { name: "河津桜", sci: "Cerasus 'Kawazu-zakura'" },
         { name: "陽光", sci: "Cerasus 'Yoko'" }, { name: "旭山桜", sci: "Cerasus serrulata 'Asahiyama'" }, { name: "富士桜", sci: "Cerasus incisa" }, { name: "ヤマザクラ", sci: "Cerasus jamasakura" },
+      ] },
+      { name: "ボタン", pickable: true, aliases: ["牡丹", "ぼたん"], varieties: [
+        { name: "島大臣", sci: "Paeonia suffruticosa 'Shima-daijin'" }, { name: "八千代椿", sci: "Paeonia suffruticosa 'Yachiyo-tsubaki'" }, { name: "新国色", sci: "Paeonia suffruticosa 'Shin-kokushoku'" }, { name: "花競", sci: "Paeonia suffruticosa 'Hanakurabe'" },
+        { name: "鎌田藤", sci: "Paeonia suffruticosa 'Kamada-fuji'" }, { name: "鎌田錦", sci: "Paeonia suffruticosa 'Kamada-nishiki'" }, { name: "ハイヌーン", sci: "Paeonia × 'High Noon'" },
       ] },
     ],
   },
