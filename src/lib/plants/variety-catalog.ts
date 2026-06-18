@@ -819,6 +819,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ボタン", pickable: true, aliases: ["牡丹", "ぼたん"], varieties: [
         { name: "島大臣", sci: "Paeonia suffruticosa 'Shima-daijin'" }, { name: "八千代椿", sci: "Paeonia suffruticosa 'Yachiyo-tsubaki'" }, { name: "新国色", sci: "Paeonia suffruticosa 'Shin-kokushoku'" }, { name: "花競", sci: "Paeonia suffruticosa 'Hanakurabe'" },
         { name: "鎌田藤", sci: "Paeonia suffruticosa 'Kamada-fuji'" }, { name: "鎌田錦", sci: "Paeonia suffruticosa 'Kamada-nishiki'" }, { name: "ハイヌーン", sci: "Paeonia × 'High Noon'" },
+        { name: "太陽", sci: "Paeonia suffruticosa 'Taiyo'" },
       ] },
       { name: "コニファー", pickable: true, varieties: [
         { name: "ゴールドクレスト", sci: "Cupressus macrocarpa 'Goldcrest'" }, { name: "エメラルドグリーン", sci: "Thuja occidentalis 'Smaragd'" }, { name: "ブルーアイス", sci: "Cupressus arizonica 'Blue Ice'" }, { name: "ブルーヘブン", sci: "Juniperus scopulorum 'Blue Heaven'" },
@@ -1073,7 +1074,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "太陽のタマゴ", sci: "Mangifera indica 'Irwin'" }, { name: "玉文", sci: "Mangifera indica 'Yu Wen'" },
       ] },
       { name: "アボカド", pickable: true, varieties: [
-        { name: "ハスアボカド", sci: "Persea americana 'Hass'" }, { name: "ベーコン", sci: "Persea americana 'Bacon'" }, { name: "ズタノ", sci: "Persea americana 'Zutano'" }, { name: "ピンカートン", sci: "Persea americana 'Pinkerton'" },
+        { name: "ハス", sci: "Persea americana 'Hass'" }, { name: "ベーコン", sci: "Persea americana 'Bacon'" }, { name: "ズタノ", sci: "Persea americana 'Zutano'" }, { name: "ピンカートン", sci: "Persea americana 'Pinkerton'" },
         { name: "フエルテ", sci: "Persea americana 'Fuerte'" }, { name: "メキシコーラ", sci: "Persea americana 'Mexicola'" },
       ] },
       { name: "バナナ", pickable: true, varieties: [
