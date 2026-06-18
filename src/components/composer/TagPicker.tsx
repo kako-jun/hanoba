@@ -146,8 +146,12 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
   }, [open]);
 
   // 「その他」ポップアップは 囲み外クリック / Esc で閉じる（×でも閉じる・#169）。
+  // 中央モーダル（#243）は scrim が全面を覆うので「囲み外」＝実質 scrim クリック＝この mousedown で閉じる。
+  // aria-modal 宣言と実挙動を一致させるため、開いたらモーダルへフォーカスを移し、閉じたら元（トリガー）へ戻す。
   useEffect(() => {
     if (overflowOpen === null) return;
+    const prevFocused = typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+    overflowRef.current?.focus();
     const onDown = (e: MouseEvent) => {
       if (overflowRef.current !== null && !overflowRef.current.contains(e.target as Node)) {
         setOverflowOpen(null);
@@ -161,6 +165,8 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
+      // 閉じたらフォーカスをトリガーへ戻す（キーボード/SR の文脈を失わせない）。
+      prevFocused?.focus?.();
     };
   }, [overflowOpen]);
 
@@ -343,7 +349,8 @@ export default function TagPicker({ popular, caption, onPick, onRemove }: Props)
                             role="dialog"
                             aria-modal="true"
                             aria-label={`${c.label}のタグ一覧`}
-                            className="glass-strong flex max-h-[80vh] w-72 max-w-[calc(100vw-2rem)] flex-col gap-2 overflow-y-auto rounded-2xl p-3 shadow-2xl"
+                            tabIndex={-1}
+                            className="glass-strong flex max-h-[80vh] w-72 max-w-[calc(100vw-2rem)] flex-col gap-2 overflow-y-auto rounded-2xl p-3 shadow-2xl focus:outline-none"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-xs text-ha-ink/55">
