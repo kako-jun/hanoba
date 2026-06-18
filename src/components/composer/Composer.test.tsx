@@ -535,6 +535,29 @@ describe("Composer 下書き配線（#228）", () => {
     expect((screen.getByLabelText("ひとこと") as HTMLTextAreaElement).value).toBe("復元された一言");
   });
 
+  it("復元直後は読んだばかりの blob を書き戻さない（syncBlobs を呼ばない・Fix1 の核心）", async () => {
+    loadDraft.mockResolvedValue(snapshotWith({ caption: "復元", images: [{ id: "img-1", name: "saved.jpg" }] }));
+    render(<Composer />);
+
+    // 復元 UI が出る＝setImages(restored) が走った後でも、復元集合キーを控えてあるので blobs は書き戻さない。
+    expect(await screen.findByAltText("1枚目")).toBeInTheDocument();
+    expect(syncBlobs).not.toHaveBeenCalled();
+  });
+
+  it("復元後に写真を全部外すと blobs を空配列でクリアする（外した写真が IDB に残って復活しない）", async () => {
+    const user = userEvent.setup();
+    loadDraft.mockResolvedValue(snapshotWith({ caption: "", images: [{ id: "img-1", name: "saved.jpg" }] }));
+    render(<Composer />);
+    await screen.findByAltText("1枚目");
+    // 復元直後は書き戻さない（前提）。
+    expect(syncBlobs).not.toHaveBeenCalled();
+
+    // 1枚を外して写真ゼロへ。集合キーが "" に変わる＝復元集合キーと不一致なので syncBlobs([]) が走る。
+    await user.click(screen.getByRole("button", { name: "写真を選び直す" }));
+    await waitFor(() => expect(syncBlobs).toHaveBeenCalled());
+    expect(syncBlobs.mock.calls.at(-1)![0]).toEqual([]);
+  });
+
   it("snapshot.images が空なら復元せずピッカーのまま（写真ゼロは下書き扱いしない）", async () => {
     loadDraft.mockResolvedValue(snapshotWith({ images: [] }));
     render(<Composer />);

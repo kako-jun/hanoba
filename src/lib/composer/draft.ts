@@ -51,7 +51,7 @@ export interface DraftMeta {
   currentId: string | null;
   /** 写真ごとの軽い状態（並び順は items の順＝blobs の order と揃える）。 */
   items: DraftMetaItem[];
-  /** 最終更新（ms）。 */
+  /** 最終更新（ms）。保存専用＝loadDraft は読まないし、復元用の DraftSnapshot にも載せない（saveMeta が焼くだけ）。 */
   updatedAt: number;
 }
 

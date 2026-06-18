@@ -87,6 +87,9 @@ export default function Composer() {
   // 下書きの自動保存・復元（#228）。復元完了までは保存系の effect を黙らせる（hydration ガード）。
   // false の間に初期 images=[] / 空 caption が走って下書きを上書き消去するのを防ぐ race 回避。
   const hydratedRef = useRef(false);
+  // 直近で blobs ストアへ sync 済みの写真集合キー（id 列／並び）。復元直後はここに復元集合キーを控え、
+  // blobs effect が「いま読んだばかりの blob」を clear+putAll で書き戻す無駄＝事故を止める（#228）。
+  const lastSyncedKeyRef = useRef<string | null>(null);
 
   // マウント時に下書きを復元する（#228・非同期）。IndexedDB から blob＋メタを読み、
   // blob から Object URL と File を再生成して DraftImage[] を組み直す。
@@ -101,6 +104,9 @@ export default function Composer() {
           return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters };
         });
         if (restored.length === 0) return;
+        // 復元した集合キーを控える（blobSetKey と同じ作り方で揃える）。これで直後に発火する
+        // blobs effect が blobSetKey === lastSyncedKeyRef となり、読んだばかりの blob を書き戻さない。
+        lastSyncedKeyRef.current = restored.map((img) => img.id).join(" ");
         setImages(restored);
         setCaption(snapshot.caption);
         setCurrentId(snapshot.currentId ?? restored[0]!.id);
@@ -115,16 +121,20 @@ export default function Composer() {
     };
   }, []);
 
-  // 保存（blobs・重い側）: 写真集合が変わったら blobs ストアを現在の集合へ一致させる（#228）。
+  // 保存（blobs・重い側）: 写真集合（id 列／並び）が前回 sync 時と変わった時だけ blobs ストアを現在の集合へ一致させる（#228）。
   // 復元前（hydration ガード）は何もしない。並び順は配列添字 i を order として焼く。
   //
-  // 発火条件は「写真集合（id 列と並び順）が変わった時だけ」に絞る。crop/filters は images 配列内の
-  // DraftImage で変わるが blob 自体には無関係なので、これらの編集で全 blob（数MB×最大4枚）を IndexedDB に
-  // 書き直すのは無駄（仕様: blob の書き込みは写真の追加/削除時だけ。crop/filters は meta 側のデバウンス保存に任せる）。
-  // そのため依存配列を images 全体でなく id 列キーだけにする（並び替え UI は今は無いので id 列が変われば order も自動で振り直される）。
+  // 「集合が変わった時だけ」に絞る理由: crop/filters は images 配列内の DraftImage で変わるが blob 自体には
+  // 無関係なので、これらの編集で全 blob（数MB×最大4枚）を IndexedDB に書き直すのは無駄（crop/filters は meta 側の
+  // デバウンス保存に任せる）。さらに復元直後は lastSyncedKeyRef に復元集合キーを控えてあるので、blobSetKey と一致＝
+  // 「いま読んだばかりの blob」を clear+putAll で書き戻さない。
+  // 一方、写真を実際に外して集合が変わった時（空配列＝blobSetKey="" を含む）は lastSyncedKeyRef と不一致になり
+  // syncBlobs([]) が走って blobs をクリアする＝外した写真が IDB に残って復活する事故を防ぐ（空でも早期 return しない）。
   const blobSetKey = images.map((img) => img.id).join(" ");
   useEffect(() => {
     if (!hydratedRef.current) return;
+    if (blobSetKey === lastSyncedKeyRef.current) return; // 復元/前回と同じ写真集合は書き戻さない。
+    lastSyncedKeyRef.current = blobSetKey;
     void syncBlobs(
       images.map((img, i) => ({ id: img.id, blob: img.file, name: img.file.name, type: img.file.type, order: i })),
     );
@@ -134,10 +144,12 @@ export default function Composer() {
 
   // 保存（meta・軽い側）: 本文・各写真のクロップ枠/フィルタ・並び順・選択中 id が変わったら
   // 約 1000ms デバウンスで meta を保存する（#228）。復元前（hydration ガード）は何もしない。
-  // 写真ゼロ かつ 本文空のときは保存しない（下の clearDraft 側に任せ、空 meta の遅延書き戻しで競合しない）。
+  // 写真ゼロなら保存しない（写真の無い下書きは loadDraft が null を返す＝復元不能なので、meta を書く意味がない＝orphan）。
+  // meta effect は images の中身（crop/filters）変化に依存し、blobs effect は集合キーにだけ依存する——この非対称は意図的
+  // （crop/filters は blob を書き直さず meta だけ更新したい・blob は重いので集合が変わった時だけ書く）。
   useEffect(() => {
     if (!hydratedRef.current) return;
-    if (images.length === 0 && caption.trim() === "") return;
+    if (images.length === 0) return;
     const timer = setTimeout(() => {
       void saveMeta({
         caption,

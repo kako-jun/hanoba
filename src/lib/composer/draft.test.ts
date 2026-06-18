@@ -30,7 +30,7 @@ function wipeDB(): Promise<void> {
 }
 
 /** 低レベルに blobs / meta へ直接 put するヘルパ（壊れ値も入れたいので生 API を使う）。 */
-function rawPut(store: "blobs" | "meta", value: unknown, keyPath: "id" | "key"): Promise<void> {
+function rawPut(store: "blobs" | "meta", value: unknown): Promise<void> {
   return new Promise((resolve, reject) => {
     const open = indexedDB.open(DB_NAME, 1);
     open.onupgradeneeded = () => {
@@ -41,8 +41,7 @@ function rawPut(store: "blobs" | "meta", value: unknown, keyPath: "id" | "key"):
     open.onsuccess = () => {
       const db = open.result;
       const tx = db.transaction(store, "readwrite");
-      // keyPath があるので key は value 側に持たせる前提。put(value) のみ。
-      void keyPath;
+      // 各ストアは keyPath（blobs=id / meta=key）を持つので、key は value 側に焼く前提＝put(value) のみ。
       tx.objectStore(store).put(value);
       tx.oncomplete = () => {
         db.close();
@@ -185,7 +184,7 @@ describe("draft 永続化（round-trip）", () => {
   it("currentId が非 string（数値）なら null に倒す", async () => {
     await syncBlobs([makeRecord({ id: "id-a", order: 0 })]);
     // 型を曲げて壊れ currentId を直接書く。
-    await rawPut("meta", { key: "current", caption: "x", currentId: 42, items: [{ id: "id-a", crop: null, filters: [] }], updatedAt: 1 }, "key");
+    await rawPut("meta", { key: "current", caption: "x", currentId: 42, items: [{ id: "id-a", crop: null, filters: [] }], updatedAt: 1 });
     const snap = await loadDraft();
     expect(snap!.currentId).toBeNull();
   });
@@ -222,7 +221,6 @@ describe("draft 永続化（round-trip）", () => {
     await rawPut(
       "meta",
       { key: "current", caption: "x", currentId: null, items: [{ id: "id-a", crop: null, filters: "壊れ" }], updatedAt: 1 },
-      "key",
     );
     const snap = await loadDraft();
     expect(snap!.images[0]!.filters).toEqual([]);
@@ -230,29 +228,29 @@ describe("draft 永続化（round-trip）", () => {
 
   it("caption が非 string の壊れ meta は null に倒す", async () => {
     await syncBlobs([makeRecord({ id: "id-a", order: 0 })]);
-    await rawPut("meta", { key: "current", caption: 123, currentId: null, items: [], updatedAt: 1 }, "key");
+    await rawPut("meta", { key: "current", caption: 123, currentId: null, items: [], updatedAt: 1 });
     const snap = await loadDraft();
     expect(snap).toBeNull();
   });
 
   it("items が非配列の壊れ meta は null に倒す", async () => {
     await syncBlobs([makeRecord({ id: "id-a", order: 0 })]);
-    await rawPut("meta", { key: "current", caption: "x", currentId: null, items: "壊れ", updatedAt: 1 }, "key");
+    await rawPut("meta", { key: "current", caption: "x", currentId: null, items: "壊れ", updatedAt: 1 });
     const snap = await loadDraft();
     expect(snap).toBeNull();
   });
 
   it("blobs に壊れレコードが混ざっても、有効分だけで復元する", async () => {
     // 有効 1 件 + 壊れ 1 件（blob が Blob でない）を直接 put する。
-    await rawPut("blobs", makeRecord({ id: "id-a", order: 0 }), "id");
-    await rawPut("blobs", { id: "id-broken", blob: "not-a-blob", name: "x", type: "y", order: 1 }, "id");
+    await rawPut("blobs", makeRecord({ id: "id-a", order: 0 }));
+    await rawPut("blobs", { id: "id-broken", blob: "not-a-blob", name: "x", type: "y", order: 1 });
     await saveMeta(makeMeta({ items: [{ id: "id-a", crop: null, filters: [] }] }));
     const snap = await loadDraft();
     expect(snap!.images.map((i) => i.id)).toEqual(["id-a"]);
   });
 
   it("blobs が壊れレコードのみなら null", async () => {
-    await rawPut("blobs", { id: "id-broken", blob: "not-a-blob", name: "x", type: "y", order: 0 }, "id");
+    await rawPut("blobs", { id: "id-broken", blob: "not-a-blob", name: "x", type: "y", order: 0 });
     await saveMeta(makeMeta({ items: [] }));
     const snap = await loadDraft();
     expect(snap).toBeNull();
