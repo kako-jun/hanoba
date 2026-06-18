@@ -82,11 +82,12 @@ export const FILTER_PRESETS: readonly FilterPreset[] = [
   {
     name: "線明",
     color: "#5e807c",
-    // 旧来の中相当 0.82 はシャープが効きすぎていたので、中=0.5 まで下げる（#171）。
+    // 線明は弱でも効きが強すぎたので、3段すべて下げる（#244 kako-jun 実機）。
+    // 弱0.3→0.15 / 中0.5→0.3 / 強0.7→0.5。最終値は実機 blink で詰める。
     levels: [
+      { filter: "none", sharpen: 0.15 },
       { filter: "none", sharpen: 0.3 },
       { filter: "none", sharpen: 0.5 },
-      { filter: "none", sharpen: 0.7 },
     ],
   },
 ] as const;
