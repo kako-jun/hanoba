@@ -9,9 +9,10 @@ import MainLayout from "../layouts/MainLayout.astro";
 // 板＋投稿フォームを描く（SSG は壊さない＝外部 script は defer でクライアント読み込み）。
 //
 // 3 つの板（公開 embed id・DESIGN §5 に控え）:
-//   - 品種並び順  hanoba-16b82341 … 品種の並び順・ランキングへの意見
-//   - 欲しい機能  hanoba-76cf0aed … 機能リクエスト
-//   - バグ報告    hanoba-12e8672f … 不具合報告
+//   - 品種への要望  hanoba-16b82341 … 品種に関する要望は全部ここ（並び順・名簿に無い品種の追加・その他）。
+//                  投稿ページ（TagPicker #169/#232）の「この植物が無い→追加をリクエスト」もここへ集約（GitHub 廃止）。
+//   - 欲しい機能    hanoba-76cf0aed … 機能リクエスト
+//   - バグ報告      hanoba-12e8672f … 不具合報告
 // theme="dark" が暗色シック（§5）に馴染む。width は外側のグラス列が制御（responsive 100%）。
 //
 // この役所は全員に開放（市民レベルのゲートなし）。ハブからは L1+ が辿るが、直接アクセスは無制限。
@@ -20,8 +21,9 @@ import MainLayout from "../layouts/MainLayout.astro";
 const boards = [
   {
     id: "hanoba-16b82341",
-    title: "品種並び順",
-    intro: "どの品種を上に並べるべきか。諸君の推しを聞かせたまえ。",
+    title: "品種への要望",
+    intro:
+      "品種に関する願いはすべてここへ。並び順、名簿に無い品種の追加、その他、遠慮はいらぬ。市長が必ず目を通す。",
   },
   {
     id: "hanoba-76cf0aed",
