@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -164,5 +164,204 @@ describe("ProfileEditor (#35 Piece3)", () => {
     );
     const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
     expect(extra.websites).toEqual(["https://keep.example.com"]);
+  });
+});
+
+// 秘密鍵（nsec）バックアップ欄（#213）。表示＋コピー専用で、kind:0（save）の payload には
+// 絶対に載せない。固定の hanoba:sk から exportNsec() は決定的に下記 nsec を返す。
+const NSEC = "nsec1vl029mgpspedva04g90vltkh6fvh240zqtv9k0t9af8935ke9laqsnlfe5";
+const MASK = "•".repeat(24);
+
+describe("ProfileEditor 秘密鍵バックアップ欄（#213）", () => {
+  beforeEach(() => {
+    fetchMyProfileResilient.mockReset().mockResolvedValue(null);
+    saveProfile.mockReset().mockResolvedValue({ id: "evt1" });
+    uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/x.jpg" });
+    localStorage.clear();
+    localStorage.setItem("hanoba:name", "テスト栽培家");
+    localStorage.setItem("hanoba:sk", "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa");
+  });
+
+  afterEach(() => cleanup());
+
+  // ---- A. 状態遷移・表示 ----------------------------------------------------
+
+  it("折りたたみ時は nsec 欄が存在しない（普段は隠す）", () => {
+    render(<ProfileEditor />);
+    expect(screen.queryByLabelText("秘密鍵（nsec）")).not.toBeInTheDocument();
+  });
+
+  it("展開すると nsec 欄が出るが既定はマスク（平文を漏らさない）", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    const code = screen.getByLabelText("秘密鍵（nsec）");
+    expect(code).toBeInTheDocument();
+    expect(code).toHaveTextContent(MASK);
+    expect(code.textContent).not.toContain("nsec1");
+  });
+
+  it("[表示]で平文 nsec が出る", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵を表示する" }));
+    expect(screen.getByLabelText("秘密鍵（nsec）")).toHaveTextContent(NSEC);
+  });
+
+  it("[隠す]でマスクへ戻る（平文を出しっぱなしにしない）", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵を表示する" }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵を隠す" }));
+    const code = screen.getByLabelText("秘密鍵（nsec）");
+    expect(code).toHaveTextContent(MASK);
+    expect(code.textContent).not.toContain("nsec1");
+  });
+
+  it("表示トグルの aria-label がマスク/表示で入れ替わる", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    // マスク時は「表示する」。
+    expect(screen.getByRole("button", { name: "秘密鍵を表示する" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "秘密鍵を隠す" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "秘密鍵を表示する" }));
+    // 表示時は「隠す」。
+    expect(screen.getByRole("button", { name: "秘密鍵を隠す" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "秘密鍵を表示する" })).not.toBeInTheDocument();
+  });
+
+  // ---- B. クリップボード ----------------------------------------------------
+
+  it("[コピー]はマスク状態でも平文 nsec を writeText に渡す", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    // マスク表示のまま（[表示]を押さずに）コピーする。
+    await user.click(screen.getByRole("button", { name: "秘密鍵をコピーする" }));
+    expect(writeText).toHaveBeenCalledWith(NSEC);
+    writeText.mockRestore();
+  });
+
+  it("コピー成功で「コピーしました」が出る", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵をコピーする" }));
+    expect(await screen.findByText("コピーしました")).toBeInTheDocument();
+    writeText.mockRestore();
+  });
+
+  it("「コピーしました」は約2秒後に消える", async () => {
+    // fake timers は mount 後に入れる（mount 時の async effect / userEvent の内部遅延が
+    // 偽タイマーで固まるため）。アクションは fireEvent + act で timer 依存なしに行う。
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    render(<ProfileEditor />);
+    fireEvent.click(screen.getByRole("button", { name: /編集/ }));
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "秘密鍵をコピーする" }));
+      });
+      expect(screen.getByText("コピーしました")).toBeInTheDocument();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000);
+      });
+      expect(screen.queryByText("コピーしました")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+      writeText.mockRestore();
+    }
+  });
+
+  it("writeText 失敗時は「コピーしました」を出さず黙る（エラーも console も増やさない）", async () => {
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockRejectedValue(new Error("denied"));
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵をコピーする" }));
+    // catch は無言: 成功文言も出ず、画面にエラー文言も増えない。
+    expect(screen.queryByText("コピーしました")).not.toBeInTheDocument();
+    expect(consoleError).not.toHaveBeenCalled();
+    writeText.mockRestore();
+    consoleError.mockRestore();
+  });
+
+  // ---- C. publish 非混入（鍵流出防止・最重要回帰） --------------------------
+
+  it("鍵流出防止: nsec 表示状態で保存しても payload に nsec が混入しない", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵を表示する" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(saveProfile).toHaveBeenCalledTimes(1));
+    // 完全一致: nsec を含まない初期 payload のみ（picture:null, about:"", websites:[]）。
+    expect(saveProfile).toHaveBeenCalledWith({
+      name: "テスト栽培家",
+      picture: null,
+      about: "",
+      websites: [],
+    });
+  });
+
+  it("鍵流出防止: コピー実行後に保存しても payload は不変（nsec 非混入）", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵をコピーする" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(saveProfile).toHaveBeenCalledTimes(1));
+    expect(saveProfile).toHaveBeenCalledWith({
+      name: "テスト栽培家",
+      picture: null,
+      about: "",
+      websites: [],
+    });
+    writeText.mockRestore();
+  });
+
+  // ---- D. a11y・配置 --------------------------------------------------------
+
+  it("表示・コピーボタンに aria-label が付く", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    expect(screen.getByRole("button", { name: "秘密鍵を表示する" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "秘密鍵をコピーする" })).toBeInTheDocument();
+  });
+
+  it("nsec ブロックは保存ボタンより DOM 後方（最下部・最も目立たない位置）", async () => {
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    const save = screen.getByRole("button", { name: "保存" });
+    const copy = screen.getByRole("button", { name: "秘密鍵をコピーする" });
+    // copy が save の後方にあると FOLLOWING ビットが立つ。
+    expect(
+      save.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  // ---- E. 任意 --------------------------------------------------------------
+
+  it("鍵未設定でも欄が壊れず、表示で生成鍵の nsec が出る", async () => {
+    localStorage.removeItem("hanoba:sk");
+    const user = userEvent.setup();
+    render(<ProfileEditor />);
+    await user.click(screen.getByRole("button", { name: /編集/ }));
+    await user.click(screen.getByRole("button", { name: "秘密鍵を表示する" }));
+    // getOrCreateSecretKey が生成するので nsec1 プレフィックスが出る。
+    expect(screen.getByLabelText("秘密鍵（nsec）").textContent).toMatch(/^nsec1/);
   });
 });

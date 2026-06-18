@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import Avatar from "../feed/Avatar.tsx";
 import { fetchMyProfileResilient, saveProfile } from "../../lib/nostr/client.ts";
 import {
+  exportNsec,
   getDisplayName,
   getProfileExtra,
   getPublicKeyHex,
@@ -39,6 +40,9 @@ export default function ProfileEditor({ bare = false }: Props) {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // 秘密鍵（nsec）バックアップ欄（#213）。表示＋コピーのみ（編集・publish は一切しない）。
+  const [nsecRevealed, setNsecRevealed] = useState(false);
+  const [nsecCopied, setNsecCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const aliveRef = useRef(true);
   const uidRef = useRef(0);
@@ -148,6 +152,23 @@ export default function ProfileEditor({ bare = false }: Props) {
       if (aliveRef.current) setStatus("error");
     }
   }
+
+  // 秘密鍵（nsec）をクリップボードへコピーする（#213）。read + copy only・publish しない。
+  async function copyNsec() {
+    try {
+      await navigator.clipboard.writeText(exportNsec());
+      if (!aliveRef.current) return;
+      setNsecCopied(true);
+      setTimeout(() => {
+        if (aliveRef.current) setNsecCopied(false);
+      }, 2000);
+    } catch {
+      // コピー失敗は黙って何もしない（[表示]で目視・手動コピーできる）。
+    }
+  }
+
+  // 表示中だけ exportNsec() を1回だけエンコードする（毎レンダーの bech32 を避ける・#213 レビュー nit）。
+  const nsecDisplay = useMemo(() => (nsecRevealed ? exportNsec() : "•".repeat(24)), [nsecRevealed]);
 
   const nameMissing = name === null || name.trim() === "";
 
@@ -328,6 +349,42 @@ export default function ProfileEditor({ bare = false }: Props) {
             >
               {status === "saving" ? "保存中…" : "保存"}
             </button>
+          </div>
+
+          {/* 秘密鍵（バックアップ）＝表示＋コピー専用（#213）。普段見せたくないので展開パネルの
+              最下部・最も目立たない位置に置く。値は exportNsec() のローカル読み取りのみで、
+              kind:0（save）の payload には絶対に載せない。 */}
+          <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
+            <span className="text-sm font-medium text-ha-green-deep">秘密鍵（バックアップ）</span>
+            <p className="text-xs text-ha-ink/55">
+              この鍵を控えておかないと、端末を変えたりブラウザのデータを消すと二度と戻せません。
+              また、この鍵を知られると、あなたの投稿をすべて操作されます。人に見せたり貼り付けたりしないでください。
+            </p>
+            <code
+              aria-label="秘密鍵（nsec）"
+              className="block break-all rounded-2xl bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-ha-ink/85 font-mono"
+            >
+              {nsecDisplay}
+            </code>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <button
+                type="button"
+                onClick={() => setNsecRevealed((v) => !v)}
+                aria-label={nsecRevealed ? "秘密鍵を隠す" : "秘密鍵を表示する"}
+                className="text-sm text-ha-green hover:text-ha-green-deep transition-colors"
+              >
+                {nsecRevealed ? "隠す" : "表示"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void copyNsec()}
+                aria-label="秘密鍵をコピーする"
+                className="text-sm text-ha-green hover:text-ha-green-deep transition-colors"
+              >
+                コピー
+              </button>
+              {nsecCopied && <span className="text-xs text-ha-green-deep">コピーしました</span>}
+            </div>
           </div>
         </div>
       )}
