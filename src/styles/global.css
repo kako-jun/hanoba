@@ -178,3 +178,21 @@ summary {
     animation: none;
   }
 }
+
+/* 期間フィルタの <input type="date"> をテーマに馴染ませる（#2/#3 blink）。
+   ネイティブ日付入力は既定でシステムフォント＋暗いカレンダーアイコンになり、暗いガラス地で
+   浮く（フォントが違う・右端のピッカーボタンが白くない）。color-scheme: dark でブラウザに
+   ダーク前提の描画をさせ（ピッカーアイコンが明色＝白寄りに・ポップアップも暗色に）、
+   font も本文へ合わせる。
+   ※ 日付の区切り（/ か -）と桁順は OS/ブラウザのロケール依存で、CSS/HTML では変更できない
+     （ネイティブ日付ピッカーの制約）。 */
+.ha-date {
+  color-scheme: dark;
+  font-family: inherit;
+}
+.ha-date::-webkit-datetime-edit {
+  font-family: inherit;
+}
+.ha-date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}

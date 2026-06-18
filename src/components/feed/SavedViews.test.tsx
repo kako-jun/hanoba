@@ -19,7 +19,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
   it("保存ビューが無くても「すべて」チップは常に出る（aria-pressed 付きボタン）", () => {
     render(<SavedViews currentQuery="" onApply={() => {}} />);
 
-    const all = screen.getByRole("button", { name: "すべて" });
+    const all = screen.getByRole("button", { name: "絞り込みなし" });
     expect(all).toBeInTheDocument();
     expect(all).toHaveAttribute("aria-pressed");
   });
@@ -30,7 +30,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     render(<SavedViews currentQuery="" onApply={() => {}} />);
 
     // それぞれ aria-pressed 付きのチップとして出ている（FilterChips と同じ group+pressed）。
-    expect(screen.getByRole("button", { name: "すべて" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "絞り込みなし" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "実生" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "胴切り" })).toBeInTheDocument();
   });
@@ -39,7 +39,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     addSavedView("実生", "#実生");
     render(<SavedViews currentQuery="" onApply={() => {}} />);
 
-    expect(screen.getByRole("button", { name: "すべて" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "絞り込みなし" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "実生" })).toHaveAttribute("aria-pressed", "false");
   });
 
@@ -49,7 +49,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     render(<SavedViews currentQuery="#胴切り" onApply={() => {}} />);
 
     // 一致したビューだけが押下状態になり、「すべて」は外れる。
-    expect(screen.getByRole("button", { name: "すべて" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "絞り込みなし" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "実生" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "胴切り" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -57,26 +57,26 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
   it("query 非空かつ未保存のときだけ「このビューを保存」導線が出る", () => {
     // 未保存の検索中（currentQuery 非空・views に該当無し）→ 保存導線あり。
     render(<SavedViews currentQuery="#アガベ" onApply={() => {}} />);
-    expect(screen.getByRole("button", { name: "このビューを保存" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "今の絞り込みを保存" })).toBeInTheDocument();
   });
 
   it("query が空（既定検索）のときは保存導線を出さない", () => {
     render(<SavedViews currentQuery="" onApply={() => {}} />);
-    expect(screen.queryByRole("button", { name: "このビューを保存" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "今の絞り込みを保存" })).not.toBeInTheDocument();
   });
 
   it("既に保存済みの query のときは保存導線を出さない（二重保存を防ぐ）", () => {
     addSavedView("アガベ", "#アガベ");
     render(<SavedViews currentQuery="#アガベ" onApply={() => {}} />);
-    expect(screen.queryByRole("button", { name: "このビューを保存" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "今の絞り込みを保存" })).not.toBeInTheDocument();
   });
 
   it("ラベルを入力して保存すると現在 query のビューが追加される（getSavedViews に増える）", async () => {
     const user = userEvent.setup();
     render(<SavedViews currentQuery="#アガベ" onApply={() => {}} />);
 
-    await user.click(screen.getByRole("button", { name: "このビューを保存" }));
-    await user.type(screen.getByRole("textbox", { name: "保存するビューの名前" }), "うちのアガベ");
+    await user.click(screen.getByRole("button", { name: "今の絞り込みを保存" }));
+    await user.type(screen.getByRole("textbox", { name: "保存する絞り込みの名前" }), "うちのアガベ");
     await user.click(screen.getByRole("button", { name: "この名前で保存する" }));
 
     // localStorage（真実）に現在 query で増えている。
@@ -91,12 +91,12 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     const user = userEvent.setup();
     render(<SavedViews currentQuery="#アガベ" onApply={() => {}} />);
 
-    await user.click(screen.getByRole("button", { name: "このビューを保存" }));
+    await user.click(screen.getByRole("button", { name: "今の絞り込みを保存" }));
     const save = screen.getByRole("button", { name: "この名前で保存する" });
     // 入力前は空＝disabled。
     expect(save).toBeDisabled();
     // 何か入れると有効化される。
-    await user.type(screen.getByRole("textbox", { name: "保存するビューの名前" }), "名");
+    await user.type(screen.getByRole("textbox", { name: "保存する絞り込みの名前" }), "名");
     expect(save).toBeEnabled();
   });
 
@@ -109,7 +109,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     expect(screen.queryByRole("button", { name: /を削除する/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "編集" }));
 
-    const del = screen.getByRole("button", { name: "ビュー「実生」を削除する" });
+    const del = screen.getByRole("button", { name: "絞り込み「実生」を削除する" });
     await user.click(del);
 
     // localStorage から消え、チップも消える。
@@ -124,7 +124,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     render(<SavedViews currentQuery="" onApply={onApply} />);
 
     await user.click(screen.getByRole("button", { name: "編集" }));
-    await user.click(screen.getByRole("button", { name: "ビュー「実生」を削除する" }));
+    await user.click(screen.getByRole("button", { name: "絞り込み「実生」を削除する" }));
 
     // 削除は切替ではない＝onApply は呼ばれない。
     expect(onApply).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe("SavedViews（名前付きビューのチップ列・#139 段階3）", 
     addSavedView("実生", "#実生");
     render(<SavedViews currentQuery="#実生" onApply={onApply} />);
 
-    await user.click(screen.getByRole("button", { name: "すべて" }));
+    await user.click(screen.getByRole("button", { name: "絞り込みなし" }));
 
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply).toHaveBeenCalledWith("");

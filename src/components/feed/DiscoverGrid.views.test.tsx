@@ -72,10 +72,11 @@ describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 
     render(<DiscoverGrid />);
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
 
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /絞り込み/ })); // パネルを開く（保存した絞り込みは中）
+
     const pushSpy = vi.spyOn(window.history, "pushState");
     pushSpy.mockClear();
-
-    const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "実生" }));
 
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(expect.objectContaining({ tags: ["実生"] })));
@@ -90,6 +91,7 @@ describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
 
     const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /絞り込み/ })); // パネルを開く（保存した絞り込みは中）
     const chip = screen.getByRole("button", { name: "旧実生" });
     expect(chip).toHaveAttribute("aria-pressed", "false");
     await user.click(chip);
@@ -108,12 +110,13 @@ describe("DiscoverGrid × 名前付きビュー切替（applyView 経由・#139 
     render(<DiscoverGrid />);
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(expect.objectContaining({ tags: ["実生"] })));
 
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /絞り込み/ })); // パネルを開く（保存した絞り込みは中）
+
     fetchDiscoverFiltered.mockClear();
     const pushSpy = vi.spyOn(window.history, "pushState");
     pushSpy.mockClear();
-
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "すべて" }));
+    await user.click(screen.getByRole("button", { name: "絞り込みなし" }));
 
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
     await waitFor(() => expect(param("tags")).toBeNull());
