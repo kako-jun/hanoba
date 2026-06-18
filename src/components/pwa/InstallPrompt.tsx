@@ -120,9 +120,9 @@ export default function InstallPrompt() {
       className="fixed bottom-3 right-3 left-3 sm:left-auto sm:bottom-5 sm:right-5 z-40 sm:max-w-sm glass-strong rounded-2xl shadow-lg p-4 ha-rise"
     >
       <div className="flex items-start gap-3">
-        <span aria-hidden className="grid place-items-center w-9 h-9 shrink-0 rounded-xl bg-ha-green-soft text-ha-green-deep">
-          <Icon name="sprout" className="w-5 h-5" />
-        </span>
+        {/* ホーム画面に追加される実アプリアイコン（ハノーバ市旗の H）を見せる＝何を追加するのか分かる。
+            汎用の芽アイコンの仮置きを廃止（#230・kako-jun 実機指摘）。icon.svg は角丸・地色を内包。 */}
+        <img src="/icon.svg" alt="" aria-hidden width={36} height={36} className="w-9 h-9 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-ha-green-deep">ホーム画面に追加</p>
           {variant === "ios" ? (
