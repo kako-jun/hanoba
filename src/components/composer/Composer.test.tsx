@@ -693,6 +693,36 @@ describe("Composer 下書き配線（#228）", () => {
     expect(lastCall.map((r) => r.name)).toEqual(["one.jpg", "two.jpg"]);
   });
 
+  it("並べ替え（右へ▶）後は新しい順序の id/order 列で syncBlobs が再保存される（#274 回帰固定）", async () => {
+    // 狙い: blobSetKey（images の id 列）に誤って .sort() が入ると、順序変更で blobs effect が
+    // 再発火しなくなり「再読込で並べ替えが巻き戻る」退行が起きる。その時このテストが即落ちる。
+    const user = userEvent.setup();
+    render(<Composer />);
+    await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+
+    // 追加直後の sync は order 0,1 / one,two。これを並べ替え前の基準にする。
+    await waitFor(() => expect(syncBlobs).toHaveBeenCalled());
+    const before = syncBlobs.mock.calls.at(-1)![0] as Array<{ id: string; name: string; order: number }>;
+    expect(before.map((r) => r.name)).toEqual(["one.jpg", "two.jpg"]);
+    const firstId = before[0]!.id; // 元の先頭（one.jpg）の id。並べ替えで末尾へ来るはず。
+    syncBlobs.mockClear();
+
+    // 追加直後は先頭（one.jpg）が選択中。右へ移動で配列は [two, one] になる。
+    await user.click(screen.getByRole("button", { name: "選択中の写真を右へ移動" }));
+
+    // blobSetKey が変わって blobs effect が再発火＝新しい順序で再保存される。
+    await waitFor(() => expect(syncBlobs).toHaveBeenCalled());
+    const after = syncBlobs.mock.calls.at(-1)![0] as Array<{ id: string; name: string; order: number }>;
+    // order は配列添字どおり 0,1（穴あきでない）で、中身が入れ替わっている。
+    expect(after.map((r) => r.order)).toEqual([0, 1]);
+    expect(after.map((r) => r.name)).toEqual(["two.jpg", "one.jpg"]);
+    // 元の先頭（one.jpg）の id が新しい末尾（order 最大）に来ている＝並べ替えが永続化される。
+    expect(after.at(-1)!.id).toBe(firstId);
+  });
+
   it("crop / filters の変更では syncBlobs を呼ばない（blob 再書き込み回避）が、saveMeta は呼ばれる", async () => {
     // 写真追加・crop 確定までは実タイマーで進める（userEvent + 全 timer fake の相互デッドロックを避ける）。
     const user = userEvent.setup();
