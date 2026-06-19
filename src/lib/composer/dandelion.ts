@@ -63,10 +63,11 @@ export function makeSeed(rng: () => number, windBase: number, variantCount = DEF
   // 飛距離は bimodal。多くは控えめ（ボタンの上）、一部（~28%）は画面端まで届く遠距離にして
   // 「画面の端まで飛ぶものが混じる」を作る（#260・kako-jun blink）。
   const far = rng() < 0.28;
-  const dy = Math.round(far ? span(rng, -1500, -900) : span(rng, -420, -200));
+  const dy = Math.round(far ? span(rng, -1300, -900) : span(rng, -440, -200));
   const rot = Math.round(span(rng, -120, 120));
-  // 所要時間は飛距離に比例（遠いほどゆっくり）＝見かけ速度を一定寄りに保ち、遠い綿毛は long-drift。
-  const durMs = Math.round(Math.abs(dy) * span(rng, 2.2, 3.0) + 800);
+  // 速度（px/ms）を全粒ほぼ一定にし、所要時間＝飛距離÷速度。遠い綿毛は「速い」のでなく
+  // 「消えるまでが長いから遠くへ漂う」自然な動きにする（#260・kako-jun blink）。±少しのゆらぎだけ残す。
+  const durMs = Math.round(Math.abs(dy) / span(rng, 0.165, 0.195));
   const delayMs = Math.round(span(rng, 0, 220));
   // 一番拡大したサイズで揃える（#252）。スプライト 128px なのでこの範囲でも downscale でくっきり保てる。
   const size = Math.round(span(rng, 90, 118));
