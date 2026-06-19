@@ -146,7 +146,9 @@ export default function CityHallBook() {
       setSwipeBlur(0);
       return;
     }
-    setSwipeBlur(swipeToBlur(swipeProgress(dx)));
+    // 整数 px に丸め、同値ならバイルアウト（毎フレームの無駄な再レンダを省く・#275）。
+    const next = Math.round(swipeToBlur(swipeProgress(dx)));
+    setSwipeBlur((prev) => (prev === next ? prev : next));
   }
   function onTouchEnd(e: ReactTouchEvent) {
     const start = touchStartRef.current;
