@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { deletePostImages, fetchMyProfileResilient } from "./client.ts";
+
+// fetchDiscoverFiltered のリレー問い合わせを検証するため SimplePool をモックする（#258）。
+// pool は client.ts の遅延シングルトンなので、querySync を hoisted な vi.fn に差し替える。
+const { querySyncMock } = vi.hoisted(() => ({ querySyncMock: vi.fn() }));
+vi.mock("nostr-tools/pool", () => ({
+  SimplePool: vi.fn(() => ({ querySync: querySyncMock })),
+}));
+
+import { deletePostImages, fetchDiscoverFiltered, fetchMyProfileResilient } from "./client.ts";
 import type { Profile } from "../feed/parse.ts";
 
 // #93: nsec 取り込み・編集欄初期化での websites 取りこぼし（単発取得）を bounded retry で塞ぐ。
@@ -101,5 +109,41 @@ describe("deletePostImages", () => {
       .mockResolvedValueOnce(true)
       .mockRejectedValueOnce(new Error("network"));
     await expect(deletePostImages(["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.jpg"], deleteFn)).resolves.toBe(false);
+  });
+});
+
+describe("fetchDiscoverFiltered (#258 母集団の単一化)", () => {
+  it("絞り込み時も母集団（#t:hanoba ∪ #t:plantstr）を必ず引き、品種を #t クエリにしない", async () => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([]);
+
+    await fetchDiscoverFiltered({ tags: ["イネ"] });
+
+    const tFilters = querySyncMock.mock.calls.map((c) => c[1]?.["#t"]).filter(Boolean) as string[][];
+    expect(tFilters).toContainEqual(["hanoba"]);
+    expect(tFilters).toContainEqual(["plantstr"]);
+    // 品種は t タグでない＝ #t:[品種] の死んだクエリは投げない（#258 退行の原因）。
+    expect(tFilters.some((t) => t.includes("イネ"))).toBe(false);
+  });
+
+  it("本文 #イネ だけを持つ hanoba 投稿（t:イネ 不在）が絞り込みに残る", async () => {
+    querySyncMock.mockReset();
+    const ineEvent = {
+      id: "a".repeat(64),
+      pubkey: "b".repeat(64),
+      created_at: 1700000000,
+      kind: 1,
+      tags: [["t", "hanoba"], ["client", "hanoba"]],
+      content: "開花した #イネ\nhttps://image.nostr.build/x.jpg",
+      sig: "",
+    };
+    // hanoba の母集団クエリ（#t:hanoba）でだけ返す。#t:plantstr / NIP-50 search は空。
+    querySyncMock.mockImplementation((_relays: unknown, filter: { "#t"?: string[] }) =>
+      Promise.resolve(filter?.["#t"]?.includes("hanoba") ? [ineEvent] : []),
+    );
+
+    const got = await fetchDiscoverFiltered({ tags: ["イネ"] });
+    expect(got).toHaveLength(1);
+    expect(got[0]!.hashtags).toContain("イネ");
   });
 });
