@@ -5,8 +5,8 @@
 // **TagPicker（#144）が開いた時に動的 import で code-split** されるよう、ここはデータ専用にする
 // （静的 import で初期 composer バンドルに載せない）。検索/ドリルダウンは全てクライアントで回る。
 //
-// カテゴリは意味の近いもの順（多肉→メセン→塊根→サボテン→着生→観葉→食虫→蘭→和もの→シダ→コケ→
-// 水草→水生→花→球根→花木→食用→穀物→山菜野草）。基本種・別ジャンル（水草等）は #168 で補完した。
+// カテゴリは「今人気のものを前に出す（似たものはまとめる）」順（多肉→塊根→メセン→サボテン→着生→観葉→
+// 食虫→蘭→和もの→シダ→コケ→水草→水生→花→球根→花木→食用→穀物→山菜野草）。基本種・別ジャンル（水草等）は #168 で補完した。
 // 穀物は #214、熱帯果樹/芍薬牡丹/山菜野草/属取りこぼしは #216-#220、同名品種の属コンテキスト解決は #223。
 // 値は「本文 # に入るタグ文字列」（空白は insertTag 側で _ に正規化）。表記揺れ（赤猫 ↔
 // レッドキャットウィーズル 等）は調査が両形を別品種として持つため、そのまま両方を pickable に残す。
@@ -160,45 +160,6 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     ],
   },
   {
-    label: "メセン",
-    genera: [
-      { name: "コノフィツム", pickable: true, varieties: [
-        { name: "ウィッテベルゲンセ", sci: "Conophytum wittebergense" }, { name: "ブルゲリ", sci: "Conophytum burgeri" }, { name: "オペラローズ", sci: "Conophytum 'Opera Rose'" }, { name: "花園", sci: "Conophytum 'Hanazono'" },
-        { name: "ペルシダム", sci: "Conophytum pellucidum" }, { name: "玉彦", sci: "Conophytum flavum" }, { name: "マウガニー", sci: "Conophytum maughanii" }, { name: "群碧玉", sci: "Conophytum minutum" },
-        { name: "寂光", sci: "Conophytum frutescens" }, { name: "円空玉", sci: "Conophytum ectypum" },
-      ] },
-      { name: "リトープス", pickable: true, varieties: [
-        { name: "日輪玉", sci: "Lithops aucampiae" }, { name: "福来玉", sci: "Lithops julii subsp. fulleri" }, { name: "紫勲", sci: "Lithops lesliei" }, { name: "大津絵", sci: "Lithops otzeniana" },
-        { name: "オリーブ玉", sci: "Lithops olivacea" }, { name: "麗虹玉", sci: "Lithops dorotheae" }, { name: "招福玉", sci: "Lithops bromfieldii" }, { name: "富貴玉", sci: "Lithops hookeri" },
-        { name: "紅大内玉", sci: "Lithops optica 'Rubra'" }, { name: "巴里玉", sci: "Lithops hallii" }, { name: "花紋玉", sci: "Lithops karasmontana" }, { name: "李夫人", sci: "Lithops salicola" },
-      ] },
-      { name: "フェネストラリア", pickable: true, varieties: [
-        { name: "五十鈴玉", sci: "Fenestraria rhopalophylla subsp. aurantiaca" }, { name: "群玉", sci: "Fenestraria rhopalophylla" },
-      ] },
-      { name: "プレイオスピロス", pickable: true, varieties: [
-        { name: "帝玉", sci: "Pleiospilos nelii" }, { name: "紫帝玉", sci: "Pleiospilos nelii 'Royal Flush'" }, { name: "鳳卵", sci: "Pleiospilos bolusii" },
-      ] },
-      { name: "フォーカリア", pickable: true, varieties: [
-        { name: "怒涛", sci: "Faucaria tuberculosa" }, { name: "四海波", sci: "Faucaria tigrina" }, { name: "雪波", sci: "Faucaria felina" },
-      ] },
-      { name: "チタノプシス", pickable: true, varieties: [
-        { name: "天女", sci: "Titanopsis calcarea" }, { name: "カルカレア", sci: "Titanopsis calcarea" },
-      ] },
-      { name: "アルギロデルマ", pickable: true, varieties: [
-        { name: "金鈴", sci: "Argyroderma delaetii" }, { name: "国宝玉", sci: "Argyroderma delaetii" },
-      ] },
-      { name: "ギバエウム", pickable: true, varieties: [
-        { name: "無比玉", sci: "Gibbaeum velutinum" }, { name: "銀光玉", sci: "Gibbaeum heathii" },
-      ] },
-      { name: "ディンテランサス", pickable: true, varieties: [
-        { name: "南蛮玉", sci: "Dinteranthus vanzylii" }, { name: "幻玉", sci: "Dinteranthus wilmotianus" },
-      ] },
-      { name: "フリチア", pickable: true, varieties: [
-        { name: "光玉", sci: "Frithia pulchra" },
-      ] },
-    ],
-  },
-  {
     label: "塊根植物",
     genera: [
       { name: "パキポディウム", pickable: true, varieties: [
@@ -247,6 +208,45 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "オトンナ", sci: "Othonna sp." }, { name: "キフォステンマ", sci: "Cyphostemma juttae" }, { name: "フィカス ペティオラリス", sci: "Ficus petiolaris" }, { name: "ブーファン", sci: "Boophone disticha" },
         { name: "ウンカリーナ", sci: "Uncarina grandidieri" }, { name: "パキコルムス", sci: "Pachycormus discolor" }, { name: "ゲラルダンサス", sci: "Gerrardanthus macrorhizus" }, { name: "ヤトロファ", sci: "Jatropha sp." },
         { name: "センナ メリディオナリス", sci: "Senna meridionalis" }, { name: "サンセベリア", sci: "Sansevieria sp." }, { name: "スタッキー", sci: "Sansevieria stuckyi" },
+      ] },
+    ],
+  },
+  {
+    label: "メセン",
+    genera: [
+      { name: "コノフィツム", pickable: true, varieties: [
+        { name: "ウィッテベルゲンセ", sci: "Conophytum wittebergense" }, { name: "ブルゲリ", sci: "Conophytum burgeri" }, { name: "オペラローズ", sci: "Conophytum 'Opera Rose'" }, { name: "花園", sci: "Conophytum 'Hanazono'" },
+        { name: "ペルシダム", sci: "Conophytum pellucidum" }, { name: "玉彦", sci: "Conophytum flavum" }, { name: "マウガニー", sci: "Conophytum maughanii" }, { name: "群碧玉", sci: "Conophytum minutum" },
+        { name: "寂光", sci: "Conophytum frutescens" }, { name: "円空玉", sci: "Conophytum ectypum" },
+      ] },
+      { name: "リトープス", pickable: true, varieties: [
+        { name: "日輪玉", sci: "Lithops aucampiae" }, { name: "福来玉", sci: "Lithops julii subsp. fulleri" }, { name: "紫勲", sci: "Lithops lesliei" }, { name: "大津絵", sci: "Lithops otzeniana" },
+        { name: "オリーブ玉", sci: "Lithops olivacea" }, { name: "麗虹玉", sci: "Lithops dorotheae" }, { name: "招福玉", sci: "Lithops bromfieldii" }, { name: "富貴玉", sci: "Lithops hookeri" },
+        { name: "紅大内玉", sci: "Lithops optica 'Rubra'" }, { name: "巴里玉", sci: "Lithops hallii" }, { name: "花紋玉", sci: "Lithops karasmontana" }, { name: "李夫人", sci: "Lithops salicola" },
+      ] },
+      { name: "フェネストラリア", pickable: true, varieties: [
+        { name: "五十鈴玉", sci: "Fenestraria rhopalophylla subsp. aurantiaca" }, { name: "群玉", sci: "Fenestraria rhopalophylla" },
+      ] },
+      { name: "プレイオスピロス", pickable: true, varieties: [
+        { name: "帝玉", sci: "Pleiospilos nelii" }, { name: "紫帝玉", sci: "Pleiospilos nelii 'Royal Flush'" }, { name: "鳳卵", sci: "Pleiospilos bolusii" },
+      ] },
+      { name: "フォーカリア", pickable: true, varieties: [
+        { name: "怒涛", sci: "Faucaria tuberculosa" }, { name: "四海波", sci: "Faucaria tigrina" }, { name: "雪波", sci: "Faucaria felina" },
+      ] },
+      { name: "チタノプシス", pickable: true, varieties: [
+        { name: "天女", sci: "Titanopsis calcarea" }, { name: "カルカレア", sci: "Titanopsis calcarea" },
+      ] },
+      { name: "アルギロデルマ", pickable: true, varieties: [
+        { name: "金鈴", sci: "Argyroderma delaetii" }, { name: "国宝玉", sci: "Argyroderma delaetii" },
+      ] },
+      { name: "ギバエウム", pickable: true, varieties: [
+        { name: "無比玉", sci: "Gibbaeum velutinum" }, { name: "銀光玉", sci: "Gibbaeum heathii" },
+      ] },
+      { name: "ディンテランサス", pickable: true, varieties: [
+        { name: "南蛮玉", sci: "Dinteranthus vanzylii" }, { name: "幻玉", sci: "Dinteranthus wilmotianus" },
+      ] },
+      { name: "フリチア", pickable: true, varieties: [
+        { name: "光玉", sci: "Frithia pulchra" },
       ] },
     ],
   },
