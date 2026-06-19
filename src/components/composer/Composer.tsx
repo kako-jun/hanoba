@@ -16,7 +16,6 @@ import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import { clearDraft, loadDraft, saveMeta, syncBlobs } from "../../lib/composer/draft.ts";
 import { moveById } from "../../lib/composer/reorder.ts";
-import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
 import DandelionBurst from "./DandelionBurst.tsx";
@@ -480,7 +479,9 @@ export default function Composer() {
                   </>
                 ) : (
                   <>
-                    <Icon name="dandelion" className="h-5 w-5" />
+                    {/* アイコンは投稿FAB（#283）と同じ「横から見た綿毛」ラスタ（post-fab.webp）を再利用
+                        （線画 Icon "dandelion" から統一・#293）。白い透過 webp なのでピンク地でも映える。 */}
+                    <img src="/post-fab.webp" alt="" className="h-5 w-auto" draggable={false} />
                     投稿する
                   </>
                 )}

@@ -43,6 +43,13 @@
     sans-serif;
 }
 
+/* スクロールバーの gutter を常に確保する。投稿時に綿毛（DandelionBurst #252）が舞う等で
+   スクロール量が一瞬変わり、縦スクロールバーが出没すると viewport 幅が動いて全体がガクつく
+   （#294・#271 の積み残し）。stable で gutter を固定し、バーの有無で幅が変わらないようにする。 */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* 地＝ぼやけた高級写真（固定）＋暗いオーバーレイで可読性を確保。ベタ塗りにしない。 */
 body {
   font-family: var(--font-sans);
