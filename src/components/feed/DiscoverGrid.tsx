@@ -14,7 +14,7 @@ import VarietyFilter from "./VarietyFilter.tsx";
 
 type Status = "idle" | "loading" | "error" | "loaded";
 
-/** 現在の URL から絞り込みタグを読む（クライアントのみ）。旧 `?q=`/`?tag=` も parseFilter が吸収する。 */
+/** 現在の URL から絞り込みタグを読む（クライアントのみ）。`?tags=` と旧 `?tag=` を parseFilter が吸収する（`?q=` は読まない・無視される）。 */
 function readTagsFromUrl(): string[] {
   try {
     return parseFilter(new URLSearchParams(window.location.search)).tags;

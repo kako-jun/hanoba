@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { nip19 } from "nostr-tools";
 import {
+  authorHref,
   filterByHashtag,
   mergePostsById,
   parseProfile,
@@ -68,6 +70,29 @@ describe("shortNpub (#35)", () => {
 
   it("不正 pubkey でも壊れず文字列を返す", () => {
     expect(typeof shortNpub("zzz")).toBe("string");
+  });
+});
+
+describe("authorHref (#272 段階3)", () => {
+  it("hex pubkey を /u?npub=… の相対パスにする（npub は round-trip で復元できる）", () => {
+    const pubkey = "a".repeat(64);
+    const href = authorHref(pubkey);
+    expect(href).not.toBeNull();
+    expect(href!.startsWith("/u?npub=npub1")).toBe(true);
+    // クエリの npub を decode すると元の pubkey に戻る（/u 島が読む経路と一致）。
+    const npub = new URLSearchParams(href!.slice(href!.indexOf("?"))).get("npub")!;
+    const decoded = nip19.decode(npub);
+    expect(decoded.type).toBe("npub");
+    expect(decoded.data).toBe(pubkey);
+  });
+
+  it("空 pubkey は null（リンクにしない）", () => {
+    expect(authorHref("")).toBeNull();
+  });
+
+  it("npub にできない不正 pubkey は null", () => {
+    // 64桁 hex でない（npubEncode が throw する）→ null。
+    expect(authorHref("zzz")).toBeNull();
   });
 });
 

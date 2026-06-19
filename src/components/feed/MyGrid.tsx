@@ -7,6 +7,7 @@ import EditPost from "./EditPost.tsx";
 import CitizenStats from "./CitizenStats.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
+import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
 
@@ -268,7 +269,8 @@ export default function MyGrid() {
               onClose={() => setSelectedId(null)}
               onSelectHashtag={(tag) => {
                 if (typeof window !== "undefined") {
-                  window.location.href = `/discover?q=${encodeURIComponent(`#${tag}`)}`;
+                  // discover は `?tags=` だけを読む（`?q=` は無視され既定ビューに落ちる）ので discoverTagHref を使う。
+                  window.location.href = discoverTagHref(tag);
                 }
               }}
             />

@@ -186,3 +186,20 @@ export function shortNpub(pubkey: string): string {
   if (npub.length <= 16) return npub;
   return `${npub.slice(0, 10)}…${npub.slice(-4)}`;
 }
+
+/**
+ * 著者の公開プロフィールページ（`/u?npub=…`）への相対パス（#272 段階3）。
+ * hanoba は静的サイト（output:static）で動的ルート `/u/[npub]` を持てないので、
+ * discover の `?tags=` と同型のクエリ方式で npub を渡す（#291 で SW がクエリ付き
+ * deep-link をホームにすり替える罠は workbox の ignoreURLParametersMatching で解消済み）。
+ * pubkey が空 / npub にエンコードできない時は null＝リンクを出さない（フォールバックで素の名前）。
+ * nip19 は純粋（relay に触れない）。
+ */
+export function authorHref(pubkey: string): string | null {
+  if (pubkey === "") return null;
+  try {
+    return `/u?npub=${nip19.npubEncode(pubkey)}`;
+  } catch {
+    return null;
+  }
+}

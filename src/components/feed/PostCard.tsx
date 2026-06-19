@@ -1,5 +1,5 @@
 import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
+import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
 import Icon from "../ui/Icon.tsx";
@@ -128,10 +128,31 @@ export default function PostCard({
               {captionText}
             </p>
           )}
-          {/* 著者（アイコン＋名前）と時刻（#35）。リンクは拡大モーダル側に出す。 */}
+          {/* 著者（アイコン＋名前）と時刻（#35）。著者はその人の公開プロフィール /u?npub= へリンク（#272 段階3）。
+              カード全体が拡大モーダルを開く（article onClick）ので、リンククリックは stopPropagation で
+              遷移だけにする（タグ/続きを読むと同じ作法）。npub にできない時は素の名前のまま。 */}
           <div className="mt-auto flex items-center gap-2 pt-2 shrink-0 text-xs text-ha-ink/55">
-            <Avatar src={profile?.picture ?? null} name={authorName} className="w-5 h-5" />
-            <span className="min-w-0 truncate font-medium text-ha-ink/75">{authorName}</span>
+            {(() => {
+              const href = authorHref(post.pubkey);
+              const inner = (
+                <>
+                  <Avatar src={profile?.picture ?? null} name={authorName} className="w-5 h-5" />
+                  <span className="min-w-0 truncate font-medium text-ha-ink/75">{authorName}</span>
+                </>
+              );
+              return href === null ? (
+                <span className="flex min-w-0 items-center gap-2">{inner}</span>
+              ) : (
+                <a
+                  href={href}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`${authorName} のプロフィール`}
+                  className="flex min-w-0 items-center gap-2 hover:text-ha-green-deep transition-colors"
+                >
+                  {inner}
+                </a>
+              );
+            })()}
             <span className="text-ha-ink/30">·</span>
             <time className="shrink-0">{relativeTime(post.createdAt, now)}</time>
             {/* いいね数・コメント数（#276）。**カードは 1 以上のときだけ控えめに添える**
