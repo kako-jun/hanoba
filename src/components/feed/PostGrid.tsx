@@ -69,11 +69,13 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const [reactionCounts, setReactionCounts] = useState<Map<string, number>>(new Map());
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(new Map());
   // id 列をキーにして、同じ投稿集合では取り直さない（タグ絞り込み等で集合が変わったら引き直す）。
-  const idsKey = posts.map((p) => p.id).join(",");
+  // ids（配列）を持ち idsKey は join で派生する＝useEffect は idsKey（文字列）が変わった時だけ再実行する
+  // （id 集合が変わった時だけ＝挙動は従来と等価。string→split の往復をやめただけ）。
+  const ids = useMemo(() => posts.map((p) => p.id), [posts]);
+  const idsKey = ids.join(",");
   useEffect(() => {
     if (idsKey === "") return; // 投稿0件なら取得しない。
     let alive = true;
-    const ids = idsKey.split(",");
     Promise.all([fetchReactionCountsBatch(ids), fetchCommentCountsBatch(ids)])
       .then(([reactions, comments]) => {
         if (!alive) return;

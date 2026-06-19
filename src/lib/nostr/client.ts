@@ -225,9 +225,17 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
 }
 
 // バッチ取得（タイムライン/discover のカード・#276）の kind:7/kind:1 上限。
-// 1グリッド分の投稿（既定 fetchHanobaFeed=100 件）の反応をまとめて1クエリで取るので、
-// 単一取得（500/件）より厚めに取る。超人気投稿が多いグリッドでは概数になり得る（既知の制約）。
-const BATCH_COUNT_LIMIT = 1000;
+// 1グリッド分の投稿（既定 fetchHanobaFeed=100 件）の反応をまとめて1クエリで取る。
+// 固定上限だと投稿数が多いグリッドで1投稿あたりの実効が薄まり、単一取得（500/件）より早く頭打ちする。
+// そこで **投稿数に連動**させる＝1投稿あたりの想定上限 PER_EVENT_COUNT_BUDGET を掛け、
+// BATCH_COUNT_MAX で天井を切る（リレー負荷の歯止め）。超人気投稿が多いグリッドでは概数になり得る（既知の制約）。
+const PER_EVENT_COUNT_BUDGET = 60;
+const BATCH_COUNT_MAX = 5000;
+
+/** バッチ取得 limit を投稿数（n）連動で算出する（両バッチ関数で共有・式の重複を避ける）。 */
+function batchCountLimit(n: number): number {
+  return Math.min(n * PER_EVENT_COUNT_BUDGET, BATCH_COUNT_MAX);
+}
 
 /**
  * 複数投稿のいいね数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
@@ -242,7 +250,7 @@ const BATCH_COUNT_LIMIT = 1000;
  */
 export async function fetchReactionCountsBatch(
   eventIds: string[],
-  limit = BATCH_COUNT_LIMIT,
+  limit = batchCountLimit(eventIds.length),
 ): Promise<Map<string, number>> {
   if (eventIds.length === 0) return new Map();
   try {
@@ -275,7 +283,7 @@ export async function fetchReactionCountsBatch(
  */
 export async function fetchCommentCountsBatch(
   eventIds: string[],
-  limit = BATCH_COUNT_LIMIT,
+  limit = batchCountLimit(eventIds.length),
 ): Promise<Map<string, number>> {
   if (eventIds.length === 0) return new Map();
   try {
