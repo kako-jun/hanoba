@@ -154,22 +154,39 @@ summary {
   }
 }
 
-/* 綿毛が舞い上がるエフェクト（#148・投稿時のフィードバック）。
-   原点（送信ボタン中央）から、各粒の風（--dx）・上昇（--dy）・回転（--rot）へ
-   流れながらフェードアウトする単発アニメーション。控えめな白の差し色。 */
-@keyframes ha-seed-drift {
-  from {
-    opacity: 1;
-    transform: translate(0, 0) rotate(0);
-  }
-  to {
+/* 綿毛が舞い上がるエフェクト（#148 / #252・投稿中のフィードバック）。
+   原点（送信ボタン中央）から、各粒の風（--dx）・上昇（--dy）・回転（--rot）へ向かいつつ、
+   上昇の途中で左右に揺れ（--sway を ＋/− に振る）、ふわっと現れて上端で消える。
+   単調な直線でなく「風に乗って漂う」曲線を描かせ、フェードイン/アウトで端の硬さを取る。 */
+@keyframes ha-seed-rise {
+  0% {
     opacity: 0;
-    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+    transform: translate(0, 0) rotate(0) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.15 + var(--sway, 0px)), calc(var(--dy) * 0.15))
+      rotate(calc(var(--rot) * 0.15)) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.5 - var(--sway, 0px)), calc(var(--dy) * 0.5))
+      rotate(calc(var(--rot) * 0.5)) scale(1);
+  }
+  80% {
+    opacity: 0.85;
+    transform: translate(calc(var(--dx) * 0.8 + var(--sway, 0px)), calc(var(--dy) * 0.8))
+      rotate(calc(var(--rot) * 0.8)) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.1);
   }
 }
 
 .ha-seed {
-  animation: ha-seed-drift var(--dur, 1200ms) cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms) both;
+  animation: ha-seed-rise var(--dur, 1800ms) cubic-bezier(0.33, 0, 0.2, 1) var(--delay, 0ms) both;
+  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {

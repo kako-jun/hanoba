@@ -66,4 +66,29 @@ describe("tag-catalog", () => {
     expect(all).not.toContain("塊根植物");
     expect(all).not.toContain("観葉植物");
   });
+
+  it("原則1: 症状・トラブル・失敗はタグにしない（本文に書く・#251）", () => {
+    const all = TAG_CATEGORIES.flatMap((c) => c.tags);
+    for (const symptom of ["徒長", "葉焼け", "殺虫", "うどんこ病", "根腐れ", "病気", "害虫"]) {
+      expect(all).not.toContain(symptom);
+    }
+  });
+
+  it("原則2: 現実の家・私生活を指すタグは入れない（ハノーバ架空設定・#251）", () => {
+    const all = TAG_CATEGORIES.flatMap((c) => c.tags);
+    expect(all).not.toContain("我が家の植物");
+  });
+
+  it("特徴は斑の細分を持たず「斑入り」一本＋綴化/石化だけ（#251）", () => {
+    for (const sub of ["錦", "黄斑", "白斑", "中斑", "覆輪", "モンスト"]) {
+      expect(trait.tags).not.toContain(sub);
+    }
+    expect(trait.tags).toEqual(["斑入り", "綴化", "石化"]);
+  });
+
+  it("記録は「実験」「収穫」を持ち、「開花待ち」は持たない（#251）", () => {
+    expect(record.tags).toContain("実験");
+    expect(record.tags).toContain("収穫");
+    expect(record.tags).not.toContain("開花待ち");
+  });
 });
