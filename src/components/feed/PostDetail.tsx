@@ -6,7 +6,14 @@ import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
-import { nextPhotoIndex, prevPhotoIndex, swipeDirection } from "../../lib/feed/carousel.ts";
+import {
+  nextPhotoIndex,
+  prevPhotoIndex,
+  swipeDirection,
+  swipeProgress,
+  swipeToBlur,
+} from "../../lib/feed/carousel.ts";
+import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { fetchReactionCount } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
@@ -55,6 +62,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
+  // スワイプ中の写真ぼかし（px・#275）。0＝ぼかし無し。指を離すと 0 に戻し、
+  // index 確定で次画像が中央へ来る＝ぼかしも解ける。1枚／reduced-motion ではかからない。
+  const [swipeBlur, setSwipeBlur] = useState(0);
 
   // 品種カタログは初期フィードバンドルに載せず、モーダル展開時に一度だけ動的 import する
   // （TagPicker の ensureCatalog と同型・SSR では走らない）。失敗時は null のまま＝札セクション非表示。
@@ -162,9 +172,28 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     if (t === undefined) return;
     touchStartRef.current = { x: t.clientX, y: t.clientY };
   }
+  // ドラッグ中はスワイプ量で写真をぼかす（#275）。水平優位のときだけ＝縦スクロールを邪魔しない。
+  // 縦優位・始点なし・1枚・reduced-motion ではぼかさない（0 のまま）。
+  function onTouchMove(e: ReactTouchEvent) {
+    const start = touchStartRef.current;
+    if (start === null || post.imageUrls.length <= 1) return;
+    if (prefersReducedMotion()) return;
+    const t = e.touches[0];
+    if (t === undefined) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // 縦優位なら縦スクロール優先＝ぼかしを解いて 0 に戻す。
+    if (Math.abs(dx) <= Math.abs(dy)) {
+      setSwipeBlur(0);
+      return;
+    }
+    setSwipeBlur(swipeToBlur(swipeProgress(dx)));
+  }
   function onTouchEnd(e: ReactTouchEvent) {
     const start = touchStartRef.current;
     touchStartRef.current = null;
+    // 指を離したらぼかしを解く（確定／キャンセルどちらでも・transition で戻る）。
+    setSwipeBlur(0);
     if (start === null || post.imageUrls.length <= 1) return;
     const t = e.changedTouches[0];
     if (t === undefined) return;
@@ -208,20 +237,32 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
           <div className="w-full shrink-0 overflow-hidden rounded-t-xl bg-ha-green-soft">
             <div
               className="relative flex items-center justify-center"
-              // 写真領域のタッチスワイプで前後切替（#184）。1枚なら無効（onTouchStart 内で弾く）。
-              // 縦スワイプはスクロール優先のため touch-action は触らず（pan-y を残す）、
-              // スワイプ中の画像ドラッグ/選択だけ select-none で抑止する。
+              // 写真領域のタッチスワイプで前後切替（#184）＋スワイプ量で写真をぼかす（#275）。
+              // 1枚なら無効（onTouchStart 内で弾く）。縦スワイプはスクロール優先のため
+              // touch-action は触らず（pan-y を残す）、スワイプ中の画像ドラッグ/選択だけ select-none で抑止する。
               onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
             >
-              <ProgressiveImage
-                // 写真切替で remount し1枚ごとに blur-up リビールを掛け直す（#145）。
-                key={photoIndex}
-                src={post.imageUrls[photoIndex] ?? post.imageUrls[0] ?? ""}
-                alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
-                className="max-w-full max-h-[70vh] select-none object-contain"
-                draggable={false}
-              />
+              {/* スワイプ中ぼかしは画像だけにかけるラッパで包む（#275）。←→ボタンには波及させない。
+                  ha-reveal の blur-up（img 側 filter）と干渉させないよう、ここ（外側 div）に当てる
+                  ＝2つの blur が合成され、リビール中でも壊れない。ドラッグ中は即追従（transition none）、
+                  離したら 0.25s で戻す。1枚／reduced-motion では swipeBlur が常に 0＝無効。 */}
+              <div
+                style={{
+                  filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
+                  transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
+                }}
+              >
+                <ProgressiveImage
+                  // 写真切替で remount し1枚ごとに blur-up リビールを掛け直す（#145）。
+                  key={photoIndex}
+                  src={post.imageUrls[photoIndex] ?? post.imageUrls[0] ?? ""}
+                  alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
+                  className="max-w-full max-h-[70vh] select-none object-contain"
+                  draggable={false}
+                />
+              </div>
               {post.imageUrls.length > 1 && (
                 <>
                   <button
