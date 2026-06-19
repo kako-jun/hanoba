@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseComment, sortComments, toComments, type Comment } from "./comments.ts";
+import { countCommentsByEvent, parseComment, sortComments, toComments, type Comment } from "./comments.ts";
 import type { NostrEvent } from "../nostr/types.ts";
 
 function makeEvent(overrides: Partial<NostrEvent> & { id: string }): NostrEvent {
@@ -104,6 +104,51 @@ describe("toComments", () => {
       PARENT,
     );
     expect(result.map((c) => c.id)).toEqual(["nested"]);
+  });
+});
+
+describe("countCommentsByEvent", () => {
+  const P1 = "1".repeat(64);
+  const P2 = "2".repeat(64);
+
+  it("eventIds の全 id をキーに持つ（該当0件の id は 0）", () => {
+    const result = countCommentsByEvent([], [P1, P2]);
+    expect(result.get(P1)).toBe(0);
+    expect(result.get(P2)).toBe(0);
+    expect(result.size).toBe(2);
+  });
+
+  it("リプライを親投稿 id ごとに数える", () => {
+    const replies = [
+      makeEvent({ id: "c1", tags: [["e", P1, "", "root"]] }),
+      makeEvent({ id: "c2", tags: [["e", P1, "", "reply"]] }),
+      makeEvent({ id: "c3", tags: [["e", P2, "", "root"]] }),
+    ];
+    const result = countCommentsByEvent(replies, [P1, P2]);
+    expect(result.get(P1)).toBe(2);
+    expect(result.get(P2)).toBe(1);
+  });
+
+  it("引用リポスト（mention）はどの投稿でも数えない", () => {
+    const replies = [
+      makeEvent({ id: "reply", tags: [["e", P1, "", "root"]] }),
+      makeEvent({ id: "quote", tags: [["e", P1, "", "mention"]] }),
+    ];
+    const result = countCommentsByEvent(replies, [P1]);
+    expect(result.get(P1)).toBe(1); // 本物のリプライのみ
+  });
+
+  it("複数リレー由来の同一 id 重複は投稿ごとに畳む", () => {
+    const replies = [
+      makeEvent({ id: "dup", tags: [["e", P1, "", "root"]] }),
+      makeEvent({ id: "dup", tags: [["e", P1, "", "root"]] }),
+    ];
+    expect(countCommentsByEvent(replies, [P1]).get(P1)).toBe(1);
+  });
+
+  it("eventIds が空なら空 Map", () => {
+    const replies = [makeEvent({ id: "c1", tags: [["e", P1, "", "root"]] })];
+    expect(countCommentsByEvent(replies, [])).toEqual(new Map());
   });
 });
 
