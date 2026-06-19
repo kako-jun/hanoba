@@ -1,8 +1,7 @@
 import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
-import { buildFuda } from "../../lib/plants/fuda.ts";
-import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
 import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import Avatar from "./Avatar.tsx";
@@ -20,8 +19,11 @@ interface Props {
   onSelectHashtag: (tag: string) => void;
   /** 著者プロフィール（#35・未取得なら null＝npub フォールバック表示）。 */
   profile?: Profile | null;
-  /** 品種カタログ（#239・植物札用）。null は未ロード＝札を出さない（グレースフル）。 */
-  catalog?: VarietyCategory[] | null;
+  /**
+   * 札解決の索引（#239/#257・植物札用）。`PostGrid` がグリッド単位で1回 `buildVarietyIndex` した
+   * ものを配る（カードごとに catalog 全走査しない）。null は未ロード＝札を出さない（グレースフル）。
+   */
+  fudaIndex?: FudaIndex | null;
   /**
    * いいね数（#276・kind:7 集計）。グリッド単位でバッチ取得した値を親が配る。
    * undefined は未ロード。**カードは 0 / undefined を出さない**（1 以上のときだけ控えめに添える）。
@@ -51,7 +53,7 @@ export default function PostCard({
   onOpen,
   onSelectHashtag,
   profile,
-  catalog,
+  fudaIndex,
   reactionCount,
   commentCount,
 }: Props) {
@@ -64,9 +66,9 @@ export default function PostCard({
   const captionRef = useRef<HTMLParagraphElement>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
 
-  // 投稿の植物札（#182/#23）。catalog 未ロード時は空＝出さない。タグ列の上（右列の最上部）に出す（#239）。
-  // カードごとに1回だけ組む（catalog は安定・hashtags は post 固定）。buildFuda は純粋。
-  const fuda = useMemo(() => (catalog ? buildFuda(post.hashtags, catalog) : []), [post.hashtags, catalog]);
+  // 投稿の植物札（#182/#23）。索引未ロード時は空＝出さない。タグ列の上（右列の最上部）に出す（#239）。
+  // 索引は PostGrid がグリッド単位で1回作って配る（#257）。resolveFuda は純粋（hashtags は post 固定）。
+  const fuda = useMemo(() => (fudaIndex ? resolveFuda(post.hashtags, fudaIndex) : []), [post.hashtags, fudaIndex]);
 
   // 折りたたみ時に本文/右列（札＋タグ）が収まりきらず clip されているかを実測してトグルの要否を決める。
   useLayoutEffect(() => {
