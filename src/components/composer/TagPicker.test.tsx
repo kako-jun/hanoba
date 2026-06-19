@@ -162,14 +162,14 @@ describe("TagPicker", () => {
     expect(screen.getByRole("button", { name: "記録のその他のタグ" })).toBeTruthy();
   });
 
-  it("インラインに出ていない定番（断水）は常時表示されず、「その他」を開くと見える（#169）", async () => {
+  it("インラインに出ていない定番（株分け）は常時表示されず、「その他」を開くと見える（#169）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    // 断水 は世話の8番目以降＝インライン（先頭7件）には出ない
-    expect(screen.queryByRole("button", { name: "#断水" })).toBeNull();
+    // 株分け は世話の作業順で先頭7件（インライン）には出ない＝あふれ側
+    expect(screen.queryByRole("button", { name: "#株分け" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
     const dialog = screen.getByRole("dialog", { name: "世話のタグ一覧" });
-    expect(within(dialog).getByRole("button", { name: "#断水" })).toBeTruthy();
+    expect(within(dialog).getByRole("button", { name: "#株分け" })).toBeTruthy();
   });
 
   it("「その他」ポップアップにはインライン済みの定番（水やり）は出ない＝あふれ分だけ（#186）", async () => {
@@ -181,8 +181,8 @@ describe("TagPicker", () => {
     const dialog = screen.getByRole("dialog", { name: "世話のタグ一覧" });
     // ポップアップ内にはインライン済みの 水やり は出ない（重複させない・#186）。
     expect(within(dialog).queryByRole("button", { name: "#水やり" })).toBeNull();
-    // あふれ分（断水）は出る。
-    expect(within(dialog).getByRole("button", { name: "#断水" })).toBeTruthy();
+    // あふれ分（株分け）は出る。
+    expect(within(dialog).getByRole("button", { name: "#株分け" })).toBeTruthy();
   });
 
   it("ポップアップ内のチップを選ぶと onPick が呼ばれる（#169）", async () => {

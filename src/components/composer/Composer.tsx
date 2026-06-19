@@ -5,7 +5,7 @@
 //   - ロジック: buildNoteTemplate（signAndPublishNote 内）が空一言を throw
 // 出力 1:1 は renderSquareImageFromRect（canvas.width=height=size）で構造的に保証。
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
@@ -14,7 +14,6 @@ import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "..
 import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
-import { makeSeeds } from "../../lib/composer/dandelion.ts";
 import { clearDraft, loadDraft, saveMeta, syncBlobs } from "../../lib/composer/draft.ts";
 import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
@@ -75,12 +74,10 @@ export default function Composer() {
   const [focusEndSignal, setFocusEndSignal] = useState(0);
   // ユーザー名（#28）。AccountName が表示・保存を担い、現在名だけ受け取って投稿ゲートに使う。
   const [name, setName] = useState<string | null>(null);
-  // 投稿時に綿毛を飛ばす単発エフェクト（#148）。投稿開始のたびに +1 して key を変え、
-  // DandelionBurst を remount＝再生する。0 は未発火（描かない）。多重発火は disabled={posting} が防ぐ。
-  const [burstKey, setBurstKey] = useState(0);
-  // 綿毛の種は burstKey ごとに1回だけ生成して固定する。JSX 内でインライン生成すると
-  // Composer の再レンダーごとに新しい乱数になり、飛行中の種の CSS 変数を揺さぶってしまう。
-  const burstSeeds = useMemo(() => makeSeeds(14), [burstKey]);
+  // 投稿の進捗（#252）。アップロードは枚数が分かるので「写真を送信中 N/M」、その後の署名・publish は
+  // 「投稿中…」と出す。綿毛（DandelionBurst）が active={posting} で舞い続けるので、ボタンの段階表示と
+  // 合わせて「10秒間ずっと動いている＝固まっていない」が伝わる。null は非投稿中。
+  const [postProgress, setPostProgress] = useState<{ stage: "upload" | "publish"; done: number; total: number } | null>(null);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
@@ -262,8 +259,8 @@ export default function Composer() {
       return;
     }
     setStatus({ kind: "posting" });
-    // 投稿開始の合図に綿毛を飛ばす（#148・投稿中のフィードバックも兼ねる）。
-    setBurstKey((k) => k + 1);
+    // 綿毛は active={posting} で投稿の全尺ずっと舞う（#252）。ボタンは段階テキストで進捗を出す。
+    setPostProgress({ stage: "upload", done: 0, total: images.length });
     // 複数枚は並列にアップロードする（#167・直列 for は枚数分だけ遅い）。
     // orderedUrls は Promise.all の結果＝images 順（imageUrls の順序保証）。
     // uploadedUrls は完了順に積む cleanup 専用（失敗時に成功分だけ deleteImage する）。
@@ -286,9 +283,13 @@ export default function Composer() {
           const squareFile = new File([blob], `hanoba-${index + 1}.jpg`, { type: "image/jpeg" });
           const { url } = await uploadImage(squareFile);
           uploadedUrls.push(url);
+          // 1枚アップロードが終わるたびに「送信中 N/M」を進める（完了順・枚数だけ確実に増える）。
+          setPostProgress((p) => (p !== null && p.stage === "upload" ? { ...p, done: p.done + 1 } : p));
           return url;
         }),
       );
+      // 写真は全部送り終え、ここから署名・relay への publish（枚数では測れないので「投稿中…」）。
+      setPostProgress({ stage: "publish", done: images.length, total: images.length });
       await signAndPublishNote({ caption, imageUrls: orderedUrls });
       // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
       recordRecentTags(extractHashtags(caption));
@@ -300,6 +301,7 @@ export default function Composer() {
       if (typeof window !== "undefined") window.location.href = "/me";
     } catch (err) {
       await Promise.allSettled(uploadedUrls.map((url) => deleteImage(url)));
+      setPostProgress(null);
       const message = err instanceof Error ? err.message : "投稿に失敗しました。";
       setStatus({ kind: "error", message });
     }
@@ -413,7 +415,7 @@ export default function Composer() {
             >
               {images.length > 1 ? "この写真を外す" : "写真を選び直す"}
             </button>
-            {/* 送信ボタンは relative なラッパで包み、綿毛オーバーレイ（#148）をボタンに重ねる。
+            {/* 送信ボタンは relative なラッパで包み、綿毛オーバーレイ（#148/#252）をボタンに重ねる。
                 オーバーレイは pointer-events:none・aria-hidden なのでクリックやレイアウトに干渉しない。 */}
             <div className="relative">
               <button
@@ -423,10 +425,26 @@ export default function Composer() {
                 aria-describedby={!posting && missing.length > 0 ? "hanoba-compose-shortfall" : undefined}
                 className="inline-flex items-center gap-2 rounded-full bg-ha-pink text-ha-white px-6 py-3 font-semibold shadow-sm shadow-ha-pink/30 enabled:hover:opacity-90 enabled:hover:shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Icon name="dandelion" className="h-5 w-5" />
-                {posting ? "投稿中…" : "投稿する"}
+                {posting ? (
+                  // 綿はボタンから飛び出した側なので、ボタンに残す稼働サインは綿マークではなく
+                  // 普通のスピナーリング（#252）。段階テキストで「送信中 N/M → 投稿中」を出す。
+                  <>
+                    <span
+                      aria-hidden="true"
+                      className="h-5 w-5 shrink-0 rounded-full border-2 border-ha-white/40 border-t-ha-white animate-spin motion-reduce:animate-none"
+                    />
+                    {postProgress?.stage === "upload"
+                      ? `写真を送信中 ${postProgress.done}/${postProgress.total}`
+                      : "投稿中…"}
+                  </>
+                ) : (
+                  <>
+                    <Icon name="dandelion" className="h-5 w-5" />
+                    投稿する
+                  </>
+                )}
               </button>
-              {burstKey > 0 && <DandelionBurst key={burstKey} seeds={burstSeeds} />}
+              <DandelionBurst active={posting} />
             </div>
           </div>
         </>

@@ -41,6 +41,14 @@ interface Props {
 const INLINE_LIMIT = 7;
 
 /**
+ * 「その他」ポップアップを出す最小あふれ件数（#251）。あふれが MIN_OVERFLOW 未満なら
+ * 中途半端な数件のためにポップアップを作らず、その行は全件インラインで見せる。
+ * これで「下のカテゴリにその他が無い／開いても2件だけ」のガタつきを消し、
+ * 残った『その他』は常に中身が充実する（隠す価値があるときだけ隠す）。
+ */
+const MIN_OVERFLOW = 4;
+
+/**
  * 品種追加リクエストの宛先（#169/#232）。市役所ハブ（#163）が整ったので GitHub をやめ、
  * `/vote` の「品種への要望」板（住民投票 BBS の先頭・Nostalgic）へ集約する。
  * 品種に関する要望（並び順・追加・その他）は全部この板で受ける＝一般ユーザーを GitHub に飛ばさない。
@@ -327,9 +335,10 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
           )}
 
           {TAG_CATEGORIES.map((c) => {
-            // 頻度上位（先頭 N）だけ常時インライン。残りは「その他」ポップアップで全件見せる（#169）。
-            const inline = c.tags.slice(0, INLINE_LIMIT);
-            const hasOverflow = c.tags.length > INLINE_LIMIT;
+            // あふれが MIN_OVERFLOW 以上あるときだけ「その他」を作る（#251）。それ未満なら全件インライン。
+            // → 仕立て・特徴のような小さい行は全部見せ、世話・記録だけ先頭 N をインライン＋残りをポップアップ。
+            const hasOverflow = c.tags.length - INLINE_LIMIT >= MIN_OVERFLOW;
+            const inline = hasOverflow ? c.tags.slice(0, INLINE_LIMIT) : c.tags;
             return (
               <ChipGroup key={c.label} label={c.label}>
                 {inline.map((tag) => (

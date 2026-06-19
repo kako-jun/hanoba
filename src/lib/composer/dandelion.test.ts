@@ -42,16 +42,30 @@ describe("makeSeeds", () => {
       expect(s.dx).toBeLessThanOrEqual(100);
       // 必ず上へ飛ぶ。
       expect(s.dy).toBeLessThan(0);
-      expect(s.dy).toBeGreaterThanOrEqual(-260);
-      expect(s.dy).toBeLessThanOrEqual(-120);
+      expect(s.dy).toBeGreaterThanOrEqual(-360);
+      expect(s.dy).toBeLessThanOrEqual(-160);
       expect(s.rot).toBeGreaterThanOrEqual(-120);
       expect(s.rot).toBeLessThanOrEqual(120);
-      expect(s.durMs).toBeGreaterThanOrEqual(900);
-      expect(s.durMs).toBeLessThanOrEqual(1600);
+      // #252 で連続スポーン化＋大きめサイズに伴い、ゆっくり大きく漂うよう時間・上昇・サイズを広げた。
+      expect(s.durMs).toBeGreaterThanOrEqual(1400);
+      expect(s.durMs).toBeLessThanOrEqual(2400);
       expect(s.delayMs).toBeGreaterThanOrEqual(0);
       expect(s.delayMs).toBeLessThanOrEqual(180);
-      expect(s.size).toBeGreaterThanOrEqual(6);
-      expect(s.size).toBeLessThanOrEqual(12);
+      expect(s.size).toBeGreaterThanOrEqual(90);
+      expect(s.size).toBeLessThanOrEqual(118);
+      // 横揺れ幅は左右対称の範囲。
+      expect(s.sway).toBeGreaterThanOrEqual(-26);
+      expect(s.sway).toBeLessThanOrEqual(26);
+      // スプライト番号は 0..2 に収まる（単体種3変種）。
+      expect(s.variant).toBeGreaterThanOrEqual(0);
+      expect(s.variant).toBeLessThanOrEqual(2);
+      // 非一様スケール（飛ぶときの変形）は 0.78..1.18 の範囲、skew は ±12deg。
+      for (const sc of [s.scaleX, s.scaleY]) {
+        expect(sc).toBeGreaterThanOrEqual(0.78);
+        expect(sc).toBeLessThanOrEqual(1.18);
+      }
+      expect(s.skew).toBeGreaterThanOrEqual(-12);
+      expect(s.skew).toBeLessThanOrEqual(12);
     }
   });
 
