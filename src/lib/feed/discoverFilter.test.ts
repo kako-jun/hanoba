@@ -4,6 +4,7 @@ import {
   addTag,
   applyClientFilter,
   applyFilterToParams,
+  discoverTagHref,
   filterSummary,
   isDefaultFilter,
   parseFilter,
@@ -134,5 +135,15 @@ describe("filterSummary", () => {
   });
   it("タグを ・ で連結", () => {
     expect(filterSummary({ tags: ["トマト", "実生"] })).toBe("トマト・実生");
+  });
+});
+
+describe("discoverTagHref", () => {
+  it("/discover?tags= に本文正規化（空白→_）してエンコードしたタグを載せる（#239 植物札リンク）", () => {
+    expect(discoverTagHref("グラキリス")).toBe(`/discover?tags=${encodeURIComponent("グラキリス")}`);
+    // 複数語の品種名は本文と同じく空白→_ にしてから載せる（投稿のタグと一致させる）。
+    expect(discoverTagHref("フィカス ペティオラリス")).toBe(
+      `/discover?tags=${encodeURIComponent("フィカス_ペティオラリス")}`,
+    );
   });
 });

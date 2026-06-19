@@ -11,7 +11,7 @@ import { fetchReactionCount } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
-import SciName from "../ui/SciName.tsx";
+import FudaList from "./FudaList.tsx";
 import Avatar from "./Avatar.tsx";
 import CommentSection from "./CommentSection.tsx";
 import DilutionControl from "./DilutionControl.tsx";
@@ -276,25 +276,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
               <span className="text-[11px] font-medium uppercase tracking-wider text-ha-ink/45">
                 この投稿の植物
               </span>
-              <ul className="flex flex-wrap gap-2">
-                {fuda.map((f) => {
-                  const query = `#${f.name}`;
-                  return (
-                    <li key={f.key}>
-                      <a
-                        href={`/discover?q=${encodeURIComponent(query)}`}
-                        className="glass inline-flex min-h-9 items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-3 py-1.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-1 before:mr-1 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
-                        title={`${f.sci !== null ? `${f.sci}（${f.name}）` : f.name}で探す`}
-                      >
-                        {f.sci !== null && (
-                          <SciName sci={f.sci} className="font-display text-ha-green-deep" />
-                        )}
-                        <span className="font-medium text-ha-ink">{f.name}</span>
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
+              <FudaList fuda={fuda} />
             </div>
           )}
 

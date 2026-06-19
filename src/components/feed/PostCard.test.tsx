@@ -3,6 +3,27 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import PostCard from "./PostCard.tsx";
 import type { FeedPost } from "../../lib/feed/parse.ts";
+import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+
+// 植物札テスト用の最小カタログ（パキポディウム属＋品種グラキリス／フィカス属＋複数語品種）。
+const TEST_CATALOG: VarietyCategory[] = [
+  {
+    label: "多肉植物",
+    genera: [
+      {
+        name: "パキポディウム",
+        pickable: true,
+        varieties: [{ name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius" }],
+      },
+      {
+        name: "フィカス",
+        pickable: true,
+        // 複数語の品種名（カタログは空白・投稿のタグは _）。両者を札で一致させる（#239 S1）。
+        varieties: [{ name: "フィカス ペティオラリス", sci: "Ficus petiolaris" }],
+      },
+    ],
+  },
+];
 
 // jsdom はレイアウトしないため scrollHeight/clientHeight は常に 0。
 // clip 判定（#50: scrollHeight > clientHeight）を検証するため両者をモックする。
@@ -36,6 +57,68 @@ const noop = () => {};
 
 describe("PostCard", () => {
   afterEach(() => cleanup());
+
+  it("植物札をカードに出し、クリックでその品種の discover 絞り込みへリンクする（#239）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <PostCard
+          post={makePost({ hashtags: ["パキポディウム", "グラキリス"] })}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+          catalog={TEST_CATALOG}
+        />,
+      );
+      // 属＋品種は品種1枚に畳む。札クリックは ?tags=<品種名> の discover 絞り込みへ。
+      const link = screen.getByRole("link", { name: /グラキリス/ });
+      expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("グラキリス")}`);
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数語の品種名（投稿は _ 区切り）でも札を出す＝空白/_ を同一視（#239 S1）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      // 投稿本文のタグは insertTag で空白→_ に畳まれて保存される（#フィカス_ペティオラリス）。
+      render(
+        <PostCard
+          post={makePost({ hashtags: ["フィカス_ペティオラリス"] })}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+          catalog={TEST_CATALOG}
+        />,
+      );
+      // カタログ名（空白）の札が出て、リンクは正規化（_）された discover 絞り込みへ。
+      const link = screen.getByRole("link", { name: /フィカス ペティオラリス/ });
+      expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("フィカス_ペティオラリス")}`);
+    } finally {
+      restore();
+    }
+  });
+
+  it("catalog 未ロード（null）なら札を出さない（グレースフル・#239）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <PostCard
+          post={makePost({ hashtags: ["パキポディウム"] })}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+          catalog={null}
+        />,
+      );
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
 
   it("本文からタグを除いて表示し、タグは別に出す", () => {
     const restore = mockSizes(0, 0); // clip なし
