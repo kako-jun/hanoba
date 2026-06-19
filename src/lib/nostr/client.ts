@@ -15,8 +15,9 @@ import {
   type FeedPost,
   type Profile,
 } from "../feed/parse.ts";
+import { countCommentsByEvent } from "../feed/comments.ts";
 import { rankHashtags, type RankedTag } from "../feed/popular.ts";
-import { countLikes } from "../feed/reactions.ts";
+import { countLikes, countLikesByEvent } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
 import {
   buildDeletionEvent,
@@ -220,6 +221,84 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
     return countLikes(reactions);
   } catch {
     return 0;
+  }
+}
+
+// バッチ取得（タイムライン/discover のカード・#276）の kind:7/kind:1 上限。
+// 1グリッド分の投稿（既定 fetchHanobaFeed=100 件）の反応をまとめて1クエリで取る。
+// 固定上限だと投稿数が多いグリッドで1投稿あたりの実効が薄まり、単一取得（500/件）より早く頭打ちする。
+// そこで **投稿数に連動**させる＝1投稿あたりの想定上限 PER_EVENT_COUNT_BUDGET を掛け、
+// BATCH_COUNT_MAX で天井を切る（リレー負荷の歯止め）。超人気投稿が多いグリッドでは概数になり得る（既知の制約）。
+const PER_EVENT_COUNT_BUDGET = 60;
+const BATCH_COUNT_MAX = 5000;
+
+/** バッチ取得 limit を投稿数（n）連動で算出する（両バッチ関数で共有・式の重複を避ける）。 */
+function batchCountLimit(n: number): number {
+  return Math.min(n * PER_EVENT_COUNT_BUDGET, BATCH_COUNT_MAX);
+}
+
+/**
+ * 複数投稿のいいね数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
+ *
+ * `{kinds:[7], "#e":[...eventIds]}` で全投稿宛のリアクションをまとめて取り、
+ * `countLikesByEvent` で id ごとに集計する＝カードごとに query しない（N+1 回避・guidelines §3）。
+ *
+ * - eventIds が空なら即空 Map（query しない）。
+ * - 失敗（オフライン等）は throw せず空 Map にフォールバックする（カードは count を出さないだけ）。
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchReactionCountsBatch(
+  eventIds: string[],
+  limit = batchCountLimit(eventIds.length),
+): Promise<Map<string, number>> {
+  if (eventIds.length === 0) return new Map();
+  try {
+    const reactions = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [7],
+        "#e": eventIds,
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    return countLikesByEvent(reactions, eventIds);
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * 複数投稿のコメント数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
+ *
+ * `{kinds:[1], "#e":[...eventIds]}` で全投稿宛のリプライをまとめて取り、
+ * `countCommentsByEvent` で id ごとに集計する（本物のリプライ抽出＝引用リポスト除外・id 重複除去を
+ * 単一取得経路と共有）＝カードごとに query しない（N+1 回避・guidelines §3）。
+ *
+ * - eventIds が空なら即空 Map（query しない）。
+ * - 失敗（オフライン等）は throw せず空 Map にフォールバックする（カードは count を出さないだけ）。
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchCommentCountsBatch(
+  eventIds: string[],
+  limit = batchCountLimit(eventIds.length),
+): Promise<Map<string, number>> {
+  if (eventIds.length === 0) return new Map();
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [1],
+        "#e": eventIds,
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    return countCommentsByEvent(events, eventIds);
+  } catch {
+    return new Map();
   }
 }
 

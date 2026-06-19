@@ -61,6 +61,31 @@ export function toComments(events: NostrEvent[], parentId: string): Comment[] {
   return [...byId.values()];
 }
 
+/**
+ * 複数投稿の kind:1 リプライを**投稿 id ごとに**コメント数へ集計する純粋関数（#276）。
+ *
+ * タイムライン/discover のカードは1グリッドで多数の投稿を出すので、id ごとに query せず
+ * 1クエリで集めた kind:1 をクライアント側で振り分ける（N+1 を避ける・取得は client.ts の責務）。
+ *
+ * - 各 id について `toComments(replies, id).length` を数える＝本物のリプライ抽出
+ *   （引用リポスト〔NIP-18・marker="mention"〕除外）と id 重複除去を**そのまま再利用**する。
+ *   ＝カードのコメント数は投稿詳細の `comments.length` と同じ純関数を通る（数え方を揃える）。
+ * - **複数の対象（e タグ）を本物リプライとして指す返信1件は、各対象に1ずつ計上される**。これは
+ *   `PostDetail` を各投稿で開いたときの `comments.length` と一致する（同じ純関数を通すため整合）。
+ *   ＝リアクション側（`countLikesByEvent`＝最初の一致 e タグへ畳む）とは割り当て規則が**非対称**。
+ * - 返り値は eventIds の全 id をキーに持つ Map（該当0件の id は 0）。0 を出すか隠すかは呼び出し側の責務。
+ */
+export function countCommentsByEvent(
+  replies: NostrEvent[],
+  eventIds: string[],
+): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const id of eventIds) {
+    result.set(id, toComments(replies, id).length);
+  }
+  return result;
+}
+
 /** コメントの並び順（古い順＝投稿の流れを追う／新しい順＝最新を先頭）。 */
 export type CommentOrder = "old" | "new";
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { diluteFeed } from "../../lib/feed/dilution.ts";
+import { fetchCommentCountsBatch, fetchReactionCountsBatch } from "../../lib/nostr/client.ts";
 import PostCard from "./PostCard.tsx";
 import PostDetail from "./PostDetail.tsx";
 import { useProfiles } from "./useProfiles.ts";
@@ -61,6 +62,34 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     };
   }, []);
 
+  // カードのいいね数・コメント数（#276）。グリッド単位で**1回ずつ**バッチ取得し各 PostCard へ配る
+  // （catalog/useProfiles と同じ「1回取得し配る」パターン・カードごとに query しない＝N+1 回避）。
+  // 取得は非同期＝カードは即描画し、count はロード後にふっと出る。失敗時は空 Map＝count を出さない。
+  // カードは間引き前後で id 集合が変わらない（diluteFeed は posts の部分集合）ので、間引き前の posts で引く。
+  const [reactionCounts, setReactionCounts] = useState<Map<string, number>>(new Map());
+  const [commentCounts, setCommentCounts] = useState<Map<string, number>>(new Map());
+  // id 列をキーにして、同じ投稿集合では取り直さない（タグ絞り込み等で集合が変わったら引き直す）。
+  // ids（配列）を持ち idsKey は join で派生する＝useEffect は idsKey（文字列）が変わった時だけ再実行する
+  // （id 集合が変わった時だけ＝挙動は従来と等価。string→split の往復をやめただけ）。
+  const ids = useMemo(() => posts.map((p) => p.id), [posts]);
+  const idsKey = ids.join(",");
+  useEffect(() => {
+    if (idsKey === "") return; // 投稿0件なら取得しない。
+    let alive = true;
+    Promise.all([fetchReactionCountsBatch(ids), fetchCommentCountsBatch(ids)])
+      .then(([reactions, comments]) => {
+        if (!alive) return;
+        setReactionCounts(reactions);
+        setCommentCounts(comments);
+      })
+      .catch(() => {
+        /* count を出さないだけ（Map は空のまま）。 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [idsKey]);
+
   // 相対時刻の基準。描画時点でよい（1秒未満のズレは表示に影響しない）。
   const now = Math.floor(Date.now() / 1000);
 
@@ -86,6 +115,8 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             onSelectHashtag={selectHashtag}
             profile={profiles.get(post.pubkey) ?? null}
             catalog={catalog}
+            reactionCount={reactionCounts.get(post.id)}
+            commentCount={commentCounts.get(post.id)}
           />
         ))}
       </ul>

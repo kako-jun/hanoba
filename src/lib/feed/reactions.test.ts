@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countLikes, isLike } from "./reactions.ts";
+import { countLikes, countLikesByEvent, isLike } from "./reactions.ts";
 import type { NostrEvent } from "../nostr/types.ts";
 
 // テスト用の最小 kind:7 イベント。集計は pubkey と content しか参照しない。
@@ -96,5 +96,74 @@ describe("countLikes", () => {
       makeReaction({ pubkey: "a", content: "+" }),
     ];
     expect(countLikes(reactions)).toBe(1);
+  });
+});
+
+describe("countLikesByEvent", () => {
+  // 対象投稿を e タグで指す kind:7 を作る（複数 id の振り分けを試す）。
+  function reactionFor(eventId: string, pubkey: string, content = "+"): NostrEvent {
+    return makeReaction({ id: `r-${eventId}-${pubkey}-${content}`, pubkey, content, tags: [["e", eventId]] });
+  }
+
+  it("eventIds の全 id をキーに持つ（該当0件の id は 0）", () => {
+    const result = countLikesByEvent([], ["p1", "p2"]);
+    expect([...result.entries()].sort()).toEqual([
+      ["p1", 0],
+      ["p2", 0],
+    ]);
+  });
+
+  it("リアクションを e タグで投稿 id ごとに振り分けて数える", () => {
+    const reactions = [
+      reactionFor("p1", "a"),
+      reactionFor("p1", "b"),
+      reactionFor("p2", "c"),
+    ];
+    const result = countLikesByEvent(reactions, ["p1", "p2"]);
+    expect(result.get("p1")).toBe(2);
+    expect(result.get("p2")).toBe(1);
+  });
+
+  it("eventIds に無い投稿宛のリアクションは無視する", () => {
+    const reactions = [reactionFor("p1", "a"), reactionFor("other", "b")];
+    const result = countLikesByEvent(reactions, ["p1"]);
+    expect(result.get("p1")).toBe(1);
+    expect(result.has("other")).toBe(false);
+  });
+
+  it("dislike 除外がバッチでも効く（投稿ごとに countLikes を通す）", () => {
+    const reactions = [
+      reactionFor("p1", "a", "+"),
+      reactionFor("p1", "b", "-"),
+      reactionFor("p2", "c", "-"),
+    ];
+    const result = countLikesByEvent(reactions, ["p1", "p2"]);
+    expect(result.get("p1")).toBe(1); // a は like、b の dislike は除外
+    expect(result.get("p2")).toBe(0); // c は dislike のみ
+  });
+
+  it("同一 pubkey の重複は投稿ごとに 1 票に畳む", () => {
+    const reactions = [reactionFor("p1", "a"), reactionFor("p1", "a", "🌸")];
+    const result = countLikesByEvent(reactions, ["p1"]);
+    expect(result.get("p1")).toBe(1);
+  });
+
+  it("複数 e タグのリアクションは eventIds に一致する値へ割り当てる", () => {
+    const reaction = makeReaction({
+      id: "multi",
+      pubkey: "a",
+      content: "+",
+      tags: [
+        ["e", "unrelated"],
+        ["e", "p2"],
+      ],
+    });
+    const result = countLikesByEvent([reaction], ["p1", "p2"]);
+    expect(result.get("p1")).toBe(0);
+    expect(result.get("p2")).toBe(1);
+  });
+
+  it("eventIds が空なら空 Map", () => {
+    expect(countLikesByEvent([reactionFor("p1", "a")], [])).toEqual(new Map());
   });
 });

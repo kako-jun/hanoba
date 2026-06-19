@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import PostCard from "./PostCard.tsx";
@@ -256,5 +256,90 @@ describe("PostCard", () => {
     } finally {
       restore();
     }
+  });
+
+  // いいね数・コメント数の表示（#276）。カードは 1 以上のときだけ控えめに添え、
+  // 0 / undefined はその要素ごと描画しない（hidden/style でなく DOM の有無で判定）。
+  describe("いいね/コメント数（#276・カードは0非表示）", () => {
+    function renderCard(props: { reactionCount?: number; commentCount?: number }) {
+      return render(
+        <PostCard
+          post={makePost()}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+          {...props}
+        />,
+      );
+    }
+
+    it("reactionCount=5 のときいいね要素が出て「5」を表示する", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({ reactionCount: 5 });
+        const like = screen.getByLabelText("いいね 5");
+        expect(like).toBeInTheDocument();
+        // 数字「5」は いいね要素の中に出る。
+        expect(within(like).getByText("5")).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
+
+    it("commentCount=3 のときコメント要素が出て「3」を表示する", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({ commentCount: 3 });
+        const comment = screen.getByLabelText("コメント 3");
+        expect(comment).toBeInTheDocument();
+        expect(within(comment).getByText("3")).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
+
+    it("reactionCount=0 のときいいね要素は DOM に存在しない（要素の有無で判定）", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({ reactionCount: 0 });
+        // hidden/style でなく、要素そのものが描画されていないことを確認する。
+        expect(screen.queryByLabelText(/^いいね/)).toBeNull();
+      } finally {
+        restore();
+      }
+    });
+
+    it("commentCount=0 のときコメント要素は DOM に存在しない", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({ commentCount: 0 });
+        expect(screen.queryByLabelText(/^コメント/)).toBeNull();
+      } finally {
+        restore();
+      }
+    });
+
+    it("どちらも渡さない（undefined）ときは いいね/コメント要素とも存在しない", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({});
+        expect(screen.queryByLabelText(/^いいね/)).toBeNull();
+        expect(screen.queryByLabelText(/^コメント/)).toBeNull();
+      } finally {
+        restore();
+      }
+    });
+
+    it("reactionCount=2・commentCount=0 ではいいねだけ出てコメントは出ない（片方0の出し分け）", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({ reactionCount: 2, commentCount: 0 });
+        expect(screen.getByLabelText("いいね 2")).toBeInTheDocument();
+        expect(screen.queryByLabelText(/^コメント/)).toBeNull();
+      } finally {
+        restore();
+      }
+    });
   });
 });

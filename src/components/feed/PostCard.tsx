@@ -3,6 +3,7 @@ import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { buildFuda } from "../../lib/plants/fuda.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import Avatar from "./Avatar.tsx";
 import FudaList from "./FudaList.tsx";
@@ -21,6 +22,14 @@ interface Props {
   profile?: Profile | null;
   /** 品種カタログ（#239・植物札用）。null は未ロード＝札を出さない（グレースフル）。 */
   catalog?: VarietyCategory[] | null;
+  /**
+   * いいね数（#276・kind:7 集計）。グリッド単位でバッチ取得した値を親が配る。
+   * undefined は未ロード。**カードは 0 / undefined を出さない**（1 以上のときだけ控えめに添える）。
+   * ※ 投稿詳細モーダル（PostDetail）は 0 でも出す＝非対称（カードは「ある時だけ」）。
+   */
+  reactionCount?: number;
+  /** コメント数（#276・kind:1 リプライ集計）。reactionCount と同じく 0/undefined はカードでは出さない。 */
+  commentCount?: number;
 }
 
 /**
@@ -35,7 +44,17 @@ interface Props {
  *
  * 本文テキストからは #タグ を除去（stripHashtags）し、タグは本文の右の縦列に出す。
  */
-export default function PostCard({ post, index, now, onOpen, onSelectHashtag, profile, catalog }: Props) {
+export default function PostCard({
+  post,
+  index,
+  now,
+  onOpen,
+  onSelectHashtag,
+  profile,
+  catalog,
+  reactionCount,
+  commentCount,
+}: Props) {
   const captionText = stripHashtags(post.caption);
   const photoCount = post.imageUrls.length;
   // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
@@ -113,6 +132,21 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
             <span className="min-w-0 truncate font-medium text-ha-ink/75">{authorName}</span>
             <span className="text-ha-ink/30">·</span>
             <time className="shrink-0">{relativeTime(post.createdAt, now)}</time>
+            {/* いいね数・コメント数（#276）。**カードは 1 以上のときだけ控えめに添える**
+                （0 / 未ロード＝undefined はそのカウンタを出さない＝要素ごと描画しない）。
+                配色・アイコンは PostDetail と揃える（いいね＝黄色い花・コメント＝吹き出し・既存トークン）。 */}
+            {reactionCount !== undefined && reactionCount > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={`いいね ${reactionCount}`}>
+                <Icon name="flower" className="h-3.5 w-3.5 text-ha-yellow" />
+                <span className="tabular-nums">{reactionCount}</span>
+              </span>
+            )}
+            {commentCount !== undefined && commentCount > 0 && (
+              <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={`コメント ${commentCount}`}>
+                <Icon name="chat" className="h-3.5 w-3.5" />
+                <span className="tabular-nums">{commentCount}</span>
+              </span>
+            )}
             {(clipped || expanded) && (
               <button
                 type="button"

@@ -15,6 +15,9 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchReplies: () => Promise.resolve([]),
   // 著者プロフィール一括取得（#35）。テストでは空 Map（npub フォールバック表示）。
   fetchProfiles: () => Promise.resolve(new Map()),
+  // カードのいいね/コメント数（#276）はグリッド単位バッチ取得。この検証では空 Map（カードに数を出さない）。
+  fetchReactionCountsBatch: () => Promise.resolve(new Map()),
+  fetchCommentCountsBatch: () => Promise.resolve(new Map()),
 }));
 
 import FeedGrid from "./FeedGrid.tsx";

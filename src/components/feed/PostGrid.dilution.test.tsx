@@ -11,6 +11,9 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchReactionCount: (...a: unknown[]) => fetchReactionCount(...a),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
+  // カードのいいね/コメント数（#276）はグリッド単位バッチ取得。この検証では空 Map（カードに数を出さない）。
+  fetchReactionCountsBatch: () => Promise.resolve(new Map()),
+  fetchCommentCountsBatch: () => Promise.resolve(new Map()),
 }));
 
 import PostGrid from "./PostGrid.tsx";
