@@ -19,6 +19,8 @@ export function moveById<T extends { id: string }>(items: readonly T[], id: stri
   const last = next.length - 1;
   const to = Math.min(last, Math.max(0, from + delta)); // 範囲内にクランプ。
   if (from === to) return next; // 端でさらに外へ／移動量 0 ＝no-op。
+  // from は findIndex で見つかった有効 index（!== -1）かつ from === to の早期 return を通過済みなので、
+  // splice(from, 1) は必ず 1 要素を返す＝moved は非 undefined（non-null assertion が安全）。
   const [moved] = next.splice(from, 1);
   next.splice(to, 0, moved!);
   return next;
