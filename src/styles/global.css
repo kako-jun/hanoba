@@ -156,15 +156,20 @@ summary {
 
 /* 綿毛が舞い上がるエフェクト（#148 / #252 / #260・投稿中のフィードバック）。
    原点（送信ボタン中央）から、各粒の風（--dx）・上昇（--dy）・回転（--rot）へ向かう。
-   上昇は 0%→100% の一本道で ease-out＝頂点へ"減速して止まる"。かつての 15/50/80% 共有ウェイポイントへ
-   per-segment 減速する「動いて止まる」拍は撤去（#260・kako-jun blink）。横揺れは ha-seed-sway に分離し、
-   粒ごとの周期/位相で拍を desync する。透明度は別トラックで linear に出し入れし端の硬さを取る。 */
+   上昇は **linear（等速）**。所要時間＝飛距離÷一定速度なので、遠い綿毛は「速い」のでなく「消えるまでが
+   長いから遠くへ漂う」（#260・kako-jun blink）。10% の中間点は上昇の直線上に置く（等速を保ったまま、サイズの
+   立ち上がりだけ早く済ませる）。かつての 15/50/80% 共有ウェイポイントへ per-segment 減速する「動いて止まる」拍は
+   無し。横揺れは ha-seed-sway に分離し粒ごとの周期/位相で desync。透明度は別トラックで出し入れし端の硬さを取る。 */
 @keyframes ha-seed-rise {
   0% {
     transform: translate(0, 0) rotate(0) scale(0.6);
   }
+  10% {
+    /* 上昇の直線上の点（dx/dy/rot を 0.1 倍）。等速は保ったまま、サイズだけ素早く立ち上げる。 */
+    transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * 0.1)) rotate(calc(var(--rot) * 0.1)) scale(1);
+  }
   100% {
-    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.08);
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.05);
   }
 }
 
@@ -204,9 +209,10 @@ summary {
 }
 
 .ha-seed {
-  /* 上昇は ease-out（速く立ち上がり頂点へ減速して止まる）。透明度は別トラックで出し入れ。 */
+  /* 上昇は linear（等速）。所要時間が飛距離に比例するので、全粒が同じ速度で漂い、遠い粒は長く生きて
+     遠くへ届く。消えるのは透明度の別トラック（fade）が担う。 */
   animation:
-    ha-seed-rise var(--dur, 1800ms) cubic-bezier(0.16, 0.78, 0.28, 1) var(--delay, 0ms) both,
+    ha-seed-rise var(--dur, 1800ms) linear var(--delay, 0ms) both,
     ha-seed-fade var(--dur, 1800ms) linear var(--delay, 0ms) both;
   will-change: transform, opacity;
 }

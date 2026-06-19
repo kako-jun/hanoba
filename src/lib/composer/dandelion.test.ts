@@ -40,15 +40,15 @@ describe("makeSeeds", () => {
       // 風 [-60,60] ＋ ゆらぎ [-40,40] ⇒ dx は [-100,100]。
       expect(s.dx).toBeGreaterThanOrEqual(-100);
       expect(s.dx).toBeLessThanOrEqual(100);
-      // 必ず上へ飛ぶ。bimodal（近 [-420,-200) ∪ 遠 [-1500,-900)・#260）。
+      // 必ず上へ飛ぶ。bimodal（近 [-440,-200) ∪ 遠 [-1300,-900)・#260）。
       expect(s.dy).toBeLessThan(0);
-      expect(s.dy).toBeGreaterThanOrEqual(-1500);
+      expect(s.dy).toBeGreaterThanOrEqual(-1300);
       expect(s.dy).toBeLessThanOrEqual(-200);
       expect(s.rot).toBeGreaterThanOrEqual(-120);
       expect(s.rot).toBeLessThanOrEqual(120);
-      // 所要時間は飛距離に比例（|dy|*[2.2,3.0]+800）＝近 ~1.3s 〜 遠 ~5s（#260）。
-      expect(s.durMs).toBeGreaterThanOrEqual(1200);
-      expect(s.durMs).toBeLessThanOrEqual(5400);
+      // 所要時間＝飛距離÷一定速度（|dy|/[0.165,0.195]px/ms）＝全粒ほぼ等速。近 ~1〜2.7s／遠 ~4.6〜7.9s（#260）。
+      expect(s.durMs).toBeGreaterThanOrEqual(1000);
+      expect(s.durMs).toBeLessThanOrEqual(8000);
       expect(s.delayMs).toBeGreaterThanOrEqual(0);
       expect(s.delayMs).toBeLessThanOrEqual(220);
       expect(s.size).toBeGreaterThanOrEqual(90);
