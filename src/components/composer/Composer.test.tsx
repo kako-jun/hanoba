@@ -424,6 +424,104 @@ describe("Composer", () => {
     expect(document.getElementById("hanoba-compose-shortfall")).toBeNull();
     expect(submit).not.toHaveAttribute("aria-describedby");
   });
+
+  // 写真の並べ替え行（#274）。サムネ列直下に ◀左へ／カウンタ／右へ▶ を出す。
+  // 並べ替えのコアは reorder.test.ts（moveById 単体）が担保。ここでは UI の出し分け・
+  // disabled 状態・押下による順序とカウンタの更新だけを実 DOM ベースで検証する。
+  it("画像が1枚のときは並べ替え行（◀左へ/右へ▶）を出さない", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+
+    // 1枚選択済み（サムネは出る）でも並べ替え行は出ない。
+    await screen.findByAltText("1枚目");
+    expect(screen.queryByRole("button", { name: "選択中の写真を左へ移動" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "選択中の写真を右へ移動" })).not.toBeInTheDocument();
+  });
+
+  it("画像が2枚以上のときは並べ替え行が表示される", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "選択中の写真を左へ移動" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "選択中の写真を右へ移動" })).toBeInTheDocument();
+    // カウンタは「N枚目 / 全M枚」。追加直後は先頭（1枚目）が選択中。
+    expect(screen.getByText((_, el) => el?.textContent === "1枚目 / 全2枚")).toBeInTheDocument();
+  });
+
+  it("先頭の写真を選択中のとき ◀左へ が disabled・右へ▶ が enabled", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+
+    // 追加直後は先頭（index 0）が選択中＝左へは押せない・右へは押せる。
+    expect(screen.getByRole("button", { name: "選択中の写真を左へ移動" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "選択中の写真を右へ移動" })).toBeEnabled();
+  });
+
+  it("末尾の写真を選択中のとき 右へ▶ が disabled・◀左へ が enabled", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+
+    // 末尾（2枚目）を選択中にする。
+    await user.click(screen.getByAltText("2枚目").closest("button")!);
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2枚目 / 全2枚")).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: "選択中の写真を右へ移動" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "選択中の写真を左へ移動" })).toBeEnabled();
+  });
+
+  it("右へ▶ を押すと選択中の写真が後ろへ移動しカウンタが増える", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+
+    // 追加直後は先頭（1枚目）が選択中。右へ移動で 2枚目位置へ。
+    expect(screen.getByText((_, el) => el?.textContent === "1枚目 / 全2枚")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "選択中の写真を右へ移動" }));
+
+    // カウンタの N が 1→2 に増える＝選択中の写真が後ろへ動いた。
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2枚目 / 全2枚")).toBeInTheDocument());
+    // 末尾へ来たので右へはもう押せない・左へは押せる。
+    expect(screen.getByRole("button", { name: "選択中の写真を右へ移動" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "選択中の写真を左へ移動" })).toBeEnabled();
+  });
+
+  it("右へ▶ 押下後はサムネの alt 順序（1枚目/2枚目）が入れ替わる", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("アルバムから選ぶ") as HTMLInputElement;
+    await user.upload(input, [makeNamedImageFile("one.jpg"), makeNamedImageFile("two.jpg")]);
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2/4枚")).toBeInTheDocument());
+
+    // 並べ替え前: alt="1枚目" は one.jpg・alt="2枚目" は two.jpg（alt は配列 index 由来）。
+    const before1 = screen.getByAltText("1枚目") as HTMLImageElement;
+    const before2 = screen.getByAltText("2枚目") as HTMLImageElement;
+    const srcOne = before1.getAttribute("src");
+    const srcTwo = before2.getAttribute("src");
+    expect(srcOne).not.toBe(srcTwo);
+
+    // 先頭（one.jpg）を右へ動かす＝配列は [two, one] になる。
+    await user.click(screen.getByRole("button", { name: "選択中の写真を右へ移動" }));
+    await waitFor(() => expect(screen.getByText((_, el) => el?.textContent === "2枚目 / 全2枚")).toBeInTheDocument());
+
+    // alt の付番（index+1）は固定枠なので、各枠の中身（src）が入れ替わっている。
+    const after1 = screen.getByAltText("1枚目") as HTMLImageElement;
+    const after2 = screen.getByAltText("2枚目") as HTMLImageElement;
+    expect(after1.getAttribute("src")).toBe(srcTwo); // 1枠目に元 two が来た
+    expect(after2.getAttribute("src")).toBe(srcOne); // 2枠目に元 one が来た
+  });
 });
 
 // 下書きの自動保存・復元の配線（#228）。draft.ts はモック済み（呼び出し有無・引数・順序だけ見る）。
