@@ -15,6 +15,7 @@ import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import { clearDraft, loadDraft, saveMeta, syncBlobs } from "../../lib/composer/draft.ts";
+import { moveById } from "../../lib/composer/reorder.ts";
 import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
@@ -229,6 +230,13 @@ export default function Composer() {
     setImageNotice(null);
   }
 
+  // 写真を 1 つ左/右へ動かす（#274）。先頭=カバー。crop/filters は DraftImage に内包されるので
+  // 配列入れ替えだけで加工も一緒に動く。setImages で配列参照が変わり、order を焼く blobs/meta の
+  // 保存 effect（依存に blobSetKey / images）が発火して並べ替え後の順序が永続化される。
+  function moveImage(id: string, delta: number) {
+    setImages((prev) => moveById(prev, id, delta));
+  }
+
   function resetAll() {
     for (const image of images) URL.revokeObjectURL(image.src);
     setImages([]);
@@ -238,6 +246,8 @@ export default function Composer() {
   }
 
   const currentImage = images.find((image) => image.id === currentId) ?? images[0] ?? null;
+  // 並べ替え行（#274）用: 選択中の写真の 0 始まり位置。currentImage が無ければ -1（行を出さない）。
+  const currentIndex = currentImage === null ? -1 : images.findIndex((image) => image.id === currentImage.id);
   const hasImage = images.length > 0;
   const posting = status.kind === "posting";
   // 名前必須（#28）＝「ユーザー名を入れたら投稿できる」。設定は AccountName 側で完了済み。
@@ -348,6 +358,37 @@ export default function Composer() {
                 </div>
               )}
             </div>
+
+            {/* 並べ替え（#274）: 選択中の写真を ◀▶ で左/右へ 1 つずつ動かす。先頭=カバー。
+                kako-jun 指示で ◀ と ▶ は隣接させず、justify-between で両端へ離す（中央にカウンタ）。
+                各ボタンは min-h-11（44px）でタップ標的を確保。2 枚以上・選択中があるときだけ出す。 */}
+            {images.length > 1 && currentImage !== null && (
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => moveImage(currentImage.id, -1)}
+                  disabled={currentIndex <= 0}
+                  aria-label="選択中の写真を左へ移動"
+                  className="glass inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ha-ink transition-colors hover:border-ha-green/50 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span aria-hidden="true">◀</span>
+                  左へ
+                </button>
+                <span className="text-xs text-ha-ink/70" aria-live="polite">
+                  {currentIndex + 1}枚目 / 全{images.length}枚
+                </span>
+                <button
+                  type="button"
+                  onClick={() => moveImage(currentImage.id, +1)}
+                  disabled={currentIndex >= images.length - 1}
+                  aria-label="選択中の写真を右へ移動"
+                  className="glass inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ha-ink transition-colors hover:border-ha-green/50 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  右へ
+                  <span aria-hidden="true">▶</span>
+                </button>
+              </div>
+            )}
           </section>
 
           {currentImage !== null && (
