@@ -38,14 +38,23 @@ describe("DandelionBurst（#148 / #252）", () => {
     expect(container.querySelectorAll(".ha-seed")).toHaveLength(14);
   });
 
-  it("各綿毛に風・上昇・回転・横揺れ・時間・遅れの CSS 変数と画像が乗る", () => {
+  it("外側に風・上昇・回転・時間・遅れ、横揺れレイヤに振幅・周期・位相の CSS 変数と画像が乗る", () => {
     stubMatchMedia(false);
     const { container } = render(<DandelionBurst active={true} />);
     const first = container.querySelector<HTMLElement>(".ha-seed");
     expect(first).not.toBeNull();
+    // 外側（上昇レイヤ）は位置系の変数。横揺れ（--sway）は別レイヤに移したので外側には乗らない（#260）。
     const style = first!.getAttribute("style") ?? "";
-    for (const v of ["--dx", "--dy", "--rot", "--sway", "--dur", "--delay"]) {
+    for (const v of ["--dx", "--dy", "--rot", "--dur", "--delay"]) {
       expect(style).toContain(v);
+    }
+    expect(style).not.toContain("--sway");
+    // 横揺れは中間 span（別レイヤ）。振幅・周期・位相の CSS 変数が乗る（#260）。
+    const sway = first!.querySelector<HTMLElement>(".ha-seed-sway");
+    expect(sway).not.toBeNull();
+    const swayStyle = sway!.getAttribute("style") ?? "";
+    for (const v of ["--sway", "--sway-dur", "--sway-phase"]) {
+      expect(swayStyle).toContain(v);
     }
     // 変種スプライト（複数の透過 PNG のどれか）が <img> で描かれる。
     const img = first!.querySelector("img");
@@ -66,13 +75,23 @@ describe("DandelionBurst（#148 / #252）", () => {
     expect(container.querySelectorAll(".ha-seed").length).toBeGreaterThan(0);
   });
 
-  it("綿毛は animationend で自分を消す（舞い終わると DOM から外れる）", () => {
+  it("綿毛は上昇（ha-seed-rise）の animationend で自分を消す（舞い終わると DOM から外れる）", () => {
     stubMatchMedia(false);
     const { container } = render(<DandelionBurst active={true} />);
     const seedsBefore = container.querySelectorAll(".ha-seed");
     expect(seedsBefore.length).toBe(14);
-    // 1粒のアニメーションが終わったら、その粒だけ消える（React の onAnimationEnd に届く形で発火）。
-    fireEvent.animationEnd(seedsBefore[0]!);
+    // 上昇アニメの終了で、その粒だけ消える（React の onAnimationEnd に届く形で発火・#260）。
+    fireEvent.animationEnd(seedsBefore[0]!, { animationName: "ha-seed-rise" });
     expect(container.querySelectorAll(".ha-seed")).toHaveLength(13);
+  });
+
+  it("上昇以外（横揺れ／fade）の animationend では消えない（#260 ガード）", () => {
+    stubMatchMedia(false);
+    const { container } = render(<DandelionBurst active={true} />);
+    const seeds = container.querySelectorAll(".ha-seed");
+    expect(seeds.length).toBe(14);
+    // fade の終了が外側へ bubble しても消さない（上昇の終了だけが removeSeed の合図）。
+    fireEvent.animationEnd(seeds[0]!, { animationName: "ha-seed-fade" });
+    expect(container.querySelectorAll(".ha-seed")).toHaveLength(14);
   });
 });

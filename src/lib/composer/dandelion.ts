@@ -9,13 +9,17 @@
 export interface Seed {
   // 飛んでいく横方向の到達量（px・右が正）。風（windBase）＋粒ごとのゆらぎ。
   dx: number;
-  // 飛んでいく縦方向の到達量（px・必ず負＝上昇）。
+  // 飛んでいく縦方向の到達量（px・必ず負＝上昇）。多くは控えめ、一部は画面端まで届く遠距離（#260）。
   dy: number;
   // 回転（deg）。
   rot: number;
-  // 上昇中の横揺れ幅（px）。サインの振幅で、符号により揺れ始める向きが変わる（単調さを消す）。
+  // 横揺れの振幅（px・正）。上昇とは別レイヤで往復させ、揺れる向きは keyframe が出す（#260）。
   sway: number;
-  // アニメーション時間（ms）。
+  // 横揺れの周期（ms）。粒ごとに変えて「動いて止まる」拍が揃わないようにする（#260）。
+  swayMs: number;
+  // 横揺れの初期位相（ms・0..swayMs）。負の animation-delay で開始位置をずらし拍を desync する（#260）。
+  swayPhaseMs: number;
+  // 上昇アニメの尺（ms）。飛距離に比例＝遠い綿毛ほどゆっくり長く漂う（#260）。
   durMs: number;
   // 発火からの遅れ（ms・粒ごとにずらして自然に散らす）。
   delayMs: number;
@@ -50,26 +54,31 @@ export function makeWind(rng: () => number = Math.random): number {
 
 /**
  * 1粒の綿毛を生む。横は windBase（その瞬間の風）に粒ごとのゆらぎを足し、縦は必ず上昇（dy<0）。
- * rng の消費順は dx ゆらぎ→dy→rot→durMs→delayMs→size→sway→variant。
+ * rng の消費順は dx ゆらぎ→far判定→dy→rot→durMs→delayMs→size→sway→swayMs→swayPhase→variant
+ * →scaleX→scaleY→skew。dx ゆらぎを第1 draw に置くのは「風の符号が全粒に効く」テスト前提のため。
  * （makeSeeds は windBase を先頭で1回引いてから、この順で各粒を生む＝決定的テストと整合）。
  */
 export function makeSeed(rng: () => number, windBase: number, variantCount = DEFAULT_VARIANT_COUNT): Seed {
-  return {
-    dx: Math.round(windBase + span(rng, -40, 40)),
-    dy: Math.round(span(rng, -360, -160)),
-    rot: Math.round(span(rng, -120, 120)),
-    durMs: Math.round(span(rng, 1400, 2400)),
-    delayMs: Math.round(span(rng, 0, 180)),
-    // 一番拡大したサイズで揃える（#252・kako-jun 指示）。小さい方に散らさず ~104px 付近で大きく。
-    // スプライトは 128px なのでこの範囲（最大 118px）でも downscale でくっきり保てる。
-    size: Math.round(span(rng, 90, 118)),
-    sway: Math.round(span(rng, -26, 26)),
-    variant: Math.floor(rng() * Math.max(1, variantCount)),
-    // 非一様スケール＝縦横独立の伸び縮み。形を一粒ずつ変え、結果として見かけの拡大率も混ぜる（#252）。
-    scaleX: round2(span(rng, 0.78, 1.18)),
-    scaleY: round2(span(rng, 0.78, 1.18)),
-    skew: Math.round(span(rng, -12, 12)),
-  };
+  const dx = Math.round(windBase + span(rng, -40, 40));
+  // 飛距離は bimodal。多くは控えめ（ボタンの上）、一部（~28%）は画面端まで届く遠距離にして
+  // 「画面の端まで飛ぶものが混じる」を作る（#260・kako-jun blink）。
+  const far = rng() < 0.28;
+  const dy = Math.round(far ? span(rng, -1500, -900) : span(rng, -420, -200));
+  const rot = Math.round(span(rng, -120, 120));
+  // 所要時間は飛距離に比例（遠いほどゆっくり）＝見かけ速度を一定寄りに保ち、遠い綿毛は long-drift。
+  const durMs = Math.round(Math.abs(dy) * span(rng, 2.2, 3.0) + 800);
+  const delayMs = Math.round(span(rng, 0, 220));
+  // 一番拡大したサイズで揃える（#252）。スプライト 128px なのでこの範囲でも downscale でくっきり保てる。
+  const size = Math.round(span(rng, 90, 118));
+  const sway = Math.round(span(rng, 14, 40));
+  const swayMs = Math.round(span(rng, 1100, 2600));
+  const swayPhaseMs = Math.round(rng() * swayMs);
+  const variant = Math.floor(rng() * Math.max(1, variantCount));
+  // 非一様スケール＝縦横独立の伸び縮み。形を一粒ずつ変え、結果として見かけの拡大率も混ぜる（#252）。
+  const scaleX = round2(span(rng, 0.78, 1.18));
+  const scaleY = round2(span(rng, 0.78, 1.18));
+  const skew = Math.round(span(rng, -12, 12));
+  return { dx, dy, rot, sway, swayMs, swayPhaseMs, durMs, delayMs, size, variant, scaleX, scaleY, skew };
 }
 
 /**
