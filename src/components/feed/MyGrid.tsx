@@ -3,6 +3,7 @@ import Icon from "../ui/Icon.tsx";
 import AccountName from "../account/AccountName.tsx";
 import ProfileEditor from "../account/ProfileEditor.tsx";
 import PostDetail from "./PostDetail.tsx";
+import EditPost from "./EditPost.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
@@ -22,6 +23,8 @@ export default function MyGrid() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // 編集中の投稿 id（#300）。EditPost モーダルを開く。
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   // サムネをクリックで拡大モーダル（#101・フィードと同じ PostDetail）。
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -94,7 +97,9 @@ export default function MyGrid() {
       {notice !== null && (
         <p
           role="status"
-          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-pink text-ha-ink px-4 py-3 text-sm"
+          // 案内はアプリ標準の素の glass パネルに揃える（Composer の「投稿しました」等と同じ。
+          // 左ピンク線の旧スタイルは世界観に馴染まず撤去・#300 kako-jun 実機指摘）。
+          className="glass rounded-2xl text-ha-ink px-4 py-3 text-sm"
         >
           {notice}
         </p>
@@ -165,16 +170,26 @@ export default function MyGrid() {
                   </button>
                 )}
 
-                {/* 削除ボタン（常時うっすら・hover で明瞭） */}
+                {/* 編集・削除ボタン（常時うっすら・hover で明瞭）。編集＝再投稿（#300）。 */}
                 {deletingId !== post.id && confirmId !== post.id && (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmId(post.id)}
-                    aria-label="この投稿を削除"
-                    className="absolute top-1.5 right-1.5 grid place-items-center w-8 h-8 rounded-full bg-black/45 backdrop-blur-md text-ha-white opacity-70 hover:opacity-100 hover:bg-ha-pink transition"
-                  >
-                    <Icon name="trash" className="w-4 h-4" />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(post.id)}
+                      aria-label="この投稿を編集"
+                      className="absolute top-1.5 right-11 grid place-items-center w-8 h-8 rounded-full bg-black/45 backdrop-blur-md text-ha-white opacity-70 hover:opacity-100 hover:bg-ha-green transition"
+                    >
+                      <Icon name="writing" className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmId(post.id)}
+                      aria-label="この投稿を削除"
+                      className="absolute top-1.5 right-1.5 grid place-items-center w-8 h-8 rounded-full bg-black/45 backdrop-blur-md text-ha-white opacity-70 hover:opacity-100 hover:bg-ha-pink transition"
+                    >
+                      <Icon name="trash" className="w-4 h-4" />
+                    </button>
+                  </>
                 )}
 
                 {/* 確認オーバーレイ */}
@@ -214,6 +229,25 @@ export default function MyGrid() {
             ))}
           </ul>
         ))}
+
+      {/* 編集モーダル（#300）。編集＝削除→確認つき再投稿（写真 URL は再利用）。 */}
+      {editingId !== null &&
+        (() => {
+          const editing = posts.find((p) => p.id === editingId);
+          if (editing === undefined) return null;
+          return (
+            <EditPost
+              post={editing}
+              onClose={() => setEditingId(null)}
+              onEdited={(newPost) => {
+                // 旧投稿を新投稿に差し替える（旧は kind:5 で削除済み・順序は据え置き＝跳ねさせない）。
+                setPosts((cur) => cur.map((p) => (p.id === editingId ? newPost : p)));
+                setEditingId(null);
+                setNotice("投稿を編集しました（新しい投稿として再投稿しました）。");
+              }}
+            />
+          );
+        })()}
 
       {/* 拡大モーダル（#101）。フィードと同じ PostDetail。タグは discover 再検索へ繋ぐ。 */}
       {selectedId !== null &&

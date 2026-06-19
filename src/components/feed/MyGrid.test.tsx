@@ -9,12 +9,19 @@ const deletePost = vi.fn();
 const fetchMyProfileResilient = vi.fn();
 const fetchReactionCount = vi.fn();
 const getPublicKeyHex = vi.fn();
+// 編集モーダル（#300・EditPost）が使う client 関数。MyGrid から EditPost を開く統合テスト用にスタブ。
+const editPost = vi.fn();
+const fetchReactionCountsBatch = vi.fn(() => Promise.resolve(new Map()));
+const fetchCommentCountsBatch = vi.fn(() => Promise.resolve(new Map()));
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchMyPosts: (...a: unknown[]) => fetchMyPosts(...a),
   deletePost: (...a: unknown[]) => deletePost(...a),
   fetchMyProfileResilient: (...a: unknown[]) => fetchMyProfileResilient(...a),
   fetchReactionCount: (...a: unknown[]) => fetchReactionCount(...a),
+  editPost: (...a: unknown[]) => editPost(...a),
+  fetchReactionCountsBatch: (...a: unknown[]) => fetchReactionCountsBatch(...a),
+  fetchCommentCountsBatch: (...a: unknown[]) => fetchCommentCountsBatch(...a),
   // コメント欄（#142）は検証対象外なので空（コメント0件）で固定。
   fetchReplies: () => Promise.resolve([]),
 }));
@@ -61,5 +68,17 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
     fetchMyPosts.mockResolvedValue([]);
     render(<MyGrid />);
     expect(await screen.findByText(/まだ、あなたの植物はありません。/)).toBeInTheDocument();
+  });
+
+  it("編集ボタンで編集モーダル（EditPost）が本文プリフィルで開く（#300）", async () => {
+    const user = userEvent.setup();
+    render(<MyGrid />);
+    const editBtn = await screen.findByRole("button", { name: "この投稿を編集" });
+    expect(screen.queryByRole("dialog", { name: "投稿を編集" })).toBeNull();
+    await user.click(editBtn);
+    const dialog = await screen.findByRole("dialog", { name: "投稿を編集" });
+    expect(dialog).toBeInTheDocument();
+    // 本文が元投稿でプリフィルされている。
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("うちのアガベ");
   });
 });
