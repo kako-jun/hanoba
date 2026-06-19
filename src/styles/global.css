@@ -55,6 +55,10 @@ body {
   background-position: center;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
+  /* 綿毛（#260）など transform で右へ飛ぶ装飾が横スクロール可能領域を広げ、横スクロールバーが
+     点滅して fixed の ScrollToTop が揺れるのを防ぐ（#271）。clip はスクロールコンテナを作らないので
+     縦スクロール・position:sticky・fixed を壊さない（hidden より安全）。綿毛は画面端で切れるだけ。 */
+  overflow-x: clip;
 }
 
 /* Tailwind v4 は <button> の既定カーソルを default に変えたため、操作可能要素にポインタを戻す
