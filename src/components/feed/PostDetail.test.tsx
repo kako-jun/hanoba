@@ -270,13 +270,9 @@ describe("PostDetail いいね数表示", () => {
     // #23: 学名（dictionary 由来）＋和名を並列表示。属単独なので和名は属名。
     expect(await screen.findByText("Pachypodium")).toBeInTheDocument();
     expect(screen.getByText("パキポディウム")).toBeInTheDocument();
-    // クリックでその札の discover 検索へ（最具体の和名＝属名）。
+    // クリックでその札の discover 絞り込みへ（最具体の和名＝属名・#239 で ?tags= に統一）。
     const link = screen.getByRole("link", { name: /Pachypodium/ });
-    // タグ集約モードで検索するため #（=%23）付きで discover へ。
-    expect(link).toHaveAttribute(
-      "href",
-      "/discover?q=%23%E3%83%91%E3%82%AD%E3%83%9D%E3%83%87%E3%82%A3%E3%82%A6%E3%83%A0",
-    );
+    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("パキポディウム")}`);
   });
 
   it("属＋品種タグは品種1枚に畳み 学名＋品種和名を並べる（属単独札は出さない・#182/#23）", async () => {
@@ -304,7 +300,7 @@ describe("PostDetail いいね数表示", () => {
     expect(link).toHaveTextContent("rosulatum");
     expect(link).toHaveTextContent("gracilius");
     // discover リンクは最も具体的な品種和名へ（#グラキリス）。
-    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#グラキリス")}`);
+    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("グラキリス")}`);
   });
 
   it("非 pickable 見出し属配下の品種は学名＋品種和名だけ・見出し語を出さない（should #1 回帰ガード・#182/#23）", async () => {
@@ -324,7 +320,7 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.queryByText("原種")).toBeNull();
     expect(screen.queryByText(/原種\s*リドレイ/)).toBeNull();
     const link = screen.getByRole("link", { name: /リドレイ/ });
-    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#リドレイ")}`);
+    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("リドレイ")}`);
   });
 
   it("学名が引けない札は和名のみ描画する（グレースフル・#23）", async () => {
@@ -343,7 +339,7 @@ describe("PostDetail いいね数表示", () => {
     expect(link).toHaveTextContent("苔玉");
     // 学名（ラテン文字トークン）が出ていないこと＝SciName を描画していない。
     expect(link.textContent).not.toMatch(/[A-Za-z]/);
-    expect(link).toHaveAttribute("href", `/discover?q=${encodeURIComponent("#苔玉")}`);
+    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("苔玉")}`);
   });
 
   it("カテゴリタグ（塊根植物）は札にしない（#182）", async () => {

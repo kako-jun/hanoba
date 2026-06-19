@@ -1,8 +1,11 @@
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
+import { buildFuda } from "../../lib/plants/fuda.ts";
+import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import Avatar from "./Avatar.tsx";
+import FudaList from "./FudaList.tsx";
 
 interface Props {
   post: FeedPost;
@@ -16,6 +19,8 @@ interface Props {
   onSelectHashtag: (tag: string) => void;
   /** 著者プロフィール（#35・未取得なら null＝npub フォールバック表示）。 */
   profile?: Profile | null;
+  /** 品種カタログ（#239・植物札用）。null は未ロード＝札を出さない（グレースフル）。 */
+  catalog?: VarietyCategory[] | null;
 }
 
 /**
@@ -30,7 +35,7 @@ interface Props {
  *
  * 本文テキストからは #タグ を除去（stripHashtags）し、タグは本文の右の縦列に出す。
  */
-export default function PostCard({ post, index, now, onOpen, onSelectHashtag, profile }: Props) {
+export default function PostCard({ post, index, now, onOpen, onSelectHashtag, profile, catalog }: Props) {
   const captionText = stripHashtags(post.caption);
   const photoCount = post.imageUrls.length;
   // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
@@ -38,17 +43,21 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
   const [expanded, setExpanded] = useState(false);
   const [clipped, setClipped] = useState(false);
   const captionRef = useRef<HTMLParagraphElement>(null);
-  const tagsRef = useRef<HTMLUListElement>(null);
+  const rightColRef = useRef<HTMLDivElement>(null);
 
-  // 折りたたみ時に本文/タグが収まりきらず clip されているかを実測してトグルの要否を決める。
+  // 投稿の植物札（#182/#23）。catalog 未ロード時は空＝出さない。タグ列の上（右列の最上部）に出す（#239）。
+  // カードごとに1回だけ組む（catalog は安定・hashtags は post 固定）。buildFuda は純粋。
+  const fuda = useMemo(() => (catalog ? buildFuda(post.hashtags, catalog) : []), [post.hashtags, catalog]);
+
+  // 折りたたみ時に本文/右列（札＋タグ）が収まりきらず clip されているかを実測してトグルの要否を決める。
   useLayoutEffect(() => {
     if (expanded) return; // 展開中は「閉じる」を出すので判定不要。
     const cap = captionRef.current;
-    const tags = tagsRef.current;
+    const col = rightColRef.current;
     const capOver = cap !== null && cap.scrollHeight > cap.clientHeight + 1;
-    const tagsOver = tags !== null && tags.scrollHeight > tags.clientHeight + 1;
-    setClipped(capOver || tagsOver);
-  }, [captionText, post.hashtags.length, expanded]);
+    const colOver = col !== null && col.scrollHeight > col.clientHeight + 1;
+    setClipped(capOver || colOver);
+  }, [captionText, post.hashtags.length, fuda.length, expanded]);
 
   return (
     <li
@@ -120,31 +129,37 @@ export default function PostCard({ post, index, now, onOpen, onSelectHashtag, pr
           </div>
         </div>
 
-        {/* タグは本文の右の空きスペースに縦並び。折りたたみ時はカード高さに収め clip。 */}
-        {post.hashtags.length > 0 && (
-          <ul
-            ref={tagsRef}
-            // モバイルは横に wrap、デスクトップは1列の縦並び（flex-nowrap）で、
-            // 多すぎる時は2列に折り返さず下を見切る（#54）。clip 時は「続きを読む」で展開。
-            className={`flex flex-wrap sm:flex-col sm:flex-nowrap items-start gap-2 px-4 pb-4 sm:p-5 sm:pl-0 shrink-0 sm:max-w-[11rem] ${
+        {/* 本文の右の空きスペースの縦列。最上部に植物札（その品種の discover 絞り込みリンク・#239）、
+            その下にタグ。モバイルは横に wrap、デスクトップは縦並び。折りたたみ時はカード高さに収め clip
+            （多すぎる時は2列に折り返さず下を見切る・#54。clip 時は「続きを読む」で展開）。 */}
+        {(fuda.length > 0 || post.hashtags.length > 0) && (
+          <div
+            ref={rightColRef}
+            className={`flex flex-col items-start gap-2 px-4 pb-4 sm:p-5 sm:pl-0 shrink-0 sm:max-w-[11rem] ${
               expanded ? "" : "overflow-hidden"
             }`}
           >
-            {post.hashtags.map((tag) => (
-              <li key={tag} className="min-w-0 max-w-full">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectHashtag(tag);
-                  }}
-                  className="block max-w-full truncate rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
-                >
-                  #{tag}
-                </button>
-              </li>
-            ))}
-          </ul>
+            {/* 植物札（#239・タグの上＝右列の最上部）。クリックでその品種の discover 絞り込みへ。 */}
+            <FudaList fuda={fuda} />
+            {post.hashtags.length > 0 && (
+              <ul className="flex flex-wrap sm:flex-col sm:flex-nowrap items-start gap-2">
+                {post.hashtags.map((tag) => (
+                  <li key={tag} className="min-w-0 max-w-full">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectHashtag(tag);
+                      }}
+                      className="block max-w-full truncate rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
+                    >
+                      #{tag}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </article>
     </li>

@@ -10,8 +10,18 @@
 // - 旧 `?tag=` は parseFilter が tags に合流する（後方互換）。旧 `?q=` は無視（applyFilterToParams が削除）。
 
 import { normalizeTag } from "./discover.ts";
+import { normalizeTagForBody } from "../image/hashtag-complete.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
 import type { FeedPost } from "./parse.ts";
+
+/**
+ * タグ名から discover の絞り込み URL（`/discover?tags=…`）を作る（#239・植物札のリンク等）。
+ * 本文と同じ正規化（normalizeTagForBody＝内部空白→`_`）をかけて、複数語の品種名（例
+ * 「フィカス ペティオラリス」→`フィカス_ペティオラリス`）でも投稿のタグと一致させる。
+ */
+export function discoverTagHref(tag: string): string {
+  return `/discover?tags=${encodeURIComponent(normalizeTagForBody(tag))}`;
+}
 
 /**
  * 絞り込みの状態。tags が空なら無制約＝「みんなの植物」既定表示（#plantstr ∪ t:hanoba）。

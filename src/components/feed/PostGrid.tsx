@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
+import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { diluteFeed } from "../../lib/feed/dilution.ts";
 import PostCard from "./PostCard.tsx";
 import PostDetail from "./PostDetail.tsx";
@@ -42,6 +43,24 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     [posts, selectedId],
   );
 
+  // 品種カタログを1回だけ動的 import（カードの植物札＝buildFuda 用・#239）。グリッド単位で1回読み、
+  // 各 PostCard に配る（カードごとに import しない）。重い chunk なので非同期＝カードは即描画し、
+  // 札はロード後にふっと出る（グレースフル）。失敗時は null＝札を出さないだけ。
+  const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    import("../../lib/plants/variety-catalog.ts")
+      .then((mod) => {
+        if (alive) setCatalog(mod.VARIETY_CATALOG);
+      })
+      .catch(() => {
+        /* 札を出さないだけ（catalog は null のまま）。 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // 相対時刻の基準。描画時点でよい（1秒未満のズレは表示に影響しない）。
   const now = Math.floor(Date.now() / 1000);
 
@@ -66,6 +85,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             onOpen={() => setSelectedId(post.id)}
             onSelectHashtag={selectHashtag}
             profile={profiles.get(post.pubkey) ?? null}
+            catalog={catalog}
           />
         ))}
       </ul>

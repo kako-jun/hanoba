@@ -74,22 +74,28 @@ export function buildFuda(
   hashtags: readonly string[],
   catalog: VarietyCategory[],
 ): Fuda[] {
+  // 照合キーの正規化（小文字・前後 trim・**内部の空白と `_` を同一視**）。catalog の品種名は空白入り
+  // （例「フィカス ペティオラリス」）だが、投稿本文のタグは insertTag(normalizeTagForBody) で空白→`_`
+  // に畳まれて `#フィカス_ペティオラリス` で保存される。同じキーに正規化しないと複数語の品種で札が
+  // 出ない（#239 レビュー S1）。`_`/空白を `_` に寄せて両者を一致させる。
+  const norm = (s: string) => s.trim().toLowerCase().replace(/[_\s]+/g, "_");
+
   // catalog を一度走査して索引を作る: 品種名(+alias)→全候補 / pickable な属名(+alias)→属表示名。
   // #223: varietyIndex は同名の全候補を配列で保持する（先勝ちで捨てない＝属共起で解決するため）。
   const varietyIndex = new Map<string, VarietyIndexEntry[]>();
-  const pickableGenus = new Map<string, string>(); // 照合キー(小文字) → 属表示名
+  const pickableGenus = new Map<string, string>(); // 照合キー(正規化) → 属表示名
 
   for (const category of catalog) {
     for (const genus of category.genera) {
       if (genus.pickable) {
         for (const key of [genus.name, ...(genus.aliases ?? [])]) {
-          const k = key.trim().toLowerCase();
+          const k = norm(key);
           if (k !== "" && !pickableGenus.has(k)) pickableGenus.set(k, genus.name);
         }
       }
       for (const v of genus.varieties) {
         for (const key of [v.name, ...(v.aliases ?? [])]) {
-          const k = key.trim().toLowerCase();
+          const k = norm(key);
           if (k === "") continue;
           const entry: VarietyIndexEntry = { genus: genus.name, varietyName: v.name, sci: v.sci };
           const list = varietyIndex.get(k);
@@ -121,7 +127,7 @@ export function buildFuda(
   // genusPresent は「pickableGenus で引けたタグ＝明示された属名/alias」だけで作る（これが正解）。
   const genusPresent = new Set<string>();
   for (const tag of hashtags) {
-    const k = tag.trim().toLowerCase();
+    const k = norm(tag);
     if (k === "") continue;
     const genusName = pickableGenus.get(k);
     if (genusName !== undefined) genusPresent.add(genusName);
@@ -129,7 +135,7 @@ export function buildFuda(
 
   // 2パス目: 各タグを属コンテキストで解決する（#223）。
   for (const tag of hashtags) {
-    const k = tag.trim().toLowerCase();
+    const k = norm(tag);
     if (k === "") continue;
     const cands = varietyIndex.get(k) ?? [];
     const gmatch = pickableGenus.get(k);
