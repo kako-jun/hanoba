@@ -4,9 +4,10 @@ import AccountName from "../account/AccountName.tsx";
 import ProfileEditor from "../account/ProfileEditor.tsx";
 import PostDetail from "./PostDetail.tsx";
 import EditPost from "./EditPost.tsx";
+import CitizenStats from "./CitizenStats.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
-import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
+import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
 
 type Status = "loading" | "error" | "loaded";
@@ -103,6 +104,12 @@ export default function MyGrid() {
         >
           {notice}
         </p>
+      )}
+
+      {/* 活動スタッツ（#272・段階1）。自分の t:hanoba 投稿からクライアント集計（投稿数/写真数/品種/在籍）。
+          名乗り有無で市民レベル（旅人/市民/市民Ln）を出す。取得済み（loaded）のときだけ。 */}
+      {status === "loaded" && (
+        <CitizenStats posts={posts} hasName={getDisplayName() !== null} subjectName="あなた" />
       )}
 
       {status === "loading" && (

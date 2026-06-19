@@ -27,6 +27,8 @@ vi.mock("../../lib/nostr/client.ts", () => ({
 }));
 vi.mock("../../lib/nostr/keys.ts", () => ({
   getPublicKeyHex: (...a: unknown[]) => getPublicKeyHex(...a),
+  // CitizenStats（#272・活動スタッツ）が市民レベル判定に使う。テストでは名乗り済み（市民）固定。
+  getDisplayName: () => "テスト栽培家",
 }));
 vi.mock("../account/AccountName.tsx", () => ({ default: () => <div data-testid="account-name" /> }));
 vi.mock("../account/ProfileEditor.tsx", () => ({ default: () => <div data-testid="profile-editor" /> }));

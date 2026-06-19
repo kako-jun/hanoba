@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type CitizenLevel,
   citizenLevel,
+  citizenLevelLabel,
   defaultPage,
   maxUnlockedPage,
   TENURE_DAYS,
@@ -118,5 +119,20 @@ describe("defaultPage", () => {
     for (const level of levels) {
       expect(defaultPage(level)).toBeLessThanOrEqual(maxUnlockedPage(level));
     }
+  });
+});
+
+describe("citizenLevelLabel（旅人/市民/市民Ln・#272）", () => {
+  it("0 以下は旅人（まだ名乗っていない＝市民でない）", () => {
+    expect(citizenLevelLabel(0)).toBe("旅人");
+    expect(citizenLevelLabel(-1)).toBe("旅人");
+  });
+  it("1 は市民", () => {
+    expect(citizenLevelLabel(1)).toBe("市民");
+  });
+  it("2 以上は市民Ln（古参という別語は使わない）", () => {
+    expect(citizenLevelLabel(2)).toBe("市民L2");
+    expect(citizenLevelLabel(3)).toBe("市民L3");
+    expect(citizenLevelLabel(10)).toBe("市民L10");
   });
 });
