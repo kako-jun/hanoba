@@ -1,0 +1,25 @@
+---
+import UserProfile from "../components/feed/UserProfile.tsx";
+import SiteHeader from "../components/SiteHeader.astro";
+import MainLayout from "../layouts/MainLayout.astro";
+
+// 他人の公開プロフィール（#272 段階3）。静的サイト（output:static）ゆえ動的ルート /u/[npub] は
+// 持てないので、/u?npub=<npub> のクエリで対象を渡す（discover の ?tags= と同型）。
+// UserProfile 島が ?npub= を読み・nip19 で pubkey に直し・公開投稿/プロフィールを取得して表示する。
+// 鍵・relay・window 参照はクライアントのみ＝client:only（SSR では取得しない・静的生成）。
+//
+// タイトル/説明は静的なので汎用にし、相手の名前はロード後に島が document.title を補完する。
+---
+
+<MainLayout
+  title="市民のプロフィール — Hanōba"
+  description="Hanōba の市民の公開プロフィール。置いた植物と活動スタッツ（投稿・写真・育てた品種・居住日数）を眺める。"
+>
+  <SiteHeader wide />
+
+  <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
+    <div class="ha-rise">
+      <UserProfile client:only="react" />
+    </div>
+  </main>
+</MainLayout>

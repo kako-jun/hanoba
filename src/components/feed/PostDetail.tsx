@@ -5,7 +5,7 @@ import { buildFuda, type Fuda } from "../../lib/plants/fuda.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
-import { relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
+import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import {
   nextPhotoIndex,
   prevPhotoIndex,
@@ -353,11 +353,28 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
           <div className="flex flex-col gap-2 pt-1 text-xs text-ha-ink/60">
             <div className="flex items-center justify-between gap-3">
-              {/* 著者（アイコン＋名前）。 */}
-              <span className="flex min-w-0 items-center gap-2">
-                <Avatar src={profile?.picture ?? null} name={authorName} className="w-6 h-6" />
-                <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
-              </span>
+              {/* 著者（アイコン＋名前）。クリックでその人の公開プロフィール /u?npub= へ（#272 段階3）。
+                  npub にできない時はリンクにせず素の名前のまま（authorHref が null）。 */}
+              {(() => {
+                const href = authorHref(post.pubkey);
+                const inner = (
+                  <>
+                    <Avatar src={profile?.picture ?? null} name={authorName} className="w-6 h-6" />
+                    <span className="min-w-0 truncate font-medium text-ha-ink/80">{authorName}</span>
+                  </>
+                );
+                return href === null ? (
+                  <span className="flex min-w-0 items-center gap-2">{inner}</span>
+                ) : (
+                  <a
+                    href={href}
+                    aria-label={`${authorName} のプロフィール`}
+                    className="flex min-w-0 items-center gap-2 rounded-full hover:text-ha-green-deep transition-colors"
+                  >
+                    {inner}
+                  </a>
+                );
+              })()}
               <span className="flex shrink-0 items-center gap-3">
                 {/* いいね（#117）。X シェアより使用頻度が高いので左に置く。黄色い花アイコン（#116）。 */}
                 <span
