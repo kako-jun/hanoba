@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
-import { EMPTY_FILTER, serializeFilter, type DiscoverFilter } from "../../lib/feed/discoverFilter.ts";
+import { EMPTY_FILTER, type DiscoverFilter } from "../../lib/feed/discoverFilter.ts";
 
 // relay 取得はモック境界で止める。discover は #239 で「品種で絞るだけ」になり、取得は
 // fetchDiscoverFiltered(tags のみの filter) に集約。応答は filter の canonical 文字列をキーに引く。
@@ -20,7 +20,7 @@ import DiscoverGrid from "./DiscoverGrid.tsx";
 
 const responses = new Map<string, FeedPost[]>();
 function keyOf(f: DiscoverFilter): string {
-  return serializeFilter(f) || "default";
+  return f.tags.join(",") || "default";
 }
 function setResponse(partial: Partial<DiscoverFilter>, posts: FeedPost[]) {
   responses.set(keyOf({ ...EMPTY_FILTER, ...partial }), posts);

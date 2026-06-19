@@ -2,12 +2,8 @@
 // 他モジュールや React 島から relay 呼び出しをばら撒かない（guidelines §3）。
 
 import { SimplePool } from "nostr-tools/pool";
-import { nip19 } from "nostr-tools";
-import { classifyDiscoverQuery, selectAuthorsByName } from "../feed/discover.ts";
 import {
   applyClientFilter,
-  hasQueryConstraint,
-  sortPosts,
   tagAliasValues,
   type DiscoverFilter,
 } from "../feed/discoverFilter.ts";
@@ -20,7 +16,7 @@ import {
   type Profile,
 } from "../feed/parse.ts";
 import { rankHashtags, type RankedTag } from "../feed/popular.ts";
-import { countLikes, countLikesByTarget } from "../feed/reactions.ts";
+import { countLikes } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
 import {
   buildDeletionEvent,
@@ -228,31 +224,6 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
 }
 
 /**
- * 複数投稿のいいね数を 1 回の問い合わせでまとめて取得する（#131 popular 並び）。
- * `{kinds:[7], "#e":[…ids]}` で対象投稿宛のリアクションを一括取得し、countLikesByTarget で
- * 投稿ごとに畳む。並べ替え対象（≤ limit 件）の人気順付けに使う。失敗・空入力は空 Map。
- *
- * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
- */
-export async function fetchReactionCounts(
-  eventIds: string[],
-  limit = 1000,
-): Promise<Map<string, number>> {
-  const ids = [...new Set(eventIds)].filter((id) => id !== "");
-  if (ids.length === 0) return new Map();
-  try {
-    const reactions = await getPool().querySync(
-      [...GENERAL_RELAYS],
-      { kinds: [7], "#e": ids, limit },
-      { maxWait: QUERY_MAXWAIT },
-    );
-    return countLikesByTarget(reactions);
-  } catch {
-    return new Map();
-  }
-}
-
-/**
  * 投稿（kind:1）へのコメント（kind:1 リプライ）を取得する（#142・表示用）。
  * `#e` で親投稿に向けられた kind:1 を集める（NIP-10 のリプライ）。
  *
@@ -304,140 +275,63 @@ export async function deleteComment(commentId: string): Promise<void> {
   await publishEvent(signed);
 }
 
-/** npub（bech32）を pubkey（hex）に変換する。npub でなければ null。nip19 は純粋。 */
-function npubToPubkey(npub: string): string | null {
-  try {
-    const decoded = nip19.decode(npub);
-    return decoded.type === "npub" ? decoded.data : null;
-  } catch {
-    return null;
-  }
-}
-
-// @名前 検索（#68/#131）。NIP-50 で kind:0 を取る上限と、その中から選ぶ著者の上限。
-// 50 件取って name 一致の新しい順に最大 20 人を選ぶ（resolveAuthorPubkeys / selectAuthorsByName）。
-const AUTHOR_NAME_PROFILE_LIMIT = 50;
-const AUTHOR_NAME_MAX = 20;
-
 /**
- * フィルタの author 軸（npub または `@名前`/素の名前）を pubkey 群へ解決する（#131）。
- * - npub … decode（壊れた npub は空＝該当0）。
- * - それ以外 … 先頭 @ を外して kind:0 を NIP-50 名前検索 → selectAuthorsByName（新しい順・上限）。
- * 空入力は空配列。`@名前` 検索（NIP-50 kind:0 → name 一致選定）を「pubkey 群を返す」形で行う。
- */
-async function resolveAuthorPubkeys(author: string): Promise<string[]> {
-  const a = author.trim();
-  if (a === "") return [];
-  const { mode, term } = classifyDiscoverQuery(a);
-  if (mode === "author") {
-    const pk = npubToPubkey(term);
-    return pk === null ? [] : [pk];
-  }
-  const name = (mode === "author-name" ? term : a).replace(/^@+/, "").trim();
-  if (name === "") return [];
-  // NIP-50 全文検索は記号を演算子扱いするリレーがある（search.nos.today は実測で `kako-jun` が
-  // 0件・`kako` だけなら多数ヒット＝ハイフンが「除外」と解釈される）。検索語は英数字・CJK 以外を
-  // 空白に均してリレーへ渡し（`kako-jun`→`kako jun`＝トークン）、厳密な name 一致は client 側の
-  // selectAuthorsByName（元の name を含むか）で取る。均した結果が空なら元の name で投げる。
-  const searchTerm = name.replace(/[^\p{L}\p{N}]+/gu, " ").trim() || name;
-  const filter = { kinds: [0], search: searchTerm, limit: AUTHOR_NAME_PROFILE_LIMIT };
-  const settled = await Promise.allSettled([
-    getPool().querySync([...SEARCH_RELAYS], filter, { maxWait: QUERY_MAXWAIT }),
-    getPool().querySync([...GENERAL_RELAYS], filter, { maxWait: QUERY_MAXWAIT }),
-  ]);
-  const profileEvents = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  return selectAuthorsByName(profileEvents, name, AUTHOR_NAME_MAX);
-}
-
-/**
- * 多軸フィルタで discover を取得する（#131 次の一手 / #139 段階2）。
- * 「誰の × どの品種(タグ) × いつ × 並び」を同時に効かせる。単一 `?q=` の fetchDiscover が
- * tag/keyword/author を排他モードでしか引けないのに対し、ここは軸を AND で重ねる。
+ * 品種タグで discover を取得する（#239: 品種で絞るだけ・新着順）。
  *
- * - author 指定時はまず pubkey 群へ解決（解決0なら正直に空＝該当者なし）。
- * - relay には押せる軸を base（kinds:1 / authors / since / until / limit）に乗せる。
- *   tags は別名展開した #t の OR 取得（#23）＋ NIP-50 "#tag" 検索、keyword は NIP-50 検索＋同語 #t。
- *   制約軸（tags/author/keyword）が無ければ既定母集団（#plantstr ∪ t:hanoba）を引く。
- * - 取得後は applyClientFilter で AND・部分一致・期間・画像のみを確定し、sortPosts で並べる
- *   （popular は対象 id のいいね数を 1 回でまとめ取りしてから降順）。
+ * - tags 指定時: #t を別名展開して OR 取得（"パキポ"→グラキリス等も拾う・#23）＋ NIP-50 "#tag" 検索。
+ *   軸間 AND の確定は applyClientFilter（relay #t は OR のため）。
+ * - tags 空（既定母集団）時: #plantstr ∪ t:hanoba を引く（みんなの植物）。
+ * - 取得後は mergePostsById で id dedup・新着降順にし、applyClientFilter で画像のみ・タグ AND を
+ *   確定して上位 limit を返す。
  * 片方の relay 群が落ちても他方を活かす（allSettled）。失敗・全滅は空配列にフォールバックする。
  *
- * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない・guidelines §3）。
+ * DESIGN §6 の契約（書き込み側は本文 # を t 化しない／読み取り側で二段構え集約）は不変。
  */
 export async function fetchDiscoverFiltered(
   filter: DiscoverFilter,
   limit = 100,
 ): Promise<FeedPost[]> {
   const pool = getPool();
-
-  let authorPubkeys: string[] | null = null;
-  if (filter.author !== "") {
-    authorPubkeys = await resolveAuthorPubkeys(filter.author);
-    if (authorPubkeys.length === 0) return []; // 著者指定だが該当者なし＝正直に0件
-  }
-
-  const range = {
-    ...(filter.since !== null ? { since: filter.since } : {}),
-    ...(filter.until !== null ? { until: filter.until } : {}),
-  };
-  const base = {
-    kinds: [1],
-    limit,
-    ...(authorPubkeys !== null ? { authors: authorPubkeys } : {}),
-    ...range,
-  };
-
-  const hasTags = filter.tags.length > 0;
-  const hasKeyword = filter.keyword !== "";
   const jobs: Promise<NostrEvent[]>[] = [];
 
-  if (hasTags) {
-    // #t は別名展開して OR（"パキポ"→グラキリス等も拾う・#23）＋原語も入れて取りこぼしを減らす。
+  if (filter.tags.length > 0) {
+    // #t は別名展開して OR（"パキポ"↔"パキポディウム" 等の同概念表記・#23）＋原語も入れて取りこぼしを減らす。
+    // **下の品種階層へは展開しない**（属で絞ったら属タグの投稿だけ＝kako-jun blink #239）。
     // 軸間 AND の確定は applyClientFilter（relay #t は OR のため）。
     const tagOrValues = [...new Set(filter.tags.flatMap((t) => [t, ...tagAliasValues(t)]))];
-    jobs.push(pool.querySync([...GENERAL_RELAYS], { ...base, "#t": tagOrValues }, { maxWait: QUERY_MAXWAIT }));
+    jobs.push(
+      pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": tagOrValues, limit }, { maxWait: QUERY_MAXWAIT }),
+    );
     jobs.push(
       pool.querySync(
         [...SEARCH_RELAYS],
-        { ...base, search: filter.tags.map((t) => `#${t}`).join(" ") },
+        { kinds: [1], search: filter.tags.map((t) => `#${t}`).join(" "), limit },
         { maxWait: QUERY_MAXWAIT },
       ),
     );
-  }
-  if (hasKeyword) {
-    jobs.push(pool.querySync([...SEARCH_RELAYS], { ...base, search: filter.keyword }, { maxWait: QUERY_MAXWAIT }));
-    jobs.push(pool.querySync([...GENERAL_RELAYS], { ...base, "#t": [filter.keyword] }, { maxWait: QUERY_MAXWAIT }));
-  }
-  if (!hasQueryConstraint(filter)) {
-    // 制約軸なし＝既定母集団（#plantstr ∪ t:hanoba）。since/until/sort は取得後に適用する。
-    jobs.push(pool.querySync([...GENERAL_RELAYS], { ...base, "#t": ["plantstr"] }, { maxWait: QUERY_MAXWAIT }));
-    jobs.push(pool.querySync([...SEARCH_RELAYS], { ...base, search: "#plantstr" }, { maxWait: QUERY_MAXWAIT }));
-    jobs.push(pool.querySync([...GENERAL_RELAYS], { ...base, "#t": [TAG_HANOBA] }, { maxWait: QUERY_MAXWAIT }));
-  } else if (!hasTags && !hasKeyword) {
-    // 制約は author だけ＝その人のタイムライン（base に authors / range を含む）。
-    jobs.push(pool.querySync([...GENERAL_RELAYS], base, { maxWait: QUERY_MAXWAIT }));
+  } else {
+    // 既定母集団（みんなの植物）＝ #plantstr ∪ t:hanoba。
+    jobs.push(
+      pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit }, { maxWait: QUERY_MAXWAIT }),
+    );
+    jobs.push(
+      pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit }, { maxWait: QUERY_MAXWAIT }),
+    );
+    jobs.push(
+      pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit }, { maxWait: QUERY_MAXWAIT }),
+    );
   }
 
   const settled = await Promise.allSettled(jobs);
   const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  const merged = mergePostsById(events.map(parsePost));
+  const merged = mergePostsById(events.map(parsePost)); // id dedup・新着降順
 
   const filtered = applyClientFilter(merged, {
     tags: filter.tags,
-    keyword: filter.keyword,
-    authorPubkeys,
-    since: filter.since,
-    until: filter.until,
     resolveTagAliases: tagAliasValues,
   });
-
-  if (filter.sort === "popular") {
-    // 絞り込み後の全件のいいね数を 1 回でまとめ取りしてから上位 limit を採る
-    // （window 先頭だけ数えると人気投稿を取りこぼすため）。
-    const counts = await fetchReactionCounts(filtered.map((p) => p.id));
-    return sortPosts(filtered, "popular", counts).slice(0, limit);
-  }
-  return sortPosts(filtered, filter.sort).slice(0, limit);
+  return filtered.slice(0, limit);
 }
 
 /**
