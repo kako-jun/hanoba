@@ -15,8 +15,9 @@ import {
   type FeedPost,
   type Profile,
 } from "../feed/parse.ts";
+import { countCommentsByEvent } from "../feed/comments.ts";
 import { rankHashtags, type RankedTag } from "../feed/popular.ts";
-import { countLikes } from "../feed/reactions.ts";
+import { countLikes, countLikesByEvent } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
 import {
   buildDeletionEvent,
@@ -220,6 +221,76 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
     return countLikes(reactions);
   } catch {
     return 0;
+  }
+}
+
+// バッチ取得（タイムライン/discover のカード・#276）の kind:7/kind:1 上限。
+// 1グリッド分の投稿（既定 fetchHanobaFeed=100 件）の反応をまとめて1クエリで取るので、
+// 単一取得（500/件）より厚めに取る。超人気投稿が多いグリッドでは概数になり得る（既知の制約）。
+const BATCH_COUNT_LIMIT = 1000;
+
+/**
+ * 複数投稿のいいね数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
+ *
+ * `{kinds:[7], "#e":[...eventIds]}` で全投稿宛のリアクションをまとめて取り、
+ * `countLikesByEvent` で id ごとに集計する＝カードごとに query しない（N+1 回避・guidelines §3）。
+ *
+ * - eventIds が空なら即空 Map（query しない）。
+ * - 失敗（オフライン等）は throw せず空 Map にフォールバックする（カードは count を出さないだけ）。
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchReactionCountsBatch(
+  eventIds: string[],
+  limit = BATCH_COUNT_LIMIT,
+): Promise<Map<string, number>> {
+  if (eventIds.length === 0) return new Map();
+  try {
+    const reactions = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [7],
+        "#e": eventIds,
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    return countLikesByEvent(reactions, eventIds);
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * 複数投稿のコメント数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
+ *
+ * `{kinds:[1], "#e":[...eventIds]}` で全投稿宛のリプライをまとめて取り、
+ * `countCommentsByEvent` で id ごとに集計する（本物のリプライ抽出＝引用リポスト除外・id 重複除去を
+ * 単一取得経路と共有）＝カードごとに query しない（N+1 回避・guidelines §3）。
+ *
+ * - eventIds が空なら即空 Map（query しない）。
+ * - 失敗（オフライン等）は throw せず空 Map にフォールバックする（カードは count を出さないだけ）。
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ */
+export async function fetchCommentCountsBatch(
+  eventIds: string[],
+  limit = BATCH_COUNT_LIMIT,
+): Promise<Map<string, number>> {
+  if (eventIds.length === 0) return new Map();
+  try {
+    const events = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      {
+        kinds: [1],
+        "#e": eventIds,
+        limit,
+      },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    return countCommentsByEvent(events, eventIds);
+  } catch {
+    return new Map();
   }
 }
 
