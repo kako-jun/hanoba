@@ -20,7 +20,22 @@ import type { FeedPost } from "./parse.ts";
  * 「フィカス ペティオラリス」→`フィカス_ペティオラリス`）でも投稿のタグと一致させる。
  */
 export function discoverTagHref(tag: string): string {
-  return `/discover?tags=${encodeURIComponent(normalizeTagForBody(tag))}`;
+  return discoverTagsHref([tag]);
+}
+
+/**
+ * 複数タグの discover 絞り込み URL（`/discover?tags=t1,t2`・AND）を作る（#272 follow-up）。
+ * 植物札クリックを **属＋品種の AND**（例 `?tags=パキポディウム,ブレビカウレ`）にするための導線。
+ * 各タグを本文同形（`normalizeTagForBody`＝内部空白→`_`）に正規化し、空は捨て、`,` 区切りで繋ぐ。
+ * parseFilter は `,` 区切りで読み戻す（区切りの `,` はリテラルのまま・各タグ値だけ URL エンコード）。
+ */
+export function discoverTagsHref(tags: string[]): string {
+  const q = tags
+    .map((t) => normalizeTagForBody(t))
+    .filter((t) => t !== "")
+    .map((t) => encodeURIComponent(t))
+    .join(",");
+  return `/discover?tags=${q}`;
 }
 
 /**

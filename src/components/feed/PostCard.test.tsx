@@ -72,9 +72,12 @@ describe("PostCard", () => {
           fudaIndex={buildVarietyIndex(TEST_CATALOG)}
         />,
       );
-      // 属＋品種は品種1枚に畳む。札クリックは ?tags=<品種名> の discover 絞り込みへ。
+      // 属＋品種は品種1枚に畳む。札クリックは **属＋品種の AND**（?tags=属,品種）で絞る（#272 逆算）。
       const link = screen.getByRole("link", { name: /グラキリス/ });
-      expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("グラキリス")}`);
+      expect(link).toHaveAttribute(
+        "href",
+        `/discover?tags=${encodeURIComponent("パキポディウム")},${encodeURIComponent("グラキリス")}`,
+      );
     } finally {
       restore();
     }

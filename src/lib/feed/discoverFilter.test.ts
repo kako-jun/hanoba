@@ -5,6 +5,7 @@ import {
   applyClientFilter,
   applyFilterToParams,
   discoverTagHref,
+  discoverTagsHref,
   filterSummary,
   isDefaultFilter,
   parseFilter,
@@ -144,6 +145,30 @@ describe("discoverTagHref", () => {
     // 複数語の品種名は本文と同じく空白→_ にしてから載せる（投稿のタグと一致させる）。
     expect(discoverTagHref("フィカス ペティオラリス")).toBe(
       `/discover?tags=${encodeURIComponent("フィカス_ペティオラリス")}`,
+    );
+  });
+});
+
+describe("discoverTagsHref（複数タグ AND・#272 札の逆算）", () => {
+  it("属＋品種を , 区切りで載せる（各タグは正規化＋エンコード・区切り , はリテラル）", () => {
+    // 品種札クリック＝属＋品種の AND（ブレビカウレ札→パキポディウム,ブレビカウレ）。
+    expect(discoverTagsHref(["パキポディウム", "ブレビカウレ"])).toBe(
+      `/discover?tags=${encodeURIComponent("パキポディウム")},${encodeURIComponent("ブレビカウレ")}`,
+    );
+    // parseFilter が読み戻せる（往復）。
+    expect(parseFilter(new URLSearchParams("tags=パキポディウム,ブレビカウレ")).tags).toEqual([
+      "パキポディウム",
+      "ブレビカウレ",
+    ]);
+  });
+
+  it("単一タグ（属単独札・素の品種札）は1タグだけ＝discoverTagHref と一致", () => {
+    expect(discoverTagsHref(["パキポディウム"])).toBe(discoverTagHref("パキポディウム"));
+  });
+
+  it("複数語の品種名は空白→_ に正規化してから載せる", () => {
+    expect(discoverTagsHref(["フィカス", "フィカス ペティオラリス"])).toBe(
+      `/discover?tags=${encodeURIComponent("フィカス")},${encodeURIComponent("フィカス_ペティオラリス")}`,
     );
   });
 });

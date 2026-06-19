@@ -29,6 +29,14 @@ export interface Fuda {
   name: string;
   /** 学名（catalog の variety.sci 優先 → dictionary lookup → 引けなければ null）。 */
   sci: string | null;
+  /**
+   * **この札を生んだタグ集合**（札クリックの discover 絞り込みに使う＝札→タグの逆算・#272 follow-up）。
+   * 札がつくルールの逆: 属共起で立った品種札は `[属, 品種]`（例 ブレビカウレ→`[パキポディウム, ブレビカウレ]`）、
+   * 属単独札は `[属]`、非 pickable 見出し属配下の素の品種札は `[品種]`。**AND** で絞ると必ず元投稿に当たる
+   * （双方向 1:1）。本文 #タグ ボタン〔単一タグ〕クリックとは区別される（札は属＋品種で絞る）。
+   * kako-jun「ブレビカウレだけが特別ではない・札がつくルールの逆算をして複数タグに分解すればいい」。
+   */
+  filterTags: string[];
 }
 
 /** catalog の品種照合用エントリ（属・カテゴリ・canonical 名・自前 sci）。 */
@@ -135,18 +143,19 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
   const { catalog, varietyIndex, pickableGenus } = index;
   const norm = normFudaKey;
 
-  // 属ごとに品種を畳む。品種が来たら属単独札は捨て、品種は集合で重複排除する。
+  // 属ごとに品種を畳む。品種が来たら属単独札は捨てる。品種ごとに「札を生んだタグ集合（filterTags）」を持つ
+  // （canonical 名 → filterTags・catalog 並び順で安定化）。
   interface GenusState {
     /** 属単独札を出すか（品種が1件も無いときだけ true）。 */
     genusOnly: boolean;
-    /** この属で立った品種の canonical 名（catalog 並び順で安定化する）。 */
-    varieties: Set<string>;
+    /** この属で立った品種 canonical 名 → その札の filterTags（札クリックの逆算タグ）。 */
+    varieties: Map<string, string[]>;
   }
   const states = new Map<string, GenusState>();
   const stateFor = (genus: string): GenusState => {
     let s = states.get(genus);
     if (s === undefined) {
-      s = { genusOnly: false, varieties: new Set<string>() };
+      s = { genusOnly: false, varieties: new Map<string, string[]>() };
       states.set(genus, s);
     }
     return s;
@@ -171,35 +180,43 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
     // 親属が同一投稿にある候補だけを品種解決する（別属の同名は混ざらない）。
     const active = cands.filter((c) => genusPresent.has(c.genus));
     if (active.length > 0) {
-      // 通常は1件。属共起で確定した品種を該当属に立てる（和名は canonical を使う）。
-      for (const c of active) stateFor(c.genus).varieties.add(c.varietyName);
+      // 通常は1件。属共起で確定した品種を該当属に立てる（和名は canonical）。filterTags=[属, 品種]
+      // （元投稿が #属 #品種 を持つ＝逆算で必ず当たる）。属名は canonical を使う（discover 側で別名展開される）。
+      for (const c of active) {
+        if (!stateFor(c.genus).varieties.has(c.varietyName)) {
+          stateFor(c.genus).varieties.set(c.varietyName, [c.genus, c.varietyName]);
+        }
+      }
     } else if (gmatch !== undefined) {
-      // 品種解決できず、タグ自体が属名/alias なら属単独札にする（蓮・イネ alias 等）。
+      // 品種解決できず、タグ自体が属名/alias なら属単独札にする（蓮・イネ alias 等）。filterTags=[属]。
       stateFor(gmatch).genusOnly = true;
     } else if (cands.length > 0) {
-      // 親属タグ無しの素の曖昧タグ＝既定（catalog 先頭候補＝出現順の最初）に倒す。
-      // 単一候補（コシヒカリ等）も親属無しでここで解決される。それ以上は諦める（#223 kako-jun 決定）。
+      // 親属タグ無しの素の品種タグ＝既定（catalog 先頭候補）に倒す（#223）。**filterTags=[品種]**
+      // ＝元投稿は #品種 しか持たないので、札クリックの逆算は品種単独で当たる（属共起の時だけ [属, 品種]）。
+      // それ以上は同定しない（諦める・#223 kako-jun 決定）。
       const def = cands[0]!;
-      stateFor(def.genus).varieties.add(def.varietyName);
+      if (!stateFor(def.genus).varieties.has(def.varietyName)) {
+        stateFor(def.genus).varieties.set(def.varietyName, [def.varietyName]);
+      }
     }
-    // else: カテゴリ label・非 pickable 見出し属・辞書外タグ（世話/記録等）は札にしない。
+    // else（カテゴリ label・非 pickable 見出し属・辞書外タグ）は札にしない。
   }
 
   // catalog 出現順で安定化しつつ Fuda を組む（品種を優先・品種が無い属だけ属単独）。
   const result: Fuda[] = [];
   const emitted = new Set<string>();
-  // 品種札: name=品種名 / sci=catalog.sci → dict(品種) → dict(属) → null
-  const emitVariety = (entry: VarietyIndexEntry) => {
+  // 品種札: name=品種名 / sci=catalog.sci → dict(品種) → dict(属) → null / filterTags=札を生んだタグ集合。
+  const emitVariety = (entry: VarietyIndexEntry, filterTags: string[]) => {
     if (emitted.has(entry.varietyName)) return;
     emitted.add(entry.varietyName);
     const sci = entry.sci ?? lookupSci(entry.varietyName) ?? lookupSci(entry.genus);
-    result.push({ key: entry.varietyName, name: entry.varietyName, sci });
+    result.push({ key: entry.varietyName, name: entry.varietyName, sci, filterTags });
   };
-  // 属単独札: name=属名 / sci=dict(属) → null
+  // 属単独札: name=属名 / sci=dict(属) → null / filterTags=[属名]。
   const emitGenus = (genus: string) => {
     if (emitted.has(genus)) return;
     emitted.add(genus);
-    result.push({ key: genus, name: genus, sci: lookupSci(genus) });
+    result.push({ key: genus, name: genus, sci: lookupSci(genus), filterTags: [genus] });
   };
 
   for (const category of catalog) {
@@ -209,8 +226,9 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
       if (state.varieties.size > 0) {
         // 品種があれば属単独は捨てる（畳む）。品種は catalog の並び順で安定化する。
         for (const v of genus.varieties) {
-          if (state.varieties.has(v.name)) {
-            emitVariety({ genus: genus.name, varietyName: v.name, sci: v.sci });
+          const tags = state.varieties.get(v.name);
+          if (tags !== undefined) {
+            emitVariety({ genus: genus.name, varietyName: v.name, sci: v.sci }, tags);
           }
         }
       } else if (state.genusOnly) {

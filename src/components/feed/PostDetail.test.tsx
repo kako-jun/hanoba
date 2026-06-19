@@ -414,8 +414,11 @@ describe("PostDetail いいね数表示", () => {
     expect(link).toHaveTextContent("Pachypodium");
     expect(link).toHaveTextContent("rosulatum");
     expect(link).toHaveTextContent("gracilius");
-    // discover リンクは最も具体的な品種和名へ（#グラキリス）。
-    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("グラキリス")}`);
+    // discover リンクは **属＋品種の AND**（?tags=パキポディウム,グラキリス）で絞る（#272 逆算）。
+    expect(link).toHaveAttribute(
+      "href",
+      `/discover?tags=${encodeURIComponent("パキポディウム")},${encodeURIComponent("グラキリス")}`,
+    );
   });
 
   it("非 pickable 見出し属配下の品種は学名＋品種和名だけ・見出し語を出さない（should #1 回帰ガード・#182/#23）", async () => {
