@@ -275,51 +275,54 @@ export async function deleteComment(commentId: string): Promise<void> {
   await publishEvent(signed);
 }
 
+/** 絞り込み時の母集団取得 limit（クライアント側で絞るため厚めに取り、珍しい品種の recall を確保）。 */
+const POP_LIMIT_FILTERED = 300;
+
 /**
- * 品種タグで discover を取得する（#239: 品種で絞るだけ・新着順）。
+ * discover（みんなの植物）を取得する（#239 / #258: 品種で絞るだけ・新着順）。
  *
- * - tags 指定時: #t を別名展開して OR 取得（"パキポ"→グラキリス等も拾う・#23）＋ NIP-50 "#tag" 検索。
- *   軸間 AND の確定は applyClientFilter（relay #t は OR のため）。
- * - tags 空（既定母集団）時: #plantstr ∪ t:hanoba を引く（みんなの植物）。
- * - 取得後は mergePostsById で id dedup・新着降順にし、applyClientFilter で画像のみ・タグ AND を
- *   確定して上位 limit を返す。
+ * 設計原則: **品種は Nostr のルーティングタグ（t タグ）ではなく hanoba の意味タグ。** 投稿の品種は
+ * 本文 #ハッシュタグにだけ宿り（buildAutoTags は t:hanoba/t:mypace のみ）、絞り込みは「みんなの植物
+ * フィード」の上のクライアント側ビューとして確定する（fetchPopularHashtags が #t:hanoba を取って
+ * extractHashtags で数えるのと同じ土俵）。
+ *
+ * - 母集団は**常に**みんなの植物（#t:plantstr ∪ search:#plantstr ∪ #t:hanoba）。既定も絞り込みも同じ。
+ *   かつて絞り込み時に投げていた #t:[品種] は、品種が t タグ化されない hanoba では構造的に常に空で、
+ *   本文 #品種 だけ持つ自分の投稿を母集団から落としていた（#258 の退行原因）ため撤去。
+ * - 絞り込み時は母集団 limit を厚めに取り（POP_LIMIT_FILTERED）、珍しい品種の recall を確保する。
+ *   ※ あくまで「最新 N 件のクライアント絞り込み」なので、それより古い品種投稿は取りこぼし得る
+ *     （サイレントな打ち切りではなく既知の制約。将来 until 時間窓ページングで補う）。
+ *   加えて NIP-50 search:#品種 を best-effort 補助に足す（外部 plantstr 投稿へのリーチ・load-bearing ではない）。
+ * - 取得後は mergePostsById で id dedup・新着降順、applyClientFilter で画像のみ・本文タグ AND を確定。
  * 片方の relay 群が落ちても他方を活かす（allSettled）。失敗・全滅は空配列にフォールバックする。
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない・guidelines §3）。
- * DESIGN §6 の契約（書き込み側は本文 # を t 化しない／読み取り側で二段構え集約）は不変。
+ * DESIGN §6 の契約（書き込み側は本文 # を t 化しない／読み取り側はフィード上でクライアント絞り込み）は不変。
  */
 export async function fetchDiscoverFiltered(
   filter: DiscoverFilter,
   limit = 100,
 ): Promise<FeedPost[]> {
   const pool = getPool();
-  const jobs: Promise<NostrEvent[]>[] = [];
+  const filtering = filter.tags.length > 0;
+  const popLimit = filtering ? Math.max(limit, POP_LIMIT_FILTERED) : limit;
 
-  if (filter.tags.length > 0) {
-    // #t は別名展開して OR（"パキポ"↔"パキポディウム" 等の同概念表記・#23）＋原語も入れて取りこぼしを減らす。
-    // **下の品種階層へは展開しない**（属で絞ったら属タグの投稿だけ＝kako-jun blink #239）。
-    // 軸間 AND の確定は applyClientFilter（relay #t は OR のため）。
-    const tagOrValues = [...new Set(filter.tags.flatMap((t) => [t, ...tagAliasValues(t)]))];
-    jobs.push(
-      pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": tagOrValues, limit }, { maxWait: QUERY_MAXWAIT }),
-    );
+  // 母集団は常に「みんなの植物」フィード（#t:plantstr ∪ search:#plantstr ∪ #t:hanoba）。
+  // 品種は本文タグなので relay の #t:[品種] では引けない＝母集団を取り applyClientFilter で絞る。
+  const jobs: Promise<NostrEvent[]>[] = [
+    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
+  ];
+
+  if (filtering) {
+    // best-effort 補助: 外部 plantstr 投稿を NIP-50 #品種 検索で拾う（届かなくても母集団が hanoba 投稿を担保）。
     jobs.push(
       pool.querySync(
         [...SEARCH_RELAYS],
         { kinds: [1], search: filter.tags.map((t) => `#${t}`).join(" "), limit },
         { maxWait: QUERY_MAXWAIT },
       ),
-    );
-  } else {
-    // 既定母集団（みんなの植物）＝ #plantstr ∪ t:hanoba。
-    jobs.push(
-      pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit }, { maxWait: QUERY_MAXWAIT }),
-    );
-    jobs.push(
-      pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit }, { maxWait: QUERY_MAXWAIT }),
-    );
-    jobs.push(
-      pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit }, { maxWait: QUERY_MAXWAIT }),
     );
   }
 
