@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { makeSeed, makeWind, type Seed } from "../../lib/composer/dandelion.ts";
+import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 
 interface DandelionBurstProps {
   /** 投稿処理中か。true の間だけ綿毛を舞わせ続ける（アップロード＋publish の全尺）。 */
@@ -31,11 +32,6 @@ const REFILL_COUNT = 3;
 const REFILL_MS = 600;
 
 type LiveSeed = Seed & { id: number };
-
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 export default function DandelionBurst({ active }: DandelionBurstProps) {
   const [seeds, setSeeds] = useState<LiveSeed[]>([]);
