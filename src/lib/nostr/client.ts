@@ -78,6 +78,28 @@ export async function signAndPublishNote(input: {
 }
 
 /**
+ * 投稿を編集する（#300・mypace 由来）。Nostr はイベント不変なので「編集」＝**新しい投稿を publish して
+ * 旧イベントを NIP-09 kind:5 で削除**する。**画像は content の URL を再利用する（再アップロードしない）**ので、
+ * 投稿削除（deletePost）と違い nostr.build の実体は消さない（消すと再投稿側の URL が死ぬ）。
+ * いいね・コメントは旧イベント id に紐づくので新投稿には引き継がれない（呼び出し側が事前に確認を取る前提）。
+ *
+ * 順序は **新規 publish → 旧削除**（先に消さない＝publish 失敗で投稿が消える事故を防ぐ）。新規 publish の
+ * 失敗は throw（呼び出し側が UI に伝える）。返り値は新しい投稿イベント（呼び出し側が即時に差し替えできる）。
+ */
+export async function editPost(input: {
+  oldEventId: string;
+  caption: string;
+  imageUrls?: string[];
+}): Promise<NostrEvent> {
+  // 1) 先に新規を publish（画像 URL は再利用＝再アップロードしない）。
+  const created = await signAndPublishNote({ caption: input.caption, imageUrls: input.imageUrls });
+  // 2) 旧イベントを kind:5 で削除（画像は消さない＝再投稿側で使う）。deletePost と違い実体削除はしない。
+  const deletion = await signTemplate(buildDeletionEvent([input.oldEventId]));
+  await publishEvent(deletion);
+  return created;
+}
+
+/**
  * 最近の hanoba 投稿から、本文で使われた #ハッシュタグの一覧を取得する。
  * 一言入力中のタグ補完（emergent taxonomy・DESIGN §3）の候補プールに使う。
  *
