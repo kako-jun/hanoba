@@ -73,10 +73,12 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(mayor).toBeDefined();
   });
 
-  it("移住案内の冒頭に語り手として市長ボタニクス・フォン・ハノーバの名を添える", async () => {
+  it("移住案内の冒頭に語り手として「ボタニクス市長」の名を添える（フルネームは本文側・#262）", async () => {
     render(<CityHallBook />);
+    // 本文（歓迎の辞）にはフルネームが残る。
     await screen.findByText(/ボタニクス・フォン・ハノーバである/);
-    expect(screen.getByText(/市長ボタニクス・フォン・ハノーバ/)).toBeInTheDocument();
+    // 肖像の脇は親しみのある短い呼び名「ボタニクス市長」。
+    expect(screen.getByText("ボタニクス市長")).toBeInTheDocument();
   });
 
   it("市役所（2p・hub）では市長アイコンを出さない（語り手肖像は移住案内専用）", async () => {

@@ -94,5 +94,17 @@ const jsonLd = {
     {/* PWA「ホーム画面に追加」促し（#230）。全ページ共通。window/localStorage は
         マウント後 useEffect で参照するため SSR 安全。初期描画を妨げないよう idle で読む。 */}
     <InstallPrompt client:idle />
+    <script>
+      // ヘッダ/フッタの「Hanōba とは」を、名乗り済みの市民には「市民手帳」に差し替える（#262）。
+      // getDisplayName は同期（localStorage）＝ネットワーク不要。名乗り有無の 2 状態だけ見るので
+      // L1↔L2 のための取得待ちが無くちらつかない。SSR/SSG は訪問者表記で焼かれ、ここで上書きする。
+      import { getDisplayName } from "../lib/nostr/keys.ts";
+      if (getDisplayName() !== null) {
+        for (const el of document.querySelectorAll<HTMLElement>("[data-about-label][data-citizen]")) {
+          const citizen = el.dataset.citizen;
+          if (citizen) el.textContent = citizen;
+        }
+      }
+    </script>
   </body>
 </html>

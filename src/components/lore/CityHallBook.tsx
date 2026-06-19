@@ -17,7 +17,7 @@ import {
   LEVEL_SUBTITLE,
   LOCKED_PAGE_VEIL,
   LOCKED_TEASER,
-  MAYOR_NAME,
+  MAYOR_SHORT_NAME,
 } from "../../lib/lore/cityHall.ts";
 
 // 市長ボタニクス・フォン・ハノーバの肖像（語り手アイコン）。
@@ -281,11 +281,12 @@ function PageContent({ page }: { page: BookPage }) {
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
-          {/* 移住案内の冒頭で市長ボタニクスが名乗る。顔は秘密＝ジョウロの肖像（#219①）。
-              Avatar は装飾扱い（alt 空）なので隣に市長名テキストを置き a11y を満たす。 */}
+          {/* 移住案内の冒頭でボタニクス市長が名乗る。顔は秘密＝ジョウロの肖像（#219①）。
+              Avatar は装飾扱い（alt 空）なので隣に市長名テキストを置き a11y を満たす。
+              肖像の脇は親しみのある短い呼び名「ボタニクス市長」（フルネームは本文側・#262）。 */}
           <div className="flex items-center gap-3">
-            <Avatar src={MAYOR_AVATAR_SRC} name="ボタニクス" className="w-16 h-16 ring-1 ring-white/10" />
-            <span className="text-sm text-ha-ink/60">市長{MAYOR_NAME}</span>
+            <Avatar src={MAYOR_AVATAR_SRC} name={MAYOR_SHORT_NAME} className="w-16 h-16 ring-1 ring-white/10" />
+            <span className="text-sm text-ha-ink/60">{MAYOR_SHORT_NAME}市長</span>
           </div>
           {page.blocks.map((b, i) =>
             b.kind === "note" ? (

@@ -5,6 +5,7 @@
 // mypace＝同じ投稿が見える先（mypace 公式マーク＝独自の丸み星画像。汎用★記号でない・#105）、
 // GitHub＝この OSS のリポジトリ（Octocat）。GitHub は React の Icon を Astro が静的描画。
 import Icon from "./ui/Icon.tsx";
+import { ABOUT_LABEL_VISITOR, ABOUT_LABEL_CITIZEN } from "../lib/lore/aboutLabel.ts";
 
 const external = [
   { label: "mypace", href: "https://mypace.llll-ll.com", img: "/mypace-icon.webp", icon: null },
@@ -21,7 +22,8 @@ const external = [
     <div class="flex flex-wrap items-center justify-between gap-4">
       <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
         <a href="/about" class="inline-flex items-center gap-[5px] leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
-          <Icon name="info" className="w-4 h-4 shrink-0" />Hanōba とは
+          <Icon name="info" className="w-4 h-4 shrink-0" />{/* 名乗り済みは「市民手帳」に差し替え（#262）。 */}
+          <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{ABOUT_LABEL_VISITOR}</span>
         </a>
         <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors">みんなの植物</a>
         <a href="/ranking" class="text-ha-ink/80 hover:text-ha-green transition-colors">人気ランキング</a>
