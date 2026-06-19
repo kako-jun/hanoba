@@ -55,15 +55,6 @@ const MIN_OVERFLOW = 4;
  */
 const REQUEST_TAG_URL = "/vote";
 
-/** 人気タグの出現回数を 3 段階の文字サイズに割り当てる（タグクラウドの強弱）。 */
-function cloudSize(count: number, max: number): string {
-  if (max <= 1) return "text-sm";
-  const r = count / max;
-  if (r > 0.66) return "text-base font-semibold";
-  if (r > 0.33) return "text-sm font-medium";
-  return "text-xs";
-}
-
 /** タグチップ。active（本文に入っている）なら満たされた緑塗りに変える。 */
 function Chip({ label, onClick, sizeClass = "text-sm", context, sci, active = false }: {
   label: string;
@@ -129,7 +120,6 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  */
 export default function TagPicker({ popular, caption, onPick, onRemove, mode = "compose" }: Props) {
   const isFilter = mode === "filter";
-  const max = popular.length > 0 ? Math.max(...popular.map((t) => t.count)) : 1;
   const panelRef = useRef<HTMLDivElement>(null);
   // 「その他」ポップアップ（世話/記録の行ごと）。ドリルダウンの open とは独立に管理する（#169）。
   const overflowRef = useRef<HTMLDivElement>(null);
@@ -326,7 +316,6 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                 <Chip
                   key={`pop-${t.tag}`}
                   label={t.tag}
-                  sizeClass={cloudSize(t.count, max)}
                   active={has(t.tag)}
                   onClick={() => toggle(t.tag, () => engage(t.tag))}
                 />
