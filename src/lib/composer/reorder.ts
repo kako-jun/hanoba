@@ -12,7 +12,9 @@
 // - 移動先が範囲外（先頭をさらに左／末尾をさらに右）になる場合は、target index を [0, len-1] に
 //   クランプする。クランプ後に from === to なら no-op（元順序のコピー）。
 // - delta は ±1 を主に想定するが、|delta|>1 でもクランプして安全に動く。
-export function moveById<T extends { id: string }>(items: readonly T[], id: string, delta: number): T[] {
+// id 型は `PropertyKey`（string | number | symbol）まで許す。写真は string id、プロフィールの
+// サイト並べ替え（#278）は number id を同じ純関数で動かせる（`===` 比較は両者で正しく働く）。
+export function moveById<T extends { id: PropertyKey }>(items: readonly T[], id: T["id"], delta: number): T[] {
   const next = [...items];
   const from = next.findIndex((item) => item.id === id);
   if (from === -1) return next; // 対象なし＝no-op。

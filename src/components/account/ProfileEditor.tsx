@@ -13,6 +13,7 @@ import {
   setProfileExtra,
 } from "../../lib/nostr/keys.ts";
 import { detectServiceLabel } from "../../lib/profile/services.ts";
+import { moveById } from "../../lib/composer/reorder.ts";
 import { uploadImage } from "../../lib/nostr/upload.ts";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -126,14 +127,10 @@ export default function ProfileEditor({ bare = false }: Props) {
     setSites((ss) => ss.filter((s) => s.id !== id));
     touch();
   }
-  function moveSite(i: number, dir: -1 | 1) {
-    setSites((ss) => {
-      const j = i + dir;
-      if (j < 0 || j >= ss.length) return ss;
-      const next = [...ss];
-      [next[i], next[j]] = [next[j]!, next[i]!];
-      return next;
-    });
+  // サイトを1つ左/右へ。写真並べ替えと同じ純関数 moveById に寄せる（#278・隣接1移動なので
+  // 旧 swap と結果は同じ。サイトは安定 id（number）を持つので id で指す）。端での no-op も moveById 内で吸収。
+  function moveSite(id: number, dir: -1 | 1) {
+    setSites((ss) => moveById(ss, id, dir));
     touch();
   }
 
@@ -292,7 +289,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                     <div className="flex shrink-0 items-center gap-0.5">
                       <button
                         type="button"
-                        onClick={() => moveSite(i, -1)}
+                        onClick={() => moveSite(site.id, -1)}
                         disabled={i === 0}
                         aria-label={`サイト ${i + 1} を上へ`}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 disabled:opacity-30 transition"
@@ -301,7 +298,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => moveSite(i, 1)}
+                        onClick={() => moveSite(site.id, 1)}
                         disabled={i === sites.length - 1}
                         aria-label={`サイト ${i + 1} を下へ`}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 disabled:opacity-30 transition"

@@ -78,6 +78,21 @@ describe("moveById", () => {
 
   it("1 要素・空配列でも壊れない（no-op）", () => {
     expect(ids(moveById([{ id: "x" }], "x", +1))).toEqual(["x"]);
-    expect(ids(moveById([], "x", +1))).toEqual([]);
+    // 空配列リテラルは要素型を推論できない（id 型が PropertyKey に一般化されたため・#278）。
+    // 実利用では配列に要素型があるので明示注釈で要素型を与える。
+    expect(ids(moveById<{ id: string }>([], "x", +1))).toEqual([]);
+  });
+
+  // #278: プロフィールのサイト並べ替えは number id で同じ純関数を使う（id 型一般化）。
+  it("number id（プロフィールのサイト等）でも動く", () => {
+    const sites = [
+      { id: 1, url: "a" },
+      { id: 2, url: "b" },
+      { id: 3, url: "c" },
+    ];
+    expect(moveById(sites, 2, -1).map((s) => s.id)).toEqual([2, 1, 3]);
+    expect(moveById(sites, 2, +1).map((s) => s.id)).toEqual([1, 3, 2]);
+    expect(moveById(sites, 1, -1).map((s) => s.id)).toEqual([1, 2, 3]); // 先頭で左＝no-op
+    expect(moveById(sites, 3, +1).map((s) => s.id)).toEqual([1, 2, 3]); // 末尾で右＝no-op
   });
 });
