@@ -38,26 +38,3 @@ export function countLikes(reactions: NostrEvent[]): number {
   }
   return count;
 }
-
-/**
- * kind:7 リアクション群を「対象投稿ごとのいいね数」に集計する純粋関数（#131 popular 並び）。
- *
- * 1 回の relay 問い合わせ（`{kinds:[7], "#e":[…ids]}`）で複数投稿宛のリアクションをまとめて取り、
- * `e` タグ（NIP-25 では最後の `e` がリアクション対象イベント）で投稿ごとに振り分けてから
- * countLikes で畳む（dislike 除外・1 人 1 票）。`e` タグの無いイベントは無視する。
- * 返り値は id→いいね数の Map（リアクションが無い投稿は Map に入らない＝呼び出し側で 0 扱い）。
- */
-export function countLikesByTarget(reactions: NostrEvent[]): Map<string, number> {
-  const byTarget = new Map<string, NostrEvent[]>();
-  for (const ev of reactions) {
-    const eTags = ev.tags.filter((t) => t[0] === "e" && typeof t[1] === "string" && t[1] !== "");
-    if (eTags.length === 0) continue;
-    const target = eTags[eTags.length - 1]![1]!; // NIP-25: 最後の e タグが対象イベント
-    const arr = byTarget.get(target);
-    if (arr === undefined) byTarget.set(target, [ev]);
-    else arr.push(ev);
-  }
-  const out = new Map<string, number>();
-  for (const [id, evs] of byTarget) out.set(id, countLikes(evs));
-  return out;
-}
