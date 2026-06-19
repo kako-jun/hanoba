@@ -70,6 +70,9 @@ export function toComments(events: NostrEvent[], parentId: string): Comment[] {
  * - 各 id について `toComments(replies, id).length` を数える＝本物のリプライ抽出
  *   （引用リポスト〔NIP-18・marker="mention"〕除外）と id 重複除去を**そのまま再利用**する。
  *   ＝カードのコメント数は投稿詳細の `comments.length` と同じ純関数を通る（数え方を揃える）。
+ * - **複数の対象（e タグ）を本物リプライとして指す返信1件は、各対象に1ずつ計上される**。これは
+ *   `PostDetail` を各投稿で開いたときの `comments.length` と一致する（同じ純関数を通すため整合）。
+ *   ＝リアクション側（`countLikesByEvent`＝最初の一致 e タグへ畳む）とは割り当て規則が**非対称**。
  * - 返り値は eventIds の全 id をキーに持つ Map（該当0件の id は 0）。0 を出すか隠すかは呼び出し側の責務。
  */
 export function countCommentsByEvent(
