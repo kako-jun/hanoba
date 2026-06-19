@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFuda } from "./fuda.ts";
+import { buildFuda, buildVarietyIndex, resolveFuda } from "./fuda.ts";
 import { VARIETY_CATALOG, type VarietyCategory } from "./variety-catalog.ts";
 
 // 期待値は実カタログ（VARIETY_CATALOG）と実辞書（dictionary.ts）から確定する（#182/#23）。
@@ -265,5 +265,26 @@ describe("buildFuda", () => {
     const fuda = buildFuda(["コシヒカリ"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ name: "コシヒカリ" });
+  });
+});
+
+// #257: 索引（buildVarietyIndex）を1回作って複数投稿で使い回しても、各投稿の札は独立に正しく出る
+// （resolveFuda が索引を読み取り専用で扱い、可変状態は呼び出しローカルに閉じている＝汚染しない）。
+describe("buildVarietyIndex / resolveFuda（#257 索引共有）", () => {
+  it("buildFuda と等価（同じ catalog で索引を作って resolveFuda に渡す）", () => {
+    const index = buildVarietyIndex(VARIETY_CATALOG);
+    for (const tags of [["パキポディウム", "グラキリス"], ["コシヒカリ"], ["塊根植物"], []]) {
+      expect(resolveFuda(tags, index)).toEqual(buildFuda(tags, VARIETY_CATALOG));
+    }
+  });
+
+  it("1つの索引を複数投稿で使い回しても相互に汚染しない", () => {
+    const index = buildVarietyIndex(VARIETY_CATALOG);
+    const a1 = resolveFuda(["パキポディウム", "グラキリス"], index);
+    const b = resolveFuda(["コシヒカリ"], index);
+    const a2 = resolveFuda(["パキポディウム", "グラキリス"], index); // 使い回し後でも同じ
+    expect(a1).toEqual(a2);
+    expect(a1[0]).toMatchObject({ name: "グラキリス" });
+    expect(b[0]).toMatchObject({ name: "コシヒカリ" });
   });
 });

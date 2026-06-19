@@ -70,16 +70,33 @@ function lookupSci(name: string): string | null {
  *
  * 戻り値は安定順（catalog の出現順）。同一 name は1件に dedupe する。
  */
-export function buildFuda(
-  hashtags: readonly string[],
-  catalog: VarietyCategory[],
-): Fuda[] {
-  // 照合キーの正規化（小文字・前後 trim・**内部の空白と `_` を同一視**）。catalog の品種名は空白入り
-  // （例「フィカス ペティオラリス」）だが、投稿本文のタグは insertTag(normalizeTagForBody) で空白→`_`
-  // に畳まれて `#フィカス_ペティオラリス` で保存される。同じキーに正規化しないと複数語の品種で札が
-  // 出ない（#239 レビュー S1）。`_`/空白を `_` に寄せて両者を一致させる。
-  const norm = (s: string) => s.trim().toLowerCase().replace(/[_\s]+/g, "_");
+// 照合キーの正規化（小文字・前後 trim・**内部の空白と `_` を同一視**）。catalog の品種名は空白入り
+// （例「フィカス ペティオラリス」）だが、投稿本文のタグは insertTag(normalizeTagForBody) で空白→`_`
+// に畳まれて `#フィカス_ペティオラリス` で保存される。同じキーに正規化しないと複数語の品種で札が
+// 出ない（#239 レビュー S1）。`_`/空白を `_` に寄せて両者を一致させる。
+function normFudaKey(s: string): string {
+  return s.trim().toLowerCase().replace(/[_\s]+/g, "_");
+}
 
+/**
+ * 札解決用の索引（#257）。catalog 全走査で作る重い部分を切り出し、グリッド単位で1回だけ作って
+ * 各カードの `resolveFuda` に配るためのもの。全カードで同一なのでカードごとに作り直さない。
+ */
+export interface FudaIndex {
+  /** 安定順 emission（catalog 出現順）に使う元 catalog。 */
+  catalog: VarietyCategory[];
+  /** 品種名(+alias) 正規化キー → 全候補（#223 同名は配列で保持）。 */
+  varietyIndex: Map<string, VarietyIndexEntry[]>;
+  /** pickable 属の正規化キー → 属表示名。 */
+  pickableGenus: Map<string, string>;
+}
+
+/**
+ * catalog を**一度だけ**走査して札解決用の索引を作る純関数（#257）。`PostGrid` が catalog と一緒に
+ * グリッド単位で1回 memo して各 `PostCard` の `resolveFuda` に配る（~2,000品種＋別名の走査を
+ * カードごとに繰り返さない＝旧 buildFuda は呼ぶたびに索引を作り直していた）。
+ */
+export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
   // catalog を一度走査して索引を作る: 品種名(+alias)→全候補 / pickable な属名(+alias)→属表示名。
   // #223: varietyIndex は同名の全候補を配列で保持する（先勝ちで捨てない＝属共起で解決するため）。
   const varietyIndex = new Map<string, VarietyIndexEntry[]>();
@@ -89,13 +106,13 @@ export function buildFuda(
     for (const genus of category.genera) {
       if (genus.pickable) {
         for (const key of [genus.name, ...(genus.aliases ?? [])]) {
-          const k = norm(key);
+          const k = normFudaKey(key);
           if (k !== "" && !pickableGenus.has(k)) pickableGenus.set(k, genus.name);
         }
       }
       for (const v of genus.varieties) {
         for (const key of [v.name, ...(v.aliases ?? [])]) {
-          const k = norm(key);
+          const k = normFudaKey(key);
           if (k === "") continue;
           const entry: VarietyIndexEntry = { genus: genus.name, varietyName: v.name, sci: v.sci };
           const list = varietyIndex.get(k);
@@ -105,6 +122,18 @@ export function buildFuda(
       }
     }
   }
+
+  return { catalog, varietyIndex, pickableGenus };
+}
+
+/**
+ * 索引（`buildVarietyIndex` の結果）を受けて**1投稿**の札を組む純関数（#257）。catalog 全走査の
+ * 重い索引作成を含まないので投稿ごとに軽い。属コンテキスト解決（#223）・安定順 emission（catalog
+ * 出現順）は従来の `buildFuda` と同一の挙動。
+ */
+export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda[] {
+  const { catalog, varietyIndex, pickableGenus } = index;
+  const norm = normFudaKey;
 
   // 属ごとに品種を畳む。品種が来たら属単独札は捨て、品種は集合で重複排除する。
   interface GenusState {
@@ -191,4 +220,13 @@ export function buildFuda(
   }
 
   return result;
+}
+
+/**
+ * `hashtags` から札を組む（索引作成＋解決を一括）。単発呼び出し（`PostDetail` の1投稿・テスト）向け。
+ * グリッド（`PostGrid`）では索引を使い回すため `buildVarietyIndex` → `resolveFuda` を直接使う（#257）。
+ * 入出力契約（#182/#223）は従来どおり：`resolveFuda(hashtags, buildVarietyIndex(catalog))` と等価。
+ */
+export function buildFuda(hashtags: readonly string[], catalog: VarietyCategory[]): Fuda[] {
+  return resolveFuda(hashtags, buildVarietyIndex(catalog));
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import { buildVarietyIndex } from "../../lib/plants/fuda.ts";
 import { diluteFeed } from "../../lib/feed/dilution.ts";
 import { fetchCommentCountsBatch, fetchReactionCountsBatch } from "../../lib/nostr/client.ts";
 import PostCard from "./PostCard.tsx";
@@ -62,6 +63,10 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     };
   }, []);
 
+  // 札解決の索引（#257）。catalog 全走査（~2,000品種＋別名）はグリッドで**1回だけ**行い、各 PostCard へ
+  // 配る（カードごとに作り直さない＝旧 buildFuda はカード数ぶん索引を再構築していた）。catalog は安定。
+  const fudaIndex = useMemo(() => (catalog ? buildVarietyIndex(catalog) : null), [catalog]);
+
   // カードのいいね数・コメント数（#276）。グリッド単位で**1回ずつ**バッチ取得し各 PostCard へ配る
   // （catalog/useProfiles と同じ「1回取得し配る」パターン・カードごとに query しない＝N+1 回避）。
   // 取得は非同期＝カードは即描画し、count はロード後にふっと出る。失敗時は空 Map＝count を出さない。
@@ -114,7 +119,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             onOpen={() => setSelectedId(post.id)}
             onSelectHashtag={selectHashtag}
             profile={profiles.get(post.pubkey) ?? null}
-            catalog={catalog}
+            fudaIndex={fudaIndex}
             reactionCount={reactionCounts.get(post.id)}
             commentCount={commentCounts.get(post.id)}
           />

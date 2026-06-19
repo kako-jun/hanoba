@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import PostCard from "./PostCard.tsx";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import { buildVarietyIndex } from "../../lib/plants/fuda.ts";
 
 // 植物札テスト用の最小カタログ（パキポディウム属＋品種グラキリス／フィカス属＋複数語品種）。
 const TEST_CATALOG: VarietyCategory[] = [
@@ -68,7 +69,7 @@ describe("PostCard", () => {
           now={2000}
           onOpen={noop}
           onSelectHashtag={noop}
-          catalog={TEST_CATALOG}
+          fudaIndex={buildVarietyIndex(TEST_CATALOG)}
         />,
       );
       // 属＋品種は品種1枚に畳む。札クリックは ?tags=<品種名> の discover 絞り込みへ。
@@ -90,7 +91,7 @@ describe("PostCard", () => {
           now={2000}
           onOpen={noop}
           onSelectHashtag={noop}
-          catalog={TEST_CATALOG}
+          fudaIndex={buildVarietyIndex(TEST_CATALOG)}
         />,
       );
       // カタログ名（空白）の札が出て、リンクは正規化（_）された discover 絞り込みへ。
@@ -111,7 +112,7 @@ describe("PostCard", () => {
           now={2000}
           onOpen={noop}
           onSelectHashtag={noop}
-          catalog={null}
+          fudaIndex={null}
         />,
       );
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
