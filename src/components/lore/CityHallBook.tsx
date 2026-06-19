@@ -13,6 +13,7 @@ import {
   BOOK_PAGES,
   BOOK_TITLE,
   type BookPage,
+  type HubLink,
   LEVEL_FLAVOR,
   LEVEL_SUBTITLE,
   LOCKED_PAGE_VEIL,
@@ -274,6 +275,32 @@ function LockedTeaser() {
   );
 }
 
+/** ハブのリンク 1 件。開庁＝リンク／近日開庁＝非リンク。群分けで各群から使うので切り出す（#263）。 */
+function HubLinkItem({ link }: { link: HubLink }) {
+  if (link.route !== null) {
+    return (
+      <li>
+        <a
+          href={link.route}
+          className="flex items-center justify-between gap-3 rounded-xl bg-white/5 hover:bg-ha-green/10 border border-white/10 px-4 py-3 text-ha-ink hover:text-ha-green-deep transition-colors"
+        >
+          <span className="font-medium">{link.label}</span>
+          <Icon name="chevron" className="w-4 h-4 -rotate-90 text-ha-green/70 shrink-0" />
+        </a>
+      </li>
+    );
+  }
+  return (
+    <li
+      aria-disabled="true"
+      className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-white/10 px-4 py-3 text-ha-ink/40"
+    >
+      <span>{link.label}</span>
+      <span className="text-xs text-ha-ink/40 shrink-0">{link.comingSoon}</span>
+    </li>
+  );
+}
+
 /** 解放済みページの中身を種類ごとに描く。 */
 function PageContent({ page }: { page: BookPage }) {
   switch (page.kind) {
@@ -312,30 +339,23 @@ function PageContent({ page }: { page: BookPage }) {
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
             {page.lead}
           </p>
-          <ul className="flex flex-col gap-2">
-            {page.links.map((link) =>
-              link.route !== null ? (
-                <li key={link.label}>
-                  <a
-                    href={link.route}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-white/5 hover:bg-ha-green/10 border border-white/10 px-4 py-3 text-ha-ink hover:text-ha-green-deep transition-colors"
-                  >
-                    <span className="font-medium">{link.label}</span>
-                    <Icon name="chevron" className="w-4 h-4 -rotate-90 text-ha-green/70 shrink-0" />
-                  </a>
-                </li>
-              ) : (
-                <li
-                  key={link.label}
-                  aria-disabled="true"
-                  className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-white/10 px-4 py-3 text-ha-ink/40"
-                >
-                  <span>{link.label}</span>
-                  <span className="text-xs text-ha-ink/40 shrink-0">{link.comingSoon}</span>
-                </li>
-              ),
-            )}
-          </ul>
+          {/* 用途で分けた群を、群間は「にじみ」（.ha-bleed）の柔らかい境界で区切る（#263）。
+              区切り線でなく和水彩のしみ出しで空間を分ける＝世界観に馴染む。見出しは群の道しるべ。 */}
+          <div className="flex flex-col gap-3">
+            {page.groups.map((group, gi) => (
+              <section key={group.heading} className="flex flex-col gap-2">
+                {gi > 0 && <div className="ha-bleed" aria-hidden="true" />}
+                <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
+                  {group.heading}
+                </h3>
+                <ul className="flex flex-col gap-2">
+                  {group.links.map((link) => (
+                    <HubLinkItem key={link.label} link={link} />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         </article>
       );
 

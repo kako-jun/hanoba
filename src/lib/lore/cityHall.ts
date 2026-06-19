@@ -20,6 +20,16 @@ export interface HubLink {
   comingSoon?: string;
 }
 
+/**
+ * ハブのリンク群（#263）。フラットに並ぶと辿りにくいので、用途で 1 まとめにする。
+ * 群と群の間は区切り線でなく「にじみ」の柔らかい境界で空間を分ける（描画側 .ha-bleed）。
+ */
+export interface HubGroup {
+  /** 群の見出し（見る・育てる・街のこと）。 */
+  heading: string;
+  links: HubLink[];
+}
+
 /** 沿革（年表）の 1 行。 */
 export interface ChronicleEntry {
   era: string;
@@ -36,7 +46,7 @@ export interface Ordinance {
 /** 本の 1 ページ。種類ごとに描画するデータ形を持つ。 */
 export type BookPage =
   | { page: 1; kind: "welcome"; title: string; blocks: Block[] }
-  | { page: 2; kind: "hub"; title: string; lead: string; links: HubLink[] }
+  | { page: 2; kind: "hub"; title: string; lead: string; groups: HubGroup[] }
   | { page: 3; kind: "chronicle"; title: string; entries: ChronicleEntry[]; note: string }
   | { page: 4; kind: "ordinances"; title: string; ordinances: Ordinance[] };
 
@@ -80,15 +90,31 @@ const PAGE_2: BookPage = {
   kind: "hub",
   title: "市役所",
   lead: "おっほん。ここは市役所だ。市政のすべては、この扉から辿れる。",
-  links: [
-    { label: "みんなの植物（フィード）", route: "/discover" },
-    { label: "あなたの植物", route: "/me" },
-    { label: "投稿する", route: "/compose" },
-    { label: "人気ランキング", route: "/ranking" },
-    { label: "住民投票", route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
-    { label: "品評会（コンテスト）", route: null, comingSoon: "近日開庁" },
-    { label: "市長ブログ", route: null, comingSoon: "近日開庁" },
-    { label: "街の地図", route: null, comingSoon: "近日開庁" },
+  // 用途で 3 群に分ける（#263）。見る（眺める）→ 育てる（自分の営み）→ 街のこと（市政・コミュニティ）。
+  groups: [
+    {
+      heading: "見る",
+      links: [
+        { label: "みんなの植物（フィード）", route: "/discover" },
+        { label: "人気ランキング", route: "/ranking" },
+      ],
+    },
+    {
+      heading: "育てる",
+      links: [
+        { label: "投稿する", route: "/compose" },
+        { label: "あなたの植物", route: "/me" },
+      ],
+    },
+    {
+      heading: "街のこと",
+      links: [
+        { label: "住民投票", route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
+        { label: "品評会（コンテスト）", route: null, comingSoon: "近日開庁" },
+        { label: "市長ブログ", route: null, comingSoon: "近日開庁" },
+        { label: "街の地図", route: null, comingSoon: "近日開庁" },
+      ],
+    },
   ],
 };
 

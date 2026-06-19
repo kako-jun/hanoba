@@ -8,8 +8,8 @@ import { BOOK_PAGES, type HubLink } from "./cityHall.ts";
 function hubLinks(): HubLink[] {
   const page2 = BOOK_PAGES.find((p) => p.page === 2);
   expect(page2?.kind).toBe("hub");
-  // 型ナローイング（hub ページのみ links を持つ）。
-  return page2 && page2.kind === "hub" ? page2.links : [];
+  // 型ナローイング（hub ページのみ groups を持つ）。群をまたいで全リンクを平らに見る（#263）。
+  return page2 && page2.kind === "hub" ? page2.groups.flatMap((g) => g.links) : [];
 }
 
 function findLink(label: string): HubLink {
