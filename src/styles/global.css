@@ -248,3 +248,16 @@ summary {
 .ha-date::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
+
+/* 市役所ハブ（#163/#263）の群を分ける「にじみ」境界。区切り線でなく、和水彩がしみ出したような
+   柔らかい帯＝中央が濃く左右へ溶ける ha-green の滲み。新色は足さない（DESIGN §5.1・ha-green のみ）。 */
+.ha-bleed {
+  height: 12px;
+  background: radial-gradient(
+    70% 140% at 50% 50%,
+    color-mix(in srgb, var(--color-ha-green) 38%, transparent) 0%,
+    transparent 72%
+  );
+  filter: blur(1.5px);
+  opacity: 0.6;
+}
