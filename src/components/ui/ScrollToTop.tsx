@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import Icon from "./Icon.tsx";
 
 /**
@@ -19,11 +20,8 @@ export default function ScrollToTop() {
   if (!visible) return null;
 
   function toTop() {
-    // モーション抑制設定を尊重する（DESIGN §5.2）。
-    const reduce =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    // モーション抑制設定を尊重する（DESIGN §5.2）。共有ヘルパに一本化（#275）。
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }
 
   return (

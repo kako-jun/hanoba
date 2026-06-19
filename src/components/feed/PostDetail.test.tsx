@@ -15,6 +15,21 @@ vi.mock("../../lib/nostr/client.ts", () => ({
 
 import PostDetail from "./PostDetail.tsx";
 
+// matchMedia を差し替えて reduced-motion の on/off を制御する（#275・DandelionBurst と同型）。
+// グローバル汚染しないよう afterEach の vi.unstubAllGlobals() で戻す。
+function stubMatchMedia(reduce: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: reduce && query.includes("prefers-reduced-motion"),
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    onchange: null,
+    dispatchEvent: () => false,
+  }));
+}
+
 function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
   return {
     id: overrides.id,
@@ -34,6 +49,8 @@ describe("PostDetail いいね数表示", () => {
 
   afterEach(() => {
     cleanup();
+    // reduced-motion 等の matchMedia スタブを毎回外す（グローバル汚染防止・#275）。
+    vi.unstubAllGlobals();
   });
 
   it("取得したいいね数を花アイコン＋数で表示する", async () => {
@@ -142,6 +159,104 @@ describe("PostDetail いいね数表示", () => {
     fireEvent.touchEnd(area, { changedTouches: [{ clientX: 60, clientY: 100 }] });
     expect(screen.getByRole("img", { name: "一枚だけ" })).toHaveAttribute("src", src!);
     expect(screen.queryByRole("button", { name: "次の写真" })).toBeNull();
+  });
+
+  it("複数画像はスワイプ中に写真ラッパへ blur が付き、指を離すと消える（#275）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    // reduced-motion なし（ぼかしが効く側）を明示する。
+    stubMatchMedia(false);
+    render(
+      <PostDetail
+        post={makePost({
+          id: "blur-multi",
+          caption: "成長記録",
+          imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const img = screen.getByRole("img", { name: "成長記録 1枚目" });
+    // 画像は blur を当てるラッパ div に包まれる（その親がタッチ領域＝touch ハンドラ）。
+    const blurWrapper = img.parentElement!;
+    const area = blurWrapper.parentElement!;
+
+    // 水平優位（dx 大・縦は微小）のドラッグ中＝ラッパに blur(px) が付く（px>0・インライン style で確認）。
+    fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchMove(area, { touches: [{ clientX: 120, clientY: 105 }] });
+    const m = blurWrapper.style.filter.match(/blur\(([\d.]+)px\)/);
+    expect(m).not.toBeNull();
+    expect(Number.parseFloat(m![1]!)).toBeGreaterThan(0);
+
+    // 指を離すと blur は解ける（filter は undefined ＝空文字）。
+    fireEvent.touchEnd(area, { changedTouches: [{ clientX: 120, clientY: 105 }] });
+    expect(blurWrapper.style.filter).toBe("");
+  });
+
+  it("単一画像はスワイプしてもぼかさない（#275・onTouchMove 早期 return）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    stubMatchMedia(false);
+    render(<PostDetail post={makePost({ id: "blur-single", caption: "一枚だけ" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    const img = screen.getByRole("img", { name: "一枚だけ" });
+    const blurWrapper = img.parentElement!;
+    const area = blurWrapper.parentElement!;
+
+    fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchMove(area, { touches: [{ clientX: 100, clientY: 105 }] });
+    // 1枚は始点も記録されない＝ blur は付かない。
+    expect(blurWrapper.style.filter).toBe("");
+  });
+
+  it("reduced-motion ではスワイプしてもぼかさない（#275・prefersReducedMotion）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    // matchMedia('(prefers-reduced-motion: reduce)') を matches:true にする。
+    stubMatchMedia(true);
+    render(
+      <PostDetail
+        post={makePost({
+          id: "blur-reduce",
+          caption: "成長記録",
+          imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const img = screen.getByRole("img", { name: "成長記録 1枚目" });
+    const blurWrapper = img.parentElement!;
+    const area = blurWrapper.parentElement!;
+
+    fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchMove(area, { touches: [{ clientX: 100, clientY: 105 }] });
+    // reduced-motion は onTouchMove が即 return＝ blur は付かない。
+    expect(blurWrapper.style.filter).toBe("");
+  });
+
+  it("縦優位ドラッグはぼかさない（#275・縦スクロール優先で 0 に戻す）", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    stubMatchMedia(false);
+    render(
+      <PostDetail
+        post={makePost({
+          id: "blur-vertical",
+          caption: "成長記録",
+          imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const img = screen.getByRole("img", { name: "成長記録 1枚目" });
+    const blurWrapper = img.parentElement!;
+    const area = blurWrapper.parentElement!;
+
+    fireEvent.touchStart(area, { touches: [{ clientX: 100, clientY: 100 }] });
+    // dy が dx を上回る＝縦優位なので blur は 0 のまま。
+    fireEvent.touchMove(area, { touches: [{ clientX: 110, clientY: 200 }] });
+    expect(blurWrapper.style.filter).toBe("");
   });
 
   it("本文 <p> から #タグ を除き、タグはチップにだけ出す（二重表示解消・#43）", async () => {

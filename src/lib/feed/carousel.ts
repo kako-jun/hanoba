@@ -37,3 +37,27 @@ export function swipeDirection(dx: number, dy: number, threshold = 40): "next" |
   if (Math.abs(dx) <= Math.abs(dy)) return null;
   return dx < 0 ? "next" : "prev";
 }
+
+/**
+ * スワイプ進捗（純関数・#275）。ドラッグ中の横移動量 dx を [0,1] の進捗に正規化する。
+ * 左右どちらに引いても同じだけ進むよう絶対値で見て、`maxDx` で 1 に飽和する。
+ * = 「次画像が中央に来る直前」を 1 と見立てた、ぼかし量の元になる値。
+ *
+ * @param dx 始点からの横移動量（左へ動くと負・絶対値で評価）
+ * @param maxDx 進捗が 1 に達する横移動量（px）。既定 120。
+ */
+export function swipeProgress(dx: number, maxDx = 120): number {
+  return Math.min(Math.abs(dx) / maxDx, 1);
+}
+
+/**
+ * 進捗（[0,1]）→ ぼかし量（px）の写像（純関数・#275）。線形に `maxBlur` まで開く。
+ * 写真カルーセルと市民手帳のページ遷移で共有し、スワイプ量に応じて中身をぼかす。
+ *
+ * @param progress swipeProgress の戻り（[0,1] 前提・範囲外入力は [0,1] にクランプ）
+ * @param maxBlur 進捗 1 のときのぼかし量（px）。既定 10（控えめ＝feel 調整しやすく）。
+ */
+export function swipeToBlur(progress: number, maxBlur = 10): number {
+  const p = Math.max(0, Math.min(progress, 1));
+  return p * maxBlur;
+}

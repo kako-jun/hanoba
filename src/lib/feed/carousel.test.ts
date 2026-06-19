@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { nextPhotoIndex, prevPhotoIndex, swipeDirection } from "./carousel.ts";
+import {
+  nextPhotoIndex,
+  prevPhotoIndex,
+  swipeDirection,
+  swipeProgress,
+  swipeToBlur,
+} from "./carousel.ts";
 
 describe("nextPhotoIndex（端は wrap）", () => {
   it("末尾以外は +1 する", () => {
@@ -72,5 +78,52 @@ describe("swipeDirection（水平優位＋しきい値）", () => {
   it("しきい値は引数で変えられる", () => {
     expect(swipeDirection(20, 0, 10)).toBe("prev");
     expect(swipeDirection(20, 0, 40)).toBeNull();
+  });
+});
+
+describe("swipeProgress（横移動量→[0,1]）", () => {
+  it("0 は 0、maxDx の半分は 0.5", () => {
+    expect(swipeProgress(0)).toBe(0);
+    expect(swipeProgress(60, 120)).toBe(0.5);
+  });
+
+  it("左右どちらも絶対値で同じだけ進む（負値→絶対値）", () => {
+    expect(swipeProgress(-60, 120)).toBe(0.5);
+    expect(swipeProgress(60, 120)).toBe(0.5);
+  });
+
+  it("maxDx 超は 1 にクランプする", () => {
+    expect(swipeProgress(120, 120)).toBe(1);
+    expect(swipeProgress(300, 120)).toBe(1);
+    expect(swipeProgress(-300, 120)).toBe(1);
+  });
+
+  it("maxDx は引数で変えられる（既定 120）", () => {
+    expect(swipeProgress(60)).toBe(0.5);
+    expect(swipeProgress(30, 60)).toBe(0.5);
+  });
+});
+
+describe("swipeToBlur（進捗→ぼかし px）", () => {
+  it("進捗 0 はぼかし 0", () => {
+    expect(swipeToBlur(0)).toBe(0);
+  });
+
+  it("進捗 0.5 は maxBlur の半分（既定 10→5）", () => {
+    expect(swipeToBlur(0.5)).toBe(5);
+  });
+
+  it("進捗 1 は maxBlur そのもの（既定 10）", () => {
+    expect(swipeToBlur(1)).toBe(10);
+  });
+
+  it("maxBlur は引数で変えられる", () => {
+    expect(swipeToBlur(1, 6)).toBe(6);
+    expect(swipeToBlur(0.5, 6)).toBe(3);
+  });
+
+  it("範囲外入力は [0,1] にクランプする（自己防御）", () => {
+    expect(swipeToBlur(1.5)).toBe(10); // 1 超は maxBlur そのまま
+    expect(swipeToBlur(-0.2)).toBe(0); // 負値は 0
   });
 });

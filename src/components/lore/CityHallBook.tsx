@@ -1,6 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type TouchEvent as ReactTouchEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Avatar from "../feed/Avatar.tsx";
 import Icon from "../ui/Icon.tsx";
+import { swipeDirection, swipeProgress, swipeToBlur } from "../../lib/feed/carousel.ts";
+import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { fetchMyPosts } from "../../lib/nostr/client.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import {
@@ -75,6 +77,10 @@ export default function CityHallBook() {
   const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
   const aliveRef = useRef(true);
+  // 本のスワイプ（#275）。←→ボタン・キーボード矢印と同じ goPrev/goNext を駆動する。
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  // スワイプ中のページ内容ぼかし（px・#275）。0＝ぼかし無し。reduced-motion ではかからない。
+  const [swipeBlur, setSwipeBlur] = useState(0);
 
   // 名乗り済みユーザーの「一瞬1ページ目→2ページ目」フラッシュを消す。
   // deriveLevel はネットワーク（fetchMyPosts）を待つので、それで page を寄せると 1p が一瞬見える。
@@ -117,6 +123,45 @@ export default function CityHallBook() {
   }
   function goNext() {
     if (canNext) setPage((p) => p + 1);
+  }
+
+  // 本のスワイプでページめくり＋スワイプ量で中身をぼかす（#275・PostDetail と同じ作法）。
+  // 写真カルーセルと純関数（swipeProgress/swipeToBlur/swipeDirection）を共有する。
+  function onTouchStart(e: ReactTouchEvent) {
+    const t = e.touches[0];
+    if (t === undefined) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }
+  // ドラッグ中はスワイプ量で中身をぼかす（水平優位のときだけ＝縦スクロールを邪魔しない）。
+  // 始点なし・縦優位・reduced-motion ではぼかさない（0 のまま／0 に戻す）。
+  function onTouchMove(e: ReactTouchEvent) {
+    const start = touchStartRef.current;
+    if (start === null) return;
+    if (prefersReducedMotion()) return;
+    const t = e.touches[0];
+    if (t === undefined) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) <= Math.abs(dy)) {
+      setSwipeBlur(0);
+      return;
+    }
+    // 整数 px に丸め、同値ならバイルアウト（毎フレームの無駄な再レンダを省く・#275）。
+    const next = Math.round(swipeToBlur(swipeProgress(dx)));
+    setSwipeBlur((prev) => (prev === next ? prev : next));
+  }
+  function onTouchEnd(e: ReactTouchEvent) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    // 指を離したらぼかしを解く（遷移できても／できなくても）。
+    setSwipeBlur(0);
+    if (start === null) return;
+    const t = e.changedTouches[0];
+    if (t === undefined) return;
+    // 左スワイプ＝次（next）／右スワイプ＝前（prev）。ロック越え・端は goPrev/goNext が no-op。
+    const dir = swipeDirection(t.clientX - start.x, t.clientY - start.y);
+    if (dir === "next") goNext();
+    else if (dir === "prev") goPrev();
   }
 
   // ←/→ で本をめくる（本のメタファー・PostDetail のカルーセル操作に倣う）。
@@ -165,9 +210,14 @@ export default function CityHallBook() {
         <p className="text-sm text-ha-ink/55">{LEVEL_SUBTITLE[level]}</p>
       </header>
 
-      {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。 */}
+      {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。
+          スワイプでページめくり（#275）＝左で次・右で前。ぼかしは中身（下の key={page}）だけにかけ、
+          和綴じ枠（このパネルの border）は固定する＝枠ごとぼかす違和感を避ける。 */}
       <div
         className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         style={{
           // 最初の AI 和綴じ枠（綴じ込み）。左（背）は綴じを見せるため厚い（slice 150）。
           borderImageSource: "url('/book-frame-washi-v1.webp')",
@@ -182,8 +232,18 @@ export default function CityHallBook() {
           boxShadow: "inset 0 0 18px 5px #13161e",
         }}
       >
-        {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。 */}
-        <div key={page} className="ha-rise flex flex-col gap-4" aria-live="polite">
+        {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。
+            スワイプ中はこの中身だけぼかす（#275）。ドラッグ中は即追従（transition none）、
+            離したら 0.25s で戻す。swipeBlur は 1枚／reduced-motion では常に 0＝無効。 */}
+        <div
+          key={page}
+          className="ha-rise flex flex-col gap-4"
+          aria-live="polite"
+          style={{
+            filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
+            transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
+          }}
+        >
           {isLockedView ? (
             <LockedTeaser />
           ) : (
