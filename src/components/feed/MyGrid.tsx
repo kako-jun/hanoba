@@ -97,7 +97,9 @@ export default function MyGrid() {
       {notice !== null && (
         <p
           role="status"
-          className="rounded-2xl bg-white/6 backdrop-blur-md border-l-2 border-l-ha-pink text-ha-ink px-4 py-3 text-sm"
+          // 案内はアプリ標準の素の glass パネルに揃える（Composer の「投稿しました」等と同じ。
+          // 左ピンク線の旧スタイルは世界観に馴染まず撤去・#300 kako-jun 実機指摘）。
+          className="glass rounded-2xl text-ha-ink px-4 py-3 text-sm"
         >
           {notice}
         </p>

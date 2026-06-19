@@ -119,7 +119,7 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
         />
 
         {stage === "error" && (
-          <p role="alert" className="rounded-2xl bg-white/6 border-l-2 border-l-ha-pink px-4 py-3 text-sm text-ha-ink">
+          <p role="alert" className="glass rounded-2xl px-4 py-3 text-sm text-ha-ink">
             編集できませんでした。時間をおいて、もう一度試してください。
           </p>
         )}
