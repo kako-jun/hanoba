@@ -19,7 +19,9 @@ import "uplot/dist/uPlot.min.css";
  * チャートを出すまで uplot チャンク自体を取得しない。
  *
  * a11y: canvas は装飾として `aria-hidden`。意味（順位・品種・件数・先週比）は上の表が持つ＝表が正本。
- * 図全体には説明的な `aria-label` を付け、概要だけ支援技術に伝える。
+ * 図全体には説明的な `aria-label` を付け、概要だけ支援技術に伝える。凡例も装飾（名前は表と aria-label が持つ）
+ * ＝`aria-hidden`。uPlot 既定凡例（□マーカー＝線＋点の実体と不一致・スマホで改行崩れ）は使わず、
+ * 線＋丸点の自前凡例を canvas の下に出す（#261）。
  * reduced-motion: uPlot は既定でアニメーションしない（再描画も即時）。新たな動きは足さない。
  *
  * sparse: `weeks.length < 2`（点が1つ以下）では退化したグラフを描かず、静かな注記を出す
@@ -27,14 +29,16 @@ import "uplot/dist/uPlot.min.css";
  */
 
 // 系列の線色＝**すべて global.css のトークン値**だけで構成する（新色を足さない・DESIGN §5.1）。
-// 緑（葉）→ オレンジ（照明）→ 黄（花）→ 明るい葉色 → ink の 5 色。暗いシック地で互いに識別しやすい
-// （RankingBoard の CHART_TOP=5 と整合＝上位 5 系列までに抑え循環せず使い切る）。
+// 緑（葉）→ ピンク（差し色）→ オレンジ（照明）→ ink（暖白）→ 黄（花）の 5 色。旧配色は
+// green/orange/yellow/green-deep/ink で **緑系が3つ**並び互いに見分けづらかったので、未使用だった
+// pink を入れて分離を上げ、暖色で最も近い orange↔yellow を隣り合わせない順に並べた（#261）。
+// RankingBoard の CHART_TOP=5 と整合＝上位 5 系列までに抑え循環せず使い切る。
 const SERIES_COLORS = [
   "#6cba38", // --color-ha-green（葉）
+  "#ff5d6a", // --color-ha-pink（差し色・最も分離する）
   "#e89a4c", // --color-ha-orange（照明）
-  "#f2c84b", // --color-ha-yellow（花）
-  "#aee07f", // --color-ha-green-deep（明るい葉）
   "#ece6da", // --color-ha-ink（暖白）
+  "#f2c84b", // --color-ha-yellow（花）
 ];
 
 // 暗いシック地に合わせた軸/グリッド/ラベル色（global.css のトークンに準拠）。
@@ -47,6 +51,21 @@ const TICK_STROKE = "rgba(236, 230, 218, 0.22)"; // 目盛り
 function weekLabel(weekKey: string): string {
   const i = weekKey.indexOf("W");
   return i >= 0 ? weekKey.slice(i) : weekKey;
+}
+
+/**
+ * x 軸の目盛り位置＝**整数の週インデックスだけ**を返す（半端な位置を一切作らない）。
+ * uPlot 自動目盛りは 0.5 刻みも打つので、週indexへ丸めると隣同士が同じ週に潰れて "W25" が2回出る
+ * （#261 の重複バグ）。ここで整数だけに固定して根を断つ。週が多いときは ~8 本に間引き、最新週は必ず含める。
+ */
+function weekSplits(weekCount: number): number[] {
+  const last = weekCount - 1;
+  if (last <= 0) return [0];
+  const step = Math.max(1, Math.ceil(weekCount / 8));
+  const out: number[] = [];
+  for (let i = 0; i <= last; i += step) out.push(i);
+  if (out[out.length - 1] !== last) out.push(last);
+  return out;
 }
 
 export default function RankRunChart({ data }: { data: RankRunData }) {
@@ -72,6 +91,7 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
 
         // AlignedData: [x(週インデックス), ...各系列の票数]。x は 0..N-1 の数値（ラベルは values で週名に差し替え）。
         const xs = data.weeks.map((_, i) => i);
+        const lastIdx = data.weeks.length - 1; // 末尾の週インデックス（range pin と splits に使う）。
         const alignedData: number[][] = [xs, ...data.series.map((s) => s.counts)];
 
         const measuredWidth = Math.max(host.clientWidth, 160);
@@ -79,11 +99,14 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
         const opts = {
           width: measuredWidth,
           height: 240,
-          // 凡例は表が正本なので uPlot 既定の凡例に頼り切らないが、品種名を出すために series.label を使う。
-          legend: { show: true },
+          // 凡例は uPlot 既定（□マーカー＝実体と不一致・スマホで改行崩れ）を使わず、canvas の下に
+          // React の自前凡例（線＋丸点）を出す（#261）。ここでは既定凡例を無効化する。
+          legend: { show: false },
           cursor: { show: true, points: { show: true } },
           scales: {
-            x: { time: false as const },
+            // x は 0..N-1 の週インデックス。range を端ぴったりに pin して左右の自動パディング（隙間）を詰める。
+            // 点（半径2.5px）が切れないだけの僅かな余白（±0.15）を残す（#261・「左右の隙間を小さく」）。
+            x: { time: false as const, range: [-0.15, lastIdx + 0.15] as [number, number] },
             y: { range: yRange(data.series.map((s) => s.counts)) },
           },
           axes: [
@@ -92,7 +115,10 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
               grid: { stroke: GRID_STROKE, width: 1 },
               ticks: { stroke: TICK_STROKE, width: 1 },
               font: "12px system-ui, sans-serif",
-              // x 値（週インデックス）を週ラベル（"W25"）に差し替える。
+              // 目盛りは整数の週インデックスだけに固定（weekSplits）。半端な位置を作らないので、
+              // 丸めで隣同士が同じ週に潰れる "W24/W25 重複" が起きない（#261）。
+              splits: () => weekSplits(data.weeks.length),
+              // x 値（整数週インデックス）を週ラベル（"W25"）に差し替える。範囲外/欠落は空に。
               values: (_u: unknown, splits: number[]) =>
                 splits.map((v) => {
                   const wk = data.weeks[Math.round(v)];
@@ -164,10 +190,34 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
     <figure className="flex flex-col gap-2" aria-label={chartSummary(data)}>
       {/* canvas は装飾（意味は上の表が持つ）＝aria-hidden。 */}
       <div ref={hostRef} aria-hidden="true" className="w-full" />
+      {/* 自前の凡例。マーカーは「線＋丸点」でグラフ本体（線＋点）と実体を一致させる（□は使わない）。
+          左揃え＋「マーカー＋和名」を whitespace-nowrap の塊にして、スマホで折り返してもユニットが割れない。
+          名前は表と figure の aria-label が持つので、この凡例は装飾＝aria-hidden。 */}
+      <ul aria-hidden="true" className="flex flex-wrap justify-start gap-x-4 gap-y-1">
+        {data.series.map((s, i) => (
+          <li
+            key={`${i}-${s.name}`}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-ha-ink/80"
+          >
+            <LegendMark color={SERIES_COLORS[i % SERIES_COLORS.length] ?? AXIS_INK} />
+            <span>{s.name}</span>
+          </li>
+        ))}
+      </ul>
       <figcaption className="text-xs text-ha-ink/55 [word-break:auto-phrase]">
         途中経過（変動）— 週ごとの投稿数の推移。詳しい順位は上の表をご覧ください。
       </figcaption>
     </figure>
+  );
+}
+
+/** 凡例マーカー＝「短い線＋丸点」。グラフ本体（線 width2 ＋ 丸点）と見た目を一致させる（□は使わない・#261）。 */
+function LegendMark({ color }: { color: string }) {
+  return (
+    <svg width="26" height="10" viewBox="0 0 26 10" aria-hidden="true" className="shrink-0">
+      <line x1="1" y1="5" x2="25" y2="5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <circle cx="13" cy="5" r="3" fill={color} />
+    </svg>
   );
 }
 
