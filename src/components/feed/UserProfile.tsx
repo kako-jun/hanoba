@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { nip19 } from "nostr-tools";
 import { fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
+import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { getDisplayName } from "../../lib/nostr/keys.ts";
@@ -81,9 +82,10 @@ export default function UserProfile() {
 
   // 表示名（取れればプロフィール名・無ければ npub 短縮）。見出し・タイトルに使う。
   const subjectName = profile?.name ?? (typeof pubkey === "string" ? shortNpub(pubkey) : "市民");
-  // 自分のページかどうか（ローカルに名乗り済みの名と一致するか）。鍵生成の副作用を避け、
-  // getDisplayName（localStorage のみ）と表示名の一致で緩く判定する＝/me への戻り導線だけに使う。
-  const isLikelyMe = status === "loaded" && profile?.name !== null && getDisplayName() === profile?.name;
+  // 自分のページかどうか（ローカルに名乗り済みの名と一致するか）。鍵生成の副作用（getPublicKeyHex は
+  // 鍵が無いと生成してしまう）を避け、getDisplayName（localStorage のみ）と表示名の一致で緩く判定する。
+  // 表示名の衝突で別人を「あなた」と誤認しうるが、用途は /me への戻り導線だけ＝実害が無い範囲。
+  const isLikelyMe = status === "loaded" && profile?.name != null && getDisplayName() === profile.name;
 
   // ロード後にタブのタイトルを相手の名前で補完する（静的タイトルは汎用なので）。
   useEffect(() => {
@@ -190,11 +192,12 @@ export default function UserProfile() {
           </div>
         ) : (
           // 読み取り専用の投稿一覧（フィードと同じ PostGrid）。タグクリックは discover の再検索へ。
+          // discover は `?tags=` だけを読む（`?q=` は無視され既定ビューに落ちる）ので discoverTagHref を使う。
           <PostGrid
             posts={posts}
             onSelectHashtag={(tag) => {
               if (typeof window !== "undefined") {
-                window.location.href = `/discover?q=${encodeURIComponent(`#${tag}`)}`;
+                window.location.href = discoverTagHref(tag);
               }
             }}
           />
