@@ -10,6 +10,7 @@
 // 主要動線へ辿れなかった。ナビをここに一本化して解消する。
 
 import Icon from "./ui/Icon.tsx";
+import { ABOUT_LABEL_VISITOR, ABOUT_LABEL_CITIZEN } from "../lib/lore/aboutLabel.ts";
 
 interface Props {
   /** 現在ページ。該当リンクを強調する（任意）。 */
@@ -26,7 +27,7 @@ const maxW = wide ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl";
 // compose は塗りボタン（主アクション）なので nav 配列とは別扱い。
 // 並びはフッタの規則に揃える（About→discover→me・#106）。About は情報ページなので i アイコンを付ける。
 const links = [
-  { href: "/about", label: "Hanōba とは", key: "about", icon: "info" },
+  { href: "/about", label: ABOUT_LABEL_VISITOR, key: "about", icon: "info" },
   { href: "/discover", label: "みんなの植物", key: "discover", icon: null },
   { href: "/me", label: "あなたの植物", key: "me", icon: null },
 ] as const;
@@ -63,7 +64,12 @@ const links = [
             ]}
           >
             {l.icon && <Icon name={l.icon} className="w-4 h-4 shrink-0" />}
-            {l.label}
+            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。 */}
+            {l.key === "about" ? (
+              <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{l.label}</span>
+            ) : (
+              l.label
+            )}
           </a>
         ))
       }
@@ -107,7 +113,12 @@ const links = [
             ]}
           >
             {l.icon && <Icon name={l.icon} className="w-4 h-4 shrink-0" />}
-            {l.label}
+            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。 */}
+            {l.key === "about" ? (
+              <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{l.label}</span>
+            ) : (
+              l.label
+            )}
           </a>
         ))
       }

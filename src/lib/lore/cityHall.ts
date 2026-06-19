@@ -46,6 +46,9 @@ export const BOOK_TITLE = "ハノーバ市民手帳";
 /** 語り手＝ハノーバ市長の名（P1 本文「ボタニクス・フォン・ハノーバ」と一貫）。 */
 export const MAYOR_NAME = "ボタニクス・フォン・ハノーバ";
 
+/** 親しみのある短い呼び名（肖像の脇など、フルネームだと長い場所で「ボタニクス市長」と名乗る・#262）。 */
+export const MAYOR_SHORT_NAME = "ボタニクス";
+
 /** P1 移住案内（市長の歓迎の辞）。 */
 const PAGE_1: BookPage = {
   page: 1,
