@@ -59,6 +59,7 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
   const canSave = trimmed !== "" && trimmed !== post.caption.trim();
 
   async function save() {
+    if (stage === "saving") return; // 二重実行（多重 publish/削除）を防ぐ再入ガード。
     setStage("saving");
     try {
       const created = await editPost({ oldEventId: post.id, caption: trimmed, imageUrls: post.imageUrls });
