@@ -151,7 +151,13 @@ export default function RankingBoard() {
         </p>
       )}
 
-      <ol className="flex flex-col gap-2">
+      {/* 広幅（md+）は「よくあるランキング」の2段組＝列ファースト（左列が上位 1..⌈n/2⌉、右列が残り）。
+          grid-flow-col ＋ 行数 ⌈n/2⌉ ＋ 2列で、10件なら 1-5 が左・6-10 が右に縦に並ぶ。データは隠さない
+          （件数に応じて行数が伸びるだけ）。狭幅は従来どおり1列の縦並び。ha-rise/--i 演出は各行で維持。 */}
+      <ol
+        className="grid grid-cols-1 gap-2 md:grid-cols-2 md:grid-flow-col md:[grid-template-rows:repeat(var(--rank-rows),auto)]"
+        style={{ "--rank-rows": Math.ceil(rows.length / 2) } as React.CSSProperties}
+      >
         {rows.map((row, i) => (
           <li
             key={row.key}
