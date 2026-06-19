@@ -54,9 +54,10 @@ export function swipeProgress(dx: number, maxDx = 120): number {
  * 進捗（[0,1]）→ ぼかし量（px）の写像（純関数・#275）。線形に `maxBlur` まで開く。
  * 写真カルーセルと市民手帳のページ遷移で共有し、スワイプ量に応じて中身をぼかす。
  *
- * @param progress swipeProgress の戻り（[0,1] 前提）
+ * @param progress swipeProgress の戻り（[0,1] 前提・範囲外入力は [0,1] にクランプ）
  * @param maxBlur 進捗 1 のときのぼかし量（px）。既定 10（控えめ＝feel 調整しやすく）。
  */
 export function swipeToBlur(progress: number, maxBlur = 10): number {
-  return progress * maxBlur;
+  const p = Math.max(0, Math.min(progress, 1));
+  return p * maxBlur;
 }

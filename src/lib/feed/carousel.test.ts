@@ -121,4 +121,9 @@ describe("swipeToBlur（進捗→ぼかし px）", () => {
     expect(swipeToBlur(1, 6)).toBe(6);
     expect(swipeToBlur(0.5, 6)).toBe(3);
   });
+
+  it("範囲外入力は [0,1] にクランプする（自己防御）", () => {
+    expect(swipeToBlur(1.5)).toBe(10); // 1 超は maxBlur そのまま
+    expect(swipeToBlur(-0.2)).toBe(0); // 負値は 0
+  });
 });
