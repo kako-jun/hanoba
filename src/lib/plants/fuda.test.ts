@@ -24,17 +24,19 @@ const SYNTH: VarietyCategory[] = [
 ];
 
 describe("buildFuda", () => {
-  it("属＋品種は品種1枚に畳む（属単独は出さない）", () => {
+  it("属＋品種は品種1枚に畳む（属単独は出さない）＋ filterTags=[属,品種]（#272 逆算）", () => {
     const fuda = buildFuda(["パキポディウム", "グラキリス"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "グラキリス" });
+    // 札クリックは属＋品種の AND で絞る（逆算が元投稿に当たる）。
+    expect(fuda[0]).toMatchObject({ name: "グラキリス", filterTags: ["パキポディウム", "グラキリス"] });
   });
 
-  it("品種単独タグでも札になる（属名は name に出さない）", () => {
-    // #181 では属タグも付くが、品種単独タグでも品種の札になる。属名は name に乗らない。
+  it("品種単独タグでも札になる＝filterTags=[品種]（属共起の時だけ [属,品種]・#272 逆算）", () => {
+    // 親属タグ無しの素の品種タグは catalog 先頭候補に倒す（#223）。逆算は filterTags=[品種]＝元投稿は
+    // #品種 しか持たないので品種単独で当たる。属が併記された時だけ filterTags=[属,品種] になる。
     const fuda = buildFuda(["グラキリス"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "グラキリス" });
+    expect(fuda[0]).toMatchObject({ name: "グラキリス", filterTags: ["グラキリス"] });
   });
 
   it("同属の複数品種はそれぞれ札になり、属単独は出ない（順序は catalog 出現順）", () => {
@@ -54,40 +56,40 @@ describe("buildFuda", () => {
     expect(fuda[0]).toMatchObject({ name: "グラキリス" });
   });
 
-  it("属単独（品種タグ無し）は属名の札を出す", () => {
+  it("属単独（品種タグ無し）は属名の札を出す＋ filterTags=[属]", () => {
     const fuda = buildFuda(["アガベ"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "アガベ" });
+    expect(fuda[0]).toMatchObject({ name: "アガベ", filterTags: ["アガベ"] });
   });
 
   it("学名は catalog の variety.sci を最優先する（塊根植物の実データ）", () => {
-    // ブレビカウレ → catalog.sci = Pachypodium brevicaule。
-    const fuda = buildFuda(["ブレビカウレ"], VARIETY_CATALOG);
+    // ブレビカウレ → catalog.sci = Pachypodium brevicaule。品種札は属＋品種で立てる（#272）。
+    const fuda = buildFuda(["パキポディウム", "ブレビカウレ"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ name: "ブレビカウレ", sci: "Pachypodium brevicaule" });
   });
 
   it("catalog.sci が無くても dictionary に品種があれば品種 sci を併記する", () => {
-    // チタノタ は catalog.sci 無し・dictionary に チタノタ→Agave titanota。
-    const fuda = buildFuda(["チタノタ"], VARIETY_CATALOG);
+    // チタノタ は catalog.sci 無し・dictionary に チタノタ→Agave titanota。属＋品種で立てる。
+    const fuda = buildFuda(["アガベ", "チタノタ"], VARIETY_CATALOG);
     expect(fuda[0]).toMatchObject({ name: "チタノタ", sci: "Agave titanota" });
   });
 
   it("catalog.sci を最優先する（合成カタログで決定的）", () => {
-    // 合成種A は catalog.sci="Agave fakea" を持つ＝dictionary より優先。
-    const fuda = buildFuda(["合成種A"], SYNTH);
+    // 合成種A は catalog.sci="Agave fakea" を持つ＝dictionary より優先。属アガベと併記。
+    const fuda = buildFuda(["アガベ", "合成種A"], SYNTH);
     expect(fuda[0]).toMatchObject({ name: "合成種A", sci: "Agave fakea" });
   });
 
   it("学名は catalog.sci も dictionary 品種も無ければ属 sci にフォールバックする（合成カタログ）", () => {
-    // 合成種B は catalog.sci 無し・dict 外。属「アガベ」が dict にある → Agave。
-    const fuda = buildFuda(["合成種B"], SYNTH);
+    // 合成種B は catalog.sci 無し・dict 外。属「アガベ」が dict にある → Agave。属アガベと併記。
+    const fuda = buildFuda(["アガベ", "合成種B"], SYNTH);
     expect(fuda[0]).toMatchObject({ name: "合成種B", sci: "Agave" });
   });
 
   it("学名は catalog.sci も品種も属も辞書外なら null（和名のみ＝グレースフル・合成カタログ）", () => {
-    // 合成種C は catalog.sci 無し・dict 外、属「ゲンクウ属」も dict 外 → null。
-    const fuda = buildFuda(["合成種C"], SYNTH);
+    // 合成種C は catalog.sci 無し・dict 外、属「ゲンクウ属」も dict 外 → null。属と併記。
+    const fuda = buildFuda(["ゲンクウ属", "合成種C"], SYNTH);
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ name: "合成種C", sci: null });
   });
@@ -118,7 +120,7 @@ describe("buildFuda", () => {
   });
 
   it("重複タグは1枚に dedupe する", () => {
-    const fuda = buildFuda(["グラキリス", "グラキリス"], VARIETY_CATALOG);
+    const fuda = buildFuda(["パキポディウム", "グラキリス", "グラキリス"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ name: "グラキリス" });
   });
@@ -140,7 +142,7 @@ describe("buildFuda", () => {
   });
 
   it("key は name で組む（dedupe 鍵）", () => {
-    expect(buildFuda(["グラキリス"], VARIETY_CATALOG)[0]!.key).toBe("グラキリス");
+    expect(buildFuda(["パキポディウム", "グラキリス"], VARIETY_CATALOG)[0]!.key).toBe("グラキリス");
     expect(buildFuda(["アガベ"], VARIETY_CATALOG)[0]!.key).toBe("アガベ");
   });
 
@@ -229,12 +231,12 @@ describe("buildFuda", () => {
     expect(fuda[0]).toMatchObject({ name: "太陽", sci: "Paeonia suffruticosa 'Taiyo'" });
   });
 
-  it("#223 太陽単独は既定（catalog 先頭候補）の1枚に倒す（親属タグ無し＝それ以上はやらない）", () => {
+  it("#223 太陽単独は既定（catalog 先頭候補）の1枚に倒す（filterTags=[品種]・親属タグ無し）", () => {
     // 太陽は サボテン(Ferocactus echidne) → スモモ(Prunus 'Taiyo') → ボタン の順で catalog に出る。
-    // 親属タグが無いので既定＝先頭候補（サボテンの太陽）に倒す。1枚だけ・二重計上しない。
+    // 親属タグが無いので既定＝先頭候補（サボテンの太陽）に倒す。逆算は filterTags=[太陽]（単独で当たる）。
     const fuda = buildFuda(["太陽"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "太陽", sci: "Ferocactus echidne" });
+    expect(fuda[0]).toMatchObject({ name: "太陽", sci: "Ferocactus echidne", filterTags: ["太陽"] });
   });
 
   it("#223 属共起で品種確定: ユッカ＋エレファンティペス→ユッカ側の札（亀甲竜に化けない）", () => {
@@ -261,10 +263,15 @@ describe("buildFuda", () => {
     expect(fuda[0]).toMatchObject({ name: "夕映", sci: "Paeonia lactiflora 'Yubae'" });
   });
 
-  it("#223 単一候補は親属タグ無しでも解決する（コシヒカリ単独＝既定で1枚）", () => {
+  it("#223 単一候補は親属タグ無しでも解決する（コシヒカリ単独＝既定で1枚・filterTags=[品種]）", () => {
     const fuda = buildFuda(["コシヒカリ"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "コシヒカリ" });
+    expect(fuda[0]).toMatchObject({ name: "コシヒカリ", filterTags: ["コシヒカリ"] });
+    // 属タグと併記すれば filterTags は [属, 品種]（札クリックの逆算が属＋品種で当たる）。
+    expect(buildFuda(["イネ", "コシヒカリ"], VARIETY_CATALOG)[0]).toMatchObject({
+      name: "コシヒカリ",
+      filterTags: ["イネ", "コシヒカリ"],
+    });
   });
 });
 
@@ -281,7 +288,7 @@ describe("buildVarietyIndex / resolveFuda（#257 索引共有）", () => {
   it("1つの索引を複数投稿で使い回しても相互に汚染しない", () => {
     const index = buildVarietyIndex(VARIETY_CATALOG);
     const a1 = resolveFuda(["パキポディウム", "グラキリス"], index);
-    const b = resolveFuda(["コシヒカリ"], index);
+    const b = resolveFuda(["イネ", "コシヒカリ"], index);
     const a2 = resolveFuda(["パキポディウム", "グラキリス"], index); // 使い回し後でも同じ
     expect(a1).toEqual(a2);
     expect(a1[0]).toMatchObject({ name: "グラキリス" });

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { fetchDiscoverFiltered } from "../../lib/nostr/client.ts";
 import {
   EMPTY_FILTER,
-  addTag,
   applyFilterToParams,
   filterSummary,
   isDefaultFilter,
@@ -128,8 +127,10 @@ export default function DiscoverGrid() {
             「{summary}」の投稿は見つかりませんでした。別の品種で試してみましょう。
           </p>
         ) : (
-          // 投稿詳細でタグをクリックしたら、その品種を絞り込みに足す（意図的操作＝pushState）。
-          <PostGrid posts={posts} onSelectHashtag={(tag) => void applyTags(addTag(tags, tag), "push")} />
+          // 投稿のタグ/札をクリックしたら、**今のフィルタを置き換えてそのタグだけで絞り直す**
+          // （AND で積み増すと結果がどんどん減るため・#272 kako-jun「毎回リセットでいい」）。意図的操作＝pushState。
+          // 複数品種の AND は上の VarietyFilter で明示的に組む（そちらは add/remove の意図的操作）。
+          <PostGrid posts={posts} onSelectHashtag={(tag) => void applyTags([tag], "push")} />
         ))}
     </section>
   );

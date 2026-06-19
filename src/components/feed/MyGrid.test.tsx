@@ -11,8 +11,8 @@ const fetchReactionCount = vi.fn();
 const getPublicKeyHex = vi.fn();
 // 編集モーダル（#300・EditPost）が使う client 関数。MyGrid から EditPost を開く統合テスト用にスタブ。
 const editPost = vi.fn();
-const fetchReactionCountsBatch = vi.fn(() => Promise.resolve(new Map()));
-const fetchCommentCountsBatch = vi.fn(() => Promise.resolve(new Map()));
+const fetchReactionCountsBatch = vi.fn((..._a: unknown[]) => Promise.resolve(new Map<string, number>()));
+const fetchCommentCountsBatch = vi.fn((..._a: unknown[]) => Promise.resolve(new Map<string, number>()));
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchMyPosts: (...a: unknown[]) => fetchMyPosts(...a),
