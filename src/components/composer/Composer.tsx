@@ -5,7 +5,7 @@
 //   - ロジック: buildNoteTemplate（signAndPublishNote 内）が空一言を throw
 // 出力 1:1 は renderSquareImageFromRect（canvas.width=height=size）で構造的に保証。
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
@@ -16,6 +16,7 @@ import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import { clearDraft, loadDraft, saveMeta, syncBlobs } from "../../lib/composer/draft.ts";
 import { moveById } from "../../lib/composer/reorder.ts";
+import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import AccountName from "../account/AccountName.tsx";
 import CaptionInput from "./CaptionInput.tsx";
 import DandelionBurst from "./DandelionBurst.tsx";
@@ -137,6 +138,36 @@ export default function Composer() {
     );
     // 依存は集合キーのみ（images 全体に依存しない＝crop/filter 変更で再書き込みしない）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blobSetKey]);
+
+  // 写真サムネ列の並べ替え（#274 の ◀▶）を FLIP で滑らせる（#289）。瞬時の差し替えでなく、
+  // 動いたサムネ（と入れ替わる隣）が新しい位置へスッと滑る。各サムネの矩形を記録し、順序が
+  // 変わった要素に「旧位置への translateX を即時 → 次フレームで 0 へ transition」を当てる。
+  // prefers-reduced-motion 時はアニメーションせず位置だけ更新する（瞬時）。
+  const thumbRefs = useRef(new Map<string, HTMLButtonElement>());
+  const prevThumbRects = useRef(new Map<string, DOMRect>());
+  useLayoutEffect(() => {
+    const reduce = prefersReducedMotion();
+    const next = new Map<string, DOMRect>();
+    thumbRefs.current.forEach((el, id) => {
+      const rect = el.getBoundingClientRect();
+      next.set(id, rect);
+      if (reduce) return;
+      const prev = prevThumbRects.current.get(id);
+      if (prev === undefined) return; // 新規サムネ（追加直後）はアニメーションしない。
+      const dx = prev.left - rect.left;
+      if (dx === 0) return; // 位置が変わっていない＝crop/filter 変更等。
+      // FLIP: いったん旧位置へ即時ジャンプ → 次フレームで 0 へ補間する。
+      el.style.transition = "none";
+      el.style.transform = `translateX(${dx}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = "transform 0.22s ease";
+        el.style.transform = "";
+        // アニメーション後に inline transition を消し、選択枠の transition-colors を元に戻す。
+        el.addEventListener("transitionend", () => { el.style.transition = ""; }, { once: true });
+      });
+    });
+    prevThumbRects.current = next;
   }, [blobSetKey]);
 
   // 保存（meta・軽い側）: 本文・各写真のクロップ枠/フィルタ・並び順・選択中 id が変わったら
@@ -336,6 +367,11 @@ export default function Composer() {
               {images.map((image, index) => (
                 <button
                   key={image.id}
+                  // FLIP（#289）用に各サムネの要素を id で参照（アンマウントで掃除する）。
+                  ref={(el) => {
+                    if (el) thumbRefs.current.set(image.id, el);
+                    else thumbRefs.current.delete(image.id);
+                  }}
                   type="button"
                   onClick={() => setCurrentId(image.id)}
                   aria-pressed={image.id === currentImage?.id}
