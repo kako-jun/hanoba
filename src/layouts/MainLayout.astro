@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import SiteFooter from "../components/SiteFooter.astro";
 import ScrollToTop from "../components/ui/ScrollToTop.tsx";
+import PostFAB from "../components/ui/PostFAB.tsx";
 import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
 
 interface Props {
@@ -18,6 +19,10 @@ const { title = "Hanōba", description = SITE_DESCRIPTION } = Astro.props;
 const SITE = Astro.site ?? new URL("https://hanoba.llll-ll.com");
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage = new URL("/og/og-image.jpg", SITE).href;
+
+// 投稿 FAB は /compose では出さない（もうそこにいる・#283）。サーバ側で出し分けて
+// クライアント判定もフラッシュも要らないようにする。末尾スラッシュも吸収する。
+const isCompose = Astro.url.pathname.replace(/\/$/, "") === "/compose";
 
 // 検索エンジン向け構造化データ（JSON-LD・<script> で描画＝meta 化しない）。
 // WebSite ＋ サイトリンク検索ボックス（discover の ?q= 検索を提示）。
@@ -90,6 +95,9 @@ const jsonLd = {
       <slot />
     </div>
     <SiteFooter />
+    {/* 投稿 FAB（#283）。右下隅の ScrollToTop の左隣に常駐。/compose では出さない
+        （isCompose でサーバ側に出し分け＝フラッシュ無し・クライアント判定不要）。 */}
+    {!isCompose && <PostFAB client:idle />}
     <ScrollToTop client:idle />
     {/* PWA「ホーム画面に追加」促し（#230）。全ページ共通。window/localStorage は
         マウント後 useEffect で参照するため SSR 安全。初期描画を妨げないよう idle で読む。 */}
