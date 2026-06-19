@@ -16,6 +16,15 @@ export default defineConfig({
     sitemap(),
     AstroPWA({
       registerType: "autoUpdate",
+      workbox: {
+        // クエリ付きのナビゲーション（例: 植物札→ `/discover?tags=ブレビカウレ`）が、precache 済みの
+        // 各ページ HTML（`/discover/index.html` 等）に**マッチするよう、マッチ時に全クエリパラメータを
+        // 無視する**（既定は utm_/fbclid のみ無視）。これが無いと `?tags=` 付き /discover が precache に
+        // マッチせず、生成 SW の navigateFallback（`createHandlerBoundToURL("/")`＝ホーム）にすり替わり、
+        // discover が一切描画されない＝**札クリックで品種絞り込みに遷移できない真因**（#291・本番のみ／
+        // SW 有効時のみ再現。dev は SW 無しで露見しなかった）。`?q=`（JSON-LD 検索）・旧 `?tag=` も同時に救済。
+        ignoreURLParametersMatching: [/.*/],
+      },
       manifest: {
         name: "Hanōba",
         short_name: "Hanōba",

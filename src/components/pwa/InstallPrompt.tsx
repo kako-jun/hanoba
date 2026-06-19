@@ -116,8 +116,9 @@ export default function InstallPrompt() {
     <div
       role="region"
       aria-label="ホーム画面に追加"
-      // 右下・ScrollToTop（bottom-5 right-5）と重ならないよう下げ、モバイルは左右に張る。
-      className="fixed bottom-3 right-3 left-3 sm:left-auto sm:bottom-5 sm:right-5 z-40 sm:max-w-sm glass-strong rounded-2xl shadow-lg p-4 ha-rise"
+      // デスクトップは**左下**に置く（右下は投稿FAB #283＋ScrollToTop #271 で混むため・#292）。
+      // モバイルは従来どおり左右に張る（bottom-3 left-3 right-3）。
+      className="fixed bottom-3 right-3 left-3 sm:right-auto sm:bottom-5 sm:left-5 z-40 sm:max-w-sm glass-strong rounded-2xl shadow-lg p-4 ha-rise"
     >
       <div className="flex items-start gap-3">
         {/* ホーム画面に追加される実アプリアイコン（ハノーバ市旗の H）を見せる＝何を追加するのか分かる。
