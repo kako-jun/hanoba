@@ -11,6 +11,11 @@ interface Props {
   loading?: "lazy" | "eager";
   /** ドラッグ可否（カルーセルのスワイプを邪魔しないよう false にできる）。 */
   draggable?: boolean;
+  /**
+   * デコード完了（または失敗・キャッシュ済み即時）で1回呼ぶ任意コールバック。
+   * 呼び出し側が「画像が高さを持った」タイミングを掴むため（#290 写真切替の高さ予約）。
+   */
+  onLoad?: () => void;
 }
 
 /**
@@ -31,14 +36,23 @@ export default function ProgressiveImage({
   className = "",
   loading = "lazy",
   draggable,
+  onLoad,
 }: Props) {
   const imgRef = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
 
+  // reveal を立てると同時に親へ通知する（#290・キャッシュ済み即時／onLoad／onError の全経路で1回）。
+  function reveal() {
+    setLoaded(true);
+    onLoad?.();
+  }
+
   // キャッシュ済み画像は onLoad が発火しないことがある（マウント時点で complete）。
   // その場合に opacity:0 のまま永遠に消えるのを防ぐため、ref で complete を見て即 loaded にする。
   useEffect(() => {
-    if (imgRef.current?.complete) setLoaded(true);
+    if (imgRef.current?.complete) reveal();
+    // src が変わるたびに見る（reveal は onLoad を含むので毎 src で1回通知）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src]);
 
   return (
@@ -49,10 +63,10 @@ export default function ProgressiveImage({
       loading={loading}
       decoding="async"
       draggable={draggable}
-      onLoad={() => setLoaded(true)}
+      onLoad={reveal}
       // 読み込み失敗（リンク切れ等）でも reveal する。さもないと opacity:0 のまま永久に
       // 見えず（素の <img> のブラウザ既定の代替表示すら出ない）レイアウトの穴になる。
-      onError={() => setLoaded(true)}
+      onError={reveal}
       data-loaded={loaded ? "true" : "false"}
       className={`${className} ha-reveal`.trim()}
     />

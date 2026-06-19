@@ -65,6 +65,12 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // スワイプ中の写真ぼかし（px・#275）。0＝ぼかし無し。指を離すと 0 に戻し、
   // index 確定で次画像が中央へ来る＝ぼかしも解ける。1枚／reduced-motion ではかからない。
   const [swipeBlur, setSwipeBlur] = useState(0);
+  // 写真切替（←→/スワイプ）の瞬間に次画像が高さ0になり画面が上に詰まるのを防ぐ（#290）。
+  // 直前に表示していた写真の実測高を min-height として写真コンテナに予約する。photoIndex が
+  // 変わっても reservedH は保持＝切替中に潰れない。新画像の onLoad で実測高に更新する
+  // （短い写真でも最終的にぴたり収まる）。ラッパは img を密に包む内側 div（ぼかしラッパ）を測る。
+  const photoWrapRef = useRef<HTMLDivElement>(null);
+  const [reservedH, setReservedH] = useState<number | undefined>(undefined);
 
   // 品種カタログは初期フィードバンドルに載せず、モーダル展開時に一度だけ動的 import する
   // （TagPicker の ensureCatalog と同型・SSR では走らない）。失敗時は null のまま＝札セクション非表示。
@@ -245,12 +251,15 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
+              // 切替中も直前の写真高を確保＝次画像が高さ0でも領域が潰れない（#290）。
+              style={{ minHeight: reservedH }}
             >
               {/* スワイプ中ぼかしは画像だけにかけるラッパで包む（#275）。←→ボタンには波及させない。
                   ha-reveal の blur-up（img 側 filter）と干渉させないよう、ここ（外側 div）に当てる
                   ＝2つの blur が合成され、リビール中でも壊れない。ドラッグ中は即追従（transition none）、
                   離したら 0.25s で戻す。1枚／reduced-motion では swipeBlur が常に 0＝無効。 */}
               <div
+                ref={photoWrapRef}
                 style={{
                   filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
                   transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
@@ -263,6 +272,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
                   className="max-w-full max-h-[70vh] select-none object-contain"
                   draggable={false}
+                  // 新画像が高さを持った時点で予約高を実測値に更新（#290）。これで切替中の
+                  // 潰れを防ぎつつ、短い写真でも最終的に余白なくぴたり収まる。
+                  onLoad={() => setReservedH(photoWrapRef.current?.offsetHeight)}
                 />
               </div>
               {post.imageUrls.length > 1 && (
