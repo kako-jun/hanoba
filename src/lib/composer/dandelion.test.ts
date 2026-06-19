@@ -11,8 +11,8 @@ function seededRng(seed: number): () => number {
 }
 
 // 与えた配列を順に返し、末尾に達したら最後の値を返し続けるカウンタ式 fake rng。
-// makeSeeds の消費順は「windBase（先頭1回）→ 各粒で dx ゆらぎ→dy→rot→durMs→delayMs→size の6回」。
-// 先頭で風を強く決め、以降を 0.5 にすると dx ゆらぎは span(-40,40) の中央＝0 になり、
+// makeSeeds は windBase を先頭で1回引き、各粒は第1 draw が dx ゆらぎ（span -40,40）。
+// 先頭で風を強く決め、以降を 0.5 にすると dx ゆらぎは中央＝0 になり、
 // 全粒の dx は windBase の符号だけで決まる（共通の風が全粒に効くことを露わにできる）。
 function sequenceRng(values: number[]): () => number {
   let i = 0;
@@ -40,22 +40,27 @@ describe("makeSeeds", () => {
       // 風 [-60,60] ＋ ゆらぎ [-40,40] ⇒ dx は [-100,100]。
       expect(s.dx).toBeGreaterThanOrEqual(-100);
       expect(s.dx).toBeLessThanOrEqual(100);
-      // 必ず上へ飛ぶ。
+      // 必ず上へ飛ぶ。bimodal（近 [-420,-200) ∪ 遠 [-1500,-900)・#260）。
       expect(s.dy).toBeLessThan(0);
-      expect(s.dy).toBeGreaterThanOrEqual(-360);
-      expect(s.dy).toBeLessThanOrEqual(-160);
+      expect(s.dy).toBeGreaterThanOrEqual(-1500);
+      expect(s.dy).toBeLessThanOrEqual(-200);
       expect(s.rot).toBeGreaterThanOrEqual(-120);
       expect(s.rot).toBeLessThanOrEqual(120);
-      // #252 で連続スポーン化＋大きめサイズに伴い、ゆっくり大きく漂うよう時間・上昇・サイズを広げた。
-      expect(s.durMs).toBeGreaterThanOrEqual(1400);
-      expect(s.durMs).toBeLessThanOrEqual(2400);
+      // 所要時間は飛距離に比例（|dy|*[2.2,3.0]+800）＝近 ~1.3s 〜 遠 ~5s（#260）。
+      expect(s.durMs).toBeGreaterThanOrEqual(1200);
+      expect(s.durMs).toBeLessThanOrEqual(5400);
       expect(s.delayMs).toBeGreaterThanOrEqual(0);
-      expect(s.delayMs).toBeLessThanOrEqual(180);
+      expect(s.delayMs).toBeLessThanOrEqual(220);
       expect(s.size).toBeGreaterThanOrEqual(90);
       expect(s.size).toBeLessThanOrEqual(118);
-      // 横揺れ幅は左右対称の範囲。
-      expect(s.sway).toBeGreaterThanOrEqual(-26);
-      expect(s.sway).toBeLessThanOrEqual(26);
+      // 横揺れの振幅は正の範囲（向きは keyframe の往復が出す・#260）。
+      expect(s.sway).toBeGreaterThanOrEqual(14);
+      expect(s.sway).toBeLessThanOrEqual(40);
+      // 横揺れの周期と初期位相（位相は 0..周期）。
+      expect(s.swayMs).toBeGreaterThanOrEqual(1100);
+      expect(s.swayMs).toBeLessThanOrEqual(2600);
+      expect(s.swayPhaseMs).toBeGreaterThanOrEqual(0);
+      expect(s.swayPhaseMs).toBeLessThanOrEqual(s.swayMs);
       // スプライト番号は 0..2 に収まる（単体種3変種）。
       expect(s.variant).toBeGreaterThanOrEqual(0);
       expect(s.variant).toBeLessThanOrEqual(2);
@@ -67,6 +72,13 @@ describe("makeSeeds", () => {
       expect(s.skew).toBeGreaterThanOrEqual(-12);
       expect(s.skew).toBeLessThanOrEqual(12);
     }
+  });
+
+  it("飛距離は bimodal＝近距離も遠距離（画面端まで）も混じる（#260）", () => {
+    // 多数の粒を出せば、控えめな上昇（|dy|<=600）と画面端まで届く遠距離（|dy|>=900）が両方現れる。
+    const seeds = makeSeeds(80, seededRng(2024));
+    expect(seeds.some((s) => Math.abs(s.dy) <= 600)).toBe(true);
+    expect(seeds.some((s) => Math.abs(s.dy) >= 900)).toBe(true);
   });
 
   it("rng 数列が違えば結果も違う（毎回違う風）", () => {

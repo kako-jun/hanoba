@@ -154,44 +154,73 @@ summary {
   }
 }
 
-/* 綿毛が舞い上がるエフェクト（#148 / #252・投稿中のフィードバック）。
-   原点（送信ボタン中央）から、各粒の風（--dx）・上昇（--dy）・回転（--rot）へ向かいつつ、
-   上昇の途中で左右に揺れ（--sway を ＋/− に振る）、ふわっと現れて上端で消える。
-   単調な直線でなく「風に乗って漂う」曲線を描かせ、フェードイン/アウトで端の硬さを取る。 */
+/* 綿毛が舞い上がるエフェクト（#148 / #252 / #260・投稿中のフィードバック）。
+   原点（送信ボタン中央）から、各粒の風（--dx）・上昇（--dy）・回転（--rot）へ向かう。
+   上昇は 0%→100% の一本道で ease-out＝頂点へ"減速して止まる"。かつての 15/50/80% 共有ウェイポイントへ
+   per-segment 減速する「動いて止まる」拍は撤去（#260・kako-jun blink）。横揺れは ha-seed-sway に分離し、
+   粒ごとの周期/位相で拍を desync する。透明度は別トラックで linear に出し入れし端の硬さを取る。 */
 @keyframes ha-seed-rise {
   0% {
-    opacity: 0;
     transform: translate(0, 0) rotate(0) scale(0.6);
   }
-  15% {
-    opacity: 1;
-    transform: translate(calc(var(--dx) * 0.15 + var(--sway, 0px)), calc(var(--dy) * 0.15))
-      rotate(calc(var(--rot) * 0.15)) scale(1);
+  100% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.08);
   }
-  50% {
-    opacity: 1;
-    transform: translate(calc(var(--dx) * 0.5 - var(--sway, 0px)), calc(var(--dy) * 0.5))
-      rotate(calc(var(--rot) * 0.5)) scale(1);
+}
+
+/* 透明度は上昇とは別トラック（位置の ease-out を再分割して拍を生まないため）。 */
+@keyframes ha-seed-fade {
+  0% {
+    opacity: 0;
   }
-  80% {
-    opacity: 0.85;
-    transform: translate(calc(var(--dx) * 0.8 + var(--sway, 0px)), calc(var(--dy) * 0.8))
-      rotate(calc(var(--rot) * 0.8)) scale(1.05);
+  12% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1.1);
+  }
+}
+
+/* 横揺れ。振幅 --sway を左右に往復させる。粒ごとの周期と初期位相で拍を desync する。 */
+@keyframes ha-seed-sway {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(var(--sway, 0px));
+  }
+  50% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(calc(-1 * var(--sway, 0px)));
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 
 .ha-seed {
-  animation: ha-seed-rise var(--dur, 1800ms) cubic-bezier(0.33, 0, 0.2, 1) var(--delay, 0ms) both;
+  /* 上昇は ease-out（速く立ち上がり頂点へ減速して止まる）。透明度は別トラックで出し入れ。 */
+  animation:
+    ha-seed-rise var(--dur, 1800ms) cubic-bezier(0.16, 0.78, 0.28, 1) var(--delay, 0ms) both,
+    ha-seed-fade var(--dur, 1800ms) linear var(--delay, 0ms) both;
   will-change: transform, opacity;
+}
+
+.ha-seed-sway {
+  /* 周期 --sway-dur と初期位相（負 delay = --sway-phase）を粒ごとに変えて拍を desync する。 */
+  animation: ha-seed-sway var(--sway-dur, 1600ms) ease-in-out calc(-1 * var(--sway-phase, 0ms)) infinite;
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   /* コンポーネント側でも null を返すが、念のため CSS でもアニメーションを止める。 */
-  .ha-seed {
+  .ha-seed,
+  .ha-seed-sway {
     animation: none;
   }
 }

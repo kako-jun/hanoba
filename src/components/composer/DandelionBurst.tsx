@@ -79,7 +79,10 @@ export default function DandelionBurst({ active }: DandelionBurstProps) {
         <span
           key={seed.id}
           className="ha-seed absolute"
-          onAnimationEnd={() => removeSeed(seed.id)}
+          // 上昇（ha-seed-rise）の終了でだけ自分を消す。横揺れ（無限）や fade の animationend は無視する。
+          onAnimationEnd={(e) => {
+            if (e.animationName === "ha-seed-rise") removeSeed(seed.id);
+          }}
           style={
             {
               width: `${seed.size}px`,
@@ -87,21 +90,32 @@ export default function DandelionBurst({ active }: DandelionBurstProps) {
               "--dx": `${seed.dx}px`,
               "--dy": `${seed.dy}px`,
               "--rot": `${seed.rot}deg`,
-              "--sway": `${seed.sway}px`,
               "--dur": `${seed.durMs}ms`,
               "--delay": `${seed.delayMs}ms`,
             } as CSSProperties
           }
         >
-          {/* 粒ごとの静的な変形（非一様スケール＋skew）は内側の img に乗せる。外側 span は
-              舞いのアニメ（translate/rotate/fade/grow）担当なので、両者が干渉せず合成される。 */}
-          <img
-            src={SEED_SPRITES[seed.variant]}
-            alt=""
-            draggable={false}
-            className="h-full w-full select-none"
-            style={{ transform: `skewX(${seed.skew}deg) scale(${seed.scaleX}, ${seed.scaleY})` }}
-          />
+          {/* 横揺れは上昇とは別レイヤ（中間 span）。粒ごとの周期/位相で拍を desync する（#260）。 */}
+          <span
+            className="ha-seed-sway block h-full w-full"
+            style={
+              {
+                "--sway": `${seed.sway}px`,
+                "--sway-dur": `${seed.swayMs}ms`,
+                "--sway-phase": `${seed.swayPhaseMs}ms`,
+              } as CSSProperties
+            }
+          >
+            {/* 粒ごとの静的な変形（非一様スケール＋skew）は最内の img に乗せる。各レイヤの transform
+                （上昇／横揺れ／静的変形）は別要素なので干渉せず合成される。 */}
+            <img
+              src={SEED_SPRITES[seed.variant]}
+              alt=""
+              draggable={false}
+              className="h-full w-full select-none"
+              style={{ transform: `skewX(${seed.skew}deg) scale(${seed.scaleX}, ${seed.scaleY})` }}
+            />
+          </span>
         </span>
       ))}
     </span>
