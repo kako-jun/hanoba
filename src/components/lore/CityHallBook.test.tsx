@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
@@ -19,6 +19,21 @@ vi.mock("../../lib/nostr/keys.ts", () => ({
 }));
 
 import CityHallBook from "./CityHallBook.tsx";
+
+// matchMedia を差し替えて reduced-motion の on/off を制御する（#275・DandelionBurst と同型）。
+// グローバル汚染しないよう afterEach の vi.restoreAllMocks() が stub も戻す。
+function stubMatchMedia(reduce: boolean) {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: reduce && query.includes("prefers-reduced-motion"),
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    onchange: null,
+    dispatchEvent: () => false,
+  }));
+}
 
 const NOW_MS = 1781913600 * 1000;
 const DAY = 86400;
@@ -53,6 +68,8 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    // matchMedia の stub も毎回外す（reduced-motion スタブのグローバル汚染防止・#275）。
+    vi.unstubAllGlobals();
   });
 
   it("常に手帳のタイトルを出す", async () => {
@@ -256,6 +273,105 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 1p より前（後方下限）には ← でも行かない。
     await user.keyboard("{ArrowLeft}");
     expect(screen.getByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
+  });
+
+  it("左スワイプで次ページ・右スワイプで前ページにめくれる（#275）", async () => {
+    getDisplayName.mockReturnValue("みどり"); // L1: 2p まで解放（次=ティザー3p）。
+    fetchMyPosts.mockResolvedValue([]);
+    render(<CityHallBook />);
+    await screen.findByText(/ここは市役所だ/);
+
+    // 本パネル（touch ハンドラ）＝ aria-live のページ内容コンテナの親。
+    const content = document.querySelector('[aria-live="polite"]')!;
+    const panel = content.parentElement!;
+
+    // 左スワイプ（dx<-40・水平優位）＝次へ＝ティザー（3p）。
+    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+    expect(await screen.findByText("？？？")).toBeInTheDocument();
+
+    // 右スワイプ（dx>+40・水平優位）＝前へ＝市役所（2p）へ戻る。
+    fireEvent.touchStart(panel, { touches: [{ clientX: 80, clientY: 100 }] });
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 200, clientY: 95 }] });
+    expect(await screen.findByText(/ここは市役所だ/)).toBeInTheDocument();
+  });
+
+  it("先頭ページで右スワイプは no-op（後方下限・#275）", async () => {
+    getDisplayName.mockReturnValue(null); // L0: 既定 1p 移住案内（前は無い）。
+    render(<CityHallBook />);
+    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
+
+    const content = document.querySelector('[aria-live="polite"]')!;
+    const panel = content.parentElement!;
+
+    // 右スワイプ（前へ）。1p より前は無い＝ページ不変。
+    fireEvent.touchStart(panel, { touches: [{ clientX: 80, clientY: 100 }] });
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 220, clientY: 100 }] });
+    expect(screen.getByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
+    expect(screen.queryByText("？？？")).toBeNull();
+  });
+
+  it("ロック境界で左スワイプは進めない（canNext=false・前方ロック・#275）", async () => {
+    const user = userEvent.setup();
+    getDisplayName.mockReturnValue("みどり"); // L1: 2p まで解放、3p はティザー上限。
+    fetchMyPosts.mockResolvedValue([]);
+    render(<CityHallBook />);
+    await screen.findByText(/ここは市役所だ/);
+
+    // まずティザー（3p＝前方ロック上限）まで進める。
+    await user.click(screen.getByRole("button", { name: "次のページ" }));
+    expect(screen.getByText("？？？")).toBeInTheDocument();
+
+    const content = document.querySelector('[aria-live="polite"]')!;
+    const panel = content.parentElement!;
+
+    // ティザーから更に左スワイプ（次へ）＝ロック越え不可（canNext=false）でページ不変＝ティザーのまま。
+    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 60, clientY: 100 }] });
+    expect(screen.getByText("？？？")).toBeInTheDocument();
+  });
+
+  it("スワイプ中はページ内容に blur が付き、指を離すと消える（#275）", async () => {
+    stubMatchMedia(false); // reduced-motion なし＝ぼかしが効く側。
+    getDisplayName.mockReturnValue("みどり");
+    fetchMyPosts.mockResolvedValue([]);
+    render(<CityHallBook />);
+    await screen.findByText(/ここは市役所だ/);
+
+    const content = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    const panel = content.parentElement!;
+
+    // 水平優位ドラッグ中＝内容コンテナに blur(px)（px>0・インライン style で確認）。
+    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchMove(panel, { touches: [{ clientX: 120, clientY: 105 }] });
+    const m = content.style.filter.match(/blur\(([\d.]+)px\)/);
+    expect(m).not.toBeNull();
+    expect(Number.parseFloat(m![1]!)).toBeGreaterThan(0);
+
+    // 指を離すと blur は解ける。しきい値（40px）未満で離す＝ページ遷移は起こさず
+    // 同じ内容コンテナ（key 不変）の filter が消えることを確認する。
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 190, clientY: 100 }] });
+    expect(content.style.filter).toBe("");
+  });
+
+  it("reduced-motion はぼかさないがページ遷移は起きる（#275）", async () => {
+    stubMatchMedia(true); // prefers-reduced-motion: reduce。
+    getDisplayName.mockReturnValue("みどり"); // L1: 次=ティザー3p。
+    fetchMyPosts.mockResolvedValue([]);
+    render(<CityHallBook />);
+    await screen.findByText(/ここは市役所だ/);
+
+    const content = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    const panel = content.parentElement!;
+
+    // move 中も blur は付かない（onTouchMove が prefersReducedMotion で即 return）。
+    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchMove(panel, { touches: [{ clientX: 120, clientY: 105 }] });
+    expect(content.style.filter).toBe("");
+
+    // それでも左スワイプの遷移自体は起きる＝ティザー（3p）へ。
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 100 }] });
+    expect(await screen.findByText("？？？")).toBeInTheDocument();
   });
 
   it("←/→: 入力欄にフォーカスがあるときはページめくりを横取りしない", async () => {
