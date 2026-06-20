@@ -5,6 +5,7 @@ import ScrollToTop from "../components/ui/ScrollToTop.tsx";
 import PostFAB from "../components/ui/PostFAB.tsx";
 import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
 import AmbientWeather from "../components/weather/AmbientWeather.tsx";
+import TimeOfDayController from "../components/weather/TimeOfDayController.tsx";
 
 interface Props {
   title?: string;
@@ -123,6 +124,9 @@ const jsonLd = {
         本文の奥（z-index:-1）に固定・pointer-events:none なので可読性も操作も妨げない。
         ネットワーク取得は useEffect なので SSR 安全・初期描画を妨げないよう idle で読む。 */}
     <AmbientWeather client:idle />
+    {/* 時間帯（鼓門 JST）を <html data-time> に反映＝背景オーバーレイの明るさ/色温度を変調（#231 後段②）。
+        初期は上の head inline script が描画前に設定済み・この島は境界またぎ更新だけを担う。 */}
+    <TimeOfDayController client:idle />
     <div class="flex-1">
       <slot />
     </div>

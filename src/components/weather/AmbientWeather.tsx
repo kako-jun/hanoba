@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { getHanobaWeather } from "../../lib/weather/fetch.ts";
 import type { WeatherCondition } from "../../lib/weather/types.ts";
 import { rainLevel, type RainLevel } from "../../lib/weather/rainLevel.ts";
-import { jstHour, timeOfDay, type TimeOfDay } from "../../lib/weather/timeOfDay.ts";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 
 // 天気の前面環境レイヤ（#231 段階2 / #132 段階4）。
@@ -35,33 +34,9 @@ function forced(): Forced | null {
   return null;
 }
 
-const TIMES: TimeOfDay[] = ["morning", "day", "evening", "night"];
-
-/** 現在の時間帯（鼓門の JST）。?time=morning|day|evening|night で強制（dev/blink 用）。 */
-function currentTimeOfDay(): TimeOfDay {
-  if (typeof window !== "undefined") {
-    const q = new URLSearchParams(window.location.search).get("time");
-    if (q && (TIMES as string[]).includes(q)) return q as TimeOfDay;
-  }
-  return timeOfDay(jstHour(new Date()));
-}
-
 export default function AmbientWeather() {
   const [state, setState] = useState<Forced | null>(null);
   const [reduced, setReduced] = useState(false);
-
-  // 時間帯（鼓門の JST）を <html data-time> に反映する。背景写真は差し替えず、CSS が
-  // この属性でオーバーレイの暗さ・色温度だけを変調する（#231 後段②）。初期ペイントは
-  // MainLayout の inline script が描画前に設定（flash 回避）、ここでは確定値の再設定＋
-  // 長時間セッションが時間帯境界をまたいだときの更新（5分ごと）を担う。
-  useEffect(() => {
-    const apply = () => {
-      document.documentElement.dataset.time = currentTimeOfDay();
-    };
-    apply();
-    const id = window.setInterval(apply, 5 * 60 * 1000);
-    return () => window.clearInterval(id);
-  }, []);
 
   useEffect(() => {
     setReduced(prefersReducedMotion());
