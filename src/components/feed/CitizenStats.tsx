@@ -121,6 +121,8 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
             <li
               key={def.key}
               title={unlocked ? def.flavor : badgeHint(def)}
+              // 未解除は見た目が ??? なので、解除条件を SR にも届ける（解除済みは可視ラベルが読まれる）。
+              aria-label={unlocked ? undefined : `未解除の称号：${badgeHint(def)}`}
               className={
                 unlocked
                   ? "inline-flex items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm font-medium text-ha-ink shadow-sm shadow-black/25 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
