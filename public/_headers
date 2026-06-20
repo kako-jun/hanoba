@@ -11,3 +11,8 @@
 
 /manifest.webmanifest
   Cache-Control: public, max-age=86400
+
+# 天気の水滴素材（#231）は precache しない（astro.config の globIgnores）。雨のとき初回だけ
+# 取得し、以後はブラウザ HTTP キャッシュに長期で乗せる（内容はファイル名固定なので長め）。
+/weather/*
+  Cache-Control: public, max-age=2592000
