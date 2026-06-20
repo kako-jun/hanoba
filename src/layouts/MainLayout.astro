@@ -5,7 +5,7 @@ import ScrollToTop from "../components/ui/ScrollToTop.tsx";
 import PostFAB from "../components/ui/PostFAB.tsx";
 import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
 import AmbientWeather from "../components/weather/AmbientWeather.tsx";
-import TimeOfDayController from "../components/weather/TimeOfDayController.tsx";
+import AmbientCalendar from "../components/weather/AmbientCalendar.tsx";
 
 interface Props {
   title?: string;
@@ -56,31 +56,65 @@ const jsonLd = {
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#509120" />
-    {/* 時間帯（鼓門の JST）を最初のペイント前に <html data-time> へ反映する（#231 後段②）。
-        body の背景オーバーレイを時間帯で変調するので、ここで先に属性を立てないと
-        既定（夜）→実時刻 のフラッシュが出る（市民手帳ラベル #262 と同じ flash 回避手法）。
-        is:inline は Vite を通らない＝import 不可なので、バケットは timeOfDay.ts と同じ境界を直書きする
-        （夜=19:00-翌5:00 / 朝=5-9 / 昼=9-16 / 夕=16-19）。?time= で blink 用に強制。AmbientWeather 島が
-        マウント後に同値で再設定＋境界更新する。 */}
+    {/* 暦由来の環境（時間帯・八節）を最初のペイント前に <html> へ反映する（#231 後段②/①）。
+        body の背景オーバーレイ（時間帯）と背景写真（季節）を変えるので、ここで先に属性を立てないと
+        既定→実値 のフラッシュが出る（市民手帳ラベル #262 と同じ flash 回避手法）。
+        is:inline は Vite を通らない＝import 不可なので、境界は timeOfDay.ts / solarPhase.ts と同じ値を直書きする。
+        - 時間帯: 夜=19:00-翌5:00 / 朝=5-9 / 昼=9-16 / 夕=16-19
+        - 八節: 立春2/4・春分3/20・立夏5/5・夏至6/21・立秋8/7・秋分9/23・立冬11/7・冬至12/22（冬至は年またぎ）
+        ?time= / ?sekki= で blink 用に強制。AmbientCalendar 島がマウント後に同値で再設定＋境界更新する。 */}
     <script is:inline>
       try {
-        var qt = new URLSearchParams(location.search).get("time");
+        var sp = new URLSearchParams(location.search);
+        var jst = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Tokyo",
+          hour: "numeric",
+          hour12: false,
+          month: "numeric",
+          day: "numeric",
+        }).formatToParts(new Date());
+        var get = function (type) {
+          for (var i = 0; i < jst.length; i++) if (jst[i].type === type) return parseInt(jst[i].value, 10);
+          return NaN;
+        };
+
+        var qt = sp.get("time");
         var t;
         if (qt && ["morning", "day", "evening", "night"].indexOf(qt) >= 0) {
           t = qt;
         } else {
-          var h =
-            parseInt(
-              new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", hour: "numeric", hour12: false }).format(
-                new Date()
-              ),
-              10
-            ) % 24;
+          var h = get("hour") % 24;
           t = h < 5 || h >= 19 ? "night" : h < 9 ? "morning" : h < 16 ? "day" : "evening";
         }
         document.documentElement.dataset.time = t;
+
+        var qs = sp.get("sekki");
+        var PHASES = ["risshun", "shunbun", "rikka", "geshi", "risshu", "shubun", "ritto", "toji"];
+        var s;
+        if (qs && PHASES.indexOf(qs) >= 0) {
+          s = qs;
+        } else {
+          var md = get("month") * 100 + get("day");
+          s =
+            md >= 1222 || md < 204
+              ? "toji"
+              : md < 320
+                ? "risshun"
+                : md < 505
+                  ? "shunbun"
+                  : md < 621
+                    ? "rikka"
+                    : md < 807
+                      ? "geshi"
+                      : md < 923
+                        ? "risshu"
+                        : md < 1107
+                          ? "shubun"
+                          : "ritto";
+        }
+        document.documentElement.dataset.sekki = s;
       } catch (e) {
-        /* Intl 不可等は属性なし＝既定（夜のベース）で安全側 */
+        /* Intl 不可等は属性なし＝既定（夜のベース・既定の背景写真）で安全側 */
       }
     </script>
     <!-- タイポ（cookbook: 汎用フォント禁止）。見出し＝Outfit（geometric sans）、
@@ -124,9 +158,10 @@ const jsonLd = {
         本文の奥（z-index:-1）に固定・pointer-events:none なので可読性も操作も妨げない。
         ネットワーク取得は useEffect なので SSR 安全・初期描画を妨げないよう idle で読む。 */}
     <AmbientWeather client:idle />
-    {/* 時間帯（鼓門 JST）を <html data-time> に反映＝背景オーバーレイの明るさ/色温度を変調（#231 後段②）。
-        初期は上の head inline script が描画前に設定済み・この島は境界またぎ更新だけを担う。 */}
-    <TimeOfDayController client:idle />
+    {/* 暦由来の環境（時間帯=data-time / 八節=data-sekki）を <html> に反映＝背景の明るさ/色温度（後段②）と
+        背景写真そのもの（後段①・季節）を変える。初期は上の head inline script が描画前に設定済み・
+        この島は境界またぎ更新だけを担う（#231）。 */}
+    <AmbientCalendar client:idle />
     <div class="flex-1">
       <slot />
     </div>
