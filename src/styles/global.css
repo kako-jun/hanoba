@@ -50,13 +50,41 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* 地＝ぼやけた高級写真（固定）＋暗いオーバーレイで可読性を確保。ベタ塗りにしない。 */
+/* 地＝ぼやけた高級写真（固定）＋暗いオーバーレイで可読性を確保。ベタ塗りにしない。
+   オーバーレイの3ストップは CSS 変数にし、時間帯（#231 後段②）でこの変数だけを差し替える
+   ＝背景写真は同じまま、暗さ・色温度だけが朝/昼/夕/夜で変わる（全段ダークレンジ＝暗色シック維持）。
+   既定（data-time 未設定）は夜＝最暗・暖色で、これまでの見た目と同一。 */
+:root {
+  --bg-overlay-top: rgba(9, 8, 6, 0.84);
+  --bg-overlay-mid: rgba(13, 11, 8, 0.68);
+  --bg-overlay-bot: rgba(9, 8, 6, 0.9);
+}
+/* 夕＝鮮やかな夕焼けオレンジの残照（一番"ばえる"＝kako-jun）。彩度を上げ alpha を下げて
+   暖色のグロウを効かせる。暗地は保つので眩しくはならない。 */
+html[data-time="evening"] {
+  --bg-overlay-top: rgba(46, 20, 7, 0.78);
+  --bg-overlay-mid: rgba(72, 32, 10, 0.52);
+  --bg-overlay-bot: rgba(20, 9, 4, 0.9);
+}
+/* 昼＝中立〜やや冷・最も明るい（暗い温室に昼光が差す＝室内の緑がよく見える。夜と大きく差をつける）。
+   オーバーレイ alpha を一段下げて暗い室内写真をより透かす（眩しくはしない・本文可読性は保つ）。 */
+html[data-time="day"] {
+  --bg-overlay-top: rgba(15, 16, 16, 0.6);
+  --bg-overlay-mid: rgba(22, 24, 23, 0.38);
+  --bg-overlay-bot: rgba(11, 13, 13, 0.74);
+}
+/* 朝＝冷たく柔らかい薄明（青み）・夜と昼の間。 */
+html[data-time="morning"] {
+  --bg-overlay-top: rgba(12, 14, 18, 0.82);
+  --bg-overlay-mid: rgba(16, 19, 24, 0.6);
+  --bg-overlay-bot: rgba(8, 10, 13, 0.88);
+}
 body {
   font-family: var(--font-sans);
   color: var(--color-ha-ink);
   background-color: var(--color-ha-base);
   background-image:
-    linear-gradient(180deg, rgba(9, 8, 6, 0.84) 0%, rgba(13, 11, 8, 0.68) 42%, rgba(9, 8, 6, 0.9) 100%),
+    linear-gradient(180deg, var(--bg-overlay-top) 0%, var(--bg-overlay-mid) 42%, var(--bg-overlay-bot) 100%),
     url("/og/bg-blur.webp");
   background-size: cover;
   background-position: center;

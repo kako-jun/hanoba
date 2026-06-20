@@ -55,6 +55,33 @@ const jsonLd = {
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#509120" />
+    {/* 時間帯（鼓門の JST）を最初のペイント前に <html data-time> へ反映する（#231 後段②）。
+        body の背景オーバーレイを時間帯で変調するので、ここで先に属性を立てないと
+        既定（夜）→実時刻 のフラッシュが出る（市民手帳ラベル #262 と同じ flash 回避手法）。
+        is:inline は Vite を通らない＝import 不可なので、バケットは timeOfDay.ts と同じ境界を直書きする
+        （夜=19:00-翌5:00 / 朝=5-9 / 昼=9-16 / 夕=16-19）。?time= で blink 用に強制。AmbientWeather 島が
+        マウント後に同値で再設定＋境界更新する。 */}
+    <script is:inline>
+      try {
+        var qt = new URLSearchParams(location.search).get("time");
+        var t;
+        if (qt && ["morning", "day", "evening", "night"].indexOf(qt) >= 0) {
+          t = qt;
+        } else {
+          var h =
+            parseInt(
+              new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", hour: "numeric", hour12: false }).format(
+                new Date()
+              ),
+              10
+            ) % 24;
+          t = h < 5 || h >= 19 ? "night" : h < 9 ? "morning" : h < 16 ? "day" : "evening";
+        }
+        document.documentElement.dataset.time = t;
+      } catch (e) {
+        /* Intl 不可等は属性なし＝既定（夜のベース）で安全側 */
+      }
+    </script>
     <!-- タイポ（cookbook: 汎用フォント禁止）。見出し＝Outfit（geometric sans）、
          日本語＝Zen Maru Gothic（丸ゴシック・角丸の世界観に合わせる #170）。preconnect でフォント取得を前倒しする。 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
