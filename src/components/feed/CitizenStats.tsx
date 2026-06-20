@@ -3,6 +3,7 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { computeCitizenStats } from "../../lib/feed/stats.ts";
 import { citizenLevelLabel } from "../../lib/lore/citizen.ts";
+import { badgeHint, evaluateBadges } from "../../lib/lore/achievements.ts";
 import SciName from "../ui/SciName.tsx";
 
 interface Props {
@@ -15,11 +16,13 @@ interface Props {
 }
 
 /**
- * 市民の活動スタッツ節（#272・段階1）。`/me`（自分）と将来の `/u/?npub`（他人）で共有する。
+ * 市民の活動スタッツ節（#272・段階1+2）。`/me`（自分）と `/u?npub=`（他人）で共有する。
  * すべて t:hanoba 投稿からのクライアント集計＝backendless・新たな身バレ無し（公開投稿を数えるだけ）。
  *
  * 品種カタログは初期バンドルに載せず動的 import（PostGrid と同型）。catalog 未ロード中は品種数を伏せ、
- * ロード後にふっと出る（グレースフル）。市民レベルは旅人/市民/市民Ln（古参・訪問者という語は使わない）。
+ * ロード後にふっと出る（グレースフル）。市民レベルは旅人/市民/市民Ln（古参・訪問者という語は使わない）で、
+ * Ln（L3+）は複合（居住×投稿）で進む（citizen.ts・段階2）。節目の達成は「市民の称号」＝実績バッジ
+ * （achievements.ts・市長ボタニクスの声）で称える。未解除は図鑑式 ???。
  */
 export default function CitizenStats({ posts, hasName, subjectName }: Props) {
   // 品種同定用カタログ（buildFuda）。動的 import・失敗時は null＝品種数を伏せるだけ。
@@ -49,6 +52,20 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
 
   const subject = subjectName ?? "この市民";
   const levelLabel = citizenLevelLabel(stats.level);
+
+  // 実績バッジ（#272 段階2・市長の声）。公開集計のしきい値で解除。品種系は catalog ロード後に確定する
+  // （未ロード中は varietyCount=0＝該当バッジは ??? のまま、ロードでふっと開く＝品種数の「…」と同作法）。
+  const badges = useMemo(
+    () =>
+      evaluateBadges({
+        postCount: stats.postCount,
+        photoCount: stats.photoCount,
+        varietyCount: stats.varietyCount,
+        tenureDays: stats.tenureDays,
+      }),
+    [stats.postCount, stats.photoCount, stats.varietyCount, stats.tenureDays],
+  );
+  const unlockedCount = badges.reduce((n, b) => (b.unlocked ? n + 1 : n), 0);
 
   return (
     <section className="glass rounded-2xl p-5 flex flex-col gap-4" aria-label={`${subject}の活動`}>
@@ -88,6 +105,33 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
           </ul>
         </div>
       )}
+
+      {/* 市民の称号（#272 段階2・実績バッジ）。市民Ln（複合 居住×投稿）と対を成す「点」の達成を称える。
+          解除＝ラベル付きチップ（市長の一言を title に）。未解除＝図鑑式 ???（解除条件を title に）。
+          品種系は catalog ロード後に確定（それまで ??? のまま）。 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-sm font-medium text-ha-ink/70">市民の称号</p>
+          <span className="text-xs tabular-nums text-ha-ink/45">
+            {unlockedCount} / {badges.length}
+          </span>
+        </div>
+        <ul className="flex flex-wrap gap-1.5">
+          {badges.map(({ def, unlocked }) => (
+            <li
+              key={def.key}
+              title={unlocked ? def.flavor : badgeHint(def)}
+              className={
+                unlocked
+                  ? "inline-flex items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm font-medium text-ha-ink shadow-sm shadow-black/25 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
+                  : "inline-flex items-center gap-1.5 rounded-[2px] bg-white/5 px-2.5 py-1 text-sm text-ha-ink/35"
+              }
+            >
+              {unlocked ? def.label : "？？？"}
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

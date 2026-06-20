@@ -14,6 +14,29 @@ export const TENURE_POSTS = 5;
 /** 市民L2 に必要な最古投稿からの経過日数（居住日数）。 */
 export const TENURE_DAYS = 14;
 
+/** 市民Ln（L2 以降）の昇格しきい値（#272 段階2）。 */
+export interface CitizenTier {
+  level: number;
+  /** この tier に必要な最小投稿数。 */
+  minPosts: number;
+  /** この tier に必要な最小居住日数。 */
+  minDays: number;
+}
+
+/**
+ * 市民Ln の昇格テーブル（#272 段階2・kako-jun 確定の軸＝複合 居住×投稿の AND で進む）。
+ * level 昇順。各 tier は「投稿数 >= minPosts かつ 居住日数 >= minDays」を満たすと到達する。
+ * L2 は既存条件（TENURE_POSTS / TENURE_DAYS）と一致させる＝CityHallBook・既存テストの不変条件を保つ。
+ * 品種コンプ・連続投稿などの「点」の達成はレベルでなく実績バッジ側（lore/achievements.ts）で称える。
+ */
+export const CITIZEN_TIERS: CitizenTier[] = [
+  { level: 2, minPosts: TENURE_POSTS, minDays: TENURE_DAYS },
+  { level: 3, minPosts: 15, minDays: 30 },
+  { level: 4, minPosts: 40, minDays: 90 },
+  { level: 5, minPosts: 80, minDays: 180 },
+  { level: 6, minPosts: 150, minDays: 365 },
+];
+
 /**
  * 市民レベルの表示名（#272・kako-jun「L0は旅人、L1が市民、L2が市民L2、ずっと市民Ln」）。
  * 古参/訪問者という別語は使わず、**名乗ったら市民・以降は市民のままレベルが上がる**進行にする。
@@ -31,13 +54,49 @@ export function citizenLevelLabel(level: number): string {
 /** 1 日の秒数。 */
 const DAY_SEC = 86400;
 
+/** 居住日数（最古投稿→now・日数 floor）を求める純粋ヘルパ。投稿が無ければ 0。 */
+function tenureDaysOf(earliestCreatedAt: number | null, now: number): number {
+  if (earliestCreatedAt === null) return 0;
+  return Math.max(0, Math.floor((now - earliestCreatedAt) / DAY_SEC));
+}
+
 /**
- * 市民レベルを決める純関数。
+ * 非キャップの市民レベル Ln を決める純関数（#272 段階2）。
  *
  * - L0 旅人: 表示名が未登録（= まだ名乗っていない＝市民でない）。
- * - L1 市民: 表示名が登録済み（= 名乗り完了）。
- * - L2 市民L2: 表示名が登録済み かつ 投稿数 >= TENURE_POSTS かつ
- *   最古投稿の created_at が now から TENURE_DAYS 日以上前（= 居住が古い）。以降の市民Ln は #272 stats で拡張。
+ * - L1 市民: 表示名が登録済み（= 名乗り完了・どの tier も未達）。
+ * - L2..Ln: CITIZEN_TIERS のうち「投稿数 >= minPosts かつ 居住日数 >= minDays」を満たす最上位 tier の level。
+ *
+ * 活動スタッツ（CitizenStats）が市民Ln を出すために使う。CityHallBook のページ解放は citizenLevel（0|1|2 capped）。
+ *
+ * @param input.hasName       登録済みの表示名が存在するか
+ * @param input.postCount     t:hanoba の投稿数
+ * @param input.earliestCreatedAt 最古投稿の created_at（unix 秒・投稿が無ければ null）
+ * @param input.now           現在時刻（unix 秒）
+ */
+export function citizenLevelFull(input: {
+  hasName: boolean;
+  postCount: number;
+  earliestCreatedAt: number | null;
+  now: number;
+}): number {
+  const { hasName, postCount, earliestCreatedAt, now } = input;
+  // 名前が無ければ旅人。名乗り（表示名の登録）が市民の条件。
+  if (!hasName) return 0;
+  const days = tenureDaysOf(earliestCreatedAt, now);
+  // 満たす最上位 tier を採る（テーブルは単調増加だが、念のため全件評価して最大達成 level を取る）。
+  let level = 1;
+  for (const tier of CITIZEN_TIERS) {
+    if (postCount >= tier.minPosts && days >= tier.minDays && tier.level > level) {
+      level = tier.level;
+    }
+  }
+  return level;
+}
+
+/**
+ * 市民レベルを決める純関数（CityHallBook のページ解放用・0|1|2 capped）。
+ * citizenLevelFull を 2 で頭打ちにする＝沿革/条文ページの解放境界は従来どおり L2 まで（挙動不変）。
  *
  * @param input.hasName       登録済みの表示名が存在するか
  * @param input.postCount     t:hanoba の投稿数
@@ -50,15 +109,7 @@ export function citizenLevel(input: {
   earliestCreatedAt: number | null;
   now: number;
 }): CitizenLevel {
-  const { hasName, postCount, earliestCreatedAt, now } = input;
-  // 名前が無ければ旅人。名乗り（表示名の登録）が市民の条件。
-  if (!hasName) return 0;
-  // 市民L2 の判定: 投稿が十分にあり、最古投稿が十分に古い。
-  if (postCount >= TENURE_POSTS && earliestCreatedAt !== null) {
-    const tenureSec = now - earliestCreatedAt;
-    if (tenureSec >= TENURE_DAYS * DAY_SEC) return 2;
-  }
-  return 1;
+  return Math.min(2, citizenLevelFull(input)) as CitizenLevel;
 }
 
 /**
