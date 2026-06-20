@@ -24,6 +24,10 @@ export default defineConfig({
         // discover が一切描画されない＝**札クリックで品種絞り込みに遷移できない真因**（#291・本番のみ／
         // SW 有効時のみ再現。dev は SW 無しで露見しなかった）。`?q=`（JSON-LD 検索）・旧 `?tag=` も同時に救済。
         ignoreURLParametersMatching: [/.*/],
+        // 天気の水滴素材（#231・雨のときだけ出る装飾）は precache しない＝雨を見ないユーザーにも
+        // install で数百 KB を背負わせない（#132「軽量」）。雨が降ったとき初回だけ network 取得し、
+        // 以後は _headers の長期 Cache-Control（public/_headers の /weather/*）でブラウザ HTTP キャッシュに乗る。
+        globIgnores: ["**/weather/**"],
       },
       manifest: {
         name: "Hanōba",

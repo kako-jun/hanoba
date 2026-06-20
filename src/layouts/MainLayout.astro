@@ -4,6 +4,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import ScrollToTop from "../components/ui/ScrollToTop.tsx";
 import PostFAB from "../components/ui/PostFAB.tsx";
 import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
+import AmbientWeather from "../components/weather/AmbientWeather.tsx";
 
 interface Props {
   title?: string;
@@ -91,6 +92,10 @@ const jsonLd = {
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   </head>
   <body class="text-ha-ink min-h-screen antialiased flex flex-col">
+    {/* 天気の前面環境レイヤ（#231 段階2・雨＝ガラスの水滴）。鼓門の今の天気で出し分ける。
+        本文の奥（z-index:-1）に固定・pointer-events:none なので可読性も操作も妨げない。
+        ネットワーク取得は useEffect なので SSR 安全・初期描画を妨げないよう idle で読む。 */}
+    <AmbientWeather client:idle />
     <div class="flex-1">
       <slot />
     </div>

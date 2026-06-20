@@ -272,3 +272,57 @@ summary {
   filter: blur(1.5px);
   opacity: 0.6;
 }
+
+/* 天気の前面環境レイヤ（#231 段階2 / #132 段階4）。雨＝ガラスに付いた水滴。
+   ハノーバ（鼓門）の今が雨のとき、暗い部屋写真と本文パネルの間（z-index:-1）に水滴の透過素材を
+   うっすら重ねる。明度は上げない＝「天気＝明るさ」でなく「天気＝ガラス面に起きる現象」で表す
+   （DESIGN §5 暗色シックを崩さない＝矛盾解決）。本文の奥に置くのでテキストの可読性は無傷。 */
+.ha-weather-rain {
+  position: fixed;
+  inset: 0;
+  z-index: -1; /* body の背景写真の手前・本文（z:auto）の奥 */
+  pointer-events: none;
+  background-image: url("/weather/rain-glass.webp"); /* 普通の雨＝疎な玉＋流れ落ちる雫 */
+  background-size: cover;
+  background-position: center;
+  /* ほどほど（差し色・自然現象の範囲・DESIGN §5）。眩しくしない。
+     水滴の細いフチを残すため少しだけ上げる（薄いと glint だけ残り点々に見える）。 */
+  opacity: 0.65;
+  /* 点滅でなく滲み出る（現像哲学・#207）。同時にごく緩く呼吸させて窓を生かす。 */
+  animation:
+    ha-weather-fadein 1.6s ease-out 1,
+    ha-weather-drift 34s ease-in-out infinite alternate;
+}
+@keyframes ha-weather-fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.65;
+  }
+}
+@keyframes ha-weather-drift {
+  from {
+    transform: translateY(0) scale(1.03);
+  }
+  to {
+    transform: translateY(-1.4%) scale(1.06);
+  }
+}
+/* 大雨＝密な水滴素材に差し替える（kako-jun: 最初の密素材を大雨用に転用）。 */
+.ha-weather-rain--heavy {
+  background-image: url("/weather/rain-glass-heavy.webp");
+}
+
+/* reduced-motion: 動かさず即表示・更に控えめに静止（滲み出しもしない＝フェード末→定常のスナップを避ける） */
+.ha-weather-rain--still {
+  opacity: 0.4;
+  transform: none;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ha-weather-rain {
+    transform: none;
+    animation: none;
+  }
+}
