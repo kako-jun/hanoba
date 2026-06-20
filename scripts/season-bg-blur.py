@@ -14,6 +14,8 @@ from PIL import Image, ImageEnhance, ImageFilter
 
 
 def main() -> None:
+    if len(sys.argv) != 3:
+        sys.exit("usage: season-bg-blur.py <src.png> <dst.webp>")
     src, dst = sys.argv[1], sys.argv[2]
     img = Image.open(src).convert("RGB")
     w, h = img.size
