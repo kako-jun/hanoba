@@ -51,13 +51,41 @@ html {
 }
 
 /* 地＝ぼやけた高級写真（固定）＋暗いオーバーレイで可読性を確保。ベタ塗りにしない。
-   オーバーレイの3ストップは CSS 変数にし、時間帯（#231 後段②）でこの変数だけを差し替える
-   ＝背景写真は同じまま、暗さ・色温度だけが朝/昼/夕/夜で変わる（全段ダークレンジ＝暗色シック維持）。
-   既定（data-time 未設定）は夜＝最暗・暖色で、これまでの見た目と同一。 */
+   背景は2軸を CSS 変数で変える（写真は同じ1枚を共有しつつ）:
+   - オーバーレイ3ストップ（--bg-overlay-*）を時間帯（#231 後段②）で差し替え＝暗さ・色温度（朝/昼/夕/夜）
+   - 背景写真そのもの（--bg-photo）を八節（#231 後段①）で差し替え＝季節（室内・夜の collector 部屋の季節）
+   既定（data-time / data-sekki 未設定）は 夜＝最暗・暖色 ＋ bg-blur.webp で、これまでの見た目と同一。 */
 :root {
   --bg-overlay-top: rgba(9, 8, 6, 0.84);
   --bg-overlay-mid: rgba(13, 11, 8, 0.68);
   --bg-overlay-bot: rgba(9, 8, 6, 0.9);
+  --bg-photo: url("/og/bg-blur.webp");
+}
+/* 八節（季節）で背景写真を差し替え（#231 後段①）。室内・夜・暗いは全節共通＝黒格子/板付ビカク/
+   アガベ/ユッカの部屋は据え置き、塊根の状態＋季節の一鉢で節を表す。未知の節は既定写真にフォールバック。 */
+html[data-sekki="risshun"] {
+  --bg-photo: url("/weather/season-risshun.webp"); /* 立春＝晩冬・裸の塊根・梅 */
+}
+html[data-sekki="shunbun"] {
+  --bg-photo: url("/weather/season-shunbun.webp"); /* 春分＝萌芽・桜の枝 */
+}
+html[data-sekki="rikka"] {
+  --bg-photo: url("/weather/season-rikka.webp"); /* 立夏＝梅雨・紫陽花 */
+}
+html[data-sekki="geshi"] {
+  --bg-photo: url("/weather/season-geshi.webp"); /* 夏至＝盛夏・開花・朝顔 */
+}
+html[data-sekki="risshu"] {
+  --bg-photo: url("/weather/season-risshu.webp"); /* 立秋＝残暑・ススキ */
+}
+html[data-sekki="shubun"] {
+  --bg-photo: url("/weather/season-shubun.webp"); /* 秋分＝黄ばみ・紅葉盆栽 */
+}
+html[data-sekki="ritto"] {
+  --bg-photo: url("/weather/season-ritto.webp"); /* 立冬＝落葉・南天の実 */
+}
+html[data-sekki="toji"] {
+  --bg-photo: url("/weather/season-toji.webp"); /* 冬至＝休眠・正月（松・灯） */
 }
 /* 夕＝鮮やかな夕焼けオレンジの残照（一番"ばえる"＝kako-jun）。彩度を上げ alpha を下げて
    暖色のグロウを効かせる。暗地は保つので眩しくはならない。 */
@@ -85,7 +113,7 @@ body {
   background-color: var(--color-ha-base);
   background-image:
     linear-gradient(180deg, var(--bg-overlay-top) 0%, var(--bg-overlay-mid) 42%, var(--bg-overlay-bot) 100%),
-    url("/og/bg-blur.webp");
+    var(--bg-photo);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
