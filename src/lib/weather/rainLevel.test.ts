@@ -24,6 +24,7 @@ describe("rainLevel", () => {
 
   it("precipitation が大きければ code に依らず heavy に寄せる", () => {
     expect(rainLevel(61, 5)).toBe("heavy"); // 並の code でも 5mm は大雨扱い
+    expect(rainLevel(61, 4)).toBe("heavy"); // しきい値ちょうど（>=4）は heavy
     expect(rainLevel(61, 3.9)).toBe("normal"); // しきい値未満は据え置き
   });
 

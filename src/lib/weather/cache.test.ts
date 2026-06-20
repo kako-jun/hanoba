@@ -55,4 +55,9 @@ describe("readWeatherCache / writeWeatherCache", () => {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ foo: 1 }));
     expect(readWeatherCache()).toBeNull();
   });
+
+  it("weatherCode を欠くエントリは null（素材選択が使う必須項目）", () => {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ condition: "rain", fetchedAt: 1000 }));
+    expect(readWeatherCache()).toBeNull();
+  });
 });

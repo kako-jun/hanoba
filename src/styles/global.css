@@ -280,7 +280,7 @@ summary {
 .ha-weather-rain {
   position: fixed;
   inset: 0;
-  z-index: -1; /* 部屋写真（canvas 背景）の手前・本文（z:auto）の奥 */
+  z-index: -1; /* body の背景写真の手前・本文（z:auto）の奥 */
   pointer-events: none;
   background-image: url("/weather/rain-glass.webp"); /* 普通の雨＝疎な玉＋流れ落ちる雫 */
   background-size: cover;

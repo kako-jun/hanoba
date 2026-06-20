@@ -25,7 +25,15 @@ export function readWeatherCache(): HanobaWeather | null {
   if (!raw) return null;
   try {
     const w = JSON.parse(raw) as HanobaWeather;
-    if (typeof w?.fetchedAt === "number" && typeof w?.condition === "string") return w;
+    // weatherCode は素材選択（rainLevel）が使う必須項目なので形に含めて検証する
+    // （旧スキーマ・改竄で欠けたエントリは捨てて次の取得で上書きさせる）。
+    if (
+      typeof w?.fetchedAt === "number" &&
+      typeof w?.condition === "string" &&
+      typeof w?.weatherCode === "number"
+    ) {
+      return w;
+    }
   } catch {
     /* 壊れた JSON は無視（次の取得で上書きされる） */
   }
