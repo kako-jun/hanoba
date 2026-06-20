@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   type CitizenLevel,
+  CITIZEN_TIERS,
   citizenLevel,
+  citizenLevelFull,
   citizenLevelLabel,
   defaultPage,
   maxUnlockedPage,
@@ -91,6 +93,57 @@ describe("citizenLevel", () => {
     expect(
       citizenLevel({ hasName: true, postCount: 10, earliestCreatedAt: null, now: NOW }),
     ).toBe(1);
+  });
+});
+
+describe("citizenLevelFull（市民Ln 非キャップ・#272 段階2・複合 居住×投稿 AND）", () => {
+  it("旅人/市民は citizenLevel と一致（L0/L1）", () => {
+    expect(citizenLevelFull({ hasName: false, postCount: 99, earliestCreatedAt: NOW - 999 * DAY, now: NOW })).toBe(0);
+    expect(citizenLevelFull({ hasName: true, postCount: 0, earliestCreatedAt: null, now: NOW })).toBe(1);
+  });
+
+  it("各 tier はちょうどのしきい値（投稿 かつ 居住）で到達する（>= 両軸 AND）", () => {
+    for (const tier of CITIZEN_TIERS) {
+      expect(
+        citizenLevelFull({
+          hasName: true,
+          postCount: tier.minPosts,
+          earliestCreatedAt: NOW - tier.minDays * DAY,
+          now: NOW,
+        }),
+      ).toBe(tier.level);
+    }
+  });
+
+  it("片軸だけ満たしても昇格しない（投稿は L4 だが居住が L3 止まり → L3）", () => {
+    // 投稿40（L4 のしきい値）だが居住は 30 日（L3 のしきい値・L4 は 90 日要）→ L3。
+    expect(
+      citizenLevelFull({ hasName: true, postCount: 40, earliestCreatedAt: NOW - 30 * DAY, now: NOW }),
+    ).toBe(3);
+  });
+
+  it("居住日数の境界は floor で判定（L3 の 30 日に 1 秒足りなければ L2 のまま）", () => {
+    // 投稿は L3 のしきい値(15)を満たすが、居住が 30 日に 1 秒足りない → L2 止まり（floor(sec/日)>=30 が偽）。
+    expect(
+      citizenLevelFull({ hasName: true, postCount: 15, earliestCreatedAt: NOW - 30 * DAY + 1, now: NOW }),
+    ).toBe(2);
+    // ちょうど 30 日なら L3。
+    expect(
+      citizenLevelFull({ hasName: true, postCount: 15, earliestCreatedAt: NOW - 30 * DAY, now: NOW }),
+    ).toBe(3);
+  });
+
+  it("両軸を超えても満たす最上位 tier に丸める（投稿200・居住500日 → 最上位 L6）", () => {
+    const top = CITIZEN_TIERS[CITIZEN_TIERS.length - 1]!;
+    expect(
+      citizenLevelFull({ hasName: true, postCount: 200, earliestCreatedAt: NOW - 500 * DAY, now: NOW }),
+    ).toBe(top.level);
+  });
+
+  it("citizenLevel は citizenLevelFull を 2 で頭打ちにする（CityHallBook 不変）", () => {
+    const input = { hasName: true, postCount: 200, earliestCreatedAt: NOW - 500 * DAY, now: NOW };
+    expect(citizenLevelFull(input)).toBeGreaterThan(2);
+    expect(citizenLevel(input)).toBe(2);
   });
 });
 

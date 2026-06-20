@@ -6,7 +6,7 @@
 // 品種の同定は #182/#23 の `tallyVarieties`（buildFuda 一本化）を再利用する（属/品種の畳み込み・
 // 同一投稿内 alias 違いの二重計上防止・票数つき降順）＝ランキングと「育てた品種」が一致する。
 
-import { citizenLevel, type CitizenLevel } from "../lore/citizen.ts";
+import { citizenLevelFull } from "../lore/citizen.ts";
 import { tallyVarieties, type RankedVariety } from "./ranking.ts";
 import type { FeedPost } from "./parse.ts";
 import type { VarietyCategory } from "../plants/variety-catalog.ts";
@@ -28,8 +28,8 @@ export interface CitizenStats {
   tenureDays: number;
   /** 最古投稿の created_at（unix 秒・投稿が無ければ null）。 */
   earliestCreatedAt: number | null;
-  /** 市民レベル（旅人=0 / 市民=1 / 市民L2=2・citizenLevelLabel で表示）。 */
-  level: CitizenLevel;
+  /** 市民レベル Ln（旅人=0 / 市民=1 / 市民L2=2 / 市民L3…・非キャップ・citizenLevelLabel で表示）。 */
+  level: number;
 }
 
 /**
@@ -56,7 +56,7 @@ export function computeCitizenStats(input: {
     posts.length > 0 ? posts.reduce((min, p) => (p.createdAt < min ? p.createdAt : min), posts[0]!.createdAt) : null;
   const tenureDays = earliestCreatedAt !== null ? Math.max(0, Math.floor((now - earliestCreatedAt) / DAY_SEC)) : 0;
 
-  const level = citizenLevel({ hasName, postCount, earliestCreatedAt, now });
+  const level = citizenLevelFull({ hasName, postCount, earliestCreatedAt, now });
 
   return {
     postCount,
