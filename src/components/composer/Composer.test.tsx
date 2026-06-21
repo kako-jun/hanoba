@@ -832,6 +832,8 @@ describe("Composer 下書き配線（#228）", () => {
       await waitFor(() => expect(confirmEventStored).toHaveBeenCalled());
       // 下書きは消さない・/me へ遷移しない・確認できない旨のエラーを出す（リトライ可）。
       expect(clearDraft).not.toHaveBeenCalled();
+      // 実在投稿（別リレーに居る可能性）の画像を消さない＝確認失敗パスで deleteImage を呼ばない。
+      expect(deleteImage).not.toHaveBeenCalled();
       expect(window.location.href).toBe("");
       expect(await screen.findByText(/投稿を確認できませんでした/)).toBeInTheDocument();
     } finally {
