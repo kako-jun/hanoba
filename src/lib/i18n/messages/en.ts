@@ -30,6 +30,38 @@ export const en: Partial<Record<MessageKey, string>> = {
   "install.later": "Later",
 
   "common.close": "Close",
+  "common.retry": "Retry",
+
+  "time.justNow": "just now",
+  "time.minutesAgo": "{n}m ago",
+  "time.hoursAgo": "{n}h ago",
+  "time.daysAgo": "{n}d ago",
+
+  "card.photo.zoom": "Zoom photo",
+  "card.photos.count": "{n}",
+  "card.author.profile": "{name}'s profile",
+  "card.readMore": "Read more",
+  "reaction.likes.aria": "{n} likes",
+  "reaction.comments.aria": "{n} comments",
+  "fuda.search.title": "Search for {label}",
+  "filter.remove.aria": "Remove “{tag}”",
+
+  "feed.error": "Couldn't load the feed.",
+  "feed.empty": "No posts yet.",
+  "feed.error.short": "Couldn't load.",
+  "feed.filter.clear": "Clear filter",
+  "feed.tag.empty": "No posts for “#{tag}” yet.",
+  "discover.loading": "Searching for “{summary}”…",
+  "discover.empty": "No posts found for “{summary}”. Try another variety.",
+
+  "my.subject": "you",
+  "my.empty": "You haven't placed any plants yet.",
+  "my.edit.aria": "Edit this post",
+  "my.delete.aria": "Delete this post",
+  "my.edit.done": "Post edited (re-published as a new post).",
+  "my.delete.photoUnconfirmed":
+    "The post was deleted, but we couldn't confirm the photo was removed (it may disappear in a few minutes).",
+  "my.delete.failed": "Couldn't delete. Please try again later.",
 
   "home.hero.title": "Grow it. Show it.",
   "home.hero.lead":

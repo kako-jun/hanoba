@@ -5,6 +5,9 @@
 import { nip19 } from "nostr-tools";
 import { extractHashtags } from "../nostr/tags.ts";
 import type { NostrEvent } from "../nostr/types.ts";
+// 純粋 lib なので React フックを束ねる index.ts でなく t.ts/locale.ts から直接引く。
+import { t } from "../i18n/t.ts";
+import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 
 /**
  * フィード表示用の投稿。Nostr イベントから parsePost で生成する。
@@ -112,13 +115,15 @@ const DAY = 24 * HOUR;
  * - 1 日未満: 「N時間前」
  * - それ以上: 「N日前」
  * 未来（now < createdAt）は「たった今」に丸める。
+ *
+ * 文言は i18n カタログ（time.*）から引く（#147）。locale 既定は ja＝挙動不変。
  */
-export function relativeTime(createdAt: number, now: number): string {
+export function relativeTime(createdAt: number, now: number, locale: Locale = DEFAULT_LOCALE): string {
   const diff = Math.floor(now - createdAt);
-  if (diff < MINUTE) return "たった今";
-  if (diff < HOUR) return `${Math.floor(diff / MINUTE)}分前`;
-  if (diff < DAY) return `${Math.floor(diff / HOUR)}時間前`;
-  return `${Math.floor(diff / DAY)}日前`;
+  if (diff < MINUTE) return t(locale, "time.justNow");
+  if (diff < HOUR) return t(locale, "time.minutesAgo", { n: Math.floor(diff / MINUTE) });
+  if (diff < DAY) return t(locale, "time.hoursAgo", { n: Math.floor(diff / HOUR) });
+  return t(locale, "time.daysAgo", { n: Math.floor(diff / DAY) });
 }
 
 /**

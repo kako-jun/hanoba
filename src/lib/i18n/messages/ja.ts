@@ -35,6 +35,41 @@ export const ja = {
 
   // 汎用（複数箇所で共有）。
   "common.close": "閉じる",
+  "common.retry": "再試行",
+
+  // 相対時刻（relativeTime・PostCard/PostDetail 等で共有）。
+  "time.justNow": "たった今",
+  "time.minutesAgo": "{n}分前",
+  "time.hoursAgo": "{n}時間前",
+  "time.daysAgo": "{n}日前",
+
+  // フィード表示（PostCard・FudaList・VarietyFilter・いいね/コメント数）。
+  "card.photo.zoom": "写真を拡大",
+  "card.photos.count": "{n}枚",
+  "card.author.profile": "{name} のプロフィール",
+  "card.readMore": "続きを読む",
+  "reaction.likes.aria": "いいね {n}",
+  "reaction.comments.aria": "コメント {n}",
+  "fuda.search.title": "{label}で探す",
+  "filter.remove.aria": "「{tag}」を外す",
+
+  // フィードのグリッド（FeedGrid / DiscoverGrid / MyGrid の読み込み・空・エラー）。
+  "feed.error": "フィードを読み込めませんでした。",
+  "feed.empty": "まだ投稿がありません。",
+  "feed.error.short": "読み込めませんでした。",
+  "feed.filter.clear": "絞り込みを解除",
+  "feed.tag.empty": "「#{tag}」の投稿はまだありません。",
+  "discover.loading": "「{summary}」を探しています…",
+  "discover.empty": "「{summary}」の投稿は見つかりませんでした。別の品種で試してみましょう。",
+
+  // あなたの植物（MyGrid・自分の投稿の編集/削除）。
+  "my.subject": "あなた",
+  "my.empty": "まだ、あなたの植物はありません。",
+  "my.edit.aria": "この投稿を編集",
+  "my.delete.aria": "この投稿を削除",
+  "my.edit.done": "投稿を編集しました（新しい投稿として再投稿しました）。",
+  "my.delete.photoUnconfirmed": "投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。",
+  "my.delete.failed": "削除できませんでした。時間をおいて再試行してください。",
 
   // ホーム（index）ヒーロー。世界観文言＝直訳でなく意訳前提（en.ts 参照）。
   "home.hero.title": "育てて、見せる。",
