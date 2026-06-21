@@ -7,6 +7,8 @@ import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
 import AmbientWeather from "../components/weather/AmbientWeather.tsx";
 import AmbientCalendar from "../components/weather/AmbientCalendar.tsx";
 import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+import { en } from "../lib/i18n/messages/en.ts";
+import { ja, type MessageKey } from "../lib/i18n/messages/ja.ts";
 
 interface Props {
   title?: string;
@@ -51,6 +53,44 @@ const jsonLd = {
     "query-input": "required name=search_term_string",
   },
 };
+
+// 殻の文言入替マップ（#147 段階2 go-live・flash 回避）。
+// 静的 .astro 殻は ja でビルドされる。en を選んだユーザーには、最初のペイント前に
+// [data-i18n] / [data-i18n-aria] の付いた殻要素だけ en へ差し替える（is:inline スクリプト）。
+// inline スクリプトは import できないので、ここで en（無ければ ja に fallback）を直列化して渡す。
+//
+// shellKeys ＝ 各 .astro 殻（SiteHeader/SiteFooter/index/discover/me/ranking/vote）の
+// 可視テキスト・aria で data-i18n を付けたキーの集合。市民手帳ラベル（about）と
+// ホームのリンク割れサブ文・vote の {title} 補間 aria は対象外（ja のまま据え置き・既知の積み残し）。
+const shellKeys: MessageKey[] = [
+  // 共通ナビ（SiteHeader / SiteFooter）。
+  "nav.discover",
+  "nav.me",
+  "nav.compose",
+  "nav.ranking",
+  "nav.menu.open",
+  // 共通フッタ。
+  "footer.tagline",
+  // ホーム（index）ヒーロー。サブ文（リンク割れ）は対象外。
+  "home.hero.title",
+  "home.hero.lead",
+  // 各ページのリード（h1 はナビキーを再利用）。
+  "discover.lead",
+  "me.lead",
+  "ranking.lead",
+  // 住民投票（vote）。board の aria（{title} 補間）は対象外。
+  "vote.h1",
+  "vote.intro",
+  "vote.note",
+  "vote.board.requests.title",
+  "vote.board.requests.intro",
+  "vote.board.features.title",
+  "vote.board.features.intro",
+  "vote.board.bugs.title",
+  "vote.board.bugs.intro",
+];
+const SHELL_SWAP = Object.fromEntries(shellKeys.map((k) => [k, en[k] ?? ja[k]]));
+const swapJson = JSON.stringify(SHELL_SWAP);
 ---
 
 <!doctype html>
@@ -178,6 +218,23 @@ const jsonLd = {
     {/* PWA「ホーム画面に追加」促し（#230）。全ページ共通。window/localStorage は
         マウント後 useEffect で参照するため SSR 安全。初期描画を妨げないよう idle で読む。 */}
     <InstallPrompt client:idle lang={locale} />
+    {/* 表示言語の殻入替（#147 段階2 go-live・flash 回避）。静的殻は ja。en を選んだユーザーだけ、
+        最初のペイント前に [data-i18n]/[data-i18n-aria] の殻要素を en へ差し替える。
+        about-label（市民手帳）swap と同手法で、body 末尾（header/footer の後）に is:inline 同期で置く
+        ＝対象要素が既に DOM にあり、かつペイント前に textContent/aria を書き換えられる。
+        is:inline は import 不可なので en マップ（swapJson）を直列化して埋め込む。キーは
+        clientLocale.ts の LOCALE_STORAGE_KEY="hanoba:lang" と一致。 */}
+    <script
+      is:inline
+      set:html={`(function(){try{
+  var L = localStorage.getItem("hanoba:lang");
+  if (L !== "en") return;
+  var M = ${swapJson};
+  document.documentElement.lang = "en";
+  document.querySelectorAll("[data-i18n]").forEach(function(el){ var v = M[el.getAttribute("data-i18n")]; if (v != null) el.textContent = v; });
+  document.querySelectorAll("[data-i18n-aria]").forEach(function(el){ var v = M[el.getAttribute("data-i18n-aria")]; if (v != null) el.setAttribute("aria-label", v); });
+}catch(e){}})();`}
+    />
     {/* ヘッダ/フッタの「Hanōba とは」を、名乗り済みの市民には「市民手帳」に差し替える（#262）。
         フラッシュを一瞬も出さないため、is:inline の同期スクリプトを body 末尾（header/footer の後）に置き、
         最初のペイント前に textContent を書き換える（type=module だと defer されて切替が見えてしまう）。

@@ -20,12 +20,13 @@ const [subBefore, subAfter] = t(locale, "home.hero.sub").split("{link}");
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
     <section class="ha-rise flex flex-col gap-2">
-      <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-ha-green-deep">
+      <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-ha-green-deep" data-i18n="home.hero.title">
         {t(locale, "home.hero.title")}
       </h1>
-      <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]">
+      <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]" data-i18n="home.hero.lead">
         {t(locale, "home.hero.lead")}
       </p>
+      {/* サブ見出しは文中リンクで {subBefore}<a>{subAfter} に割れるため data-i18n を付けず ja のまま据え置く（#147 既知の積み残し）。 */}
       <p class="text-sm leading-relaxed text-ha-ink/55 [word-break:auto-phrase]">
         {subBefore}<a href="/discover" class="text-ha-green hover:text-ha-green-deep underline underline-offset-2">{t(locale, "home.hero.sub.link")}</a>{subAfter}
       </p>

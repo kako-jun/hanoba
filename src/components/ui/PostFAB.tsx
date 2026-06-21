@@ -11,12 +11,19 @@
  * もの（`public/post-fab.webp`）。線アイコン集（Icon.tsx）は currentColor の SVG だが、これは綿毛の
  * 柔らかさを出すため例外的にラスタ。装飾なので alt 空（リンク側 aria-label が読み上げを担う）。
  *
- * lang は MainLayout がページの locale を流す（#147 段階1）。今は既定（ja）固定＝挙動不変。
+ * lang は MainLayout がページの locale を流す（#147）＝SSR/初期描画の種（ja）。
+ * マウント後に resolveClientLocale() で表示言語を確定する（en を選んでいれば en で描き直す）。
+ * leaf 島も殻と同じ言語に揃える（hydration mismatch を避けるため初期は ja、post-mount で正す）。
  */
-import { useT, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useEffect, useState } from "react";
+import { useT, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 export default function PostFAB({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   return (
     <a
       href="/compose"

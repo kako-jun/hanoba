@@ -9,7 +9,7 @@ import Icon from "../ui/Icon.tsx";
 import Avatar from "./Avatar.tsx";
 import CitizenStats from "./CitizenStats.tsx";
 import PostGrid from "./PostGrid.tsx";
-import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 type Status = "invalid" | "loading" | "error" | "loaded";
 
@@ -26,7 +26,12 @@ type Status = "invalid" | "loading" | "error" | "loaded";
  */
 // lang は u.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
 export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   // URL の ?npub= を pubkey hex に直す（マウント時に一度・クライアントのみ）。
   // 欠落 / npub でない / decode 失敗は null＝"invalid"（取得に行かない）。
   const [pubkey, setPubkey] = useState<string | null | undefined>(undefined);
@@ -101,7 +106,7 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
 
   if (status === "invalid") {
     return (
-      <LocaleProvider value={lang}>
+      <LocaleProvider value={loc}>
         <div className="py-16 flex flex-col items-center gap-4 text-center">
           <p className="text-ha-ink/70">{t("profile.notFound")}</p>
           <a
@@ -116,7 +121,7 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
   }
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
     <section className="flex flex-col gap-5">
       {/* プロフィールヘッダ（アバター・名前・自己紹介・サイトリンク）。取得前/失敗時も npub で骨格を出す。 */}
       <div className="glass rounded-2xl p-5 flex flex-col gap-4">

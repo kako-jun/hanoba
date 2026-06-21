@@ -4,7 +4,7 @@ import { fetchRankingPosts } from "../../lib/nostr/client.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { bucketByWeek, rankRunData, rankWithDeltas, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
-import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale, type MessageKey, type TParams } from "../../lib/i18n/index.ts";
+import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale, type MessageKey, type TParams } from "../../lib/i18n/index.ts";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -33,7 +33,12 @@ const RankRunChart = lazy(() => import("./RankRunChart.tsx"));
  */
 // lang は ranking.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
 export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   const [status, setStatus] = useState<Status>("loading");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
@@ -104,7 +109,7 @@ export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale 
 
   if (status === "loading") {
     return (
-      <LocaleProvider value={lang}>
+      <LocaleProvider value={loc}>
         <p className="py-12 text-center text-ha-ink/60">{t("ranking.board.loading")}</p>
       </LocaleProvider>
     );
@@ -112,7 +117,7 @@ export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale 
 
   if (status === "error") {
     return (
-      <LocaleProvider value={lang}>
+      <LocaleProvider value={loc}>
         <div className="py-12 flex flex-col items-center gap-4 text-center">
           <p className="text-ha-ink/70">{t("ranking.board.error")}</p>
           <a
@@ -129,7 +134,7 @@ export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 空状態（投稿/品種が集まっていない）＝壊れて見えないよう正直に案内する。
   if (rows.length === 0) {
     return (
-      <LocaleProvider value={lang}>
+      <LocaleProvider value={loc}>
         <div className="flex flex-col items-center gap-4 py-16 text-center">
           <p className="text-ha-ink/70 [word-break:auto-phrase]">
             {t("ranking.board.empty")}
@@ -146,7 +151,7 @@ export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
     <section className="flex flex-col gap-4">
       {import.meta.env.DEV && demo && (
         // 開発専用デモであることを画面にも明示する。import.meta.env.DEV で本番ビルドからは

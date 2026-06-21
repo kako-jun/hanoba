@@ -10,7 +10,7 @@ import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nos
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
-import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -23,7 +23,12 @@ type Status = "loading" | "error" | "loaded";
  */
 // lang は me.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
 export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   const [status, setStatus] = useState<Status>("loading");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -88,7 +93,7 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   }
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
     <section className="flex flex-col gap-5">
       {/* アカウント＋プロフィールを1枚のカードに統合（#104）。名前（変更/アカウント変更）が
           プロフィール内に収まり、操作ボタンは名前の下段に並ぶ。両者を bare で内包する。

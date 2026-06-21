@@ -9,7 +9,7 @@ import {
   type DiscoverFilter,
 } from "../../lib/feed/discoverFilter.ts";
 import { type FeedPost } from "../../lib/feed/parse.ts";
-import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import PostGrid from "./PostGrid.tsx";
 import VarietyFilter from "./VarietyFilter.tsx";
 
@@ -37,7 +37,12 @@ function readTagsFromUrl(): string[] {
  */
 // lang は discover.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
 export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   const [tags, setTags] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -102,7 +107,7 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   const summary = filterSummary({ ...EMPTY_FILTER, tags }, lang);
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
       <section className="flex flex-col gap-4">
         {/* 絞り込みは品種だけ（投稿画面と同じ TagPicker を流用）。選んだ瞬間に新着順で反映。 */}
         <VarietyFilter tags={tags} onChange={(next) => void applyTags(next, "push")} />
