@@ -10,6 +10,7 @@
 // 主要動線へ辿れなかった。ナビをここに一本化して解消する。
 
 import Icon from "./ui/Icon.tsx";
+import LangSwitcher from "./ui/LangSwitcher.tsx";
 import { ABOUT_LABEL_VISITOR, ABOUT_LABEL_CITIZEN } from "../lib/lore/aboutLabel.ts";
 import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
@@ -69,11 +70,13 @@ const links = [
             ]}
           >
             {l.icon && <Icon name={l.icon} className="w-4 h-4 shrink-0" />}
-            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。 */}
+            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。
+                en 入替は about だけ citizen swap と競合するため対象外（ja のまま・#147 既知）。
+                それ以外（discover/me）は data-i18n="nav.{key}" で en へ入替できる。 */}
             {l.key === "about" ? (
               <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{l.label}</span>
             ) : (
-              l.label
+              <span data-i18n={`nav.${l.key}`}>{l.label}</span>
             )}
           </a>
         ))
@@ -83,8 +86,9 @@ const links = [
         class="inline-flex items-center gap-[5px] rounded-full bg-ha-green text-ha-white px-5 py-2 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
       >
         <Icon name="sprout" className="w-4 h-4" />
-        {t(locale, "nav.compose")}
+        <span data-i18n="nav.compose">{t(locale, "nav.compose")}</span>
       </a>
+      <LangSwitcher client:idle />
     </nav>
 
     <!-- モバイル: ハンバーガー -->
@@ -93,6 +97,7 @@ const links = [
       id="ha-menu-btn"
       class="sm:hidden inline-flex items-center justify-center w-10 h-10 -mr-2 rounded-xl text-ha-green-deep hover:bg-ha-green/10 transition-colors"
       aria-label={t(locale, "nav.menu.open")}
+      data-i18n-aria="nav.menu.open"
       data-label-open={t(locale, "nav.menu.open")}
       data-label-close={t(locale, "nav.menu.close")}
       aria-expanded="false"
@@ -120,11 +125,12 @@ const links = [
             ]}
           >
             {l.icon && <Icon name={l.icon} className="w-4 h-4 shrink-0" />}
-            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。 */}
+            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。
+                en 入替は about だけ citizen swap と競合するため対象外。discover/me は data-i18n で入替。 */}
             {l.key === "about" ? (
               <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{l.label}</span>
             ) : (
-              l.label
+              <span data-i18n={`nav.${l.key}`}>{l.label}</span>
             )}
           </a>
         ))
@@ -134,8 +140,12 @@ const links = [
         class="mt-1 inline-flex items-center justify-center gap-[5px] rounded-xl bg-ha-green text-ha-white px-3 py-3 font-semibold hover:brightness-110 transition-all"
       >
         <Icon name="sprout" className="w-4 h-4" />
-        {t(locale, "nav.compose")}
+        <span data-i18n="nav.compose">{t(locale, "nav.compose")}</span>
       </a>
+      {/* モバイルでも言語切替を辿れるようドロップダウンに同梱する（#147）。 */}
+      <div class="mt-1 px-3 py-2">
+        <LangSwitcher client:idle />
+      </div>
     </div>
   </nav>
 </header>

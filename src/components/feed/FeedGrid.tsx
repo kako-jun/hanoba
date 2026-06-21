@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchHanobaFeed } from "../../lib/nostr/client.ts";
 import { filterByHashtag, type FeedPost } from "../../lib/feed/parse.ts";
-import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import PostGrid from "./PostGrid.tsx";
 import FeedSkeleton from "./FeedSkeleton.tsx";
 
@@ -20,7 +20,12 @@ type Status = "loading" | "error" | "loaded";
 // lang は index.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
 // 子孫（PostGrid→PostCard 等）は LocaleProvider 経由で useLocale から読む。
 export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   const [status, setStatus] = useState<Status>("loading");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [activeTag, setActiveTag] = useState<string | null>(null);
@@ -67,7 +72,7 @@ export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   }
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
       <section className="flex flex-col gap-4">
         {activeTag !== null && (
           <div className="flex items-center gap-2">

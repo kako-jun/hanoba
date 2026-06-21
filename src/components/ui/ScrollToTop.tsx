@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
-import { useT, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import Icon from "./Icon.tsx";
 
 /**
@@ -8,11 +8,17 @@ import Icon from "./Icon.tsx";
  * 一定量スクロールしたら右下に出現し、押すと最上部へスムーズスクロール。
  * 暗地グラスの世界観に合わせ控えめに。スクロール監視は passive。
  *
- * lang は MainLayout がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+ * lang は MainLayout がページの locale を流す（#147）＝SSR/初期描画の種（ja）。
+ * マウント後に resolveClientLocale() で表示言語を確定する（en を選んでいれば en で描く）。
  */
 export default function ScrollToTop({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  const [loc, setLoc] = useState<Locale>(lang);
+  const t = useT(loc);
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400);

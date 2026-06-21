@@ -22,19 +22,27 @@ const locale: Locale = DEFAULT_LOCALE;
 // この役所は全員に開放（市民レベルのゲートなし）。ハブからは L1+ が辿るが、直接アクセスは無制限。
 // 板は外部の web component なので、実際の描画・dark テーマ・投稿動線は実ブラウザでのみ確認できる。
 
+// titleKey/introKey は en 殻入替（data-i18n）のために保持する。aria は {title} 補間が要るため
+// data-i18n-aria では再現できず ja のまま据え置く（#147 既知の積み残し）。
 const boards = [
   {
     id: "hanoba-16b82341",
+    titleKey: "vote.board.requests.title",
+    introKey: "vote.board.requests.intro",
     title: t(locale, "vote.board.requests.title"),
     intro: t(locale, "vote.board.requests.intro"),
   },
   {
     id: "hanoba-76cf0aed",
+    titleKey: "vote.board.features.title",
+    introKey: "vote.board.features.intro",
     title: t(locale, "vote.board.features.title"),
     intro: t(locale, "vote.board.features.intro"),
   },
   {
     id: "hanoba-12e8672f",
+    titleKey: "vote.board.bugs.title",
+    introKey: "vote.board.bugs.intro",
     title: t(locale, "vote.board.bugs.title"),
     intro: t(locale, "vote.board.bugs.intro"),
   },
@@ -46,13 +54,13 @@ const boards = [
 
   <main class="mx-auto max-w-3xl px-5 py-9 flex flex-col gap-8">
     <section class="ha-rise flex flex-col gap-3">
-      <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
+      <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep" data-i18n="vote.h1">
         {t(locale, "vote.h1")}
       </h1>
-      <p class="text-base leading-relaxed text-ha-ink/85 [word-break:auto-phrase]">
+      <p class="text-base leading-relaxed text-ha-ink/85 [word-break:auto-phrase]" data-i18n="vote.intro">
         {t(locale, "vote.intro")}
       </p>
-      <p class="text-xs leading-relaxed text-ha-ink/55 [word-break:auto-phrase]">
+      <p class="text-xs leading-relaxed text-ha-ink/55 [word-break:auto-phrase]" data-i18n="vote.note">
         {t(locale, "vote.note")}
       </p>
     </section>
@@ -65,8 +73,8 @@ const boards = [
           aria-label={t(locale, "vote.board.aria", { title: board.title })}
         >
           <div class="flex flex-col gap-1">
-            <h2 class="font-display text-xl font-bold text-ha-green-deep">{board.title}</h2>
-            <p class="text-sm text-ha-ink/75 leading-relaxed [word-break:auto-phrase]">
+            <h2 class="font-display text-xl font-bold text-ha-green-deep" data-i18n={board.titleKey}>{board.title}</h2>
+            <p class="text-sm text-ha-ink/75 leading-relaxed [word-break:auto-phrase]" data-i18n={board.introKey}>
               {board.intro}
             </p>
           </div>

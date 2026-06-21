@@ -21,7 +21,7 @@ import {
   lockedTeaser,
   mayorShortName,
 } from "../../lib/lore/cityHall.ts";
-import { useT, useLocale, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, useLocale, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 // 市長ボタニクス・フォン・ハノーバの肖像（語り手アイコン）。
 // 顔は秘密という世界観のため、肖像の代わりにジョウロの写真を掲げる（public 直下の静的アセット）。
@@ -71,16 +71,22 @@ async function deriveLevel(): Promise<CitizenLevel> {
   }
 }
 
-// lang は about.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+// lang は about.astro がページの locale を流す（#147）＝SSR/初期描画の種（ja）。
 // この島は LocaleProvider のルート（about.astro 直下・他の Provider に包まれない）なので、
-// 自分で <LocaleProvider value={lang}> を張り、子（PageContent 等）は useLocale() で読む。
+// 自分で <LocaleProvider value={loc}> を張り、子（PageContent 等）は useLocale() で読む。
+// loc はマウント後に resolveClientLocale() で確定する（en を選んでいれば en で描き直す）。
 export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   // 本文（構造化データ）と味付け文言は locale で組み直す。
-  const bookPages = buildCityHallBook(lang);
+  const bookPages = buildCityHallBook(loc);
   const bookTitleText = t("cityHall.book.title");
-  const levelSubtitleMap = levelSubtitle(lang);
-  const flavorMap = levelFlavor(lang);
+  const levelSubtitleMap = levelSubtitle(loc);
+  const flavorMap = levelFlavor(loc);
 
   // 判定中は安全側＝L0（1p のみ）で始め、ロック状態を実市民に見せない。
   // 名乗り済みなら下の useIsoLayoutEffect がペイント前に L1/2p へ寄せる（フラッシュ防止）。
@@ -212,7 +218,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
         : null;
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
     <section className="ha-rise flex flex-col gap-5" aria-label={bookTitleText}>
       {/* 手帳の表題（在世タイトル）。肩書はレベルで変わる（menu 語の差し替えは defer・本側で適応）。 */}
       <header className="flex flex-col gap-1">

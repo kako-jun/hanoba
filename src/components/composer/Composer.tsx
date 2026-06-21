@@ -25,7 +25,7 @@ import CropFrame from "./CropFrame.tsx";
 import FilterChips from "./FilterChips.tsx";
 import ImagePicker from "./ImagePicker.tsx";
 import TagPicker from "./TagPicker.tsx";
-import { t as translate, useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { t as translate, useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 type Status = { kind: "idle" } | { kind: "posting" } | { kind: "done" } | { kind: "error"; message: string };
 type DraftImage = {
@@ -75,7 +75,12 @@ function centeredSquareRect(image: HTMLImageElement): SquareCropRect {
 
 // lang は compose.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
 export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   const [images, setImages] = useState<DraftImage[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -395,7 +400,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   }
 
   return (
-    <LocaleProvider value={lang}>
+    <LocaleProvider value={loc}>
     <div className="flex flex-col gap-6">
       <AccountName onChange={setName} promptLabel={t("compose.account.prompt")} />
 

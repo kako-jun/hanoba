@@ -5,7 +5,7 @@ import {
   isDismissActive,
   setInstallDismissedAt,
 } from "../../lib/pwa/install.ts";
-import { useT, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { useT, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 /**
  * PWA「ホーム画面に追加」促し（#230）。全ページ共通（MainLayout に島として差す）。
@@ -46,9 +46,14 @@ function isIosSafari(): boolean {
 
 type Variant = "prompt" | "ios" | null;
 
-// lang は MainLayout がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+// lang は MainLayout がページの locale を流す（#147）＝SSR/初期描画の種（ja）。
+// マウント後に resolveClientLocale() で表示言語を確定する（en を選んでいれば en で描く）。
 export default function InstallPrompt({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  const t = useT(lang);
+  const [loc, setLoc] = useState<Locale>(lang);
+  useEffect(() => {
+    setLoc(resolveClientLocale());
+  }, []);
+  const t = useT(loc);
   // 表示する種類（prompt=beforeinstallprompt あり / ios=手動手順 / null=出さない）。
   const [variant, setVariant] = useState<Variant>(null);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
