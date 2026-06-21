@@ -17,8 +17,9 @@ const PROFILE: Profile = {
   picture: "https://image.nostr.build/midori.jpg",
   about: null,
   websites: [],
+  favoriteVarieties: [],
 };
-const EMPTY: Profile = { name: null, picture: null, about: null, websites: [] };
+const EMPTY: Profile = { name: null, picture: null, about: null, websites: [], favoriteVarieties: [] };
 
 function mapOf(...entries: [string, Profile][]): Map<string, Profile> {
   return new Map(entries);

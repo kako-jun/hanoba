@@ -157,11 +157,13 @@ export interface ProfileExtra {
   picture: string | null;
   about: string | null;
   websites: string[];
+  /** 好きな品種（#141）。 */
+  favoriteVarieties: string[];
 }
 
 /** 保存済みのプロフィール付加項目を返す（未設定/壊れは空）。 */
 export function getProfileExtra(): ProfileExtra {
-  const empty: ProfileExtra = { picture: null, about: null, websites: [] };
+  const empty: ProfileExtra = { picture: null, about: null, websites: [], favoriteVarieties: [] };
   const raw = getLS()?.getItem(PROFILE_EXTRA_KEY);
   if (raw === null || raw === undefined || raw === "") return empty;
   try {
@@ -170,13 +172,16 @@ export function getProfileExtra(): ProfileExtra {
       picture: typeof d.picture === "string" && d.picture !== "" ? d.picture : null,
       about: typeof d.about === "string" && d.about !== "" ? d.about : null,
       websites: Array.isArray(d.websites) ? d.websites.filter((w): w is string => typeof w === "string") : [],
+      favoriteVarieties: Array.isArray(d.favoriteVarieties)
+        ? d.favoriteVarieties.filter((v): v is string => typeof v === "string")
+        : [],
     };
   } catch {
     return empty;
   }
 }
 
-/** プロフィール付加項目をローカルに保存する。 */
+/** プロフィール付加項目をローカルに保存する。本文 favoriteVarieties は #141。 */
 export function setProfileExtra(extra: ProfileExtra): void {
   getLS()?.setItem(PROFILE_EXTRA_KEY, JSON.stringify(extra));
 }
@@ -192,5 +197,7 @@ export function mergeProfileExtra(local: ProfileExtra, remote: ProfileExtra | nu
     picture: local.picture ?? remote.picture,
     about: local.about ?? remote.about,
     websites: local.websites.length > 0 ? local.websites : remote.websites,
+    favoriteVarieties:
+      local.favoriteVarieties.length > 0 ? local.favoriteVarieties : remote.favoriteVarieties,
   };
 }

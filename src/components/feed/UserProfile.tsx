@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { nip19 } from "nostr-tools";
 import { fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
-import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
+import { discoverTagHref, discoverTagsHref } from "../../lib/feed/discoverFilter.ts";
 import { shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { getDisplayName } from "../../lib/nostr/keys.ts";
@@ -151,6 +151,25 @@ export default function UserProfile() {
               </li>
             ))}
           </ul>
+        )}
+
+        {/* 好きな品種（#141）。同好の士の手がかり。チップをタップで discover をその品種で絞る。 */}
+        {profile !== null && profile.favoriteVarieties.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium text-ha-ink/55">好きな品種</span>
+            <ul className="flex flex-wrap gap-1.5">
+              {profile.favoriteVarieties.map((v) => (
+                <li key={v}>
+                  <a
+                    href={discoverTagsHref([v])}
+                    className="glass inline-flex items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 hover:text-ha-green-deep hover:border-ha-green/50 transition-colors before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
+                  >
+                    {v}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 

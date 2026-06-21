@@ -76,6 +76,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
       picture: null,
       about: "アガベ育ててます",
       websites: ["https://llll-ll.com"],
+      favoriteVarieties: [],
     });
     expect(await screen.findByText("保存しました。")).toBeInTheDocument();
   });
@@ -304,12 +305,13 @@ describe("ProfileEditor 秘密鍵バックアップ欄（#213）", () => {
     await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(saveProfile).toHaveBeenCalledTimes(1));
-    // 完全一致: nsec を含まない初期 payload のみ（picture:null, about:"", websites:[]）。
+    // 完全一致: nsec を含まない初期 payload のみ（picture:null, about:"", websites:[], favoriteVarieties:[]）。
     expect(saveProfile).toHaveBeenCalledWith({
       name: "テスト栽培家",
       picture: null,
       about: "",
       websites: [],
+      favoriteVarieties: [],
     });
   });
 
@@ -327,6 +329,7 @@ describe("ProfileEditor 秘密鍵バックアップ欄（#213）", () => {
       picture: null,
       about: "",
       websites: [],
+      favoriteVarieties: [],
     });
     writeText.mockRestore();
   });

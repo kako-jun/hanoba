@@ -15,6 +15,7 @@ import {
 import { detectServiceLabel } from "../../lib/profile/services.ts";
 import { moveById } from "../../lib/composer/reorder.ts";
 import { uploadImage } from "../../lib/nostr/upload.ts";
+import FavoriteVarietyPicker from "./FavoriteVarietyPicker.tsx";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -38,6 +39,8 @@ export default function ProfileEditor({ bare = false }: Props) {
   const [about, setAbout] = useState("");
   // サイト行は安定 id で持つ（index key だと並べ替え/中間削除でフォーカス・IME が飛ぶ・レビュー S2）。
   const [sites, setSites] = useState<{ id: number; url: string }[]>([]);
+  // 好きな品種（#141・カタログ品種名の配列）。選択ロジックは FavoriteVarietyPicker に分離。
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -65,26 +68,29 @@ export default function ProfileEditor({ bare = false }: Props) {
     setPicture(extra.picture);
     setAbout(extra.about ?? "");
     setSites(extra.websites.map((url) => ({ id: nextId(), url })));
+    setFavorites(extra.favoriteVarieties);
 
     void (async () => {
       try {
         const pubkey = await getPublicKeyHex();
-        // 単発でなく bounded retry で取る。取りこぼすと websites が空のまま固定され、
-        // その空控えが clobber を招く（#93）。
+        // 単発でなく bounded retry で取る。取りこぼすと websites/好きな品種が空のまま固定され、
+        // その空控えが clobber を招く（#93/#141）。
         const remote = await fetchMyProfileResilient(pubkey);
         if (!aliveRef.current || remote === null) return;
         setPicture((cur) => cur ?? remote.picture);
         setAbout((cur) => (cur === "" ? (remote.about ?? "") : cur));
         setSites((cur) => (cur.length === 0 ? remote.websites.map((url) => ({ id: nextId(), url })) : cur));
+        setFavorites((cur) => (cur.length === 0 ? (remote.favoriteVarieties ?? []) : cur));
         if (localName === null && remote.name !== null) setName(remote.name);
         // relay から取れた値をローカル控えにも書き戻す（#93）。表示だけ回復して控えが空のまま
-        // 残ると、名前変更時の saveDisplayName が websites:[] で relay の正本を潰す（clobber）。
+        // 残ると、名前変更時の saveDisplayName が websites:[]/好きな品種:[] で relay の正本を潰す（clobber）。
         // mergeProfileExtra はローカル非空を優先するので、編集中の控えは壊さない。
         setProfileExtra(
           mergeProfileExtra(getProfileExtra(), {
             picture: remote.picture,
             about: remote.about,
             websites: remote.websites,
+            favoriteVarieties: remote.favoriteVarieties ?? [],
           }),
         );
       } catch {
@@ -140,7 +146,7 @@ export default function ProfileEditor({ bare = false }: Props) {
     if (currentName === null || currentName.trim() === "") return;
     setStatus("saving");
     try {
-      await saveProfile({ name: currentName, picture, about, websites: sites.map((s) => s.url) });
+      await saveProfile({ name: currentName, picture, about, websites: sites.map((s) => s.url), favoriteVarieties: favorites });
       if (aliveRef.current) {
         setName(currentName);
         setStatus("saved");
@@ -326,6 +332,15 @@ export default function ProfileEditor({ bare = false }: Props) {
               ＋ サイトを追加
             </button>
           </div>
+
+          {/* 好きな品種（#141・既存の品種ピッカーを再利用＝選択ロジックをテキスト挿入から分離）。 */}
+          <FavoriteVarietyPicker
+            selected={favorites}
+            onChange={(next) => {
+              setFavorites(next);
+              touch();
+            }}
+          />
 
           {/* 保存（アクション行＝主操作を右端に・補足は左／#98 統一ポリシー）。 */}
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">

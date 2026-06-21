@@ -38,7 +38,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 }
 
 function makeProfile(overrides: Partial<Profile> = {}): Profile {
-  return { name: null, picture: null, about: null, websites: [], ...overrides };
+  return { name: null, picture: null, about: null, websites: [], favoriteVarieties: [], ...overrides };
 }
 
 describe("UserProfile（他人の公開プロフィール・#272 段階3）", () => {

@@ -122,11 +122,13 @@ export interface Profile {
   picture: string | null;
   about: string | null;
   websites: string[];
+  /** 好きな品種（#141・kind:0 カスタム `favorite_varieties`）。同好の士の手がかり。 */
+  favoriteVarieties: string[];
 }
 
 /** kind:0 content（JSON）を Profile に変換する純粋関数。JSON 不正は空 Profile。 */
 export function parseProfile(content: string): Profile {
-  const empty: Profile = { name: null, picture: null, about: null, websites: [] };
+  const empty: Profile = { name: null, picture: null, about: null, websites: [], favoriteVarieties: [] };
   let data: Record<string, unknown>;
   try {
     data = JSON.parse(content) as Record<string, unknown>;
@@ -161,7 +163,16 @@ export function parseProfile(content: string): Profile {
   // 標準フィールド website（単一 URL）も拾う（他クライアント互換）。
   push(str(data.website));
 
-  return { name, picture: str(data.picture), about: str(data.about), websites };
+  // 好きな品種（#141・hanoba 独自 `favorite_varieties`＝文字列配列）。空/非文字列を除き dedupe。
+  const favoriteVarieties: string[] = [];
+  if (Array.isArray(data.favorite_varieties)) {
+    for (const v of data.favorite_varieties) {
+      const s = str(v);
+      if (s !== null && !favoriteVarieties.includes(s)) favoriteVarieties.push(s);
+    }
+  }
+
+  return { name, picture: str(data.picture), about: str(data.about), websites, favoriteVarieties };
 }
 
 /**

@@ -139,6 +139,8 @@ export interface ProfileFields {
   about?: string | null;
   /** 複数サイト URL（モーダルのサイトリンクに出る）。 */
   websites?: string[];
+  /** 好きな品種（#141・kind:0 カスタム `favorite_varieties`・同好の士の手がかり）。 */
+  favoriteVarieties?: string[];
 }
 
 /**
@@ -169,6 +171,11 @@ export function buildProfileEvent(fields: ProfileFields, createdAt?: number): Ev
 
   const websites = (fields.websites ?? []).map((w) => w.trim()).filter((w) => isHttpUrl(w));
   if (websites.length > 0) content.websites = websites.map((url) => ({ url }));
+
+  // 好きな品種（#141）。カタログ品種名の素の文字列配列を hanoba 独自キーで載せる
+  // （他クライアントは未知キーとして無視）。空は載せない（mypace round-trip と同方針）。
+  const favoriteVarieties = (fields.favoriteVarieties ?? []).map((v) => v.trim()).filter((v) => v !== "");
+  if (favoriteVarieties.length > 0) content.favorite_varieties = [...new Set(favoriteVarieties)];
 
   return {
     kind: 0,

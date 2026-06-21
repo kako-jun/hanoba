@@ -69,10 +69,10 @@ describe("keys: nsec ラウンドトリップ", () => {
 
   it("importNsec はプロフィール控え（profileExtra）を消す（鍵交換で他人の値を残さない・#78 M1）", () => {
     window.localStorage.setItem(SK_KEY, bytesToHex(FIXED_SK));
-    setProfileExtra({ picture: "https://old", about: "前の鍵の自己紹介", websites: ["https://old"] });
+    setProfileExtra({ picture: "https://old", about: "前の鍵の自己紹介", websites: ["https://old"], favoriteVarieties: ["グラキリス"] });
     const nsec = exportNsec();
     importNsec(nsec);
-    expect(getProfileExtra()).toEqual({ picture: null, about: null, websites: [] });
+    expect(getProfileExtra()).toEqual({ picture: null, about: null, websites: [], favoriteVarieties: [] });
   });
 });
 
@@ -80,23 +80,23 @@ describe("mergeProfileExtra（ローカル優先・空欄だけ relay 補完）"
   it("ローカルが空の項目だけ relay 値で埋める", () => {
     expect(
       mergeProfileExtra(
-        { picture: null, about: null, websites: [] },
-        { picture: "https://p", about: "a", websites: ["https://w"] },
+        { picture: null, about: null, websites: [], favoriteVarieties: [] },
+        { picture: "https://p", about: "a", websites: ["https://w"], favoriteVarieties: ["チタノタ"] },
       ),
-    ).toEqual({ picture: "https://p", about: "a", websites: ["https://w"] });
+    ).toEqual({ picture: "https://p", about: "a", websites: ["https://w"], favoriteVarieties: ["チタノタ"] });
   });
 
-  it("ローカルに値があれば relay で上書きしない", () => {
+  it("ローカルに値があれば relay で上書きしない（好きな品種も clobber 防止・#141）", () => {
     expect(
       mergeProfileExtra(
-        { picture: "https://local", about: "ローカル", websites: ["https://lw"] },
-        { picture: "https://remote", about: "リモート", websites: ["https://rw"] },
+        { picture: "https://local", about: "ローカル", websites: ["https://lw"], favoriteVarieties: ["グラキリス"] },
+        { picture: "https://remote", about: "リモート", websites: ["https://rw"], favoriteVarieties: ["オベサ"] },
       ),
-    ).toEqual({ picture: "https://local", about: "ローカル", websites: ["https://lw"] });
+    ).toEqual({ picture: "https://local", about: "ローカル", websites: ["https://lw"], favoriteVarieties: ["グラキリス"] });
   });
 
   it("remote が null ならローカルそのまま", () => {
-    const local = { picture: "https://x", about: null, websites: [] };
+    const local = { picture: "https://x", about: null, websites: [], favoriteVarieties: ["パキポディウム"] };
     expect(mergeProfileExtra(local, null)).toEqual(local);
   });
 });
