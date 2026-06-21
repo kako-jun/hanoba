@@ -9,6 +9,7 @@ import {
   findPickableGenus,
   searchCatalog,
   tagsToPick,
+  tagsToPickAt,
   tagsToUnpick,
 } from "../../lib/plants/variety-search.ts";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
@@ -206,7 +207,10 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
   // onPick(name) だけ＝前置されない（null 安全・設計どおり。辞書が無ければ具体名のみ入る）。
   // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
   // （タップしただけ・あとで消したタグは最近に残さない）。
-  function pick(name: string) {
+  // `context` を渡せる経路（ドリルダウン/検索）は**選んだ経路どおりのカテゴリ/属**で階層化する
+  // （#315・同名品種のカテゴリ跨ぎ誤同定を避ける）。文脈の無い経路（freeform/人気/最近）は
+  // 名前先勝ち解決にフォールバックする。`genusName` は前置する pickable 属名（無ければ null）。
+  function pick(name: string, context?: { categoryLabel: string; genusName: string | null }) {
     // filter は葉タグのみ（AND 絞り込みで上位を足すと、上位タグを持たない投稿が落ちて過剰に絞るため）。
     // catalog 未ロードも葉のみ（階層を引けない）。
     if (isFilter || catalog === null) {
@@ -216,7 +220,11 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
     // compose は概要→詳細の全階層を onPick で順に挿入する（#312）。本文側 Composer.onPick は
     // setCaption の関数型アップデータ＋insertTag（captionHasTag ガード）なので、複数連発でも
     // 重複挿入されず `#カテゴリ #属 #品種` の順で並ぶ（この契約は hashtag-complete テストで固定）。
-    for (const t of tagsToPick(catalog, name)) onPick(t);
+    const tags =
+      context !== undefined
+        ? tagsToPickAt(context.categoryLabel, context.genusName, name)
+        : tagsToPick(catalog, name);
+    for (const t of tags) onPick(t);
   }
 
   // 選択済みチップの再タップ＝解除。兄弟が残らなければ上位（属・カテゴリ）も連動して外す。
@@ -477,7 +485,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                     <button
                       key={`c-${h.name}`}
                       type="button"
-                      onClick={() => toggle(h.name, () => pick(h.name))}
+                      onClick={() => toggle(h.name, () => pick(h.name, { categoryLabel: h.category, genusName: null }))}
                       aria-pressed={has(h.name)}
                       className={`rounded-full px-3 py-1 text-sm transition-colors ${
                         has(h.name)
@@ -515,7 +523,15 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       context={h.genus ?? h.category}
                       sci={h.sci}
                       active={has(h.name)}
-                      onClick={() => toggle(h.name, () => pick(h.name))}
+                      onClick={() =>
+                        toggle(h.name, () =>
+                          // 検索ヒットの由来カテゴリ/属で階層化（#315・名前先勝ちで別カテゴリに化けない）。
+                          pick(h.name, {
+                            categoryLabel: h.category,
+                            genusName: h.genusPickable === true ? (h.genus ?? null) : null,
+                          }),
+                        )
+                      }
                     />
                   ),
                 )}
@@ -556,7 +572,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                 // ここで止めて `#カテゴリ` だけ付けられる。filter は広すぎる絞りになるので出さない（葉で絞る）。
                 <button
                   type="button"
-                  onClick={() => toggle(cat.label, () => pick(cat.label))}
+                  onClick={() => toggle(cat.label, () => pick(cat.label, { categoryLabel: cat.label, genusName: null }))}
                   aria-pressed={has(cat.label)}
                   className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                     has(cat.label)
@@ -586,7 +602,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
               {genus.pickable && (
                 <button
                   type="button"
-                  onClick={() => toggle(genus.name, () => pick(genus.name))}
+                  onClick={() => toggle(genus.name, () => pick(genus.name, { categoryLabel: cat.label, genusName: null }))}
                   aria-pressed={has(genus.name)}
                   className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                     has(genus.name)
@@ -603,7 +619,12 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                   label={v.name}
                   sci={v.sci}
                   active={has(v.name)}
-                  onClick={() => toggle(v.name, () => pick(v.name))}
+                  // ドリルダウンで降りた属/カテゴリで階層化（#315・同名品種が別カテゴリに化けない）。
+                  onClick={() =>
+                    toggle(v.name, () =>
+                      pick(v.name, { categoryLabel: cat.label, genusName: genus.pickable ? genus.name : null }),
+                    )
+                  }
                 />
               ))}
             </div>

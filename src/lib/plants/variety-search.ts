@@ -41,6 +41,49 @@ export function findVarietyGenus(catalog: VarietyCategory[], name: string): Cata
 }
 
 /**
+ * **既知の文脈**（ドリルダウン/検索で確定したカテゴリ・属）から階層タグを組む純関数（#315）。
+ * `tagsToPick` の名前先勝ち解決と違い、同名品種がカテゴリ跨ぎで存在しても**選んだ経路どおり**の
+ * カテゴリ/属を入れる（例 バラの「アイスバーグ」→`[バラ, アイスバーグ]`／多肉の同名→`[多肉植物,
+ * エケベリア, アイスバーグ]`）。`genusName` は前置する pickable 属名（非 pickable 見出し属や
+ * カテゴリ/属自体が leaf のときは null）。重複は畳む（カテゴリ名＝属名/leaf が一致しても二重に返さない）。
+ */
+export function tagsToPickAt(categoryLabel: string, genusName: string | null, leaf: string): string[] {
+  const out = [categoryLabel];
+  if (genusName !== null) out.push(genusName);
+  out.push(leaf);
+  return [...new Set(out)];
+}
+
+/**
+ * `name` に一致する品種の所在を、**本文 `caption` の文脈で曖昧さ回避**して返す（#315）。
+ * 同名品種が複数カテゴリ/属にあるとき（アイスバーグ＝バラ/エケベリア 等）、本文に親（属 or カテゴリ）
+ * タグがある所在を優先する＝解除時に「本文に実在する階層」を畳む（無関係な別属を消そうとしない）。
+ * 候補が無ければ null、1件 or 文脈一致なしなら catalog 出現順の先頭（従来の findVarietyGenus 互換）。
+ */
+export function findVarietyGenusInCaption(
+  catalog: VarietyCategory[],
+  name: string,
+  caption: string,
+): CatalogLocation | null {
+  const n = name.trim().toLowerCase();
+  const matches: CatalogLocation[] = [];
+  for (const category of catalog) {
+    for (const genus of category.genera) {
+      for (const v of genus.varieties) {
+        const names = [v.name, ...(v.aliases ?? [])].map((s) => s.toLowerCase());
+        if (names.includes(n)) matches.push({ category, genus });
+      }
+    }
+  }
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0]!;
+  const inCaption = matches.find(
+    (m) => captionHasTag(caption, m.genus.name) || captionHasTag(caption, m.category.label),
+  );
+  return inCaption ?? matches[0]!;
+}
+
+/**
  * 選んだタグ `name` を本文へ入れるとき、**概要→詳細の全階層**を順に返す（#312・kako-jun
  * 「ドリルダウンで1回押した言葉がタグにならないのは直感に反する」＝カテゴリ・属もタグにする。
  * #181/#166 の『カテゴリはタグにしない』を反転）。
@@ -49,6 +92,8 @@ export function findVarietyGenus(catalog: VarietyCategory[], name: string): Cata
  * - カテゴリ: `[カテゴリ]`
  * - catalog に無い（世話/記録/freeform 等）: `[name]`（前置しない）
  * 重複は畳む（品種名＝属名/カテゴリ名が一致するデータでも二重に返さない）。
+ * **文脈が分かる経路（ドリルダウン/検索）は `tagsToPickAt` を使うこと**（#315・名前先勝ちの
+ * 誤同定を避ける）。ここは文脈の無い経路（freeform/人気/最近）のフォールバック＝名前先勝ち解決。
  * filter モード・catalog 未ロードは呼び出し側で `[name]` に倒す（葉のみ＝AND で過剰に絞らない）。
  */
 export function tagsToPick(catalog: VarietyCategory[], name: string): string[] {
@@ -193,7 +238,8 @@ export function tagsToUnpick(
   if (catalog === null) return [name];
 
   // ── 品種を外す: 兄弟が残らなければ属→カテゴリへ連動撤去（既存ロジック・#144） ──
-  const vloc = findVarietyGenus(catalog, name);
+  // 同名跨ぎ（#315）は本文の親タグで所在を曖昧さ回避する（無関係な別属/カテゴリを消そうとしない）。
+  const vloc = findVarietyGenusInCaption(catalog, name, caption);
   if (vloc !== null) {
     const { category, genus } = vloc;
     const result = [name];
