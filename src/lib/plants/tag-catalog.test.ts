@@ -77,11 +77,18 @@ describe("tag-catalog", () => {
     expect(all).not.toContain("観葉植物");
   });
 
-  it("投稿の種類（質問・失敗）を先頭の枠に持つ（#311）", () => {
+  it("投稿の種類（成長記録/実験/質問/失敗）を先頭の枠に持つ（#311・成長記録・実験を追補）", () => {
     expect(postType).toBeTruthy();
-    expect(postType.tags).toEqual(["質問", "失敗"]);
+    expect(postType.tags).toEqual(["成長記録", "実験", "質問", "失敗"]);
     // 先頭の枠＝高位の descriptor（共有文化を促す・kako-jun 配置サインオフ対象）。
     expect(TAG_CATEGORIES[0]!.label).toBe("投稿の種類");
+  });
+
+  it("成長記録・実験は「記録」でなく「投稿の種類」に置く（植物の出来事でなく投稿タイプ・kako-jun）", () => {
+    expect(record.tags).not.toContain("成長記録");
+    expect(record.tags).not.toContain("実験");
+    expect(postType.tags).toContain("成長記録");
+    expect(postType.tags).toContain("実験");
   });
 
   it("原則1（#311 改訂）: 症状の細目はタグにしない／投稿の種類（質問・失敗）は可（#251/#311）", () => {
@@ -107,9 +114,9 @@ describe("tag-catalog", () => {
     expect(trait.tags).toEqual(["斑入り", "綴化", "石化"]);
   });
 
-  it("記録は「実験」「収穫」を持ち、「開花待ち」は持たない（#251）", () => {
-    expect(record.tags).toContain("実験");
+  it("記録は植物の出来事（収穫 等）を持ち、「開花待ち」は持たない（#251）", () => {
     expect(record.tags).toContain("収穫");
+    expect(record.tags).toContain("開花");
     expect(record.tags).not.toContain("開花待ち");
   });
 });
