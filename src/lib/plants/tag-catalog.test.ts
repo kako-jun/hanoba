@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TAG_CATEGORIES } from "./tag-catalog.ts";
 
+const postType = TAG_CATEGORIES.find((c) => c.label === "投稿の種類")!;
 const care = TAG_CATEGORIES.find((c) => c.label === "世話")!;
 const record = TAG_CATEGORIES.find((c) => c.label === "記録")!;
 const trait = TAG_CATEGORIES.find((c) => c.label === "特徴")!;
@@ -60,6 +61,15 @@ describe("tag-catalog", () => {
     expect(form.tags[0]).toBe("水耕");
   });
 
+  it("仕立ては水耕系（水耕→ハイドロカルチャー）を隣接させる（#311・水挿しを間に挟まない）", () => {
+    const i水耕 = form.tags.indexOf("水耕");
+    const iハイドロ = form.tags.indexOf("ハイドロカルチャー");
+    expect(i水耕).toBeGreaterThanOrEqual(0);
+    expect(iハイドロ).toBe(i水耕 + 1);
+    // 水挿し（繁殖寄り）は水耕系2つの後ろ。
+    expect(form.tags.indexOf("水挿し")).toBe(iハイドロ + 1);
+  });
+
   it("分類語（多肉植物 等）は入れない（#166＝分類はタグにしない）", () => {
     const all = TAG_CATEGORIES.flatMap((c) => c.tags);
     expect(all).not.toContain("多肉植物");
@@ -67,11 +77,22 @@ describe("tag-catalog", () => {
     expect(all).not.toContain("観葉植物");
   });
 
-  it("原則1: 症状・トラブル・失敗はタグにしない（本文に書く・#251）", () => {
+  it("投稿の種類（質問・失敗）を先頭の枠に持つ（#311）", () => {
+    expect(postType).toBeTruthy();
+    expect(postType.tags).toEqual(["質問", "失敗"]);
+    // 先頭の枠＝高位の descriptor（共有文化を促す・kako-jun 配置サインオフ対象）。
+    expect(TAG_CATEGORIES[0]!.label).toBe("投稿の種類");
+  });
+
+  it("原則1（#311 改訂）: 症状の細目はタグにしない／投稿の種類（質問・失敗）は可（#251/#311）", () => {
     const all = TAG_CATEGORIES.flatMap((c) => c.tags);
+    // 症状の細目はタグにしない（本文へ）。
     for (const symptom of ["徒長", "葉焼け", "殺虫", "うどんこ病", "根腐れ", "病気", "害虫"]) {
       expect(all).not.toContain(symptom);
     }
+    // 投稿の種類タグ（質問・失敗）は可（#311・失敗は症状でなく投稿タイプ）。
+    expect(all).toContain("質問");
+    expect(all).toContain("失敗");
   });
 
   it("原則2: 現実の家・私生活を指すタグは入れない（ハノーバ架空設定・#251）", () => {

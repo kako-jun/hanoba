@@ -33,6 +33,15 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["水やり"]]);
   });
 
+  it("投稿の種類「質問」「失敗」をタップすると前置なしで onPick が1回（投稿タイプ単一タグ・#311）", async () => {
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    // 投稿の種類は variety-catalog 外＝カテゴリ/属を前置しない（tagsToPick は [name] を返す）。
+    await user.click(screen.getByRole("button", { name: "#質問" }));
+    await user.click(screen.getByRole("button", { name: "#失敗" }));
+    expect(onPick.mock.calls).toEqual([["質問"], ["失敗"]]);
+  });
+
   it("本文に入っているタグは満たされた色（aria-pressed=true）になる", () => {
     renderPicker({ caption: "今日は #水やり した" });
     expect(screen.getByRole("button", { name: "#水やり" })).toHaveAttribute("aria-pressed", "true");
