@@ -26,9 +26,10 @@ const [subBefore, subAfter] = t(locale, "home.hero.sub").split("{link}");
       <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]" data-i18n="home.hero.lead">
         {t(locale, "home.hero.lead")}
       </p>
-      {/* サブ見出しは文中リンクで {subBefore}<a>{subAfter} に割れるため data-i18n を付けず ja のまま据え置く（#147 既知の積み残し）。 */}
+      {/* サブ見出しは文中リンクで {subBefore}<a>{subAfter} に割れる。#380 で3片を個別 data-i18n に分け、
+          MainLayout の swap マップ（home.hero.sub.before/link/after）で非既定言語へ差し替える（JA 選択時も日本語に）。 */}
       <p class="text-sm leading-relaxed text-ha-ink/55 [word-break:auto-phrase]">
-        {subBefore}<a href="/discover" class="text-ha-green hover:text-ha-green-deep underline underline-offset-2">{t(locale, "home.hero.sub.link")}</a>{subAfter}
+        <span data-i18n="home.hero.sub.before">{subBefore}</span><a href="/discover" class="text-ha-green hover:text-ha-green-deep underline underline-offset-2" data-i18n="home.hero.sub.link">{t(locale, "home.hero.sub.link")}</a><span data-i18n="home.hero.sub.after">{subAfter}</span>
       </p>
     </section>
 
