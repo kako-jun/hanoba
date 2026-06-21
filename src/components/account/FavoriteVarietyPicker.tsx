@@ -4,6 +4,7 @@ import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import Icon from "../ui/Icon.tsx";
 import SciName from "../ui/SciName.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 /**
  * 好きな品種ピッカー（#141・複数選択）。TagPicker（投稿タグ＝本文へ挿入）の**選択ロジックを
@@ -21,6 +22,7 @@ export default function FavoriteVarietyPicker({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
+  const t = useT(useLocale());
   const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -100,9 +102,9 @@ export default function FavoriteVarietyPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-medium text-ha-green-deep">好きな品種</span>
+      <span className="text-sm font-medium text-ha-green-deep">{t("profile.favorites")}</span>
       <p className="text-xs text-ha-ink/55">
-        プロフィールに並びます。同じ品種が好きな人と見つけ合えます。
+        {t("account.favorites.hint")}
       </p>
 
       {/* 選択済みの好きな品種（× で外す）。 */}
@@ -113,7 +115,7 @@ export default function FavoriteVarietyPicker({
               <button
                 type="button"
                 onClick={() => toggle(name)}
-                aria-label={`${name} を好きな品種から外す`}
+                aria-label={t("account.favorites.removeAria", { name })}
                 className="inline-flex items-center gap-1 rounded-full border border-ha-green bg-ha-green px-3 py-1 text-sm text-ha-white hover:brightness-110 transition"
               >
                 {name}
@@ -132,7 +134,7 @@ export default function FavoriteVarietyPicker({
           className="glass flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:border-ha-green/50 transition-colors"
         >
           <Icon name="sprout" className="h-4 w-4" />
-          植物から選ぶ
+          {t("tag.fromPlants")}
           <span aria-hidden className="text-ha-ink/40">›</span>
         </button>
       ) : (
@@ -141,18 +143,18 @@ export default function FavoriteVarietyPicker({
             <button
               type="button"
               onClick={goBack}
-              aria-label="一つ前に戻る"
+              aria-label={t("tag.back.aria")}
               className="rounded-full px-2 py-1 text-sm text-ha-ink/70 hover:text-ha-green-deep transition-colors"
             >
-              ‹ 戻る
+              {t("tag.back")}
             </button>
             <span className="min-w-0 flex-1 truncate text-center text-xs text-ha-ink/55">
-              植物{cat ? ` › ${cat.label}` : ""}{genus ? ` › ${genus.name}` : ""}
+              {t("tag.breadcrumb.root")}{cat ? ` › ${cat.label}` : ""}{genus ? ` › ${genus.name}` : ""}
             </span>
             <button
               type="button"
               onClick={closeDrill}
-              aria-label="閉じる"
+              aria-label={t("common.close")}
               className="grid h-7 w-7 place-items-center rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
             >
               <Icon name="close" className="h-4 w-4" />
@@ -164,18 +166,18 @@ export default function FavoriteVarietyPicker({
             <ClearableInput
               value={query}
               onValueChange={handleQuery}
-              aria-label="品種を検索"
-              placeholder="品種・属を検索（例: チタノタ）"
+              aria-label={t("account.favorites.search.aria")}
+              placeholder={t("tag.search.placeholder")}
               className="rounded-full border border-white/30 bg-white/5 py-2 pl-9 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:border-ha-green/50 focus:outline-none"
             />
           </div>
 
           {searching ? (
             <div className="flex flex-wrap gap-1.5">
-              {loading && catalog === null && <span className="text-xs text-ha-ink/45">辞書を読み込み中…</span>}
-              {error && <span className="text-xs text-ha-pink">辞書を読み込めませんでした。もう一度お試しください。</span>}
+              {loading && catalog === null && <span className="text-xs text-ha-ink/45">{t("tag.dict.loading")}</span>}
+              {error && <span className="text-xs text-ha-pink">{t("tag.dict.error")}</span>}
               {hits.length === 0 && !showFreeform && !loading && (
-                <span className="text-xs text-ha-ink/45">該当なし</span>
+                <span className="text-xs text-ha-ink/45">{t("tag.noResults")}</span>
               )}
               {hits.map((h) => (
                 <button key={`${h.kind}-${h.name}`} type="button" onClick={() => toggle(h.name)} aria-pressed={has(h.name)} className={itemClass(h.name)}>
@@ -196,13 +198,13 @@ export default function FavoriteVarietyPicker({
                   onClick={() => toggle(freeform)}
                   className="rounded-full border border-dashed border-ha-green/50 px-3 py-1 text-sm text-ha-green-deep hover:bg-ha-green/10 transition-colors"
                 >
-                  そのまま「{freeform}」を追加
+                  {t("account.favorites.useFreeform", { freeform })}
                 </button>
               )}
             </div>
           ) : catalog === null ? (
             <span className="px-1 py-2 text-xs text-ha-ink/45">
-              {error ? "辞書を読み込めませんでした。もう一度お試しください。" : loading ? "辞書を読み込み中…" : "—"}
+              {error ? t("tag.dict.error") : loading ? t("tag.dict.loading") : t("account.favorites.dict.empty")}
             </span>
           ) : cat === null ? (
             <div className="flex flex-wrap gap-1.5">
