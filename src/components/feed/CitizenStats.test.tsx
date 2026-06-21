@@ -43,15 +43,13 @@ describe("CitizenStats（活動スタッツ表示・#272）", () => {
     expect(within(section).getByText("投稿").parentElement).toHaveTextContent("0件");
   });
 
-  it("実績バッジ（#272 段階2）: 投稿1件で『初めの一鉢』を解除し、未解除は ??? で出す", () => {
+  it("称号/実績バッジは出さない（脱ゲーム化・#272）: 「市民の称号」も ??? も無い", () => {
     const now = Math.floor(Date.now() / 1000);
     const posts = [makePost({ id: "1", imageUrls: ["a.jpg"], createdAt: now })];
     render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
-    expect(screen.getByText("市民の称号")).toBeInTheDocument();
-    // 解除済み称号のラベルが見える。
-    expect(screen.getByText("初めの一鉢")).toBeInTheDocument();
-    // 未解除は図鑑式 ???（複数）。
-    expect(screen.getAllByText("？？？").length).toBeGreaterThan(0);
+    expect(screen.queryByText("市民の称号")).not.toBeInTheDocument();
+    expect(screen.queryByText("初めの一鉢")).not.toBeInTheDocument();
+    expect(screen.queryAllByText("？？？")).toHaveLength(0);
   });
 
   it("育てた品種を catalog ロード後に一覧表示する（属＋品種で同定）", async () => {
