@@ -16,6 +16,7 @@ import { detectServiceLabel } from "../../lib/profile/services.ts";
 import { moveById } from "../../lib/composer/reorder.ts";
 import { uploadImage } from "../../lib/nostr/upload.ts";
 import FavoriteVarietyPicker from "./FavoriteVarietyPicker.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function ProfileEditor({ bare = false }: Props) {
+  const t = useT(useLocale());
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
   const [picture, setPicture] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export default function ProfileEditor({ bare = false }: Props) {
       const { url } = await uploadImage(file);
       if (aliveRef.current) setPicture(url);
     } catch {
-      if (aliveRef.current) setUploadError("画像をアップロードできませんでした。時間をおいて再試行してください。");
+      if (aliveRef.current) setUploadError(t("account.profile.icon.uploadError"));
     } finally {
       if (aliveRef.current) setUploading(false);
       if (fileRef.current !== null) fileRef.current.value = "";
@@ -183,9 +185,9 @@ export default function ProfileEditor({ bare = false }: Props) {
           <span className="flex min-w-0 flex-col">
             {/* bare（/me の統合カード）では名前は上の AccountName が主表示するので重複させない（#104）。 */}
             <span className="text-sm font-semibold text-ha-ink/85 truncate">
-              {bare ? "プロフィール" : (name ?? "ハンドルネーム 未設定")}
+              {bare ? t("account.profile.heading") : (name ?? t("account.handle.unset"))}
             </span>
-            <span className="text-xs text-ha-ink/50">アイコン・自己紹介・サイト</span>
+            <span className="text-xs text-ha-ink/50">{t("account.profile.sub")}</span>
           </span>
         </span>
         <button
@@ -194,7 +196,7 @@ export default function ProfileEditor({ bare = false }: Props) {
           aria-expanded={open}
           className="shrink-0 inline-flex items-center gap-1 text-sm text-ha-green hover:text-ha-green-deep transition-colors"
         >
-          {open ? "閉じる" : "編集"}
+          {open ? t("common.close") : t("account.profile.edit")}
           <Icon name="chevron" className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
       </div>
@@ -203,7 +205,7 @@ export default function ProfileEditor({ bare = false }: Props) {
         <div className="flex flex-col gap-5 pt-1">
           {/* アイコン */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-ha-green-deep">アイコン</span>
+            <span className="text-sm font-medium text-ha-green-deep">{t("account.profile.icon.label")}</span>
             <div className="flex items-center gap-3">
               <Avatar src={picture} name={name ?? "?"} className="w-14 h-14" />
               <div className="flex flex-wrap items-center gap-2">
@@ -214,7 +216,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                   className="inline-flex items-center gap-[5px] rounded-full bg-ha-green text-ha-white px-3.5 py-1.5 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition"
                 >
                   <Icon name="image" className="w-4 h-4" />
-                  {uploading ? "アップロード中…" : "画像を選ぶ"}
+                  {uploading ? t("account.profile.icon.uploading") : t("account.profile.icon.pick")}
                 </button>
                 {picture !== null && (
                   <button
@@ -225,7 +227,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                     }}
                     className="text-sm text-ha-ink/55 hover:text-ha-pink transition-colors"
                   >
-                    削除
+                    {t("account.profile.icon.remove")}
                   </button>
                 )}
                 <input
@@ -247,8 +249,8 @@ export default function ProfileEditor({ bare = false }: Props) {
                 setPicture(v === "" ? null : v);
                 touch();
               }}
-              placeholder="または画像 URL を貼る（https://…）"
-              aria-label="アイコン画像 URL"
+              placeholder={t("account.profile.icon.urlPlaceholder")}
+              aria-label={t("account.profile.icon.urlAria")}
               className="rounded-full bg-white/10 border border-white/15 pl-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
             />
             {uploadError !== null && <p className="text-xs text-ha-pink">{uploadError}</p>}
@@ -257,21 +259,21 @@ export default function ProfileEditor({ bare = false }: Props) {
           {/* 自己紹介（ひとこと入力欄と同一デザイン・glass＋下辺ドラッグバーで高さ調整・#188）。 */}
           <ResizableTextarea
             id="hanoba-about"
-            label="自己紹介"
+            label={t("account.profile.about.label")}
             value={about}
             onValueChange={(v) => {
               setAbout(v);
               touch();
             }}
             rows={3}
-            placeholder="育てている植物のこと、好きな品種など"
+            placeholder={t("account.profile.about.placeholder")}
           />
 
           {/* 複数サイト */}
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-ha-green-deep">サイト・SNS</span>
+            <span className="text-sm font-medium text-ha-green-deep">{t("account.profile.sites.label")}</span>
             <p className="text-xs text-ha-ink/55">
-              拡大写真の著者欄にアイコンで並びます。各人が自分のサイトへ誘導できます。
+              {t("account.profile.sites.hint")}
             </p>
             <ul className="flex flex-col gap-2.5 pl-3 border-l border-white/10">
               {sites.map((site, i) => {
@@ -283,9 +285,9 @@ export default function ProfileEditor({ bare = false }: Props) {
                         type="url"
                         value={site.url}
                         onValueChange={(v) => updateSite(site.id, v)}
-                        placeholder="https://…"
-                        aria-label={`サイト ${i + 1} の URL`}
-                        clearLabel={`サイト ${i + 1} をクリア`}
+                        placeholder={t("account.profile.sites.urlPlaceholder")}
+                        aria-label={t("account.profile.sites.urlAria", { n: i + 1 })}
+                        clearLabel={t("account.profile.sites.clearAria", { n: i + 1 })}
                         className="rounded-full bg-white/10 border border-white/15 pl-3.5 py-2.5 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                       />
                       {label !== null && (
@@ -297,7 +299,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                         type="button"
                         onClick={() => moveSite(site.id, -1)}
                         disabled={i === 0}
-                        aria-label={`サイト ${i + 1} を上へ`}
+                        aria-label={t("account.profile.sites.moveUpAria", { n: i + 1 })}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 disabled:opacity-30 transition"
                       >
                         <Icon name="chevron" className="w-4 h-4 rotate-180" />
@@ -306,7 +308,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                         type="button"
                         onClick={() => moveSite(site.id, 1)}
                         disabled={i === sites.length - 1}
-                        aria-label={`サイト ${i + 1} を下へ`}
+                        aria-label={t("account.profile.sites.moveDownAria", { n: i + 1 })}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 disabled:opacity-30 transition"
                       >
                         <Icon name="chevron" className="w-4 h-4" />
@@ -314,7 +316,7 @@ export default function ProfileEditor({ bare = false }: Props) {
                       <button
                         type="button"
                         onClick={() => removeSite(site.id)}
-                        aria-label={`サイト ${i + 1} を削除`}
+                        aria-label={t("account.profile.sites.removeAria", { n: i + 1 })}
                         className="grid place-items-center w-8 h-8 rounded-full text-ha-ink/55 hover:text-ha-pink hover:bg-white/10 transition"
                       >
                         <Icon name="trash" className="w-4 h-4" />
@@ -329,7 +331,7 @@ export default function ProfileEditor({ bare = false }: Props) {
               onClick={addSite}
               className="self-start mt-0.5 text-sm text-ha-green hover:text-ha-green-deep underline underline-offset-2"
             >
-              ＋ サイトを追加
+              {t("account.profile.sites.add")}
             </button>
           </div>
 
@@ -345,13 +347,13 @@ export default function ProfileEditor({ bare = false }: Props) {
           {/* 保存（アクション行＝主操作を右端に・補足は左／#98 統一ポリシー）。 */}
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
             {nameMissing && (
-              <span className="text-xs text-ha-ink/55">先に上でハンドルネームを設定してください。</span>
+              <span className="text-xs text-ha-ink/55">{t("account.profile.nameMissing")}</span>
             )}
             {!nameMissing && status === "saved" && (
-              <span className="text-xs text-ha-green-deep">保存しました。</span>
+              <span className="text-xs text-ha-green-deep">{t("account.profile.saved")}</span>
             )}
             {!nameMissing && status === "error" && (
-              <span className="text-xs text-ha-pink">保存できませんでした（端末には保存済み）。</span>
+              <span className="text-xs text-ha-pink">{t("account.profile.saveError")}</span>
             )}
             <button
               type="button"
@@ -359,7 +361,7 @@ export default function ProfileEditor({ bare = false }: Props) {
               disabled={status === "saving" || nameMissing}
               className="rounded-full bg-ha-green text-ha-white px-5 py-2 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition"
             >
-              {status === "saving" ? "保存中…" : "保存"}
+              {status === "saving" ? t("account.profile.saving") : t("account.profile.save")}
             </button>
           </div>
 
@@ -367,13 +369,12 @@ export default function ProfileEditor({ bare = false }: Props) {
               最下部・最も目立たない位置に置く。値は exportNsec() のローカル読み取りのみで、
               kind:0（save）の payload には絶対に載せない。 */}
           <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
-            <span className="text-sm font-medium text-ha-green-deep">秘密鍵（バックアップ）</span>
+            <span className="text-sm font-medium text-ha-green-deep">{t("account.profile.nsec.label")}</span>
             <p className="text-xs text-ha-ink/55">
-              この鍵を控えておかないと、端末を変えたりブラウザのデータを消すと二度と戻せません。
-              また、この鍵を知られると、あなたの投稿をすべて操作されます。人に見せたり貼り付けたりしないでください。
+              {t("account.profile.nsec.warning")}
             </p>
             <code
-              aria-label="秘密鍵（nsec）"
+              aria-label={t("account.profile.nsec.codeAria")}
               className="block break-all rounded-2xl bg-white/10 border border-white/15 px-3.5 py-2.5 text-xs text-ha-ink/85 font-mono"
             >
               {nsecDisplay}
@@ -382,20 +383,20 @@ export default function ProfileEditor({ bare = false }: Props) {
               <button
                 type="button"
                 onClick={() => setNsecRevealed((v) => !v)}
-                aria-label={nsecRevealed ? "秘密鍵を隠す" : "秘密鍵を表示する"}
+                aria-label={nsecRevealed ? t("account.profile.nsec.hideAria") : t("account.profile.nsec.showAria")}
                 className="text-sm text-ha-green hover:text-ha-green-deep transition-colors"
               >
-                {nsecRevealed ? "隠す" : "表示"}
+                {nsecRevealed ? t("account.profile.nsec.hide") : t("account.profile.nsec.show")}
               </button>
               <button
                 type="button"
                 onClick={() => void copyNsec()}
-                aria-label="秘密鍵をコピーする"
+                aria-label={t("account.profile.nsec.copyAria")}
                 className="text-sm text-ha-green hover:text-ha-green-deep transition-colors"
               >
-                コピー
+                {t("account.profile.nsec.copy")}
               </button>
-              {nsecCopied && <span className="text-xs text-ha-green-deep">コピーしました</span>}
+              {nsecCopied && <span className="text-xs text-ha-green-deep">{t("account.profile.nsec.copied")}</span>}
             </div>
           </div>
         </div>
