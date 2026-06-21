@@ -45,6 +45,8 @@ export interface DraftMetaItem {
   rotation?: number;
   /** 撮影日（#324・`YYYY-MM-DD`・null/未指定=載せない）。 */
   shotDate?: string | null;
+  /** 撮影日が自動抽出由来か（#324・「自動抽出しました。」表示の判定。未指定=false）。 */
+  shotDateAuto?: boolean;
 }
 
 /** meta ストアの singleton レコード（デバウンス保存する軽い側）。 */
@@ -73,6 +75,7 @@ export interface DraftSnapshot {
     filters: SelectedFilter[];
     rotation: number;
     shotDate: string | null;
+    shotDateAuto: boolean;
   }>;
 }
 
@@ -178,6 +181,7 @@ export async function loadDraft(): Promise<DraftSnapshot | null> {
           filters: Array.isArray(m?.filters) ? m!.filters : [],
           rotation: typeof m?.rotation === "number" ? m.rotation : 0,
           shotDate: typeof m?.shotDate === "string" ? m.shotDate : null,
+          shotDateAuto: m?.shotDateAuto === true,
         };
       });
 

@@ -37,6 +37,11 @@ type DraftImage = {
   rotation: number;
   /** 撮影日（#324・`YYYY-MM-DD`）。添付時に EXIF/ファイル名から検出・編集/除外可（null=載せない）。 */
   shotDate: string | null;
+  /**
+   * 撮影日が自動抽出（EXIF/ファイル名）由来か（#324・kako-jun「自動でないのに自動と出すな」）。
+   * 自動検出時 true、手入力/訂正で false。「自動抽出しました。」は shotDate!=null && これが true の時だけ出す。
+   */
+  shotDateAuto: boolean;
 };
 
 const MAX_IMAGES = 4;
@@ -46,7 +51,7 @@ function makeDraftImage(file: File): DraftImage {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random()}`;
-  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [], rotation: 0, shotDate: null };
+  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [], rotation: 0, shotDate: null, shotDateAuto: false };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -104,7 +109,7 @@ export default function Composer() {
         if (!alive || snapshot === null) return;
         const restored: DraftImage[] = snapshot.images.map((img) => {
           const file = new File([img.blob], img.name, { type: img.type });
-          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters, rotation: img.rotation, shotDate: img.shotDate };
+          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters, rotation: img.rotation, shotDate: img.shotDate, shotDateAuto: img.shotDateAuto };
         });
         if (restored.length === 0) return;
         // 復元した集合キーを控える（blobSetKey と同じ作り方で揃える）。これで直後に発火する
@@ -187,7 +192,7 @@ export default function Composer() {
       void saveMeta({
         caption,
         currentId,
-        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters, rotation: img.rotation, shotDate: img.shotDate })),
+        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters, rotation: img.rotation, shotDate: img.shotDate, shotDateAuto: img.shotDateAuto })),
       });
     }, 1000);
     return () => clearTimeout(timer);
@@ -251,8 +256,11 @@ export default function Composer() {
           const shotDate = detectShotDate(buf, draft.file.name);
           if (shotDate !== null) {
             // ユーザーが先に手で編集/除外していたら上書きしない（crop と同じ「null のときだけ自動セット」）。
+            // 自動検出由来なので shotDateAuto=true（「自動抽出しました。」を出してよい印・#324）。
             setImages((prev) =>
-              prev.map((item) => (item.id === draft.id && item.shotDate === null ? { ...item, shotDate } : item)),
+              prev.map((item) =>
+                item.id === draft.id && item.shotDate === null ? { ...item, shotDate, shotDateAuto: true } : item,
+              ),
             );
           }
         })
@@ -263,7 +271,7 @@ export default function Composer() {
     setStatus({ kind: "idle" });
   }
 
-  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate">>) {
+  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate" | "shotDateAuto">>) {
     if (currentId === null) return;
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
   }
@@ -483,20 +491,26 @@ export default function Composer() {
           {currentImage !== null && (
             <section className="flex flex-col gap-1.5">
               <h2 className="text-sm font-medium text-ha-green-deep">撮影日</h2>
-              {currentImage.shotDate !== null && <p className="text-xs text-ha-ink/55">自動抽出しました。</p>}
+              {/* 自動抽出由来の時だけ出す（手入力/訂正には出さない＝嘘をつかない・#324 kako-jun）。 */}
+              {currentImage.shotDate !== null && currentImage.shotDateAuto && (
+                <p className="text-xs text-ha-ink/55">自動抽出しました。</p>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="date"
                   value={currentImage.shotDate ?? ""}
                   max="2999-12-31"
-                  onChange={(e) => updateCurrentImage({ shotDate: e.target.value === "" ? null : e.target.value })}
+                  onChange={(e) =>
+                    // 手入力/訂正＝自動でなくなる（shotDateAuto=false）。空にしたら null。
+                    updateCurrentImage({ shotDate: e.target.value === "" ? null : e.target.value, shotDateAuto: false })
+                  }
                   aria-label="この写真の撮影日"
                   className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                 />
                 {currentImage.shotDate !== null && (
                   <button
                     type="button"
-                    onClick={() => updateCurrentImage({ shotDate: null })}
+                    onClick={() => updateCurrentImage({ shotDate: null, shotDateAuto: false })}
                     className="text-xs text-ha-ink/55 underline decoration-dotted underline-offset-2 hover:text-ha-pink transition-colors"
                   >
                     撮影日を含めない

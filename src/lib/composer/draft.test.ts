@@ -160,6 +160,31 @@ describe("draft 永続化（round-trip）", () => {
     expect(snap!.images[1]!.filters).toEqual([{ name: "cool", strength: 2 }]);
   });
 
+  it("撮影日 / 自動検出フラグ（shotDate / shotDateAuto）を往復する（#324）", async () => {
+    await syncBlobs([
+      makeRecord({ id: "id-auto", order: 0 }),
+      makeRecord({ id: "id-manual", order: 1 }),
+      makeRecord({ id: "id-none", order: 2 }),
+    ]);
+    await saveMeta(
+      makeMeta({
+        items: [
+          // 自動抽出: shotDateAuto=true（「自動抽出しました。」を出してよい）。
+          { id: "id-auto", crop: null, filters: [], shotDate: "2024-06-15", shotDateAuto: true },
+          // 手入力: 同じ日付でも自動でない＝false（嘘をつかない・kako-jun）。
+          { id: "id-manual", crop: null, filters: [], shotDate: "2024-06-15", shotDateAuto: false },
+          // 未指定（旧ドラフト互換）: shotDate なし → shotDateAuto は既定 false。
+          { id: "id-none", crop: null, filters: [] },
+        ],
+      }),
+    );
+
+    const snap = await loadDraft();
+    expect(snap!.images[0]).toMatchObject({ shotDate: "2024-06-15", shotDateAuto: true });
+    expect(snap!.images[1]).toMatchObject({ shotDate: "2024-06-15", shotDateAuto: false });
+    expect(snap!.images[2]).toMatchObject({ shotDate: null, shotDateAuto: false });
+  });
+
   it("currentId が現存する id ならそのまま維持する", async () => {
     await syncBlobs([makeRecord({ id: "id-a", order: 0 })]);
     await saveMeta(makeMeta({ currentId: "id-a", items: [{ id: "id-a", crop: null, filters: [] }] }));
