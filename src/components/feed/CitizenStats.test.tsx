@@ -1,9 +1,24 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CitizenStats from "./CitizenStats.tsx";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
 const NOW_DAY = 86400;
+
+// CitizenStats は GreenArea（#310）を内包し、画像を crossOrigin で読む。jsdom の Image は
+// onerror を非同期発火して late setState→act 警告を出すので、無反応 Image にして抑える
+// （緑グリッドの描画は GreenArea.test と純関数 green.test／実機 blink が担保）。
+beforeEach(() => {
+  vi.stubGlobal(
+    "Image",
+    class {
+      crossOrigin = "";
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_v: string) {}
+    },
+  );
+});
 
 function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
   return {
@@ -18,7 +33,10 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 }
 
 describe("CitizenStats（活動スタッツ表示・#272）", () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
   it("名乗り済み（hasName）は市民・投稿数/写真数/居住日数を出す", () => {
     const now = Math.floor(Date.now() / 1000);
