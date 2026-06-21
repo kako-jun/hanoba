@@ -13,6 +13,8 @@ import {
   removeTag,
   tagAliasValues,
 } from "./discoverFilter.ts";
+import { buildCatalogAliasIndex } from "../plants/variety-search.ts";
+import { VARIETY_CATALOG } from "../plants/variety-catalog.ts";
 import type { FeedPost } from "./parse.ts";
 
 /** テスト用の最小 FeedPost。 */
@@ -127,6 +129,22 @@ describe("applyClientFilter", () => {
       resolveTagAliases: (t) => (t === "パキポ" ? ["パキポ", "グラキリス"] : [t.toLowerCase()]),
     });
     expect(out.map((p) => p.id)).toEqual(["alias"]);
+  });
+
+  it("catalog 属別名でタグした cross-client 投稿に AND が当たる（#303・ゴムの木→フィカス）", () => {
+    // dictionary に無い属別名「ゴムの木」（=フィカス）を catalog 別名索引で展開して照合する。
+    const index = buildCatalogAliasIndex(VARIETY_CATALOG);
+    const resolve = (t: string): string[] => {
+      const cat = index.get(t.trim().toLowerCase());
+      const dict = tagAliasValues(t);
+      return cat === undefined ? dict : [...new Set([...dict, ...cat])];
+    };
+    const posts = [
+      post({ id: "cross", hashtags: ["ゴムの木", "ペティオラリス"] }),
+      post({ id: "no", hashtags: ["ゴムの木"] }), // ペティオラリス が無いので AND に落ちる
+    ];
+    const out = applyClientFilter(posts, { tags: ["フィカス", "ペティオラリス"], resolveTagAliases: resolve });
+    expect(out.map((p) => p.id)).toEqual(["cross"]);
   });
 });
 

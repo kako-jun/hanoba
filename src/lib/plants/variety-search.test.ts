@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { VarietyCategory } from "./variety-catalog.ts";
 import {
+  buildCatalogAliasIndex,
   findPickableGenus,
   findVarietyGenus,
   findVarietyGenusInCaption,
@@ -318,5 +319,28 @@ describe("tagsToUnpick（#315・同名跨ぎは本文文脈で正しい階層を
       "クレマチス",
       "バラ・草花",
     ]);
+  });
+});
+
+describe("buildCatalogAliasIndex（#303・discover の catalog 別名展開）", () => {
+  const index = buildCatalogAliasIndex(CATALOG);
+
+  it("品種の別名を双方向に引ける（鉄線 ↔ テッセン）", () => {
+    expect(index.get("鉄線")).toEqual(["テッセン", "鉄線"]);
+    expect(index.get("テッセン")).toEqual(["テッセン", "鉄線"]);
+  });
+
+  it("別名の無い pickable 属/品種は自分だけ", () => {
+    expect(index.get("アガベ")).toEqual(["アガベ"]);
+    expect(index.get("チタノタ")).toEqual(["チタノタ"]);
+  });
+
+  it("非 pickable 見出し属はキーにしないが、その配下品種はキーになる", () => {
+    expect(index.has("その他塊根")).toBe(false);
+    expect(index.get("火星人")).toEqual(["火星人"]);
+  });
+
+  it("辞書に無い語は索引に無い（呼び出し側で素のタグに倒す）", () => {
+    expect(index.get("存在しない")).toBeUndefined();
   });
 });

@@ -111,6 +111,30 @@ export function tagsToPick(catalog: VarietyCategory[], name: string): string[] {
   return [name];
 }
 
+/**
+ * discover の別名展開用に、variety-catalog の **pickable 属＋品種の name/aliases** を
+ * 「小文字キー → 同一エンティティの別名集合（小文字）」へ展開した索引を作る純関数（#303）。
+ * 札を組むのと同じ source of truth で discover の AND 照合も別名展開し、辞書外の属/品種別名で
+ * タグした cross-client 投稿（例 `#ゴムの木`＝フィカスの別名）にも当てる。
+ * 同名衝突（別エンティティが同じ語を使う稀ケース）は先勝ち（最初に登録した集合を保つ）。
+ */
+export function buildCatalogAliasIndex(catalog: VarietyCategory[]): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  const add = (names: string[]) => {
+    const lower = [...new Set(names.map((n) => n.trim().toLowerCase()).filter((n) => n !== ""))];
+    for (const key of lower) {
+      if (!index.has(key)) index.set(key, lower);
+    }
+  };
+  for (const category of catalog) {
+    for (const genus of category.genera) {
+      if (genus.pickable) add([genus.name, ...(genus.aliases ?? [])]);
+      for (const v of genus.varieties) add([v.name, ...(v.aliases ?? [])]);
+    }
+  }
+  return index;
+}
+
 /** 検索結果の表示上限（TagPicker と共有）。 */
 export const SEARCH_LIMIT = 40;
 
