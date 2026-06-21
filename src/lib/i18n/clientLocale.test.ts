@@ -12,8 +12,8 @@ describe("clientLocale", () => {
   });
 
   describe("resolveClientLocale", () => {
-    it("保存が無ければ既定（ja）を返す", () => {
-      expect(resolveClientLocale()).toBe("ja");
+    it("保存が無ければ既定（go-live で en）を返す", () => {
+      expect(resolveClientLocale()).toBe("en");
     });
 
     it("localStorage に保存した言語を読む（en）", () => {
@@ -26,14 +26,14 @@ describe("clientLocale", () => {
       expect(resolveClientLocale()).toBe("ja");
     });
 
-    it("未対応の値は既定（ja）に落とす", () => {
+    it("未対応の値は既定（en）に落とす", () => {
       localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
-      expect(resolveClientLocale()).toBe("ja");
+      expect(resolveClientLocale()).toBe("en");
     });
 
-    it("空文字も既定（ja）に落とす", () => {
+    it("空文字も既定（en）に落とす", () => {
       localStorage.setItem(LOCALE_STORAGE_KEY, "");
-      expect(resolveClientLocale()).toBe("ja");
+      expect(resolveClientLocale()).toBe("en");
     });
   });
 

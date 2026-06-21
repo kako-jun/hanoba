@@ -118,6 +118,52 @@ export function computeSquareCropRect(
   return { sx, sy, size };
 }
 
+/** % 単位の正方形クロップ（react-image-crop の percentCrop と同じ x/y/width/height）。 */
+export interface PercentCrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * 回転後の「見えている写真の領域」に正方形クロップ(%)を収める純関数（#348）。
+ *
+ * 焼き込み（`renderInPlaceRotation`）もプレビュー（CSS `transform: rotate()`）も**元画像と同寸（W×H）の
+ * box に中心回転で描く**ので、90/270 回転だと写真は中心の `min(W,H)` 正方形だけが見え、左右（または上下）は
+ * letterbox の空き帯になる。だが react-image-crop の操作領域は回転前の box（W×H）のままなので、クロップ枠を
+ * **空き帯（写真外）までドラッグできてしまう**（#348）。これを見えている領域に clamp する。
+ * - 0/180（`quarter` 偶数）: box 全体が見えているので素通し（微調整回転も含め退行させない）。
+ * - 90/270（`quarter` 奇数）: 中心の `S=min(W,H)` 正方形に収める（位置・サイズとも）。
+ *
+ * `box{W,H}` は表示中の img（回転前）の px 寸法。返り値は % 単位（正方形＝px で width≈height）。
+ */
+export function clampCropToVisible(crop: PercentCrop, rotation: number, boxW: number, boxH: number): PercentCrop {
+  if (boxW <= 0 || boxH <= 0) return crop;
+  const quarter = ((Math.round(rotation / 90) % 4) + 4) % 4;
+  const swapped = quarter === 1 || quarter === 3;
+  // 0/180（および微調整回転＝quarter 偶数）は box 全体が見えている＝素通し（退行させない・react-image-crop の
+  // aspect/bound 制約に委ねる）。clamp は写真が中心正方形に letterbox される 90/270 のときだけ行う。
+  if (!swapped) return crop;
+
+  // 見えている領域（px）＝中心の S=min(W,H) 正方形。
+  const s = Math.min(boxW, boxH);
+  const minX = (boxW - s) / 2;
+  const minY = (boxH - s) / 2;
+
+  // px に直して、領域に収まる最大の正方形辺へ詰める。
+  const toPxX = (v: number) => (v / 100) * boxW;
+  const toPxY = (v: number) => (v / 100) * boxH;
+  const reqSide = Math.min(toPxX(crop.width), toPxY(crop.height)); // 正方形なので px は一致するはず
+  const side = Math.max(1, Math.min(reqSide, s));
+
+  // 原点を中心正方形の内側へ（右端・下端がはみ出さない）。
+  const x = Math.min(Math.max(toPxX(crop.x), minX), minX + s - side);
+  const y = Math.min(Math.max(toPxY(crop.y), minY), minY + s - side);
+
+  return { x: (x / boxW) * 100, y: (y / boxH) * 100, width: (side / boxW) * 100, height: (side / boxH) * 100 };
+}
+
 /**
  * クロップ＋フィルタを 1 パスで canvas に焼き込み、正方形の画像 Blob を返す。
  * ブラウザ専用（HTMLCanvasElement / toBlob を使う）。SSR では呼ばない。

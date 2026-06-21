@@ -5,8 +5,8 @@ import { ja } from "./messages/ja.ts";
 import { en } from "./messages/en.ts";
 
 describe("i18n locale", () => {
-  it("既定言語は ja", () => {
-    expect(DEFAULT_LOCALE).toBe("ja");
+  it("既定言語は en（#147 go-live＝世界の正面を英語に）", () => {
+    expect(DEFAULT_LOCALE).toBe("en");
   });
 
   it("isLocale は対応言語のみ true", () => {

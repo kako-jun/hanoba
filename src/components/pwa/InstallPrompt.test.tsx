@@ -63,6 +63,7 @@ const BANNER = { name: "ホーム画面に追加" } as const;
 describe("InstallPrompt（#230 A2HS 促しバナー）", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
     stubStandaloneMedia(false); // 既定は未設置
     stubUserAgent(DESKTOP_CHROME); // 既定は iOS でない
     stubNavigatorStandalone(undefined);

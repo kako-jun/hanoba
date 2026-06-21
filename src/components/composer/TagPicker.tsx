@@ -248,7 +248,17 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
     }
   }
 
-  // フラットなタグ（人気/最近）のタップ。属なら階層へ誘導、それ以外は葉として挿入（#166）。
+  // ドリルダウンを指定地点（カテゴリ／属）で開く（#364・カテゴリは常に品種選択へ入る）。
+  function drillTo(category: VarietyCategory, genusObj: Genus | null) {
+    setQuery("");
+    setOpen(true);
+    setCat(category);
+    setGenus(genusObj);
+  }
+
+  // フラットなタグ（人気/最近）のタップ。属なら階層へ誘導、**カテゴリも常に階層へドリルイン**（#364・
+  // kako-jun「カテゴリのクリックは常に品種選択と同じ動き／カテゴリ単体タグを打ちたい場合はない」）。
+  // それ以外（品種/辞書外）は葉として挿入（#166）。
   async function engage(name: string) {
     const loaded = await ensureCatalog();
     if (loaded === null) {
@@ -257,10 +267,13 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
     }
     const asGenus = findPickableGenus(loaded, name);
     if (asGenus !== null) {
-      setQuery("");
-      setOpen(true);
-      setCat(asGenus.category);
-      setGenus(asGenus.genus);
+      drillTo(asGenus.category, asGenus.genus);
+      return;
+    }
+    // #364: カテゴリ名なら、そのカテゴリの階層へドリルイン（単体タグにしない）。
+    const asCat = loaded.find((c) => c.label === name);
+    if (asCat !== undefined) {
+      drillTo(asCat, null);
       return;
     }
     pick(name);
@@ -491,22 +504,17 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
               <div className="flex flex-wrap gap-1.5">
                 {hits.map((h) =>
                   h.kind === "category" ? (
-                    // カテゴリヒット（#312）。タップで `#カテゴリ` を付ける（ドリルダウンせず葉として確定）。
+                    // カテゴリヒット（#364）。タップで**そのカテゴリの階層へドリルイン**（#312 の単体タグ化は撤回・
+                    // kako-jun「カテゴリのクリックは常に品種選択と同じ動き／単体タグを打ちたい場合はない」）。
                     <button
                       key={`c-${h.name}`}
                       type="button"
-                      onClick={() => toggle(h.name, () => pick(h.name, { categoryLabel: h.category, genusName: null }))}
-                      aria-pressed={has(h.name)}
-                      className={`rounded-full px-3 py-1 text-sm transition-colors ${
-                        has(h.name)
-                          ? "border border-ha-green bg-ha-green text-ha-white"
-                          : "glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep"
-                      }`}
+                      onClick={() => engage(h.name)}
+                      className="rounded-full px-3 py-1 text-sm glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
                     >
-                      #{h.name}
-                      <span className={`ml-1 text-[10px] ${has(h.name) ? "text-ha-white/70" : "text-ha-ink/40"}`}>
-                        {t("tag.category.label")}
-                      </span>
+                      {h.name}
+                      <span className="ml-1 text-[10px] text-ha-ink/40">{t("tag.category.label")}</span>
+                      <span aria-hidden className="ml-1 text-ha-ink/40">›</span>
                     </button>
                   ) : h.kind === "genus" ? (
                     <button
@@ -575,24 +583,9 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
               ))}
             </div>
           ) : genus === null ? (
-            // 属一覧（pickable な属へドリル＋「このカテゴリをこのまま使う」でカテゴリ単独タグ・#312）
+            // 属一覧（pickable な属へドリル）。#364 で「このカテゴリをこのまま使う」（#312 のカテゴリ単独タグ）は
+            // 撤去＝カテゴリは単体エンドポイントにせず、必ず属/品種まで降りて選ぶ（カテゴリは前置タグとしてだけ付く）。
             <div className="flex flex-wrap gap-1.5">
-              {!isFilter && (
-                // カテゴリ単独でタグにする（#312・属の「このまま使う」と対称）。品種名が分からない人は
-                // ここで止めて `#カテゴリ` だけ付けられる。filter は広すぎる絞りになるので出さない（葉で絞る）。
-                <button
-                  type="button"
-                  onClick={() => toggle(cat.label, () => pick(cat.label, { categoryLabel: cat.label, genusName: null }))}
-                  aria-pressed={has(cat.label)}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    has(cat.label)
-                      ? "border border-ha-green bg-ha-green text-ha-white"
-                      : "border border-ha-green/60 bg-ha-green/10 text-ha-green-deep hover:bg-ha-green/20"
-                  }`}
-                >
-                  {t("tag.useCategory", { label: cat.label })}
-                </button>
-              )}
               {cat.genera.map((g) => (
                 <button
                   key={g.name}

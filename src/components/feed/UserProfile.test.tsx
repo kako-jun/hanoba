@@ -46,6 +46,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
     fetchMyPosts.mockReset();
     fetchMyProfileResilient.mockReset();
     window.localStorage.clear();
+    localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
     window.history.replaceState(null, "", "/u");
   });
 

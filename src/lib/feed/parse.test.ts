@@ -301,28 +301,28 @@ describe("filterByHashtag", () => {
 
 describe("relativeTime", () => {
   it("1 分未満はたった今", () => {
-    expect(relativeTime(1000, 1000)).toBe("たった今");
-    expect(relativeTime(1000, 1059)).toBe("たった今");
+    expect(relativeTime(1000, 1000, "ja")).toBe("たった今");
+    expect(relativeTime(1000, 1059, "ja")).toBe("たった今");
   });
 
   it("分前（境界 60 秒）", () => {
-    expect(relativeTime(0, 60)).toBe("1分前");
-    expect(relativeTime(0, 3 * 60)).toBe("3分前");
-    expect(relativeTime(0, 59 * 60 + 59)).toBe("59分前");
+    expect(relativeTime(0, 60, "ja")).toBe("1分前");
+    expect(relativeTime(0, 3 * 60, "ja")).toBe("3分前");
+    expect(relativeTime(0, 59 * 60 + 59, "ja")).toBe("59分前");
   });
 
   it("時間前（境界 3600 秒）", () => {
-    expect(relativeTime(0, 3600)).toBe("1時間前");
-    expect(relativeTime(0, 5 * 3600)).toBe("5時間前");
-    expect(relativeTime(0, 23 * 3600 + 3599)).toBe("23時間前");
+    expect(relativeTime(0, 3600, "ja")).toBe("1時間前");
+    expect(relativeTime(0, 5 * 3600, "ja")).toBe("5時間前");
+    expect(relativeTime(0, 23 * 3600 + 3599, "ja")).toBe("23時間前");
   });
 
   it("日前（境界 86400 秒）", () => {
-    expect(relativeTime(0, 86400)).toBe("1日前");
-    expect(relativeTime(0, 7 * 86400)).toBe("7日前");
+    expect(relativeTime(0, 86400, "ja")).toBe("1日前");
+    expect(relativeTime(0, 7 * 86400, "ja")).toBe("7日前");
   });
 
   it("未来はたった今に丸める", () => {
-    expect(relativeTime(2000, 1000)).toBe("たった今");
+    expect(relativeTime(2000, 1000, "ja")).toBe("たった今");
   });
 });

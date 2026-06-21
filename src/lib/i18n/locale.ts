@@ -12,7 +12,7 @@ export const LOCALES = ["ja", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 /** 既定言語。世界観文言の原典（日本語）。未訳はここに fallback する。 */
-export const DEFAULT_LOCALE: Locale = "ja";
+export const DEFAULT_LOCALE: Locale = "en";
 
 /** 任意の値が対応言語かを判定する（URL/localStorage 由来の文字列の検証用・段階2）。 */
 export function isLocale(value: unknown): value is Locale {

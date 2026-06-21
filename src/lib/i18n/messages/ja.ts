@@ -180,6 +180,8 @@ export const ja = {
   "compose.reorder.right": "右へ",
   "compose.reorder.counter": "{index}枚目 / 全{total}枚",
   // フィルタ節（Composer の見出し）。
+  "compose.undo": "1手戻す",
+  "compose.undo.aria": "直前の画像編集（角度・フィルタ・撮影日）を1手戻す",
   "compose.filter.heading": "フィルタ",
   // 撮影日節（#324）。
   "compose.shotDate.heading": "撮影日",
