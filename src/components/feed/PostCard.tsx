@@ -2,6 +2,7 @@ import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import Avatar from "./Avatar.tsx";
@@ -57,6 +58,8 @@ export default function PostCard({
   reactionCount,
   commentCount,
 }: Props) {
+  const locale = useLocale();
+  const t = useT(locale);
   const captionText = stripHashtags(post.caption);
   const photoCount = post.imageUrls.length;
   // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
@@ -99,7 +102,7 @@ export default function PostCard({
               onOpen();
             }}
             // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
-            aria-label={post.caption === "" ? "写真を拡大" : post.caption}
+            aria-label={post.caption === "" ? t("card.photo.zoom") : post.caption}
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
             className="relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
@@ -110,7 +113,7 @@ export default function PostCard({
             />
             {photoCount > 1 && (
               <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">
-                {photoCount}枚
+                {t("card.photos.count", { n: photoCount })}
               </span>
             )}
           </button>
@@ -146,7 +149,7 @@ export default function PostCard({
                 <a
                   href={href}
                   onClick={(e) => e.stopPropagation()}
-                  aria-label={`${authorName} のプロフィール`}
+                  aria-label={t("card.author.profile", { name: authorName })}
                   className="flex min-w-0 items-center gap-2 hover:text-ha-green-deep transition-colors"
                 >
                   {inner}
@@ -154,18 +157,18 @@ export default function PostCard({
               );
             })()}
             <span className="text-ha-ink/30">·</span>
-            <time className="shrink-0">{relativeTime(post.createdAt, now)}</time>
+            <time className="shrink-0">{relativeTime(post.createdAt, now, locale)}</time>
             {/* いいね数・コメント数（#276）。**カードは 1 以上のときだけ控えめに添える**
                 （0 / 未ロード＝undefined はそのカウンタを出さない＝要素ごと描画しない）。
                 配色・アイコンは PostDetail と揃える（いいね＝黄色い花・コメント＝吹き出し・既存トークン）。 */}
             {reactionCount !== undefined && reactionCount > 0 && (
-              <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={`いいね ${reactionCount}`}>
+              <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={t("reaction.likes.aria", { n: reactionCount })}>
                 <Icon name="flower" className="h-3.5 w-3.5 text-ha-yellow" />
                 <span className="tabular-nums">{reactionCount}</span>
               </span>
             )}
             {commentCount !== undefined && commentCount > 0 && (
-              <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={`コメント ${commentCount}`}>
+              <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={t("reaction.comments.aria", { n: commentCount })}>
                 <Icon name="chat" className="h-3.5 w-3.5" />
                 <span className="tabular-nums">{commentCount}</span>
               </span>
@@ -180,7 +183,7 @@ export default function PostCard({
                 aria-expanded={expanded}
                 className="ml-auto shrink-0 text-sm font-medium text-ha-green hover:text-ha-green-deep transition-colors"
               >
-                {expanded ? "閉じる" : "続きを読む"}
+                {expanded ? t("common.close") : t("card.readMore")}
               </button>
             )}
           </div>

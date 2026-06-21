@@ -9,6 +9,7 @@ import {
   type DiscoverFilter,
 } from "../../lib/feed/discoverFilter.ts";
 import { type FeedPost } from "../../lib/feed/parse.ts";
+import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import PostGrid from "./PostGrid.tsx";
 import VarietyFilter from "./VarietyFilter.tsx";
 
@@ -34,7 +35,9 @@ function readTagsFromUrl(): string[] {
  *   replaceState/無書き込み（popstate ループ防止）。`latestRef` で stale 応答を破棄。
  * - 正方形グリッド＋詳細モーダルは PostGrid（FeedGrid と共有）。relay/window 参照はクライアントのみ。
  */
-export default function DiscoverGrid() {
+// lang は discover.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   const [tags, setTags] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -96,42 +99,42 @@ export default function DiscoverGrid() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const summary = filterSummary({ ...EMPTY_FILTER, tags });
+  const summary = filterSummary({ ...EMPTY_FILTER, tags }, lang);
 
   return (
-    <section className="flex flex-col gap-4">
-      {/* 絞り込みは品種だけ（投稿画面と同じ TagPicker を流用）。選んだ瞬間に新着順で反映。 */}
-      <VarietyFilter tags={tags} onChange={(next) => void applyTags(next, "push")} />
+    <LocaleProvider value={lang}>
+      <section className="flex flex-col gap-4">
+        {/* 絞り込みは品種だけ（投稿画面と同じ TagPicker を流用）。選んだ瞬間に新着順で反映。 */}
+        <VarietyFilter tags={tags} onChange={(next) => void applyTags(next, "push")} />
 
-      {status === "loading" && (
-        <p className="py-12 text-center text-ha-ink/60">「{summary}」を探しています…</p>
-      )}
+        {status === "loading" && (
+          <p className="py-12 text-center text-ha-ink/60">{t("discover.loading", { summary })}</p>
+        )}
 
-      {status === "error" && (
-        <div className="py-12 flex flex-col items-center gap-4 text-center">
-          <p className="text-ha-ink/70">読み込めませんでした。</p>
-          {/* 再試行は同条件の再取得＝URL を書かない（navigate:"none"・余分な履歴を積まない）。 */}
-          <button
-            type="button"
-            onClick={() => void applyTags(tags, "none")}
-            className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-          >
-            再試行
-          </button>
-        </div>
-      )}
+        {status === "error" && (
+          <div className="py-12 flex flex-col items-center gap-4 text-center">
+            <p className="text-ha-ink/70">{t("feed.error.short")}</p>
+            {/* 再試行は同条件の再取得＝URL を書かない（navigate:"none"・余分な履歴を積まない）。 */}
+            <button
+              type="button"
+              onClick={() => void applyTags(tags, "none")}
+              className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+            >
+              {t("common.retry")}
+            </button>
+          </div>
+        )}
 
-      {status === "loaded" &&
-        (posts.length === 0 ? (
-          <p className="py-12 text-center text-ha-ink/70">
-            「{summary}」の投稿は見つかりませんでした。別の品種で試してみましょう。
-          </p>
-        ) : (
-          // 投稿のタグ/札をクリックしたら、**今のフィルタを置き換えてそのタグだけで絞り直す**
-          // （AND で積み増すと結果がどんどん減るため・#272 kako-jun「毎回リセットでいい」）。意図的操作＝pushState。
-          // 複数品種の AND は上の VarietyFilter で明示的に組む（そちらは add/remove の意図的操作）。
-          <PostGrid posts={posts} onSelectHashtag={(tag) => void applyTags([tag], "push")} />
-        ))}
-    </section>
+        {status === "loaded" &&
+          (posts.length === 0 ? (
+            <p className="py-12 text-center text-ha-ink/70">{t("discover.empty", { summary })}</p>
+          ) : (
+            // 投稿のタグ/札をクリックしたら、**今のフィルタを置き換えてそのタグだけで絞り直す**
+            // （AND で積み増すと結果がどんどん減るため・#272 kako-jun「毎回リセットでいい」）。意図的操作＝pushState。
+            // 複数品種の AND は上の VarietyFilter で明示的に組む（そちらは add/remove の意図的操作）。
+            <PostGrid posts={posts} onSelectHashtag={(tag) => void applyTags([tag], "push")} />
+          ))}
+      </section>
+    </LocaleProvider>
   );
 }

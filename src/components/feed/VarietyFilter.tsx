@@ -1,6 +1,7 @@
 import Icon from "../ui/Icon.tsx";
 import TagPicker from "../composer/TagPicker.tsx";
 import { normalizeTagForBody } from "../../lib/image/hashtag-complete.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface Props {
   /** 現在の絞り込みタグ（品種＋自由タグ・AND）。 */
@@ -23,14 +24,15 @@ interface Props {
  * 同形にしないと relay/AND/選択色のどれも一致しない（#239 レビュー指摘）。
  */
 export default function VarietyFilter({ tags, onChange }: Props) {
-  const caption = tags.map((t) => `#${t}`).join(" ");
+  const t = useT(useLocale());
+  const caption = tags.map((tg) => `#${tg}`).join(" ");
 
   function add(raw: string) {
     const tag = normalizeTagForBody(raw);
     if (tag !== "" && !tags.includes(tag)) onChange([...tags, tag]);
   }
   function remove(tag: string) {
-    onChange(tags.filter((t) => t !== tag));
+    onChange(tags.filter((tg) => tg !== tag));
   }
 
   return (
@@ -45,7 +47,7 @@ export default function VarietyFilter({ tags, onChange }: Props) {
               #{tag}
               <button
                 type="button"
-                aria-label={`「${tag}」を外す`}
+                aria-label={t("filter.remove.aria", { tag })}
                 onClick={() => remove(tag)}
                 className="-mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ha-white/80 hover:text-ha-white"
               >
