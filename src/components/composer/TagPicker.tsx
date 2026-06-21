@@ -50,6 +50,13 @@ const INLINE_LIMIT = 7;
 const MIN_OVERFLOW = 4;
 
 /**
+ * 「最近使った」「人気」の近道行で出すチップ数の上限（kako-jun「数が多すぎてスクロールが大変」）。
+ * 人気は relay 集計で最大30件、最近は最大12件まで溜まるが、近道は**さっと選ぶ少数**でよい
+ * （網羅は植物ドリルダウン＋検索が担う）。先頭=最頻/最新の数件に絞る。
+ */
+const QUICK_SHORTCUT_LIMIT = 8;
+
+/**
  * 品種追加リクエストの宛先（#169/#232）。市役所ハブ（#163）が整ったので GitHub をやめ、
  * `/vote` の「品種への要望」板（住民投票 BBS の先頭・Nostalgic）へ集約する。
  * 品種に関する要望（並び順・追加・その他）は全部この板で受ける＝一般ユーザーを GitHub に飛ばさない。
@@ -319,7 +326,8 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
             <>
           {recent.length > 0 && (
             <ChipGroup label="最近使った">
-              {recent.map((t) => (
+              {/* 多すぎてスクロールが大変なので先頭 QUICK_SHORTCUT_LIMIT 件だけ出す（kako-jun）。 */}
+              {recent.slice(0, QUICK_SHORTCUT_LIMIT).map((t) => (
                 <Chip key={`recent-${t}`} label={t} active={has(t)} onClick={() => toggle(t, () => engage(t))} />
               ))}
             </ChipGroup>
@@ -327,7 +335,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
 
           {popular.length > 0 && (
             <ChipGroup label="人気">
-              {popular.map((t) => (
+              {popular.slice(0, QUICK_SHORTCUT_LIMIT).map((t) => (
                 <Chip
                   key={`pop-${t.tag}`}
                   label={t.tag}
