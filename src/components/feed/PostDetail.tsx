@@ -128,12 +128,14 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose, post.imageUrls.length, shareOpen]);
 
-  // フォーカス管理（a11y）: 開いたら閉じるボタンへフォーカスを移し、
-  // 閉じたら開く前にフォーカスがあった要素（クリックしたセル）へ戻す。
+  // フォーカス管理（a11y）: 開いたら**ダイアログ・パネル**へフォーカスを移し（WAI-ARIA dialog 標準）、
+  // 閉じたら開く前にフォーカスがあった要素（クリックしたセル）へ戻す。#379: 以前は × ボタンへ移していたが、
+  // リロード後初回のプログラム的フォーカスで `:focus-visible` が立ち × に UA 既定の白枠が出ていた。パネル
+  // （tabindex=-1・outline-none）へ移せば白枠は出ず、Esc は window keydown で効き、Tab で × へ到達できる。
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    // preventScroll: focus による背面スクロール飛びを防ぐ（開＝閉じるボタン／閉＝元セル・#79）。
-    closeButtonRef.current?.focus({ preventScroll: true });
+    // preventScroll: focus による背面スクロール飛びを防ぐ（開＝ダイアログ・パネル／閉＝元セル・#79）。
+    panelRef.current?.focus({ preventScroll: true });
     return () => {
       previouslyFocused?.focus({ preventScroll: true });
     };
@@ -230,7 +232,8 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     >
       <div
         ref={panelRef}
-        className="glass-strong relative w-full max-w-md max-h-full overflow-y-auto rounded-xl shadow-2xl flex flex-col ha-rise"
+        tabIndex={-1}
+        className="glass-strong relative w-full max-w-md max-h-full overflow-y-auto rounded-xl shadow-2xl flex flex-col ha-rise focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <button
