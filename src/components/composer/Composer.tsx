@@ -310,22 +310,18 @@ export default function Composer() {
   const posting = status.kind === "posting";
   // 名前必須（#28）＝「ユーザー名を入れたら投稿できる」。設定は AccountName 側で完了済み。
   const hasName = name !== null && name.trim() !== "";
-  const allCropsReady = images.length > 0 && images.every((image) => image.crop !== null);
-  const canSubmit = caption.trim() !== "" && hasImage && hasName && allCropsReady && !posting;
+  // クロップは「未設定」という概念を持たない（kako-jun）。中央正方形の自動枠がそのままベストなことも多く、
+  // ユーザーが触らなければそれを既定として使う＝投稿を妨げない（投稿時に crop が無ければ中央正方形を当てる）。
+  const canSubmit = caption.trim() !== "" && hasImage && hasName && !posting;
 
   // 投稿ボタンが押せない理由（不足条件）。ボタン近くに出して「なぜ押せない？」を消す。
   const missing: string[] = [];
   if (!hasName) missing.push("ユーザー名");
   if (!hasImage) missing.push("写真");
   if (caption.trim() === "") missing.push("ひとこと");
-  if (hasImage && !allCropsReady) missing.push("写真の枠");
 
   async function handleSubmit() {
     if (!canSubmit) return;
-    if (!allCropsReady) {
-      setStatus({ kind: "error", message: "クロップ範囲が未確定です。枠を調整してください。" });
-      return;
-    }
     setStatus({ kind: "posting" });
     // 綿毛は active={posting} で投稿の全尺ずっと舞う（#252）。ボタンは段階テキストで進捗を出す。
     setPostProgress({ stage: "upload", done: 0, total: images.length });
@@ -336,14 +332,15 @@ export default function Composer() {
     try {
       const orderedUrls = await Promise.all(
         images.map(async (draft, index) => {
-          if (draft.crop === null) throw new Error("クロップ範囲が未確定です。枠を調整してください。");
           const original = await loadImage(draft.src);
+          // crop は「未設定」を持たない（kako-jun）＝ユーザーが触っていなければ中央正方形の自動枠を当てる。
+          const crop = draft.crop ?? centeredSquareRect(original);
           // 回転（#314）は焼き込み時に**その場回転**で再現＝元画像と同寸の canvas に中心回転で描き、
           // それを crop の素材にする（crop 矩形は元画像の自然座標のまま一致＝プレビューの CSS rotate と同じ見え）。
           const source = draft.rotation === 0 ? original : renderInPlaceRotation(original, draft.rotation);
           const blob = await renderSquareImageFromRect(
             source,
-            draft.crop,
+            crop,
             composeFilterCss(draft.filters),
             composeVignette(draft.filters),
             composeSharpen(draft.filters),
@@ -427,11 +424,6 @@ export default function Composer() {
                   }`}
                 >
                   <img src={image.src} alt={`${index + 1}枚目`} className="h-full w-full object-cover" />
-                  {image.crop === null && (
-                    <span className="absolute inset-x-0 bottom-0 bg-ha-pink/85 py-0.5 text-[10px] font-semibold text-ha-white">
-                      未設定
-                    </span>
-                  )}
                 </button>
               ))}
               {images.length < MAX_IMAGES && (
