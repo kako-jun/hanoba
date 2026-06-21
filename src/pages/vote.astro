@@ -1,6 +1,10 @@
 ---
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+
+// 表示言語（#147）。今は既定（ja）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
 
 // 住民投票（#160）。市役所ハブ（#163）の最初に開庁する役所。
 // バックエンドレス（DESIGN §6）を保つため、投票＝掲示板は kako-jun 自作の
@@ -21,39 +25,35 @@ import MainLayout from "../layouts/MainLayout.astro";
 const boards = [
   {
     id: "hanoba-16b82341",
-    title: "品種への要望",
-    intro:
-      "品種に関する願いはすべてここへ。並び順、名簿に無い品種の追加、その他、遠慮はいらぬ。市長が必ず目を通す。",
+    title: t(locale, "vote.board.requests.title"),
+    intro: t(locale, "vote.board.requests.intro"),
   },
   {
     id: "hanoba-76cf0aed",
-    title: "欲しい機能",
-    intro: "この市にあったらいい仕組みを請願せよ。市長が善処する（かもしれない）。",
+    title: t(locale, "vote.board.features.title"),
+    intro: t(locale, "vote.board.features.intro"),
   },
   {
     id: "hanoba-12e8672f",
-    title: "バグ報告",
-    intro: "市の不具合を見つけたら、ここへ。直ちに修繕隊を送る。",
+    title: t(locale, "vote.board.bugs.title"),
+    intro: t(locale, "vote.board.bugs.intro"),
   },
 ] as const;
 ---
 
-<MainLayout
-  title="住民投票 — ハノーバ市役所"
-  description="ハノーバ市役所の住民投票所。品種の並び順・欲しい機能・バグ報告を、掲示板で気軽に。名前は任意。"
->
+<MainLayout title={t(locale, "meta.vote.title")} description={t(locale, "meta.vote.description")}>
   <SiteHeader />
 
   <main class="mx-auto max-w-3xl px-5 py-9 flex flex-col gap-8">
     <section class="ha-rise flex flex-col gap-3">
       <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-        住民投票
+        {t(locale, "vote.h1")}
       </h1>
       <p class="text-base leading-relaxed text-ha-ink/85 [word-break:auto-phrase]">
-        おっほん。ここは住民投票所だ。市政に物申したい諸君、遠慮はいらぬ。名乗らずとも一票は一票。市長が必ず目を通す。
+        {t(locale, "vote.intro")}
       </p>
       <p class="text-xs leading-relaxed text-ha-ink/55 [word-break:auto-phrase]">
-        ※ 各欄は掲示板です。気軽に書き込めます（名前は任意）。
+        {t(locale, "vote.note")}
       </p>
     </section>
 
@@ -62,7 +62,7 @@ const boards = [
         <section
           class="ha-rise flex flex-col gap-3"
           style={`--i:${i + 1}`}
-          aria-label={`住民投票 — ${board.title}`}
+          aria-label={t(locale, "vote.board.aria", { title: board.title })}
         >
           <div class="flex flex-col gap-1">
             <h2 class="font-display text-xl font-bold text-ha-green-deep">{board.title}</h2>

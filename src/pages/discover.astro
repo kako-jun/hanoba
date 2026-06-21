@@ -2,27 +2,28 @@
 import DiscoverGrid from "../components/feed/DiscoverGrid.tsx";
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 // みんなの植物（discover）。hanoba フィード（トップ・t:hanoba 限定）とは別ページ・別島。
 // 本文 #タグで mypace 等 他クライアントの植物投稿も集約する（DESIGN §6 二段構え）。
 // DiscoverGrid は relay 取得・window/history 参照を useEffect/イベント内で行うため
 // client:load（SSR では取得しない・静的生成）。
+
+// 表示言語（#147）。今は既定（ja）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
 ---
 
-<MainLayout
-  title="みんなの植物 — Hanōba"
-  description="Nostr 全体の植物（#plantstr）と、Hanōba の投稿をまとめて眺める。"
->
+<MainLayout title={t(locale, "meta.discover.title")} description={t(locale, "meta.discover.description")}>
   <SiteHeader current="discover" wide />
 
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
     <section class="ha-rise flex flex-col gap-2">
       <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-        みんなの植物
+        {t(locale, "nav.discover")}
       </h1>
       <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]">
-        Nostr 全体の植物（#plantstr）と、Hanōba の投稿をまとめて眺めます。
+        {t(locale, "discover.lead")}
       </p>
     </section>
 

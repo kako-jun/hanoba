@@ -8,12 +8,13 @@ import MainLayout from "../layouts/MainLayout.astro";
 // #27: 道具棚（アフィリエイト）は本の下に 1 スロットだけ残す。
 import AffiliateGrid from "../components/AffiliateGrid.astro";
 import CityHallBook from "../components/lore/CityHallBook.tsx";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+
+// 表示言語（#147）。今は既定（ja）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
 ---
 
-<MainLayout
-  title="Hanōba とは — 架空の植物都市"
-  description="Hanōba は植物写真の SNS。架空の植物好き都市ハノーバを、みんなで育てる場所です。"
->
+<MainLayout title={t(locale, "meta.about.title")} description={t(locale, "meta.about.description")}>
   <SiteHeader current="about" wide />
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
