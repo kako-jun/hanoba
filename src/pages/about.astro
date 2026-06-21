@@ -18,7 +18,7 @@ const locale: Locale = DEFAULT_LOCALE;
   <SiteHeader current="about" wide />
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
-    <CityHallBook client:load />
+    <CityHallBook client:load lang={locale} />
 
     <AffiliateGrid />
   </main>

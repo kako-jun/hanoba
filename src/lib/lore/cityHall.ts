@@ -1,10 +1,15 @@
-// ハノーバ市民手帳の表示テキスト（#163）。UI（CityHallBook）が描画する単一ソース。
+// ハノーバ市民手帳の表示テキスト（#163）。UI（CityHallBook）が描画する構造化データ。
 //
 // 文言はトーンロック済み（市長ボタニクス・フォン・ハノーバの声）。
 // doctrine（市長バイブル・市民レベル・ページモデル）の正本は docs/lore.md にある。
 // ここはその「レンダリング元」。本文の言い回しは承認済みのまま、改変しない。
 //
-// 言語別（JA/EN）は #147 前提で defer。まず JA のみ。
+// 言語別（JA/EN）は #147 で i18n カタログ（messages/）へ移管。文言の実体は cityHall.* 名前空間に置き、
+// ここは locale を受けて t() で解決し、同じ構造（BookPage[]）を組み立てる（buildCityHallBook）。
+// 後方互換のため DEFAULT_LOCALE で解決した定数（BOOK_TITLE / BOOK_PAGES 等）も従来どおり export する。
+
+import { t } from "../i18n/t.ts";
+import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 
 /** 本文の 1 段落。kind で見出し脇の実務注などを区別する。 */
 export type Block =
@@ -50,144 +55,179 @@ export type BookPage =
   | { page: 3; kind: "chronicle"; title: string; entries: ChronicleEntry[]; note: string }
   | { page: 4; kind: "ordinances"; title: string; ordinances: Ordinance[] };
 
-/** 本の在世タイトル（手帳の表題）。 */
-export const BOOK_TITLE = "ハノーバ市民手帳";
+/** 本の在世タイトル（手帳の表題）を locale で引く。 */
+export function bookTitle(locale: Locale = DEFAULT_LOCALE): string {
+  return t(locale, "cityHall.book.title");
+}
 
 /** 語り手＝ハノーバ市長の名（P1 本文「ボタニクス・フォン・ハノーバ」と一貫）。 */
-export const MAYOR_NAME = "ボタニクス・フォン・ハノーバ";
+export function mayorName(locale: Locale = DEFAULT_LOCALE): string {
+  return t(locale, "cityHall.mayor.name");
+}
 
 /** 親しみのある短い呼び名（肖像の脇など、フルネームだと長い場所で「ボタニクス市長」と名乗る・#262）。 */
-export const MAYOR_SHORT_NAME = "ボタニクス";
+export function mayorShortName(locale: Locale = DEFAULT_LOCALE): string {
+  return t(locale, "cityHall.mayor.shortName");
+}
 
 /** P1 移住案内（市長の歓迎の辞）。 */
-const PAGE_1: BookPage = {
-  page: 1,
-  kind: "welcome",
-  title: "移住案内",
-  blocks: [
-    {
-      kind: "para",
-      text: "おっほん。ハノーバ市長、ボタニクス・フォン・ハノーバである。ようこそ、緑の市へ。",
-    },
-    {
-      kind: "para",
-      text: "わが市に土地代はない。植物を育てている限り、区画は永久に無料で諸君のものだ。やることはただ一つ——正方形の区画にあなたの一鉢を植え、ひとこと添える。それだけで、あなたも立派な市民だ。写真は植物に限る（人もペットも、よその街でやりたまえ）。",
-    },
-    {
-      kind: "para",
-      text: "市の沿革も、条文も、品評会も、すべてこの市役所からご覧になれる。さあ、移住の手続きを。好きな呼び名をひとつ決めれば、それで完了だ。本名は要らぬ——諸君が諸君であればよい。",
-    },
-    {
-      kind: "note",
-      text: "※ ハノーバは植物専用の写真SNSです。正方形の写真1枚＋ひとこと、植物だけ。名前を登録すると投稿できます。",
-    },
-  ],
-};
+function page1(locale: Locale): BookPage {
+  return {
+    page: 1,
+    kind: "welcome",
+    title: t(locale, "cityHall.welcome.title"),
+    blocks: [
+      { kind: "para", text: t(locale, "cityHall.welcome.0") },
+      { kind: "para", text: t(locale, "cityHall.welcome.1") },
+      { kind: "para", text: t(locale, "cityHall.welcome.2") },
+      { kind: "note", text: t(locale, "cityHall.welcome.3") },
+    ],
+  };
+}
 
 /** P2 市役所ハブ（導線集約）。実在ルートのみ機能させ、未開設は「近日開庁」。 */
-const PAGE_2: BookPage = {
-  page: 2,
-  kind: "hub",
-  title: "市役所",
-  lead: "おっほん。ここは市役所だ。市政のすべては、この扉から辿れる。",
-  // 用途で 3 群に分ける（#263）。見る（眺める）→ 育てる（自分の営み）→ 街のこと（市政・コミュニティ）。
-  groups: [
-    {
-      heading: "見る",
-      links: [
-        { label: "みんなの植物（フィード）", route: "/discover" },
-        { label: "人気ランキング", route: "/ranking" },
-      ],
-    },
-    {
-      heading: "育てる",
-      links: [
-        { label: "投稿する", route: "/compose" },
-        { label: "あなたの植物", route: "/me" },
-      ],
-    },
-    {
-      heading: "街のこと",
-      links: [
-        { label: "住民投票", route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
-        { label: "品評会（コンテスト）", route: null, comingSoon: "近日開庁" },
-        { label: "市長ブログ", route: null, comingSoon: "近日開庁" },
-        { label: "街の地図", route: null, comingSoon: "近日開庁" },
-      ],
-    },
-  ],
-};
+function page2(locale: Locale): BookPage {
+  const comingSoon = t(locale, "cityHall.hub.comingSoon");
+  return {
+    page: 2,
+    kind: "hub",
+    title: t(locale, "cityHall.hub.title"),
+    lead: t(locale, "cityHall.hub.lead"),
+    // 用途で 3 群に分ける（#263）。見る（眺める）→ 育てる（自分の営み）→ 街のこと（市政・コミュニティ）。
+    groups: [
+      {
+        heading: t(locale, "cityHall.hub.group.0.heading"),
+        links: [
+          { label: t(locale, "cityHall.hub.group.0.link.0.label"), route: "/discover" },
+          { label: t(locale, "cityHall.hub.group.0.link.1.label"), route: "/ranking" },
+        ],
+      },
+      {
+        heading: t(locale, "cityHall.hub.group.1.heading"),
+        links: [
+          { label: t(locale, "cityHall.hub.group.1.link.0.label"), route: "/compose" },
+          { label: t(locale, "cityHall.hub.group.1.link.1.label"), route: "/me" },
+        ],
+      },
+      {
+        heading: t(locale, "cityHall.hub.group.2.heading"),
+        links: [
+          { label: t(locale, "cityHall.hub.group.2.link.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
+          { label: t(locale, "cityHall.hub.group.2.link.1.label"), route: null, comingSoon },
+          { label: t(locale, "cityHall.hub.group.2.link.2.label"), route: null, comingSoon },
+          { label: t(locale, "cityHall.hub.group.2.link.3.label"), route: null, comingSoon },
+        ],
+      },
+    ],
+  };
+}
 
 /** P3 沿革（年表・遊び）。 */
-const PAGE_3: BookPage = {
-  page: 3,
-  kind: "chronicle",
-  title: "沿革",
-  entries: [
-    {
-      era: "第一年 春",
-      text: "初代市長ボタニクス・フォン・ハノーバ、荒れ地に最初の一鉢を植える。芽が出た日を、市の誕生とする。",
-    },
-    {
-      era: "第一年 夏",
-      text: "市長、「雑草という植物は無い」と布告。優劣をつける条例の制定を永久に禁ずる。",
-    },
-    {
-      era: "第一年 秋",
-      text: "葉脈川（はみゃくがわ）の水、初めて温室街を潤す。",
-    },
-    {
-      era: "第二年",
-      text: "区画はすべて正方形と定められる。理由は「美しいから」とのみ記録される。",
-    },
-  ],
-  note: "市民が増えるたび、この年表は書き足される。",
-};
+function page3(locale: Locale): BookPage {
+  return {
+    page: 3,
+    kind: "chronicle",
+    title: t(locale, "cityHall.chronicle.title"),
+    entries: [
+      { era: t(locale, "cityHall.chronicle.entry.0.era"), text: t(locale, "cityHall.chronicle.entry.0.text") },
+      { era: t(locale, "cityHall.chronicle.entry.1.era"), text: t(locale, "cityHall.chronicle.entry.1.text") },
+      { era: t(locale, "cityHall.chronicle.entry.2.era"), text: t(locale, "cityHall.chronicle.entry.2.text") },
+      { era: t(locale, "cityHall.chronicle.entry.3.era"), text: t(locale, "cityHall.chronicle.entry.3.text") },
+    ],
+    note: t(locale, "cityHall.chronicle.note"),
+  };
+}
 
 /** P4 市の条文（ハノーバ市憲章・各条に市長解説）。 */
-const PAGE_4: BookPage = {
-  page: 4,
-  kind: "ordinances",
-  title: "市の条文",
-  ordinances: [
-    {
-      article: "第一条（土地）",
-      text: "ハノーバ市の土地代は、植物を育てている限り、無料とする。",
-      commentary:
-        "おっほん。育てる意志こそが地代だ。水をやり、葉を見つめる——それで諸君は十分に納めている。",
-    },
-    {
-      article: "第二条（区画）",
-      text: "一つの区画には、正方形の写真一枚と、ひとことを添えるものとする。",
-      commentary: "区画は正方形に限る。なぜか？ 美しいからだ。理由は以上である。",
-    },
-    {
-      article: "第三条（住民）",
-      text: "名を名乗った者を、市民とみなす。",
-      commentary: "名乗りは移住届だ。本名である必要はない。諸君が諸君であればよい。",
-    },
-    {
-      article: "第四条（平等）",
-      text: "市は、すべての植物を等しく愛する。雑草という名の植物は、当市には存在しない。",
-      commentary:
-        "日陰の苔も、軒先の多肉も、みな市の宝。優劣をつける条例は、永久に制定しない。",
-    },
-    {
-      article: "第五条（写真）",
-      text: "当市に掲げる写真は、植物のものに限る。",
-      commentary: "人もペットも、それぞれの街で輝けばよい。ここは植物の市だ。",
-    },
-  ],
-};
+function page4(locale: Locale): BookPage {
+  return {
+    page: 4,
+    kind: "ordinances",
+    title: t(locale, "cityHall.ordinance.title"),
+    ordinances: [
+      {
+        article: t(locale, "cityHall.ordinance.0.article"),
+        text: t(locale, "cityHall.ordinance.0.text"),
+        commentary: t(locale, "cityHall.ordinance.0.commentary"),
+      },
+      {
+        article: t(locale, "cityHall.ordinance.1.article"),
+        text: t(locale, "cityHall.ordinance.1.text"),
+        commentary: t(locale, "cityHall.ordinance.1.commentary"),
+      },
+      {
+        article: t(locale, "cityHall.ordinance.2.article"),
+        text: t(locale, "cityHall.ordinance.2.text"),
+        commentary: t(locale, "cityHall.ordinance.2.commentary"),
+      },
+      {
+        article: t(locale, "cityHall.ordinance.3.article"),
+        text: t(locale, "cityHall.ordinance.3.text"),
+        commentary: t(locale, "cityHall.ordinance.3.commentary"),
+      },
+      {
+        article: t(locale, "cityHall.ordinance.4.article"),
+        text: t(locale, "cityHall.ordinance.4.text"),
+        commentary: t(locale, "cityHall.ordinance.4.commentary"),
+      },
+    ],
+  };
+}
 
-/** 全ページ（1〜4・順序固定）。 */
-export const BOOK_PAGES: BookPage[] = [PAGE_1, PAGE_2, PAGE_3, PAGE_4];
+/** 全ページ（1〜4・順序固定）を locale で組み立てる。 */
+export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
+  return [page1(locale), page2(locale), page3(locale), page4(locale)];
+}
 
-/** ロックされたページのティザー（図鑑式・？？？）。 */
-export const LOCKED_TEASER = {
-  title: "？？？",
-  note: "このページは、もう少し市に馴染んでから。",
-} as const;
+/** ロックされたページのティザー（図鑑式・？？？）を locale で引く。 */
+export function lockedTeaser(locale: Locale = DEFAULT_LOCALE): { title: string; note: string } {
+  return {
+    title: t(locale, "cityHall.locked.title"),
+    note: t(locale, "cityHall.locked.note"),
+  };
+}
+
+/** レベル昇格時に小さく添える市長のひとこと（味付け）を locale で引く。 */
+export function levelFlavor(locale: Locale = DEFAULT_LOCALE): { citizen: string; tenured: string } {
+  return {
+    /** L1 で 2p 目（市役所）を開いたとき。L2 以上では出さない（古参に移住受理を再掲しない）。 */
+    citizen: t(locale, "cityHall.flavor.citizen"),
+    /** L2 が初めて奥のページ（3p 沿革）に達したとき。 */
+    tenured: t(locale, "cityHall.flavor.tenured"),
+  };
+}
+
+/** レベル別の手帳タイトル脇に添える肩書（本の見出しがレベルで変わる）を locale で引く。 */
+export function levelSubtitle(locale: Locale = DEFAULT_LOCALE): Record<0 | 1 | 2, string> {
+  return {
+    0: t(locale, "cityHall.subtitle.0"),
+    1: t(locale, "cityHall.subtitle.1"),
+    2: t(locale, "cityHall.subtitle.2"),
+  };
+}
+
+// --- 後方互換 export（DEFAULT_LOCALE で解決した定数）。既存の const 消費側・テストはこのまま動く。 ---
+
+/** 本の在世タイトル（手帳の表題・ja 既定）。 */
+export const BOOK_TITLE = bookTitle(DEFAULT_LOCALE);
+
+/** 語り手＝ハノーバ市長の名（ja 既定）。 */
+export const MAYOR_NAME = mayorName(DEFAULT_LOCALE);
+
+/** 親しみのある短い呼び名（ja 既定・#262）。 */
+export const MAYOR_SHORT_NAME = mayorShortName(DEFAULT_LOCALE);
+
+/** 全ページ（1〜4・順序固定・ja 既定）。 */
+export const BOOK_PAGES: BookPage[] = buildCityHallBook(DEFAULT_LOCALE);
+
+/** ロックされたページのティザー（ja 既定）。 */
+export const LOCKED_TEASER = lockedTeaser(DEFAULT_LOCALE);
+
+/** レベル昇格時の市長のひとこと（ja 既定）。 */
+export const LEVEL_FLAVOR = levelFlavor(DEFAULT_LOCALE);
+
+/** レベル別の手帳タイトル脇に添える肩書（ja 既定）。 */
+export const LEVEL_SUBTITLE: Record<0 | 1 | 2, string> = levelSubtitle(DEFAULT_LOCALE);
 
 /**
  * ロック頁の背後に敷く「読めない頁」のフェイク本文（#219 ③）。
@@ -204,18 +244,3 @@ export const LOCKED_PAGE_VEIL: readonly string[] = [
   "おくやまけふこえてあさきゆめみし",
   "ゑひもせす",
 ];
-
-/** レベル昇格時に小さく添える市長のひとこと（味付け）。 */
-export const LEVEL_FLAVOR = {
-  /** L1 で 2p 目（市役所）を開いたとき。L2 以上では出さない（古参に移住受理を再掲しない）。 */
-  citizen: "移住、確かに受理した。ようこそ、市民諸君。",
-  /** L2 が初めて奥のページ（3p 沿革）に達したとき。 */
-  tenured: "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
-} as const;
-
-/** レベル別の手帳タイトル脇に添える肩書（本の見出しがレベルで変わる・menu 語の差し替えは defer）。 */
-export const LEVEL_SUBTITLE: Record<0 | 1 | 2, string> = {
-  0: "ようこそ、緑の市へ",
-  1: "市民の手引き",
-  2: "古参の手引き",
-};
