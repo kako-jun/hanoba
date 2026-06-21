@@ -5,6 +5,7 @@ import {
   isDismissActive,
   setInstallDismissedAt,
 } from "../../lib/pwa/install.ts";
+import { useT, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 /**
  * PWA「ホーム画面に追加」促し（#230）。全ページ共通（MainLayout に島として差す）。
@@ -45,7 +46,9 @@ function isIosSafari(): boolean {
 
 type Variant = "prompt" | "ios" | null;
 
-export default function InstallPrompt() {
+// lang は MainLayout がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+export default function InstallPrompt({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   // 表示する種類（prompt=beforeinstallprompt あり / ios=手動手順 / null=出さない）。
   const [variant, setVariant] = useState<Variant>(null);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -115,7 +118,7 @@ export default function InstallPrompt() {
   return (
     <div
       role="region"
-      aria-label="ホーム画面に追加"
+      aria-label={t("install.title")}
       // デスクトップは**左下**に置く（右下は投稿FAB #283＋ScrollToTop #271 で混むため・#292）。
       // モバイルは従来どおり左右に張る（bottom-3 left-3 right-3）。
       className="fixed bottom-3 right-3 left-3 sm:right-auto sm:bottom-5 sm:left-5 z-40 sm:max-w-sm glass-strong rounded-2xl shadow-lg p-4 ha-rise"
@@ -125,13 +128,23 @@ export default function InstallPrompt() {
             汎用の芽アイコンの仮置きを廃止（#230・kako-jun 実機指摘）。icon.svg は角丸・地色を内包。 */}
         <img src="/icon.svg" alt="" aria-hidden width={36} height={36} className="w-9 h-9 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ha-green-deep">ホーム画面に追加</p>
+          <p className="text-sm font-semibold text-ha-green-deep">{t("install.title")}</p>
           {variant === "ios" ? (
             <p className="mt-1 text-sm text-ha-ink/80">
-              共有メニュー <span aria-hidden>↑</span> から「ホーム画面に追加」を選ぶと、アプリのように開けます。
+              {/* iOS 手順は文中に共有アイコン ↑ を挟むので {arrow} で分割し span を差し込む。 */}
+              {(() => {
+                const [before, after] = t("install.ios").split("{arrow}");
+                return (
+                  <>
+                    {before}
+                    <span aria-hidden>↑</span>
+                    {after}
+                  </>
+                );
+              })()}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-ha-ink/80">アプリのように開けます。</p>
+            <p className="mt-1 text-sm text-ha-ink/80">{t("install.tagline")}</p>
           )}
           <div className="mt-3 flex items-center gap-3">
             {variant === "prompt" && (
@@ -140,7 +153,7 @@ export default function InstallPrompt() {
                 onClick={install}
                 className="rounded-full bg-ha-green text-ha-white px-4 py-1.5 text-sm font-semibold hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
               >
-                追加
+                {t("install.add")}
               </button>
             )}
             <button
@@ -148,14 +161,14 @@ export default function InstallPrompt() {
               onClick={dismiss}
               className="text-sm text-ha-ink/55 hover:text-ha-ink transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green rounded"
             >
-              あとで
+              {t("install.later")}
             </button>
           </div>
         </div>
         <button
           type="button"
           onClick={dismiss}
-          aria-label="閉じる"
+          aria-label={t("common.close")}
           className="grid place-items-center w-7 h-7 shrink-0 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
         >
           <Icon name="close" className="w-4 h-4" />

@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
+import { useT, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import Icon from "./Icon.tsx";
 
 /**
  * 「一番上へ戻る」フローティングボタン（#110）。全ページ共通（MainLayout）。
  * 一定量スクロールしたら右下に出現し、押すと最上部へスムーズスクロール。
  * 暗地グラスの世界観に合わせ控えめに。スクロール監視は passive。
+ *
+ * lang は MainLayout がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
  */
-export default function ScrollToTop() {
+export default function ScrollToTop({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ export default function ScrollToTop() {
     <button
       type="button"
       onClick={toTop}
-      aria-label="一番上へ戻る"
+      aria-label={t("scrollToTop.aria")}
       // 操作要素の慣習に合わせ rest=ha-green / hover=ha-green-deep（明）＋focus リング。
       className="fixed bottom-5 right-5 z-40 grid place-items-center w-11 h-11 rounded-full glass-strong text-ha-green shadow-lg hover:text-ha-green-deep transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
     >
