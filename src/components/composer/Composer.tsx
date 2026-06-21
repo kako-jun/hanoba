@@ -11,7 +11,7 @@ import { detectShotDate } from "../../lib/image/exif.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
-import { fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
+import { confirmEventStored, fetchKnownHashtags, fetchPopularHashtags, signAndPublishNote } from "../../lib/nostr/client.ts";
 import { extractHashtags } from "../../lib/nostr/tags.ts";
 import { deleteImage, uploadImage } from "../../lib/nostr/upload.ts";
 import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
@@ -364,7 +364,20 @@ export default function Composer() {
       // 撮影日（#324）: 各写真の撮影日を imageUrls 順の per-photo 配列で載せる（写真↔日付を保つ・
       // 「1つの被写体の1ヶ月を振り返る」投稿が成立）。orderedUrls は images 順なので index が一致する。
       const photoShotDates = images.map((img) => img.shotDate);
-      await signAndPublishNote({ caption, imageUrls: orderedUrls, photoShotDates });
+      const created = await signAndPublishNote({ caption, imageUrls: orderedUrls, photoShotDates });
+      // #350: publish は Promise.any（1 リレーの OK で成功）なので、書き込み先のうち search 等だけが
+      // OK を返し /me が読む GENERAL_RELAYS に載らないと、成功扱いで下書きごと消える事故があった。
+      // 読む側で実在を確認できてから成功確定する。確認できなければ**下書きを残して**エラー＝リトライ可
+      // （resetAll/clearDraft を呼ばず・画像も消さない＝別リレーに居る可能性／再投稿で復帰できる）。
+      const stored = await confirmEventStored(created.id);
+      if (!stored) {
+        setPostProgress(null);
+        setStatus({
+          kind: "error",
+          message: "投稿を確認できませんでした。電波の良いところでもう一度お試しください（下書きは残っています）。",
+        });
+        return;
+      }
       // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
       recordRecentTags(extractHashtags(caption));
       resetAll();
