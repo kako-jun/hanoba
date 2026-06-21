@@ -10,6 +10,9 @@
 // - 旧 `?tag=` は parseFilter が tags に合流する（後方互換）。旧 `?q=` は無視（applyFilterToParams が削除）。
 
 import { normalizeTag } from "./discover.ts";
+// 純粋 lib なので React フックを束ねる index.ts でなく t.ts/locale.ts から直接引く（#147）。
+import { t } from "../i18n/t.ts";
+import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import { normalizeTagForBody } from "../image/hashtag-complete.ts";
 import { findPlantByTerm, plantTagValues } from "../plants/search.ts";
 import type { FeedPost } from "./parse.ts";
@@ -166,8 +169,8 @@ export function applyClientFilter(posts: FeedPost[], f: ClientFilterInput): Feed
 
 /**
  * フィルタを人間可読の短い要約にする（loading/empty 文言・共有テキスト用）。
- * 例: "トマト・実生"。タグが無ければ "みんなの植物"。
+ * 例: "トマト・実生"。タグが無ければ "みんなの植物"（i18n・#147・locale 既定 ja＝挙動不変）。
  */
-export function filterSummary(f: DiscoverFilter): string {
-  return f.tags.length > 0 ? f.tags.join("・") : "みんなの植物";
+export function filterSummary(f: DiscoverFilter, locale: Locale = DEFAULT_LOCALE): string {
+  return f.tags.length > 0 ? f.tags.join("・") : t(locale, "nav.discover");
 }

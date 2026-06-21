@@ -32,7 +32,7 @@ const [subBefore, subAfter] = t(locale, "home.hero.sub").split("{link}");
     </section>
 
     <div class="ha-rise" style="--i:1">
-      <FeedGrid client:load />
+      <FeedGrid client:load lang={locale} />
     </div>
   </main>
 </MainLayout>

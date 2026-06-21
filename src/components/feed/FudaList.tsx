@@ -1,5 +1,6 @@
 import type { Fuda } from "../../lib/plants/fuda.ts";
 import { discoverTagsHref } from "../../lib/feed/discoverFilter.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 import SciName from "../ui/SciName.tsx";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
  * 学名（catalog.sci → dictionary）が引ければイタリックで併記、無ければ和名のみ（グレースフル）。
  */
 export default function FudaList({ fuda }: Props) {
+  const t = useT(useLocale());
   if (fuda.length === 0) return null;
   return (
     <ul className="flex flex-wrap gap-1.5">
@@ -26,7 +28,7 @@ export default function FudaList({ fuda }: Props) {
           <a
             // 札を生んだタグ集合（filterTags）で AND 絞り込み（品種札=[属,品種] / 属札=[属]・#272 逆算）。
             href={discoverTagsHref(f.filterTags)}
-            title={`${f.sci !== null ? `${f.sci}（${f.name}）` : f.name}で探す`}
+            title={t("fuda.search.title", { label: f.sci !== null ? `${f.sci}（${f.name}）` : f.name })}
             onClick={(e) => e.stopPropagation()}
             className="glass inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >

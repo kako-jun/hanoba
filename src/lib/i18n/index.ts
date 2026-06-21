@@ -2,4 +2,5 @@
 export { LOCALES, DEFAULT_LOCALE, isLocale, type Locale } from "./locale.ts";
 export { t, type TParams } from "./t.ts";
 export { useT } from "./useT.ts";
+export { LocaleProvider, useLocale } from "./context.ts";
 export { type MessageKey } from "./messages/ja.ts";
