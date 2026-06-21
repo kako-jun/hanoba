@@ -15,8 +15,12 @@ describe("tag-catalog", () => {
     expect(TAG_CATEGORIES.find((c) => c.label === "記録")).toBeUndefined();
   });
 
-  it("入手からの時系列＝入手で始まる（#353）", () => {
-    expect(careRecord.tags[0]).toBe("入手");
+  it("来歴の時系列＝自生→入手で始まる（#346・自生は入手より前）", () => {
+    expect(careRecord.tags[0]).toBe("自生");
+    expect(careRecord.tags[1]).toBe("入手");
+    // 自生は入手・お迎えより前（来歴の起点）。
+    expect(careRecord.tags.indexOf("自生")).toBeLessThan(careRecord.tags.indexOf("入手"));
+    expect(careRecord.tags.indexOf("自生")).toBeLessThan(careRecord.tags.indexOf("お迎え"));
   });
 
   it("propagation（発根→発芽→実生）は世話・記録の中で隣接している（index が連続・#169/#353）", () => {
