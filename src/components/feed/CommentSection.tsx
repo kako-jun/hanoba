@@ -4,6 +4,7 @@ import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import { useComments } from "./useComments.ts";
 import { useProfiles } from "./useProfiles.ts";
 import Avatar from "./Avatar.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface Props {
   /** コメント対象の投稿 id（親イベント id）。 */
@@ -22,6 +23,7 @@ interface Props {
  * relay 呼び出しは useComments → client に集約。暗色・控えめの glass で「静かなコメント」に。
  */
 export default function CommentSection({ postId }: Props) {
+  const t = useT(useLocale());
   const { comments, loading, myPubkey, order, setOrder, submit, remove } = useComments(postId);
   // 著者プロフィール（アイコン・名前）。取得前は npub フォールバック。
   const profiles = useProfiles((comments ?? []).map((c) => c.pubkey));
@@ -44,7 +46,7 @@ export default function CommentSection({ postId }: Props) {
       await submit(draft);
       setDraft("");
     } catch {
-      setError("コメントを送れませんでした。少し待って試してください。");
+      setError(t("comment.error.submit"));
     } finally {
       setSubmitting(false);
     }
@@ -57,17 +59,17 @@ export default function CommentSection({ postId }: Props) {
     try {
       await remove(id);
     } catch {
-      setError("コメントを削除できませんでした。");
+      setError(t("comment.error.remove"));
     } finally {
       setRemovingId(null);
     }
   }
 
   return (
-    <section aria-label="コメント" className="flex flex-col gap-3 border-t border-ha-ink/10 pt-3">
+    <section aria-label={t("comment.section.aria")} className="flex flex-col gap-3 border-t border-ha-ink/10 pt-3">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-medium text-ha-ink/80">
-          コメント {comments === null ? "" : comments.length}
+          {t("comment.heading")} {comments === null ? "" : comments.length}
         </h3>
         {/* 並び替えトグル（押すと反対の順へ）。**並べ替える対象が無い**＝0件/1件/読み込み中は
             出さない（kako-jun「0件のとき『古い順』は要らない」。1件も順序が無いので同様に隠す）。 */}
@@ -75,22 +77,22 @@ export default function CommentSection({ postId }: Props) {
           <button
             type="button"
             onClick={() => setOrder(order === "old" ? "new" : "old")}
-            aria-label={order === "old" ? "新しい順に並べ替える" : "古い順に並べ替える"}
+            aria-label={order === "old" ? t("comment.sort.toNew") : t("comment.sort.toOld")}
             className="rounded-full px-3 py-1 text-xs font-medium text-ha-ink/60 hover:bg-ha-ink/5 hover:text-ha-ink transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green/40"
           >
-            {order === "old" ? "古い順" : "新しい順"}
+            {order === "old" ? t("comment.sort.old") : t("comment.sort.new")}
           </button>
         )}
       </div>
 
       {/* 状態通知（読み込み・送受信エラー）を aria-live で読み上げる。 */}
       <div aria-live="polite">
-        {loading && <p className="text-xs text-ha-ink/45">読み込み中…</p>}
+        {loading && <p className="text-xs text-ha-ink/45">{t("comment.loading")}</p>}
         {error !== null && <p className="text-xs text-ha-pink">{error}</p>}
       </div>
 
       {comments !== null && comments.length === 0 && (
-        <p className="text-xs text-ha-ink/45">まだコメントはありません</p>
+        <p className="text-xs text-ha-ink/45">{t("comment.empty")}</p>
       )}
 
       {comments !== null && comments.length > 0 && (
@@ -115,10 +117,10 @@ export default function CommentSection({ postId }: Props) {
                     <button
                       type="button"
                       onClick={() => setConfirmId(c.id)}
-                      aria-label="このコメントを削除"
+                      aria-label={t("comment.delete.aria")}
                       className="shrink-0 rounded-full px-2 py-0.5 text-[11px] text-ha-ink/45 hover:bg-ha-pink/15 hover:text-ha-pink transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-pink/40"
                     >
-                      削除
+                      {t("comment.delete.label")}
                     </button>
                   )}
                 </div>
@@ -128,24 +130,24 @@ export default function CommentSection({ postId }: Props) {
                 {/* 削除の確認（破壊操作はインライン確認・§5.6）。 */}
                 {isMine && confirmId === c.id && (
                   <div className="flex items-center gap-2 pl-8 text-xs">
-                    <span className="text-ha-ink/60">削除しますか？</span>
+                    <span className="text-ha-ink/60">{t("comment.delete.confirm.q")}</span>
                     <button
                       type="button"
                       onClick={() => void onRemove(c.id)}
                       className="rounded-full bg-ha-pink px-3 py-0.5 font-semibold text-ha-white hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-pink/50"
                     >
-                      削除
+                      {t("comment.delete.label")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmId(null)}
                       className="rounded-full bg-ha-ink/10 px-3 py-0.5 text-ha-ink/70 hover:bg-ha-ink/15 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green/40"
                     >
-                      やめる
+                      {t("comment.delete.confirm.no")}
                     </button>
                   </div>
                 )}
-                {isRemoving && <p className="pl-8 text-[11px] text-ha-ink/45">削除中…</p>}
+                {isRemoving && <p className="pl-8 text-[11px] text-ha-ink/45">{t("comment.deleting")}</p>}
               </li>
             );
           })}
@@ -156,11 +158,11 @@ export default function CommentSection({ postId }: Props) {
       <div className="flex flex-col gap-2">
         <ResizableTextarea
           id={`hanoba-comment-${postId}`}
-          aria-label="コメントを入力"
+          aria-label={t("comment.input.aria")}
           value={draft}
           onValueChange={setDraft}
-          clearLabel="コメントをクリア"
-          placeholder="コメントを書く…"
+          clearLabel={t("comment.input.clear")}
+          placeholder={t("comment.input.placeholder")}
           initialHeight={84}
           minHeight={72}
           maxHeight={240}
@@ -172,7 +174,7 @@ export default function CommentSection({ postId }: Props) {
             disabled={!canSubmit}
             className="rounded-full bg-ha-green px-5 py-2 text-sm font-semibold text-ha-white shadow-sm shadow-ha-green/30 enabled:hover:opacity-90 enabled:hover:shadow-md transition-all disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {submitting ? "投稿中…" : "コメント"}
+            {submitting ? t("comment.submit.posting") : t("comment.submit")}
           </button>
         </div>
       </div>

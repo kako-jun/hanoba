@@ -330,6 +330,62 @@ export const ja = {
   "account.favorites.search.aria": "品種を検索",
   "account.favorites.dict.empty": "—",
   "account.favorites.useFreeform": "そのまま「{freeform}」を追加",
+
+  // 投稿詳細モーダル（PostDetail・#147 段階2）。著者プロフィール aria は card.author.profile を再利用。
+  "detail.dialog.aria": "投稿の詳細",
+  "detail.photo.alt": "{caption} {n}枚目",
+  "detail.photo.prev": "前の写真",
+  "detail.photo.next": "次の写真",
+  "detail.photo.goto": "{n}枚目を表示",
+  "detail.fuda.heading": "この投稿の植物",
+  // いいね aria は「いいね {n}」を reaction.likes.aria と共有。取得中はこの語を {n} に差す。
+  "detail.likes.loading": "取得中",
+  "detail.share.aria": "X でシェア",
+  "detail.share.split.aria": "X でシェア（分割）",
+  "detail.share.whole": "全文",
+
+  // コメント欄（CommentSection・#142/#147 段階2）。
+  "comment.section.aria": "コメント",
+  "comment.heading": "コメント",
+  "comment.sort.toNew": "新しい順に並べ替える",
+  "comment.sort.toOld": "古い順に並べ替える",
+  "comment.sort.old": "古い順",
+  "comment.sort.new": "新しい順",
+  "comment.loading": "読み込み中…",
+  "comment.error.submit": "コメントを送れませんでした。少し待って試してください。",
+  "comment.error.remove": "コメントを削除できませんでした。",
+  "comment.empty": "まだコメントはありません",
+  "comment.delete.aria": "このコメントを削除",
+  "comment.delete.label": "削除",
+  "comment.delete.confirm.q": "削除しますか？",
+  "comment.delete.confirm.no": "やめる",
+  "comment.deleting": "削除中…",
+  "comment.input.aria": "コメントを入力",
+  "comment.input.clear": "コメントをクリア",
+  "comment.input.placeholder": "コメントを書く…",
+  "comment.submit": "コメント",
+  "comment.submit.posting": "投稿中…",
+
+  // 投稿の編集（EditPost・#300/#147 段階2）。閉じる aria は common.close、サムネ alt は compose.photos.thumbAlt を再利用。
+  "edit.dialog.aria": "投稿を編集",
+  "edit.heading": "投稿を編集",
+  "edit.caption.label": "本文",
+  "edit.caption.placeholder": "一言（#タグも本文に書けます）",
+  "edit.error": "編集できませんでした。時間をおいて、もう一度試してください。",
+  // 確認文は <strong> を挟むため断片キーに分解（ja の素のテキストはバイト一致を保つ）。
+  "edit.confirm.lead": "編集すると",
+  "edit.confirm.repost": "新しい投稿として再投稿",
+  "edit.confirm.mid": "され、",
+  "edit.confirm.has.prefix": "この投稿の",
+  "edit.confirm.has.counts": "いいね {likes}・コメント {comments}",
+  "edit.confirm.has.suffix": "は引き継がれません。",
+  "edit.confirm.none": "元の投稿に付いたいいね・コメントは引き継がれません。",
+  "edit.confirm.q": "よろしいですか？",
+  "edit.back": "もどる",
+  "edit.confirm.submit": "編集して再投稿",
+  "edit.cancel": "やめる",
+  "edit.saving": "再投稿中…",
+  "edit.update": "更新する",
 } as const;
 
 /** 全文言キーの union（ja を単一ソースに型を導出する）。 */
