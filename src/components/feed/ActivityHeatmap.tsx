@@ -14,14 +14,16 @@ import { useT, useLocale } from "../../lib/i18n/index.ts";
 const LEVEL_BG = ["bg-white/5", "bg-ha-green/25", "bg-ha-green/45", "bg-ha-green/70", "bg-ha-green"] as const;
 const WEEKS = 13;
 
+/**
+ * 活動の草の曜日軸（#345）。**全言語で英語フル表記の7日を固定**し、省略・間引きをしない
+ * （旧: ロケール由来の narrow を 月/水/金 だけ間引き＝軸が欠け、言語で表記も変わって意図が伝わらなかった）。
+ * 行 0=日 … 6=土＝集計 `activityHeatmap` のグリッド行順（grid 行 0 が日曜）と一致させる。
+ */
+const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+
 export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
   const locale = useLocale();
   const t = useT(locale);
-  // 曜日ラベル（行 0=日 … 6=土）。間引いて 月/水/金 だけ出す（GitHub の草と同じ・縦軸=曜日を示す）。
-  // ロケール由来の narrow 表記で出す（ja は 日月火水木金土・en は SMTWTFS）。2024-01-07 が日曜。
-  const weekdayLabels = Array.from({ length: 7 }, (_, i) =>
-    new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" }).format(Date.UTC(2024, 0, 7 + i)),
-  );
   if (posts.length === 0) return null;
   // 暦日バケットなので秒未満のズレは無関係＝描画時点の now でよい（純関数に渡す）。
   const now = Math.floor(Date.now() / 1000);
@@ -35,11 +37,11 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
       </p>
       {/* 週列×7曜日のヒートマップ。縦横の意味が分かるよう曜日ラベルを左に添える（kako-jun）。 */}
       <div className="flex gap-1 overflow-x-auto" aria-hidden>
-        {/* 曜日ラベル列（GitHub の草と同じく間引いて 月/水/金 だけ・縦軸が曜日だと分かる）。 */}
-        <div className="flex shrink-0 flex-col gap-0.5 pr-0.5">
-          {weekdayLabels.map((d, r) => (
-            <span key={r} className="flex h-2.5 items-center text-[8px] leading-none text-ha-ink/40">
-              {r === 1 || r === 3 || r === 5 ? d : ""}
+        {/* 曜日ラベル列（#345・英語フル表記7日を省略せず全行に・行位置を草マスと揃える）。 */}
+        <div className="flex shrink-0 flex-col gap-0.5 pr-1">
+          {WEEKDAY_LABELS.map((d, r) => (
+            <span key={r} className="flex h-2.5 items-center whitespace-nowrap text-[8px] leading-none text-ha-ink/40">
+              {d}
             </span>
           ))}
         </div>

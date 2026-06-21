@@ -32,4 +32,18 @@ describe("ActivityHeatmap（#272 段階4・活動の草）", () => {
     const cells = container.querySelectorAll("div[aria-hidden] > div > span");
     expect(cells.length).toBeGreaterThan(70);
   });
+
+  it("曜日軸は英語フル表記7日を省略せず全行に出す（#345）", () => {
+    render(<ActivityHeatmap posts={[post(0)]} />);
+    for (const day of ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]) {
+      expect(screen.getByText(day)).toBeInTheDocument();
+    }
+  });
+
+  it("曜日ラベルはロケールで変えない（ja でも英語フル）", () => {
+    // i18n の locale は描画時に解決されるが、曜日軸は #345 で全言語固定＝英語のまま。
+    render(<ActivityHeatmap posts={[post(0)]} />);
+    expect(screen.queryByText("日")).not.toBeInTheDocument();
+    expect(screen.getByText("Wednesday")).toBeInTheDocument();
+  });
 });
