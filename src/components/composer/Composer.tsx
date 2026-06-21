@@ -478,13 +478,12 @@ export default function Composer() {
           </section>
 
           {/* 撮影日（#324）。投稿日とずれるとき用＝EXIF/ファイル名から自動検出し、活動の草に反映する。
-              不正確なこともあるので編集・除外できる（kako-jun「訂正したり含めないようにも」）。 */}
+              不正確なこともあるので編集・除外できる（kako-jun「訂正したり含めないようにも」）。
+              説明はくどくしない（kako-jun session692）＝取れた時だけ「自動抽出しました。」、未設定は空欄で自明。 */}
           {currentImage !== null && (
             <section className="flex flex-col gap-1.5">
               <h2 className="text-sm font-medium text-ha-green-deep">撮影日</h2>
-              <p className="text-xs text-ha-ink/55">
-                後日まとめて投稿しても、撮った日として「活動の草」に積まれます（EXIF/ファイル名から自動検出・直せます）。
-              </p>
+              {currentImage.shotDate !== null && <p className="text-xs text-ha-ink/55">自動抽出しました。</p>}
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="date"
@@ -494,9 +493,7 @@ export default function Composer() {
                   aria-label="この写真の撮影日"
                   className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                 />
-                {currentImage.shotDate === null ? (
-                  <span className="text-xs text-ha-ink/45">未設定（活動の草には投稿日で積まれます）</span>
-                ) : (
+                {currentImage.shotDate !== null && (
                   <button
                     type="button"
                     onClick={() => updateCurrentImage({ shotDate: null })}
