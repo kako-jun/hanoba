@@ -7,6 +7,7 @@ import {
   tagAliasValues,
   type DiscoverFilter,
 } from "../feed/discoverFilter.ts";
+import { buildCatalogAliasIndex } from "../plants/variety-search.ts";
 import {
   mergePostsById,
   parseProfile,
@@ -401,6 +402,18 @@ const POP_LIMIT_FILTERED = 300;
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない・guidelines §3）。
  * DESIGN §6 の契約（書き込み側は本文 # を t 化しない／読み取り側はフィード上でクライアント絞り込み）は不変。
  */
+// discover の別名展開用 catalog 別名索引（#303）。filtering 時に1回だけ動的 import して構築・キャッシュ。
+// 失敗時は空 Map＝dictionary だけで動く（グレースフル・catalog 未ロードでも壊さない）。
+let catalogAliasIndexPromise: Promise<Map<string, string[]>> | null = null;
+function getCatalogAliasIndex(): Promise<Map<string, string[]>> {
+  if (catalogAliasIndexPromise === null) {
+    catalogAliasIndexPromise = import("../plants/variety-catalog.ts")
+      .then((mod) => buildCatalogAliasIndex(mod.VARIETY_CATALOG))
+      .catch(() => new Map<string, string[]>());
+  }
+  return catalogAliasIndexPromise;
+}
+
 export async function fetchDiscoverFiltered(
   filter: DiscoverFilter,
   limit = 100,
@@ -408,6 +421,8 @@ export async function fetchDiscoverFiltered(
   const pool = getPool();
   const filtering = filter.tags.length > 0;
   const popLimit = filtering ? Math.max(limit, POP_LIMIT_FILTERED) : limit;
+  // catalog 別名索引は relay 取得と並行で読み込む（filtering 時のみ・初回以降はキャッシュ即時）。
+  const aliasIndexPromise = filtering ? getCatalogAliasIndex() : null;
 
   // 母集団は常に「みんなの植物」フィード（#t:plantstr ∪ search:#plantstr ∪ #t:hanoba）。
   // 品種は本文タグなので relay の #t:[品種] では引けない＝母集団を取り applyClientFilter で絞る。
@@ -432,10 +447,18 @@ export async function fetchDiscoverFiltered(
   const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
   const merged = mergePostsById(events.map(parsePost)); // id dedup・新着降順
 
-  const filtered = applyClientFilter(merged, {
-    tags: filter.tags,
-    resolveTagAliases: tagAliasValues,
-  });
+  // 別名展開＝dictionary（#23・学名/英名）∪ variety-catalog の属/品種別名（#303・札と同じ source）。
+  // catalog 索引は辞書外の属別名でタグした cross-client 投稿（例 #ゴムの木＝フィカス）にも当てる。
+  const aliasIndex = aliasIndexPromise === null ? null : await aliasIndexPromise;
+  const resolveTagAliases =
+    aliasIndex === null
+      ? tagAliasValues
+      : (t: string): string[] => {
+          const cat = aliasIndex.get(t.trim().toLowerCase());
+          const dict = tagAliasValues(t);
+          return cat === undefined ? dict : [...new Set([...dict, ...cat])];
+        };
+  const filtered = applyClientFilter(merged, { tags: filter.tags, resolveTagAliases });
   return filtered.slice(0, limit);
 }
 
