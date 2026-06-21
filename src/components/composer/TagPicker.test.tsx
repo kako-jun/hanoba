@@ -167,6 +167,29 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["ビカクシダ"], ["リドレイ"]]);
   });
 
+  it("同名品種はドリルダウン経路どおりのカテゴリ/属で階層化する（#315・アイスバーグ＝バラ）", async () => {
+    // アイスバーグは 多肉植物›エケベリア と バラ›バラ に跨る（catalog 先頭は多肉）。
+    // バラから選べば名前先勝ちに化けず #バラ #アイスバーグ になる。
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.click(await screen.findByRole("button", { name: "バラ" }));
+    await user.click(await screen.findByRole("button", { name: /^バラ\s*\d/ }));
+    await user.click(await screen.findByRole("button", { name: "#アイスバーグ" }));
+    // バラ category＝バラ genus（同字）なので dedupe で [バラ, アイスバーグ]。
+    expect(onPick.mock.calls).toEqual([["バラ"], ["アイスバーグ"]]);
+  });
+
+  it("同名品種を多肉から選べば多肉の階層になる（#315・同名でも経路で分岐）", async () => {
+    const user = userEvent.setup();
+    const { onPick } = renderPicker();
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.click(await screen.findByRole("button", { name: /多肉植物/ }));
+    await user.click(await screen.findByRole("button", { name: /^エケベリア\s*\d/ }));
+    await user.click(await screen.findByRole("button", { name: "#アイスバーグ" }));
+    expect(onPick.mock.calls).toEqual([["多肉植物"], ["エケベリア"], ["アイスバーグ"]]);
+  });
+
   it("品種選択は onPick を カテゴリ→属→品種 の順に3回呼ぶ（順序固定・#312）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
