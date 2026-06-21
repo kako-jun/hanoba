@@ -12,16 +12,16 @@ import {
   maxUnlockedPage,
 } from "../../lib/lore/citizen.ts";
 import {
-  BOOK_PAGES,
-  BOOK_TITLE,
   type BookPage,
+  buildCityHallBook,
   type HubLink,
-  LEVEL_FLAVOR,
-  LEVEL_SUBTITLE,
+  levelFlavor,
+  levelSubtitle,
   LOCKED_PAGE_VEIL,
-  LOCKED_TEASER,
-  MAYOR_SHORT_NAME,
+  lockedTeaser,
+  mayorShortName,
 } from "../../lib/lore/cityHall.ts";
+import { useT, useLocale, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 // 市長ボタニクス・フォン・ハノーバの肖像（語り手アイコン）。
 // 顔は秘密という世界観のため、肖像の代わりにジョウロの写真を掲げる（public 直下の静的アセット）。
@@ -41,7 +41,8 @@ const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 // client:load。鍵・relay 取得はクライアントのみ（getDisplayName / getPublicKeyHex / fetchMyPosts）。
 // SSR では window/localStorage を触らない（keys.ts が SSR 安全・取得は useEffect 内）。
 
-const TOTAL_PAGES = BOOK_PAGES.length; // 4
+// ページ数は locale 非依存（4 ページ固定）。既定 locale で 1 度組んで length を取る。
+const TOTAL_PAGES = buildCityHallBook(DEFAULT_LOCALE).length; // 4
 
 // SSR では useLayoutEffect が警告を出す（サーバに layout フェーズが無い）。
 // クライアントでのみ layout（ペイント前）に走らせ、サーバでは no-op の effect に落とす。
@@ -70,7 +71,17 @@ async function deriveLevel(): Promise<CitizenLevel> {
   }
 }
 
-export default function CityHallBook() {
+// lang は about.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+// この島は LocaleProvider のルート（about.astro 直下・他の Provider に包まれない）なので、
+// 自分で <LocaleProvider value={lang}> を張り、子（PageContent 等）は useLocale() で読む。
+export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
+  // 本文（構造化データ）と味付け文言は locale で組み直す。
+  const bookPages = buildCityHallBook(lang);
+  const bookTitleText = t("cityHall.book.title");
+  const levelSubtitleMap = levelSubtitle(lang);
+  const flavorMap = levelFlavor(lang);
+
   // 判定中は安全側＝L0（1p のみ）で始め、ロック状態を実市民に見せない。
   // 名乗り済みなら下の useIsoLayoutEffect がペイント前に L1/2p へ寄せる（フラッシュ防止）。
   const [level, setLevel] = useState<CitizenLevel>(0);
@@ -111,7 +122,7 @@ export default function CityHallBook() {
   }, []);
 
   const maxUnlocked = maxUnlockedPage(level);
-  const current = BOOK_PAGES.find((p) => p.page === page) ?? BOOK_PAGES[0]!;
+  const current = bookPages.find((p) => p.page === page) ?? bookPages[0]!;
   const isLockedView = page > maxUnlocked;
 
   const canPrev = page > 1;
@@ -195,19 +206,20 @@ export default function CityHallBook() {
   // - 古参歓迎: L2 が初めて奥（3p 沿革・古参専用ページの先頭）に達したときだけ。2p では出さない。
   const flavor =
     resolved && level === 1 && page === 2
-      ? LEVEL_FLAVOR.citizen
+      ? flavorMap.citizen
       : resolved && level === 2 && page === 3
-        ? LEVEL_FLAVOR.tenured
+        ? flavorMap.tenured
         : null;
 
   return (
-    <section className="ha-rise flex flex-col gap-5" aria-label={BOOK_TITLE}>
+    <LocaleProvider value={lang}>
+    <section className="ha-rise flex flex-col gap-5" aria-label={bookTitleText}>
       {/* 手帳の表題（在世タイトル）。肩書はレベルで変わる（menu 語の差し替えは defer・本側で適応）。 */}
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-          {BOOK_TITLE}
+          {bookTitleText}
         </h1>
-        <p className="text-sm text-ha-ink/55">{LEVEL_SUBTITLE[level]}</p>
+        <p className="text-sm text-ha-ink/55">{levelSubtitleMap[level]}</p>
       </header>
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。
@@ -258,35 +270,36 @@ export default function CityHallBook() {
         )}
 
         {/* めくり操作＋ページ表示。前=戻る（後方オープン）／次=進む（前方ロック）。 */}
-        <nav className="flex items-center justify-between gap-3 pt-1" aria-label="ページめくり">
+        <nav className="flex items-center justify-between gap-3 pt-1" aria-label={t("cityHall.nav.aria")}>
           <button
             type="button"
             onClick={goPrev}
             disabled={!canPrev}
-            aria-label="前のページ"
+            aria-label={t("cityHall.nav.prev")}
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
           >
             <Icon name="chevron" className="w-4 h-4 rotate-90" />
-            前
+            {t("cityHall.nav.prev.label")}
           </button>
 
           <span className="text-sm text-ha-ink/60 tabular-nums" aria-hidden="true">
-            {page} / {TOTAL_PAGES}
+            {t("cityHall.nav.indicator", { page, total: TOTAL_PAGES })}
           </span>
 
           <button
             type="button"
             onClick={goNext}
             disabled={!canNext}
-            aria-label="次のページ"
+            aria-label={t("cityHall.nav.next")}
             className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
           >
-            次
+            {t("cityHall.nav.next.label")}
             <Icon name="chevron" className="w-4 h-4 -rotate-90" />
           </button>
         </nav>
       </div>
     </section>
+    </LocaleProvider>
   );
 }
 
@@ -297,6 +310,8 @@ export default function CityHallBook() {
  * blur は静的（アニメ無し）なので reduced-motion 懸念なし。暗地に沈めた低グレア（§5）。
  */
 function LockedTeaser() {
+  const locale = useLocale();
+  const teaser = lockedTeaser(locale);
   return (
     <div
       className="relative isolate flex min-h-[360px] flex-col items-center justify-center gap-3 overflow-hidden py-10 text-center select-none"
@@ -328,9 +343,9 @@ function LockedTeaser() {
         }}
       />
       <p className="font-display text-4xl font-extrabold tracking-widest text-ha-ink/30">
-        {LOCKED_TEASER.title}
+        {teaser.title}
       </p>
-      <p className="text-sm text-ha-ink/50 [word-break:auto-phrase]">{LOCKED_TEASER.note}</p>
+      <p className="text-sm text-ha-ink/50 [word-break:auto-phrase]">{teaser.note}</p>
     </div>
   );
 }
@@ -363,6 +378,9 @@ function HubLinkItem({ link }: { link: HubLink }) {
 
 /** 解放済みページの中身を種類ごとに描く。 */
 function PageContent({ page }: { page: BookPage }) {
+  const locale = useLocale();
+  const t = useT(locale);
+  const shortName = mayorShortName(locale);
   switch (page.kind) {
     case "welcome":
       return (
@@ -372,8 +390,8 @@ function PageContent({ page }: { page: BookPage }) {
               Avatar は装飾扱い（alt 空）なので隣に市長名テキストを置き a11y を満たす。
               肖像の脇は親しみのある短い呼び名「ボタニクス市長」（フルネームは本文側・#262）。 */}
           <div className="flex items-center gap-3">
-            <Avatar src={MAYOR_AVATAR_SRC} name={MAYOR_SHORT_NAME} className="w-16 h-16 ring-1 ring-white/10" />
-            <span className="text-sm text-ha-ink/60">{MAYOR_SHORT_NAME}市長</span>
+            <Avatar src={MAYOR_AVATAR_SRC} name={shortName} className="w-16 h-16 ring-1 ring-white/10" />
+            <span className="text-sm text-ha-ink/60">{t("cityHall.mayorTitle", { name: shortName })}</span>
           </div>
           {page.blocks.map((b, i) =>
             b.kind === "note" ? (
