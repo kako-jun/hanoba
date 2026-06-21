@@ -24,7 +24,7 @@ const post: FeedPost = {
   imageUrls: ["https://example.com/a.jpg", "https://example.com/b.jpg"],
   imageUrl: "https://example.com/a.jpg",
   hashtags: ["アガベ"],
-};
+  shotDates: [],};
 
 describe("EditPost（投稿の編集＝確認つき再投稿・#300）", () => {
   beforeEach(() => {

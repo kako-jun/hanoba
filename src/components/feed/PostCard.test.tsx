@@ -50,7 +50,7 @@ function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
     imageUrls: ["https://example.com/a.jpg"],
     imageUrl: "https://example.com/a.jpg",
     hashtags: ["アガベ"],
-    ...overrides,
+    shotDates: [],    ...overrides,
   };
 }
 

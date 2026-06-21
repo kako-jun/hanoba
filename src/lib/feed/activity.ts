@@ -17,6 +17,31 @@ export function jstDayIndex(unixSec: number): number {
   return Math.floor((unixSec + JST_OFFSET_SEC) / DAY_SEC);
 }
 
+/** `YYYY-MM-DD`（撮影日・#324）→ JST 暦日インデックス。不正は null。 */
+export function ymdToJstDayIndex(ymd: string): number | null {
+  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m === null) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return Math.floor(Date.UTC(y, mo - 1, d) / (DAY_SEC * 1000));
+}
+
+/**
+ * 投稿の「活動した暦日」を返す（#324・kako-jun「撮影日で数える」）。**写真の撮影日があればそれ**
+ * （per-photo・毎日撮って週末まとめ投稿でも撮った日数が点く）、無ければ created_at 日にフォールバック
+ * （撮影日タグの無い既存/他クライアント投稿も従来どおり数える）。同一投稿内の重複日は畳まない
+ * （その日に複数枚撮れば濃くなる＝ヒートマップの count に効く）。
+ */
+export function postActiveDays(post: FeedPost): number[] {
+  if (post.shotDates.length > 0) {
+    const days = post.shotDates.map(ymdToJstDayIndex).filter((d): d is number => d !== null);
+    if (days.length > 0) return days;
+  }
+  return [jstDayIndex(post.createdAt)];
+}
+
 /** 暦日インデックスの曜日（0=日 … 6=土）。1970-01-01 は木曜なので +4 オフセット。 */
 export function weekdayOf(dayIndex: number): number {
   return (((dayIndex + 4) % 7) + 7) % 7;
@@ -50,8 +75,7 @@ export function activityHeatmap(posts: FeedPost[], now: number, weeks = 13): Hea
   const firstSunday = firstDay - weekdayOf(firstDay); // その週の日曜まで遡る（列の起点）
   const counts = new Map<number, number>();
   for (const p of posts) {
-    const d = jstDayIndex(p.createdAt);
-    counts.set(d, (counts.get(d) ?? 0) + 1);
+    for (const d of postActiveDays(p)) counts.set(d, (counts.get(d) ?? 0) + 1);
   }
   const numWeeks = Math.ceil((today - firstSunday + 1) / 7);
   const cols: HeatCell[][] = [];
@@ -83,7 +107,7 @@ export interface Streaks {
  */
 export function streaks(posts: FeedPost[], now: number): Streaks {
   const days = new Set<number>();
-  for (const p of posts) days.add(jstDayIndex(p.createdAt));
+  for (const p of posts) for (const d of postActiveDays(p)) days.add(d);
   if (days.size === 0) return { current: 0, longest: 0 };
 
   const sorted = [...days].sort((a, b) => a - b);

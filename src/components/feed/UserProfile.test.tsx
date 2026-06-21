@@ -33,7 +33,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     imageUrls: ["https://image.nostr.build/x.jpg"],
     imageUrl: "https://image.nostr.build/x.jpg",
     hashtags: [],
-    ...overrides,
+    shotDates: [],    ...overrides,
   };
 }
 

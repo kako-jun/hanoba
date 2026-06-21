@@ -72,6 +72,7 @@ export async function signAndPublishNote(input: {
   caption: string;
   imageUrls?: string[];
   createdAt?: number;
+  shotDates?: string[];
 }): Promise<NostrEvent> {
   const template = buildNoteTemplate(input);
   const signed = await signTemplate(template);

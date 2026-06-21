@@ -23,6 +23,8 @@ export interface FeedPost {
   imageUrls: string[];
   imageUrl: string | null;
   hashtags: string[];
+  /** 写真の撮影日（#324・`YYYY-MM-DD`）。`shot_date` タグ由来・無ければ空。活動の草の集計に使う。 */
+  shotDates: string[];
 }
 
 // content 中のインライン画像 URL（クエリ文字列付きも許容）。
@@ -52,6 +54,15 @@ export function parsePost(event: NostrEvent): FeedPost {
   // 空行（段落区切り）は残す。過剰な連続改行（3つ以上）だけ空行1つ（\n\n）に抑え、前後を trim。
   const caption = withoutImages.replace(/\n{3,}/g, "\n\n").trim();
 
+  // 撮影日（#324）: `["shot_date","YYYY-MM-DD"]` タグから妥当な日付だけを distinct で拾う。
+  const shotDates = [
+    ...new Set(
+      event.tags
+        .filter((t) => t[0] === "shot_date" && typeof t[1] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t[1]))
+        .map((t) => t[1]!),
+    ),
+  ];
+
   return {
     id: event.id,
     pubkey: event.pubkey,
@@ -60,6 +71,7 @@ export function parsePost(event: NostrEvent): FeedPost {
     imageUrls,
     imageUrl,
     hashtags: extractHashtags(content),
+    shotDates,
   };
 }
 

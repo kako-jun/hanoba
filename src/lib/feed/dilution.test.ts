@@ -10,7 +10,7 @@ import type { FeedPost } from "./parse.ts";
 
 // テスト用の最小 FeedPost を作る（間引きは id / pubkey しか見ない）。
 function post(id: string, pubkey: string): FeedPost {
-  return { id, pubkey, createdAt: 0, caption: "", imageUrls: [], imageUrl: null, hashtags: [] };
+  return { id, pubkey, createdAt: 0, caption: "", imageUrls: [], imageUrl: null, hashtags: [], shotDates: [] };
 }
 
 describe("dilution の状態（get/set/getAll）", () => {

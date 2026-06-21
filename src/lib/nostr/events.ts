@@ -32,6 +32,8 @@ export function buildNoteTemplate(input: {
   caption: string;
   imageUrls?: string[];
   createdAt?: number;
+  /** 写真の撮影日（#324・`YYYY-MM-DD`）。distinct を `["shot_date", 日付]` タグで載せる（本文は汚さない）。 */
+  shotDates?: string[];
 }): EventTemplate {
   const caption = input.caption.trim();
   if (caption === "") {
@@ -41,10 +43,16 @@ export function buildNoteTemplate(input: {
   const imageUrls = input.imageUrls ?? [];
   const content = imageUrls.length > 0 ? [caption, ...imageUrls].join("\n") : caption;
 
+  // 撮影日（#324）: `YYYY-MM-DD` の妥当なものを distinct で `["shot_date", 日付]` タグにする
+  // （活動の草を撮影日基準にするため・本文は汚さない・他クライアントは未知タグとして無視）。
+  const shotDateTags = [
+    ...new Set((input.shotDates ?? []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))),
+  ].map((d) => ["shot_date", d]);
+
   return {
     kind: 1,
     created_at: input.createdAt ?? nowSec(),
-    tags: buildAutoTags(),
+    tags: [...buildAutoTags(), ...shotDateTags],
     content,
   };
 }

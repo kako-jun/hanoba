@@ -120,7 +120,7 @@ function makeEvent(overrides: Partial<NostrEvent> & { content: string }): NostrE
     pubkey: overrides.pubkey ?? "pk0",
     created_at: overrides.created_at ?? 1000,
     kind: 1,
-    tags: [],
+    tags: overrides.tags ?? [],
     content: overrides.content,
     sig: "",
   };
@@ -141,6 +141,26 @@ describe("parsePost", () => {
   it("hashtags を本文から抽出する", () => {
     const post = parsePost(makeEvent({ content: "開花 #アガベ #パキポ\nhttps://image.nostr.build/abc.png" }));
     expect(post.hashtags).toEqual(["アガベ", "パキポ"]);
+  });
+
+  it("shot_date タグから撮影日を distinct で読む（妥当な YYYY-MM-DD だけ・#324）", () => {
+    const post = parsePost(
+      makeEvent({
+        content: "記録\nhttps://image.nostr.build/a.jpg",
+        tags: [
+          ["shot_date", "2024-06-15"],
+          ["shot_date", "2024-06-16"],
+          ["shot_date", "2024-06-15"],
+          ["shot_date", "bad"],
+          ["t", "hanoba"],
+        ],
+      }),
+    );
+    expect(post.shotDates).toEqual(["2024-06-15", "2024-06-16"]);
+  });
+
+  it("shot_date タグが無ければ撮影日は空（#324）", () => {
+    expect(parsePost(makeEvent({ content: "記録" })).shotDates).toEqual([]);
   });
 
   it("画像 URL が無ければ imageUrl は null、caption は本文そのまま", () => {
@@ -201,7 +221,7 @@ describe("parsePost", () => {
 
 describe("mergePostsById", () => {
   function p(id: string, createdAt: number): FeedPost {
-    return { id, pubkey: "pk", createdAt, caption: "", imageUrls: [], imageUrl: null, hashtags: [] };
+    return { id, pubkey: "pk", createdAt, caption: "", imageUrls: [], imageUrl: null, hashtags: [], shotDates: [] };
   }
 
   it("id で重複除去する（最初の出現を採用）", () => {
@@ -222,7 +242,7 @@ describe("mergePostsById", () => {
 
 describe("filterByHashtag", () => {
   function p(id: string, hashtags: string[]): FeedPost {
-    return { id, pubkey: "pk", createdAt: 1, caption: "", imageUrls: [], imageUrl: null, hashtags };
+    return { id, pubkey: "pk", createdAt: 1, caption: "", imageUrls: [], imageUrl: null, hashtags, shotDates: [] };
   }
   const posts = [p("a", ["アガベ", "パキポ"]), p("b", ["植物"]), p("c", ["Agave"])];
 

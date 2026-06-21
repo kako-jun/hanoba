@@ -27,7 +27,7 @@ function post(over: Partial<FeedPost> = {}): FeedPost {
     imageUrls: over.imageUrls ?? ["https://x/i.jpg"],
     imageUrl: over.imageUrl !== undefined ? over.imageUrl : "https://x/i.jpg",
     hashtags: over.hashtags ?? [],
-  };
+    shotDates: [],  };
 }
 
 describe("parseTagList", () => {
