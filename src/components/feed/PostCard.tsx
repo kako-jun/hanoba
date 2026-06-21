@@ -120,10 +120,12 @@ export default function PostCard({
                 {t("card.photos.count", { n: photoCount })}
               </span>
             )}
-            {/* 撮影期間（#324・A案）。表紙左上に控えめに（写真枚数は右上）。レンジ＝この投稿が
-                「ある期間の振り返り」だと一目で示す。撮影日が無ければ出さない。 */}
+            {/* 撮影期間（#324・A案）。表紙**左下**に控えめに（#375・写真らしいスタンプ位置＝拡大の
+                オーバーレイ撮影日と左下で揃える。写真枚数バッジは右上のまま）。レンジ＝この投稿が
+                「ある期間の振り返り」だと一目で示す。撮影日が無ければ出さない。長い範囲は下アンカーから
+                上へ伸びて折り返す。 */}
             {dateRange !== null && (
-              <span className="absolute left-2 top-2 inline-flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-x-1 gap-y-0.5 rounded-2xl bg-black/55 px-2.5 py-1 text-xs font-medium text-ha-white backdrop-blur-sm">
+              <span className="absolute left-2 bottom-2 inline-flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-x-1 gap-y-0.5 rounded-2xl bg-black/55 px-2.5 py-1 text-xs font-medium text-ha-white backdrop-blur-sm">
                 <Icon name="camera" className="h-3 w-3 shrink-0" />
                 {/* レンジが長い時は 〜 の位置だけで改行（各 YYYY-MM-DD は whitespace-nowrap で途中で割らない・#347 kako-jun「長くなったら改行すればいい」）。 */}
                 {dateRange.split("〜").map((part, i) => (
