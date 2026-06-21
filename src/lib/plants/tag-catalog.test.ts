@@ -2,28 +2,30 @@ import { describe, expect, it } from "vitest";
 import { TAG_CATEGORIES } from "./tag-catalog.ts";
 
 const postType = TAG_CATEGORIES.find((c) => c.label === "投稿の種類")!;
-const care = TAG_CATEGORIES.find((c) => c.label === "世話")!;
-const record = TAG_CATEGORIES.find((c) => c.label === "記録")!;
+// 世話と記録は #353 で「世話・記録」1枠に統合（境界が曖昧＝発芽/発根が世話・開花が記録は分からない）。
+const careRecord = TAG_CATEGORIES.find((c) => c.label === "世話・記録")!;
 const trait = TAG_CATEGORIES.find((c) => c.label === "特徴")!;
 const form = TAG_CATEGORIES.find((c) => c.label === "仕立て")!;
 
 describe("tag-catalog", () => {
-  it("世話・記録の2行を持つ", () => {
-    expect(care).toBeTruthy();
-    expect(record).toBeTruthy();
+  it("世話・記録を1枠に統合して持つ（#353）", () => {
+    expect(careRecord).toBeTruthy();
+    // 旧「世話」「記録」の独立枠は持たない。
+    expect(TAG_CATEGORIES.find((c) => c.label === "世話")).toBeUndefined();
+    expect(TAG_CATEGORIES.find((c) => c.label === "記録")).toBeUndefined();
   });
 
-  it("propagation（発芽→発根→実生）は世話の中で隣接している（index が連続・#169）", () => {
-    const i芽 = care.tags.indexOf("発芽");
-    const i根 = care.tags.indexOf("発根");
-    const i実 = care.tags.indexOf("実生");
-    expect(i芽).toBeGreaterThanOrEqual(0);
-    expect(i根).toBe(i芽 + 1);
-    expect(i実).toBe(i根 + 1);
+  it("入手からの時系列＝入手で始まる（#353）", () => {
+    expect(careRecord.tags[0]).toBe("入手");
   });
 
-  it("記録には発芽を置かない（世話へ移し二重カウントしない・#169）", () => {
-    expect(record.tags).not.toContain("発芽");
+  it("propagation（発根→発芽→実生）は世話・記録の中で隣接している（index が連続・#169/#353）", () => {
+    const i根 = careRecord.tags.indexOf("発根");
+    const i芽 = careRecord.tags.indexOf("発芽");
+    const i実 = careRecord.tags.indexOf("実生");
+    expect(i根).toBeGreaterThanOrEqual(0);
+    expect(i芽).toBe(i根 + 1);
+    expect(i実).toBe(i芽 + 1);
   });
 
   it("「発根管理」は近接同義の「発根」へ寄せて重複させない（#169）", () => {
@@ -84,9 +86,9 @@ describe("tag-catalog", () => {
     expect(TAG_CATEGORIES[0]!.label).toBe("投稿の種類");
   });
 
-  it("成長記録・実験は「記録」でなく「投稿の種類」に置く（植物の出来事でなく投稿タイプ・kako-jun）", () => {
-    expect(record.tags).not.toContain("成長記録");
-    expect(record.tags).not.toContain("実験");
+  it("成長記録・実験は「世話・記録」でなく「投稿の種類」に置く（植物の出来事でなく投稿タイプ・kako-jun）", () => {
+    expect(careRecord.tags).not.toContain("成長記録");
+    expect(careRecord.tags).not.toContain("実験");
     expect(postType.tags).toContain("成長記録");
     expect(postType.tags).toContain("実験");
   });
@@ -114,9 +116,9 @@ describe("tag-catalog", () => {
     expect(trait.tags).toEqual(["斑入り", "綴化", "石化"]);
   });
 
-  it("記録は植物の出来事（収穫 等）を持ち、「開花待ち」は持たない（#251）", () => {
-    expect(record.tags).toContain("収穫");
-    expect(record.tags).toContain("開花");
-    expect(record.tags).not.toContain("開花待ち");
+  it("世話・記録は植物の出来事（収穫・開花 等）を持ち、「開花待ち」は持たない（#251/#353）", () => {
+    expect(careRecord.tags).toContain("収穫");
+    expect(careRecord.tags).toContain("開花");
+    expect(careRecord.tags).not.toContain("開花待ち");
   });
 });

@@ -45,7 +45,7 @@ describe("TagPicker", () => {
   it("本文に入っているタグは満たされた色（aria-pressed=true）になる", () => {
     renderPicker({ caption: "今日は #水やり した" });
     expect(screen.getByRole("button", { name: "#水やり" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "#開花" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "#肥料" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("選択済みチップを再タップすると onRemove で外れる（onPick は呼ばない）", async () => {
@@ -218,29 +218,28 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["我が家のレア株"]]);
   });
 
-  it("INLINE_LIMIT を超える行に「その他」ボタンが出る（世話・記録とも・#169）", () => {
+  it("INLINE_LIMIT を超える行に「その他」ボタンが出る（世話・記録・#169）", () => {
     renderPicker();
-    expect(screen.getByRole("button", { name: "世話のその他のタグ" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "記録のその他のタグ" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "世話・記録のその他のタグ" })).toBeTruthy();
   });
 
   it("インラインに出ていない定番（株分け）は常時表示されず、「その他」を開くと見える（#169）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    // 株分け は世話の作業順で先頭7件（インライン）には出ない＝あふれ側
+    // 株分け は世話・記録の時系列で先頭7件（インライン）には出ない＝あふれ側
     expect(screen.queryByRole("button", { name: "#株分け" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
-    const dialog = screen.getByRole("dialog", { name: "世話のタグ一覧" });
+    await user.click(screen.getByRole("button", { name: "世話・記録のその他のタグ" }));
+    const dialog = screen.getByRole("dialog", { name: "世話・記録のタグ一覧" });
     expect(within(dialog).getByRole("button", { name: "#株分け" })).toBeTruthy();
   });
 
   it("「その他」ポップアップにはインライン済みの定番（水やり）は出ない＝あふれ分だけ（#186）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    // 水やり は世話の先頭＝インライン表示済み。インラインには出る。
+    // 水やり は世話・記録の先頭＝インライン表示済み。インラインには出る。
     expect(screen.getByRole("button", { name: "#水やり" })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
-    const dialog = screen.getByRole("dialog", { name: "世話のタグ一覧" });
+    await user.click(screen.getByRole("button", { name: "世話・記録のその他のタグ" }));
+    const dialog = screen.getByRole("dialog", { name: "世話・記録のタグ一覧" });
     // ポップアップ内にはインライン済みの 水やり は出ない（重複させない・#186）。
     expect(within(dialog).queryByRole("button", { name: "#水やり" })).toBeNull();
     // あふれ分（株分け）は出る。
@@ -250,8 +249,8 @@ describe("TagPicker", () => {
   it("ポップアップ内のチップを選ぶと onPick が呼ばれる（#169）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
-    await user.click(screen.getByRole("button", { name: "記録のその他のタグ" }));
-    const dialog = screen.getByRole("dialog", { name: "記録のタグ一覧" });
+    await user.click(screen.getByRole("button", { name: "世話・記録のその他のタグ" }));
+    const dialog = screen.getByRole("dialog", { name: "世話・記録のタグ一覧" });
     await user.click(within(dialog).getByRole("button", { name: "#休眠" }));
     expect(onPick.mock.calls).toEqual([["休眠"]]);
   });
@@ -259,7 +258,7 @@ describe("TagPicker", () => {
   it("「その他」ボタンの aria-expanded は開閉に追従する（#169）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    const btn = screen.getByRole("button", { name: "世話のその他のタグ" });
+    const btn = screen.getByRole("button", { name: "世話・記録のその他のタグ" });
     expect(btn).toHaveAttribute("aria-expanded", "false");
     await user.click(btn);
     expect(btn).toHaveAttribute("aria-expanded", "true");
@@ -268,28 +267,28 @@ describe("TagPicker", () => {
   it("ポップアップは × で閉じる（#169）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
-    expect(screen.getByRole("dialog", { name: "世話のタグ一覧" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "世話・記録のその他のタグ" }));
+    expect(screen.getByRole("dialog", { name: "世話・記録のタグ一覧" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "タグ一覧を閉じる" }));
-    expect(screen.queryByRole("dialog", { name: "世話のタグ一覧" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "世話・記録のタグ一覧" })).toBeNull();
   });
 
   it("ポップアップは Esc で閉じる（#169）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    await user.click(screen.getByRole("button", { name: "記録のその他のタグ" }));
-    expect(screen.getByRole("dialog", { name: "記録のタグ一覧" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "世話・記録のその他のタグ" }));
+    expect(screen.getByRole("dialog", { name: "世話・記録のタグ一覧" })).toBeTruthy();
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog", { name: "記録のタグ一覧" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "世話・記録のタグ一覧" })).toBeNull();
   });
 
   it("ポップアップは囲み外クリックで閉じる（#169）", async () => {
     const user = userEvent.setup();
     renderPicker();
-    await user.click(screen.getByRole("button", { name: "世話のその他のタグ" }));
-    expect(screen.getByRole("dialog", { name: "世話のタグ一覧" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "世話・記録のその他のタグ" }));
+    expect(screen.getByRole("dialog", { name: "世話・記録のタグ一覧" })).toBeTruthy();
     await user.click(screen.getByText("タグを選ぶ"));
-    expect(screen.queryByRole("dialog", { name: "世話のタグ一覧" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "世話・記録のタグ一覧" })).toBeNull();
   });
 
   it("追加リクエストリンクが /vote（市役所の品種要望板）に向く・GitHub に飛ばさない（#169/#232）", () => {
@@ -359,7 +358,7 @@ describe("TagPicker", () => {
     const recent = screen.getByText("最近使った").parentElement!;
     expect(within(recent).getByRole("button", { name: "#チタノタ" })).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "#開花" }));
+    await user.click(screen.getByRole("button", { name: "#肥料" }));
     expect(JSON.parse(window.localStorage.getItem("hanoba:recent-tags")!)).toEqual(["チタノタ"]);
   });
 });

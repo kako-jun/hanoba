@@ -210,9 +210,14 @@ describe("parsePost", () => {
     expect(post.caption).toBe("一段目\n\n二段目");
   });
 
-  it("過剰な連続改行（3つ以上）は空行1つに抑える", () => {
-    const post = parsePost(makeEvent({ content: "a\n\n\n\nb" }));
-    expect(post.caption).toBe("a\n\nb");
+  it("空行2つ（改行3つ）は段落の間隔として残す（#351）", () => {
+    const post = parsePost(makeEvent({ content: "a\n\n\nb" }));
+    expect(post.caption).toBe("a\n\n\nb");
+  });
+
+  it("過剰な連続改行（4つ以上＝空行3つ以上）は空行2つに抑える（#351）", () => {
+    const post = parsePost(makeEvent({ content: "a\n\n\n\n\nb" }));
+    expect(post.caption).toBe("a\n\n\nb");
   });
 
   it("複数画像 URL は先頭を imageUrl にする", () => {

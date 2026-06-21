@@ -64,8 +64,9 @@ export function parsePost(event: NostrEvent): FeedPost {
   // content から画像 URL を取り除く（replace は別途新しい RegExp で。グローバルフラグの lastIndex 汚染を避ける）。
   const withoutImages = content.replace(new RegExp(IMAGE_URL_RE.source, "gi"), "");
 
-  // 空行（段落区切り）は残す。過剰な連続改行（3つ以上）だけ空行1つ（\n\n）に抑え、前後を trim。
-  const caption = withoutImages.replace(/\n{3,}/g, "\n\n").trim();
+  // 段落の間隔を作れるよう**空行2つ（改行3つ）まで残す**（#351・kako-jun「少し間隔をあけた段落」）。
+  // 過剰（改行4つ以上＝空行3つ以上）だけ空行2つ（\n\n\n）に抑え、前後を trim（TL 荒らし防止のバランス）。
+  const caption = withoutImages.replace(/\n{4,}/g, "\n\n\n").trim();
 
   // 撮影日（#324）。
   // 新形式: 1本の位置配列タグ `["shot_dates", d0, d1, …]`（imageUrls 順・無い位置は ""）＝写真↔日付を保つ。

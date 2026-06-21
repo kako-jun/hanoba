@@ -347,9 +347,9 @@ describe("Composer", () => {
     const caption = screen.getByLabelText("ひとこと") as HTMLTextAreaElement;
     await user.type(caption, "成長記録");
     await user.click(screen.getByRole("button", { name: "#水やり" }));
-    await user.click(screen.getByRole("button", { name: "#開花" }));
+    await user.click(screen.getByRole("button", { name: "#肥料" }));
 
-    expect(caption.value).toBe("成長記録\n\n#水やり #開花 ");
+    expect(caption.value).toBe("成長記録\n\n#水やり #肥料 ");
   });
 
   it("選択済みチップを外すと空タグ行のぶら下がり空行を畳む（#282）", async () => {
