@@ -77,6 +77,7 @@ describe("EditPost（投稿の編集＝確認つき再投稿・#300）", () => {
       oldEventId: "old-id",
       caption: "なおした #アガベ",
       imageUrls: ["https://example.com/a.jpg", "https://example.com/b.jpg"],
+      shotDates: [], // 撮影日（#324）も編集で引き継ぐ
     });
     // 新しい投稿（parsePost の結果）で差し替えを通知する。caption は画像 URL を除いた本文（#タグは残る）。
     await waitFor(() => expect(onEdited).toHaveBeenCalledTimes(1));

@@ -250,7 +250,10 @@ export default function Composer() {
         .then((buf) => {
           const shotDate = detectShotDate(buf, draft.file.name);
           if (shotDate !== null) {
-            setImages((prev) => prev.map((item) => (item.id === draft.id ? { ...item, shotDate } : item)));
+            // ユーザーが先に手で編集/除外していたら上書きしない（crop と同じ「null のときだけ自動セット」）。
+            setImages((prev) =>
+              prev.map((item) => (item.id === draft.id && item.shotDate === null ? { ...item, shotDate } : item)),
+            );
           }
         })
         .catch(() => {

@@ -16,9 +16,12 @@ export function exifDateToYmd(raw: string): string | null {
   return validYmd(Number(m[1]), Number(m[2]), Number(m[3]));
 }
 
-/** 年月日が暦として妥当なら `YYYY-MM-DD`、でなければ null。 */
+/** 年月日が暦として妥当なら `YYYY-MM-DD`、でなければ null（月ごとの日数・閏年も検査）。 */
 function validYmd(y: number, mo: number, d: number): string | null {
-  if (y < 1900 || y > 2999 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  if (y < 1900 || y > 2999 || mo < 1 || mo > 12 || d < 1) return null;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
+  if (d > daysInMonth) return null; // 例 6月31日・2月30日 はファイル名の誤検出として弾く
   const mm = String(mo).padStart(2, "0");
   const dd = String(d).padStart(2, "0");
   return `${y}-${mm}-${dd}`;

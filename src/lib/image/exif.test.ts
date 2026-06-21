@@ -27,6 +27,9 @@ describe("parseFilenameDate", () => {
     expect(parseFilenameDate("DSC_0001.jpg")).toBeNull();
     expect(parseFilenameDate("screenshot.png")).toBeNull();
     expect(parseFilenameDate("20249999.jpg")).toBeNull(); // 月99日99は不正
+    expect(parseFilenameDate("IMG_20240631.jpg")).toBeNull(); // 6月31日は存在しない（月ごと日数）
+    expect(parseFilenameDate("IMG_20230229.jpg")).toBeNull(); // 2023は閏年でない＝2月29日は不正
+    expect(parseFilenameDate("IMG_20240229.jpg")).toBe("2024-02-29"); // 2024は閏年＝OK
   });
 });
 
