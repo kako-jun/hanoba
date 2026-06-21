@@ -361,9 +361,10 @@ export default function Composer() {
       );
       // 写真は全部送り終え、ここから署名・relay への publish（枚数では測れないので「投稿中…」）。
       setPostProgress({ stage: "publish", done: images.length, total: images.length });
-      // 撮影日（#324）: 各写真の撮影日を distinct で載せる（活動の草を撮影日基準にする）。
-      const shotDates = [...new Set(images.map((img) => img.shotDate).filter((d): d is string => d !== null))];
-      await signAndPublishNote({ caption, imageUrls: orderedUrls, shotDates });
+      // 撮影日（#324）: 各写真の撮影日を imageUrls 順の per-photo 配列で載せる（写真↔日付を保つ・
+      // 「1つの被写体の1ヶ月を振り返る」投稿が成立）。orderedUrls は images 順なので index が一致する。
+      const photoShotDates = images.map((img) => img.shotDate);
+      await signAndPublishNote({ caption, imageUrls: orderedUrls, photoShotDates });
       // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
       recordRecentTags(extractHashtags(caption));
       resetAll();
