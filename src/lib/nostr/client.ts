@@ -65,6 +65,24 @@ export async function publishEvent(event: NostrEvent): Promise<void> {
 }
 
 /**
+ * publish したイベントが**フィードの読むリレー（GENERAL_RELAYS）で実在するか**を確認する（#350）。
+ *
+ * `publishEvent` は Promise.any（1 リレーの OK で成功）なので、**書き込み先 RELAYS のうち
+ * search.nos.today だけが OK を返し、/me が読む GENERAL_RELAYS には載らない**と、成功扱いで
+ * 下書きごと消える事故があった（accept-then-drop / 伝播しない）。読む側で id 取得して実在を確かめ、
+ * **確認できてから成功確定**する（できなければ呼び出し側は下書きを残してリトライさせる）。
+ * 期限内に1件でも返れば true。取得失敗（オフライン等）は false（＝楽観成功にしない・安全側）。
+ */
+export async function confirmEventStored(id: string, maxWait = QUERY_MAXWAIT): Promise<boolean> {
+  try {
+    const events = await getPool().querySync([...GENERAL_RELAYS], { ids: [id] }, { maxWait });
+    return events.some((e) => e.id === id);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 投稿テンプレートを構築・署名・publish し、署名済みイベントを返す。
  * 返り値は呼び出し側（フィード即時反映など）の利便のため。
  */

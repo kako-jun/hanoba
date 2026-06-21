@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const uploadImage = vi.fn();
 const deleteImage = vi.fn();
 const signAndPublishNote = vi.fn();
+const confirmEventStored = vi.fn();
 const fetchKnownHashtags = vi.fn();
 const renderSquareImageFromRect = vi.fn();
 
@@ -18,6 +19,7 @@ const fetchPopularHashtags = vi.fn();
 const fetchProfileName = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   signAndPublishNote: (...args: unknown[]) => signAndPublishNote(...args),
+  confirmEventStored: (...args: unknown[]) => confirmEventStored(...args),
   fetchKnownHashtags: (...args: unknown[]) => fetchKnownHashtags(...args),
   fetchPopularHashtags: (...args: unknown[]) => fetchPopularHashtags(...args),
   saveDisplayName: (...args: unknown[]) => saveDisplayName(...args),
@@ -65,6 +67,7 @@ describe("Composer", () => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
     deleteImage.mockReset().mockResolvedValue(true);
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
+    confirmEventStored.mockReset().mockResolvedValue(true); // #350: 既定は実在確認 OK（成功パス）。
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
     fetchPopularHashtags.mockReset().mockResolvedValue([]);
     fetchProfileName.mockReset().mockResolvedValue(null);
@@ -572,6 +575,7 @@ describe("Composer 下書き配線（#228）", () => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
     deleteImage.mockReset().mockResolvedValue(true);
     signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
+    confirmEventStored.mockReset().mockResolvedValue(true); // #350: 既定は実在確認 OK（成功パス）。
     fetchKnownHashtags.mockReset().mockResolvedValue([]);
     fetchPopularHashtags.mockReset().mockResolvedValue([]);
     fetchProfileName.mockReset().mockResolvedValue(null);
@@ -805,6 +809,31 @@ describe("Composer 下書き配線（#228）", () => {
 
       await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
       expect(clearDraft).toHaveBeenCalled();
+    } finally {
+      if (orig) Object.defineProperty(window, "location", orig);
+    }
+  });
+
+  it("#350: publish しても実在確認できなければ下書きを消さず・遷移せず・エラーを出す", async () => {
+    const user = userEvent.setup();
+    confirmEventStored.mockReset().mockResolvedValue(false); // 読む側に載っていない（accept-then-drop）。
+    const orig = Object.getOwnPropertyDescriptor(window, "location");
+    Object.defineProperty(window, "location", { configurable: true, value: { href: "" } as Location });
+    try {
+      render(<Composer />);
+      await waitFor(() => expect(loadDraft).toHaveBeenCalled());
+      await user.upload(screen.getByLabelText("カメラで撮影") as HTMLInputElement, makeImageFile());
+      fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+      await user.type(screen.getByLabelText("ひとこと"), "開花した");
+      clearDraft.mockClear();
+      await user.click(await screen.findByRole("button", { name: /投稿する/ }));
+
+      await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
+      await waitFor(() => expect(confirmEventStored).toHaveBeenCalled());
+      // 下書きは消さない・/me へ遷移しない・確認できない旨のエラーを出す（リトライ可）。
+      expect(clearDraft).not.toHaveBeenCalled();
+      expect(window.location.href).toBe("");
+      expect(await screen.findByText(/投稿を確認できませんでした/)).toBeInTheDocument();
     } finally {
       if (orig) Object.defineProperty(window, "location", orig);
     }
