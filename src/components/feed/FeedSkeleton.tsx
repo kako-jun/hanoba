@@ -1,13 +1,16 @@
+import { useT, useLocale } from "../../lib/i18n/index.ts";
+
 /**
  * フィード読み込み中のスケルトン（#99）。素っ気ない「読み込み中…」の代わりに、
  * 実際のカード形（写真の正方形＋本文行）をガラスで象って pulse させ、レイアウトの予感を出す。
  * 視覚のみの飾りなので aria-hidden。読み上げ向けには status テキストを別に置く。
  */
 export default function FeedSkeleton({ count = 4 }: { count?: number }) {
+  const t = useT(useLocale());
   return (
     <div className="flex flex-col gap-4">
       <p role="status" className="sr-only">
-        植物を読み込み中…
+        {t("feed.skeleton.loading.sr")}
       </p>
       <ul className="flex flex-col gap-4" aria-hidden="true">
         {Array.from({ length: count }).map((_, i) => (

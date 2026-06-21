@@ -386,6 +386,44 @@ export const ja = {
   "edit.cancel": "やめる",
   "edit.saving": "再投稿中…",
   "edit.update": "更新する",
+
+  // 人気ランキング島（RankingBoard・#162/#147 段階2）。SciName/件数は別途。NEW/RE/—/↑↓ は記号扱い。
+  "ranking.board.loading": "読み込み中…",
+  "ranking.board.error": "ランキングを読み込めませんでした。",
+  "ranking.board.reload": "再読み込み",
+  "ranking.board.empty": "まだランキングを出すほどの投稿が集まっていません。",
+  "ranking.board.firstPost": "最初の一鉢を投稿する",
+  "ranking.board.demo": "開発プレビュー（?demo）— 合成データです。実際の投稿ではありません。",
+  "ranking.board.firstWeek": "今週が集計の最初の週です。先週との比較（↑↓）は来週から表示されます。",
+  "ranking.board.count.unit": "件",
+  "ranking.board.chart.loading": "グラフを読み込み中…",
+  // 行の読み上げ要約（DeltaBadge の意味語）。aria-label の組み立てに使う。
+  "ranking.board.delta.new": "新登場",
+  "ranking.board.delta.re": "再登場",
+  "ranking.board.delta.same": "順位変わらず",
+  "ranking.board.delta.up": "{by}ランクアップ",
+  "ranking.board.delta.down": "{by}ランクダウン",
+  // 行全体の読み上げ要約（順位・品種・学名・件数・先週比）。{sci} は学名（無ければ空）。
+  "ranking.board.rowSummary": "{rank}位 {name}{sci} {count}件 {delta}",
+
+  // 途中経過チャート（RankRunChart・#162/#261/#147 段階2）。canvas/凡例は装飾、説明は aria/figcaption。
+  "ranking.chart.sparse": "推移グラフは週が2つ以上たまると表示されます。",
+  "ranking.chart.caption": "途中経過（変動）— 週ごとの投稿数の推移。詳しい順位は上の表をご覧ください。",
+  "ranking.chart.summary": "上位品種（{names}）の週ごとの投稿数の推移グラフ。詳しくは上の表を参照。",
+
+  // 人ごとに「フィードで減らす」コントロール（DilutionControl・#138/#147 段階2）。{name}=著者名・{n}=減量。
+  "dilution.stop.none": "なし",
+  "dilution.trigger.idle": "{name}さんの表示を調整",
+  "dilution.trigger.active": "{name}さんを 1/{n} に減らし中",
+  "dilution.heading": "{name}さんの投稿をフィードで減らす",
+  "dilution.slider.aria": "{name}さんの投稿をフィードで減らす量",
+
+  // 入力部品の共通文言（ResizableTextarea / ClearableInput・#188/#98）。account.name.clear と同義だが部品ごとに保持。
+  "input.clear": "入力をクリア",
+  "input.resizeHandle.aria": "入力欄の高さを調整",
+
+  // フィード読み込み中スケルトン（FeedSkeleton・#99）。視覚は飾り、読み上げ向け status のみ文言。
+  "feed.skeleton.loading.sr": "植物を読み込み中…",
 } as const;
 
 /** 全文言キーの union（ja を単一ソースに型を導出する）。 */

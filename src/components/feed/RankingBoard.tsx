@@ -4,6 +4,7 @@ import { fetchRankingPosts } from "../../lib/nostr/client.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { bucketByWeek, rankRunData, rankWithDeltas, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale, type MessageKey, type TParams } from "../../lib/i18n/index.ts";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -30,7 +31,9 @@ const RankRunChart = lazy(() => import("./RankRunChart.tsx"));
  *   この分岐は本番ビルドでは import.meta.env.DEV=false によりデッドコードになる（捏造データを本番に出さない）。
  * - relay 取得は client.ts に集約（島から直接リレーを叩かない）。SSR では走らせない。
  */
-export default function RankingBoard() {
+// lang は ranking.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   const [status, setStatus] = useState<Status>("loading");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
@@ -100,54 +103,63 @@ export default function RankingBoard() {
   const showChart = runData.weeks.length >= 2 && runData.series.length > 0;
 
   if (status === "loading") {
-    return <p className="py-12 text-center text-ha-ink/60">読み込み中…</p>;
+    return (
+      <LocaleProvider value={lang}>
+        <p className="py-12 text-center text-ha-ink/60">{t("ranking.board.loading")}</p>
+      </LocaleProvider>
+    );
   }
 
   if (status === "error") {
     return (
-      <div className="py-12 flex flex-col items-center gap-4 text-center">
-        <p className="text-ha-ink/70">ランキングを読み込めませんでした。</p>
-        <a
-          href="/ranking"
-          className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-        >
-          再読み込み
-        </a>
-      </div>
+      <LocaleProvider value={lang}>
+        <div className="py-12 flex flex-col items-center gap-4 text-center">
+          <p className="text-ha-ink/70">{t("ranking.board.error")}</p>
+          <a
+            href="/ranking"
+            className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+          >
+            {t("ranking.board.reload")}
+          </a>
+        </div>
+      </LocaleProvider>
     );
   }
 
   // 空状態（投稿/品種が集まっていない）＝壊れて見えないよう正直に案内する。
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <p className="text-ha-ink/70 [word-break:auto-phrase]">
-          まだランキングを出すほどの投稿が集まっていません。
-        </p>
-        <a
-          href="/compose"
-          className="inline-flex items-center rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-        >
-          最初の一鉢を投稿する
-        </a>
-      </div>
+      <LocaleProvider value={lang}>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <p className="text-ha-ink/70 [word-break:auto-phrase]">
+            {t("ranking.board.empty")}
+          </p>
+          <a
+            href="/compose"
+            className="inline-flex items-center rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+          >
+            {t("ranking.board.firstPost")}
+          </a>
+        </div>
+      </LocaleProvider>
     );
   }
 
   return (
+    <LocaleProvider value={lang}>
     <section className="flex flex-col gap-4">
       {import.meta.env.DEV && demo && (
         // 開発専用デモであることを画面にも明示する。import.meta.env.DEV で本番ビルドからは
         // このノード自体が消える（banner 文字列ごとデッドコード化＝本番に痕跡を残さない）。
         <p className="rounded-xl bg-ha-green-soft px-4 py-2 text-sm text-ha-green-deep">
-          開発プレビュー（?demo）— 合成データです。実際の投稿ではありません。
+          {t("ranking.board.demo")}
         </p>
       )}
 
       {isFirstWeek && (
         // 単週のみ＝全 NEW。偽の矢印を出さない代わりに、比較が来週から始まることを正直に伝える。
         <p className="text-sm text-ha-ink/60 [word-break:auto-phrase]">
-          今週が集計の最初の週です。先週との比較（↑↓）は来週から表示されます。
+          {t("ranking.board.firstWeek")}
         </p>
       )}
 
@@ -163,7 +175,7 @@ export default function RankingBoard() {
             key={row.key}
             className="ha-rise glass rounded-xl px-4 py-3 flex items-center gap-3"
             style={{ "--i": Math.min(i, 12) } as React.CSSProperties}
-            aria-label={rowSummary(row)}
+            aria-label={rowSummary(row, t)}
           >
             {/* 順位 */}
             <span
@@ -187,7 +199,7 @@ export default function RankingBoard() {
             {/* 投稿数（票）。1000超でも読めるよう3桁区切り（#kako-jun）。 */}
             <span className="shrink-0 text-right tabular-nums text-ha-ink/80">
               <span className="font-semibold text-ha-ink">{row.count.toLocaleString("en-US")}</span>
-              <span className="text-xs text-ha-ink/55">件</span>
+              <span className="text-xs text-ha-ink/55">{t("ranking.board.count.unit")}</span>
             </span>
           </li>
         ))}
@@ -197,36 +209,37 @@ export default function RankingBoard() {
           uPlot は遅延ロード（チャートを出すときだけ uplot チャンクを取得）。読み込み中は静かに空。 */}
       {showChart && (
         <div className="ha-rise glass rounded-xl px-4 py-4" style={{ "--i": 1 } as React.CSSProperties}>
-          <Suspense fallback={<p className="text-sm text-ha-ink/55">グラフを読み込み中…</p>}>
+          <Suspense fallback={<p className="text-sm text-ha-ink/55">{t("ranking.board.chart.loading")}</p>}>
             <RankRunChart data={runData} />
           </Suspense>
         </div>
       )}
     </section>
+    </LocaleProvider>
   );
 }
 
-/** 先週比 Delta を読み上げ用の短い日本語にする（行の aria-label に使う）。 */
-function deltaText(delta: Delta): string {
+/** 先週比 Delta を読み上げ用の短い文言にする（行の aria-label に使う・#147）。 */
+function deltaText(delta: Delta, t: (key: MessageKey, params?: TParams) => string): string {
   switch (delta.kind) {
     case "new":
-      return "新登場";
+      return t("ranking.board.delta.new");
     case "re":
-      return "再登場";
+      return t("ranking.board.delta.re");
     case "same":
-      return "順位変わらず";
+      return t("ranking.board.delta.same");
     case "up":
-      return `${delta.by}ランクアップ`;
+      return t("ranking.board.delta.up", { by: delta.by });
     case "down":
-      return `${delta.by}ランクダウン`;
+      return t("ranking.board.delta.down", { by: delta.by });
   }
 }
 
 /** 行全体の読み上げ要約（順位・品種・学名・件数・先週比）。sparkline は aria-hidden なのでここに含める。 */
-function rowSummary(row: RankRow): string {
+function rowSummary(row: RankRow, t: (key: MessageKey, params?: TParams) => string): string {
   // 学名があれば和名のあとに添える（SR 利用者にも学名を伝える・#162 N3）。
   const sci = row.sci !== null ? ` ${row.sci}` : "";
-  return `${row.rank}位 ${row.name}${sci} ${row.count}件 ${deltaText(row.delta)}`;
+  return t("ranking.board.rowSummary", { rank: row.rank, name: row.name, sci, count: row.count, delta: deltaText(row.delta, t) });
 }
 
 /** 先週比バッジ（テキストで意味を持たせる＝色だけに頼らない・a11y）。 */

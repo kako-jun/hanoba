@@ -11,6 +11,7 @@
 
 import { useRef, type InputHTMLAttributes } from "react";
 import Icon from "./Icon.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 // value/onChange/className は本コンポーネントが制御するので、ネイティブ属性からは除いて渡してもらう。
 type InputRest = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "className">;
@@ -50,10 +51,11 @@ function ClearButton({
 export function ClearableInput({
   value,
   onValueChange,
-  clearLabel = "入力をクリア",
+  clearLabel,
   className = "",
   ...rest
 }: ClearableInputProps) {
+  const t = useT(useLocale());
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="relative">
@@ -66,7 +68,7 @@ export function ClearableInput({
       />
       {value !== "" && (
         <ClearButton
-          clearLabel={clearLabel}
+          clearLabel={clearLabel ?? t("input.clear")}
           position="top-1/2 -translate-y-1/2"
           onClear={() => {
             onValueChange("");
