@@ -406,7 +406,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "レナータ", sci: "Schefflera arboricola 'Renata'" }, { name: "アマテ", sci: "Schefflera actinophylla 'Amate'" },
       ] },
       { name: "ユッカ", pickable: true, aliases: ["Yucca"], varieties: [
-        { name: "エレファンティペス", sci: "Yucca gigantea", aliases: ["青年の木"] }, { name: "ロストラータ", sci: "Yucca rostrata" }, { name: "デスメティアナ", sci: "Yucca desmetiana" }, { name: "アロイフォリア", sci: "Yucca aloifolia" },
+        { name: "エレファンティペス", sci: "Yucca gigantea", aliases: ["青年の木"] }, { name: "ロストラータ", sci: "Yucca rostrata" }, { name: "リギダ", sci: "Yucca rigida", aliases: ["ユッカリギダ"] }, { name: "デスメティアナ", sci: "Yucca desmetiana" }, { name: "アロイフォリア", sci: "Yucca aloifolia" },
         { name: "グロリオサ", sci: "Yucca gloriosa" },
       ] },
       { name: "その他観葉", pickable: false, varieties: [

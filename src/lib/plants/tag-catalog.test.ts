@@ -77,9 +77,9 @@ describe("tag-catalog", () => {
     expect(all).not.toContain("観葉植物");
   });
 
-  it("投稿の種類（成長記録/実験/質問/失敗）を先頭の枠に持つ（#311・成長記録・実験を追補）", () => {
+  it("投稿の種類（成長記録/質問/実験/失敗）を先頭の枠に持つ（#311・実験は失敗の隣＝kako-jun）", () => {
     expect(postType).toBeTruthy();
-    expect(postType.tags).toEqual(["成長記録", "実験", "質問", "失敗"]);
+    expect(postType.tags).toEqual(["成長記録", "質問", "実験", "失敗"]);
     // 先頭の枠＝高位の descriptor（共有文化を促す・kako-jun 配置サインオフ対象）。
     expect(TAG_CATEGORIES[0]!.label).toBe("投稿の種類");
   });
