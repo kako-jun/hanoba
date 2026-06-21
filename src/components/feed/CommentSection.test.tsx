@@ -58,12 +58,21 @@ describe("CommentSection", () => {
     expect(screen.getByText("読み込み中…")).toBeInTheDocument();
   });
 
-  it("0件のときは空メッセージを出し、件数 0 を表示する", () => {
+  it("0件のときは空メッセージを出し、件数 0 を表示する・並び替えトグルは出さない（kako-jun）", () => {
     useCommentsState.comments = [];
     useCommentsState.loading = false;
     render(<CommentSection postId="p1" />);
     expect(screen.getByText("まだコメントはありません")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /コメント 0/ })).toBeInTheDocument();
+    // 並べ替える対象が無いので「古い順」トグルは出さない。
+    expect(screen.queryByRole("button", { name: /並べ替える/ })).not.toBeInTheDocument();
+  });
+
+  it("1件のときも並び替えトグルは出さない（順序が無い）", () => {
+    useCommentsState.comments = [comment({ id: "c1" })];
+    useCommentsState.loading = false;
+    render(<CommentSection postId="p1" />);
+    expect(screen.queryByRole("button", { name: /並べ替える/ })).not.toBeInTheDocument();
   });
 
   it("コメント一覧と件数を表示する", () => {
@@ -79,7 +88,8 @@ describe("CommentSection", () => {
   });
 
   it("並び替えトグルで setOrder を呼ぶ（古い順 → 新しい順）", () => {
-    useCommentsState.comments = [comment({ id: "c1" })];
+    // トグルは並べ替える対象（2件以上）があるときだけ出る。
+    useCommentsState.comments = [comment({ id: "c1" }), comment({ id: "c2" })];
     useCommentsState.loading = false;
     useCommentsState.order = "old";
     render(<CommentSection postId="p1" />);

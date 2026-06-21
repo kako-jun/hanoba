@@ -69,15 +69,18 @@ export default function CommentSection({ postId }: Props) {
         <h3 className="text-sm font-medium text-ha-ink/80">
           コメント {comments === null ? "" : comments.length}
         </h3>
-        {/* 並び替えトグル（押すと反対の順へ）。件数0/読み込み中でも操作は無害なので常時出す。 */}
-        <button
-          type="button"
-          onClick={() => setOrder(order === "old" ? "new" : "old")}
-          aria-label={order === "old" ? "新しい順に並べ替える" : "古い順に並べ替える"}
-          className="rounded-full px-3 py-1 text-xs font-medium text-ha-ink/60 hover:bg-ha-ink/5 hover:text-ha-ink transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green/40"
-        >
-          {order === "old" ? "古い順" : "新しい順"}
-        </button>
+        {/* 並び替えトグル（押すと反対の順へ）。**並べ替える対象が無い**＝0件/1件/読み込み中は
+            出さない（kako-jun「0件のとき『古い順』は要らない」。1件も順序が無いので同様に隠す）。 */}
+        {comments !== null && comments.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setOrder(order === "old" ? "new" : "old")}
+            aria-label={order === "old" ? "新しい順に並べ替える" : "古い順に並べ替える"}
+            className="rounded-full px-3 py-1 text-xs font-medium text-ha-ink/60 hover:bg-ha-ink/5 hover:text-ha-ink transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green/40"
+          >
+            {order === "old" ? "古い順" : "新しい順"}
+          </button>
+        )}
       </div>
 
       {/* 状態通知（読み込み・送受信エラー）を aria-live で読み上げる。 */}
