@@ -13,7 +13,7 @@ function post(daysAgo: number, id = `p${daysAgo}`): FeedPost {
     imageUrls: ["x.jpg"],
     imageUrl: "x.jpg",
     hashtags: [],
-    id,
+    shotDates: [],    id,
   };
 }
 

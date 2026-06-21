@@ -205,6 +205,7 @@ describe("Composer", () => {
     expect(signAndPublishNote).toHaveBeenCalledWith({
       caption: "成長記録",
       imageUrls: ["https://image.nostr.build/hanoba-1.jpg", "https://image.nostr.build/hanoba-2.jpg"],
+      shotDates: [], // 撮影日（#324）: テスト画像は EXIF/日付名なし＝空
     });
   });
 
@@ -285,6 +286,7 @@ describe("Composer", () => {
         "https://image.nostr.build/hanoba-3.jpg",
         "https://image.nostr.build/hanoba-4.jpg",
       ],
+      shotDates: [],
     });
   });
 

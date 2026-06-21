@@ -35,7 +35,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     imageUrls: overrides.imageUrls ?? ["https://image.example/x.jpg"],
     imageUrl: overrides.imageUrl ?? "https://image.example/x.jpg",
     hashtags: overrides.hashtags ?? [],
-  };
+    shotDates: [],  };
 }
 
 describe("RankingBoard", () => {

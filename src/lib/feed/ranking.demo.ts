@@ -69,6 +69,7 @@ export function buildDemoRankingPosts(now: number): FeedPost[] {
         imageUrls: [`https://example.invalid/demo-${n}.jpg`],
         imageUrl: `https://example.invalid/demo-${n}.jpg`,
         hashtags,
+        shotDates: [],
       });
       n += 1;
     }

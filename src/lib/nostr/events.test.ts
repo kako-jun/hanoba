@@ -103,6 +103,23 @@ describe("buildNoteTemplate", () => {
     expect(t.content).toBe("開花した #アガベ\nhttps://image.nostr.build/xxx.jpg");
   });
 
+  it("撮影日を shot_date タグに載せる（distinct・妥当な YYYY-MM-DD だけ・#324）", () => {
+    const t = buildNoteTemplate({
+      caption: "記録",
+      shotDates: ["2024-06-15", "2024-06-16", "2024-06-15", "bad-date", "2024/06/17"],
+      createdAt: 1700000000,
+    });
+    const shot = t.tags.filter((tag) => tag[0] === "shot_date").map((tag) => tag[1]);
+    expect(shot).toEqual(["2024-06-15", "2024-06-16"]); // distinct・形式不正は落とす
+    // 自動タグは保つ。
+    expect(t.tags).toContainEqual(["t", "hanoba"]);
+  });
+
+  it("撮影日が無ければ shot_date タグは付けない（#324）", () => {
+    const t = buildNoteTemplate({ caption: "記録" });
+    expect(t.tags.some((tag) => tag[0] === "shot_date")).toBe(false);
+  });
+
   it("複数の画像 URL を改行で連結する", () => {
     const t = buildNoteTemplate({
       caption: "成長記録",

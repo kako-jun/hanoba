@@ -47,7 +47,7 @@ function makePost(createdAt: number, id: string): FeedPost {
     imageUrls: ["https://x/y.jpg"],
     imageUrl: "https://x/y.jpg",
     hashtags: [],
-  };
+    shotDates: [],  };
 }
 
 /** L2（古参）相当の投稿: 5 件・最古は 20 日前。 */

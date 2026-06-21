@@ -43,7 +43,7 @@ const post: FeedPost = {
   imageUrls: ["https://example.com/a.jpg"],
   imageUrl: "https://example.com/a.jpg",
   hashtags: [],
-};
+  shotDates: [],};
 
 describe("MyGrid（あなたの植物・#28/#101）", () => {
   beforeEach(() => {

@@ -33,7 +33,7 @@ function makePost(id: string, imageUrls: string[]): FeedPost {
     imageUrls,
     imageUrl: imageUrls[0] ?? null,
     hashtags: [],
-    id,
+    shotDates: [],    id,
   };
 }
 

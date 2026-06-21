@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { activityHeatmap, activityLevel, jstDayIndex, streaks, weekdayOf } from "./activity.ts";
+import {
+  activityHeatmap,
+  activityLevel,
+  jstDayIndex,
+  postActiveDays,
+  streaks,
+  weekdayOf,
+  ymdToJstDayIndex,
+} from "./activity.ts";
 import type { FeedPost } from "./parse.ts";
 
 const DAY = 86400;
@@ -7,7 +15,7 @@ const DAY = 86400;
 function noon(dayIndex: number): number {
   return dayIndex * DAY + 12 * 3600 - 9 * 3600;
 }
-function post(dayIndex: number, id = `p${dayIndex}`): FeedPost {
+function post(dayIndex: number, id = `p${dayIndex}`, shotDates: string[] = []): FeedPost {
   return {
     pubkey: "a".repeat(64),
     createdAt: noon(dayIndex),
@@ -15,9 +23,29 @@ function post(dayIndex: number, id = `p${dayIndex}`): FeedPost {
     imageUrls: ["x.jpg"],
     imageUrl: "x.jpg",
     hashtags: [],
+    shotDates,
     id,
   };
 }
+
+describe("ymdToJstDayIndex / postActiveDays（#324・撮影日）", () => {
+  it("YYYY-MM-DD を JST 暦日インデックスに（jstDayIndex と整合）", () => {
+    // 2024-06-15 の暦日インデックスは、その日の正午 JST の jstDayIndex と一致する。
+    const idx = ymdToJstDayIndex("2024-06-15")!;
+    expect(jstDayIndex(noon(idx))).toBe(idx);
+    expect(ymdToJstDayIndex("2024-06-16")).toBe(idx + 1);
+    expect(ymdToJstDayIndex("not-a-date")).toBeNull();
+    expect(ymdToJstDayIndex("2024-13-40")).toBeNull();
+  });
+
+  it("撮影日があればそれを、無ければ投稿日を活動日にする", () => {
+    expect(postActiveDays(post(100, "a", ["2024-06-15", "2024-06-16"]))).toEqual([
+      ymdToJstDayIndex("2024-06-15"),
+      ymdToJstDayIndex("2024-06-16"),
+    ]);
+    expect(postActiveDays(post(20000, "b"))).toEqual([20000]); // 撮影日なし→投稿日
+  });
+});
 
 describe("jstDayIndex / weekdayOf", () => {
   it("JST の日境界で切り替わる（23:00 JST と翌 01:00 JST は別日）", () => {
@@ -111,5 +139,18 @@ describe("streaks", () => {
   it("同日複数投稿は1日として数える", () => {
     const posts = [post(today, "a"), post(today, "b"), post(today - 1)];
     expect(streaks(posts, now).current).toBe(2);
+  });
+
+  it("週末まとめ投稿でも撮った日数ぶん連続になる（#324・撮影日基準）", () => {
+    // 1投稿に7日ぶんの撮影日（毎日撮って日曜にまとめ投稿）。投稿は1回でも連続7日になる。
+    const dates = ["2024-06-10", "2024-06-11", "2024-06-12", "2024-06-13", "2024-06-14", "2024-06-15", "2024-06-16"];
+    const lastIdx = ymdToJstDayIndex("2024-06-16")!;
+    const sundayPost = post(lastIdx, "batch", dates);
+    const s = streaks([sundayPost], noon(lastIdx));
+    expect(s.longest).toBe(7);
+    expect(s.current).toBe(7); // 最終撮影日が今日＝今日まで連続
+    // ヒートマップにも7日ぶん点く（各日 count 1）。
+    const flat = activityHeatmap([sundayPost], noon(lastIdx), 13).flat();
+    expect(flat.filter((c) => c.count > 0)).toHaveLength(7);
   });
 });

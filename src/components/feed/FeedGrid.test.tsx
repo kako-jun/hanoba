@@ -31,7 +31,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     imageUrls: overrides.imageUrls ?? [overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`],
     imageUrl: overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`,
     hashtags: overrides.hashtags ?? [],
-  };
+    shotDates: [],  };
 }
 
 describe("FeedGrid", () => {

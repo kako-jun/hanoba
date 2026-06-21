@@ -39,7 +39,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     imageUrls: overrides.imageUrls ?? [overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`],
     imageUrl: overrides.imageUrl ?? `https://image.nostr.build/${overrides.id}.jpg`,
     hashtags: overrides.hashtags ?? [],
-  };
+    shotDates: [],  };
 }
 
 describe("PostDetail いいね数表示", () => {
@@ -399,7 +399,7 @@ describe("PostDetail いいね数表示", () => {
           caption: "開花",
           // #181 で属＋品種が両方タグに入る。札は属単独を捨てて品種1枚に畳む。
           hashtags: ["パキポディウム", "グラキリス"],
-        })}
+          shotDates: [],        })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,

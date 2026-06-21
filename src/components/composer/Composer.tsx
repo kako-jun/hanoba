@@ -7,6 +7,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { renderInPlaceRotation, renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
+import { detectShotDate } from "../../lib/image/exif.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
@@ -34,6 +35,8 @@ type DraftImage = {
   filters: SelectedFilter[];
   /** 90度回転（#314・0/90/180/270）。crop は回転後座標系。 */
   rotation: number;
+  /** 撮影日（#324・`YYYY-MM-DD`）。添付時に EXIF/ファイル名から検出・編集/除外可（null=載せない）。 */
+  shotDate: string | null;
 };
 
 const MAX_IMAGES = 4;
@@ -43,7 +46,7 @@ function makeDraftImage(file: File): DraftImage {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random()}`;
-  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [], rotation: 0 };
+  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [], rotation: 0, shotDate: null };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -101,7 +104,7 @@ export default function Composer() {
         if (!alive || snapshot === null) return;
         const restored: DraftImage[] = snapshot.images.map((img) => {
           const file = new File([img.blob], img.name, { type: img.type });
-          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters, rotation: img.rotation };
+          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters, rotation: img.rotation, shotDate: img.shotDate };
         });
         if (restored.length === 0) return;
         // 復元した集合キーを控える（blobSetKey と同じ作り方で揃える）。これで直後に発火する
@@ -184,7 +187,7 @@ export default function Composer() {
       void saveMeta({
         caption,
         currentId,
-        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters, rotation: img.rotation })),
+        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters, rotation: img.rotation, shotDate: img.shotDate })),
       });
     }, 1000);
     return () => clearTimeout(timer);
@@ -241,11 +244,26 @@ export default function Composer() {
           prev.map((item) => (item.id === draft.id && item.crop === null ? { ...item, crop } : item)),
         );
       });
+      // 撮影日（#324）を EXIF/ファイル名から検出して載せる（編集/除外は後で UI から）。
+      void draft.file
+        .arrayBuffer()
+        .then((buf) => {
+          const shotDate = detectShotDate(buf, draft.file.name);
+          if (shotDate !== null) {
+            // ユーザーが先に手で編集/除外していたら上書きしない（crop と同じ「null のときだけ自動セット」）。
+            setImages((prev) =>
+              prev.map((item) => (item.id === draft.id && item.shotDate === null ? { ...item, shotDate } : item)),
+            );
+          }
+        })
+        .catch(() => {
+          /* 撮影日が取れないだけ＝載せない */
+        });
     }
     setStatus({ kind: "idle" });
   }
 
-  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation">>) {
+  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate">>) {
     if (currentId === null) return;
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
   }
@@ -335,7 +353,9 @@ export default function Composer() {
       );
       // 写真は全部送り終え、ここから署名・relay への publish（枚数では測れないので「投稿中…」）。
       setPostProgress({ stage: "publish", done: images.length, total: images.length });
-      await signAndPublishNote({ caption, imageUrls: orderedUrls });
+      // 撮影日（#324）: 各写真の撮影日を distinct で載せる（活動の草を撮影日基準にする）。
+      const shotDates = [...new Set(images.map((img) => img.shotDate).filter((d): d is string => d !== null))];
+      await signAndPublishNote({ caption, imageUrls: orderedUrls, shotDates });
       // 投稿に実際に含まれたタグだけを「最近使った」に記録する（タップしただけは入れない）。
       recordRecentTags(extractHashtags(caption));
       resetAll();
@@ -456,6 +476,38 @@ export default function Composer() {
               onChange={(filters) => updateCurrentImage({ filters })}
             />
           </section>
+
+          {/* 撮影日（#324）。投稿日とずれるとき用＝EXIF/ファイル名から自動検出し、活動の草に反映する。
+              不正確なこともあるので編集・除外できる（kako-jun「訂正したり含めないようにも」）。 */}
+          {currentImage !== null && (
+            <section className="flex flex-col gap-1.5">
+              <h2 className="text-sm font-medium text-ha-green-deep">撮影日</h2>
+              <p className="text-xs text-ha-ink/55">
+                後日まとめて投稿しても、撮った日として「活動の草」に積まれます（EXIF/ファイル名から自動検出・直せます）。
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="date"
+                  value={currentImage.shotDate ?? ""}
+                  max="2999-12-31"
+                  onChange={(e) => updateCurrentImage({ shotDate: e.target.value === "" ? null : e.target.value })}
+                  aria-label="この写真の撮影日"
+                  className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink focus:outline-none focus:ring-2 focus:ring-ha-green/30"
+                />
+                {currentImage.shotDate === null ? (
+                  <span className="text-xs text-ha-ink/45">未設定（活動の草には投稿日で積まれます）</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => updateCurrentImage({ shotDate: null })}
+                    className="text-xs text-ha-ink/55 underline decoration-dotted underline-offset-2 hover:text-ha-pink transition-colors"
+                  >
+                    撮影日を含めない
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
 
           <CaptionInput value={caption} onChange={setCaption} pool={pool} focusEndSignal={focusEndSignal} />
 
