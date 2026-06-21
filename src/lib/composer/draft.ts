@@ -41,6 +41,8 @@ export interface DraftMetaItem {
   id: string;
   crop: SquareCropRect | null;
   filters: SelectedFilter[];
+  /** 90度回転（#314・0/90/180/270）。crop は回転後座標系なので一緒に持たないと復元時に崩れる。 */
+  rotation?: number;
 }
 
 /** meta ストアの singleton レコード（デバウンス保存する軽い側）。 */
@@ -67,6 +69,7 @@ export interface DraftSnapshot {
     type: string;
     crop: SquareCropRect | null;
     filters: SelectedFilter[];
+    rotation: number;
   }>;
 }
 
@@ -170,6 +173,7 @@ export async function loadDraft(): Promise<DraftSnapshot | null> {
           type: rec.type,
           crop: m?.crop ?? null,
           filters: Array.isArray(m?.filters) ? m!.filters : [],
+          rotation: typeof m?.rotation === "number" ? m.rotation : 0,
         };
       });
 

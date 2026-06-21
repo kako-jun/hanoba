@@ -42,6 +42,49 @@ export function outputEdge(rectSize: number, maxEdge = MAX_OUTPUT_EDGE): number 
 }
 
 /**
+ * 角度を **90度単位**（0/90/180/270）に正規化する純関数（#314 v1＝横倒し写真の向き直し）。
+ * 負・360超も畳む。例: -90→270, 450→90, 175→180。
+ */
+export function normalizeQuarter(degrees: number): number {
+  return ((((Math.round(degrees / 90) * 90) % 360) + 360) % 360);
+}
+
+/**
+ * 画像を `degrees` 回転したときの**軸整列バウンディングボックス**を返す純関数（#314）。
+ * 90度系では幅高さが入れ替わる（例 100×50 を 90度→50×100）。任意角も計算可（将来の微調整用）。
+ */
+export function rotatedBoundingBox(w: number, h: number, degrees: number): { width: number; height: number } {
+  const rad = (degrees * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  return { width: Math.round(w * cos + h * sin), height: Math.round(h * cos + w * sin) };
+}
+
+/**
+ * 画像を `degrees` 回転して新しい canvas に描く（ブラウザ専用・#314）。canvas は回転後の
+ * バウンディングボックスサイズで、四隅の隙間は白で埋める（90度系では隙間が出ないので無影響）。
+ * react-image-crop には**この回転済み canvas（の blob URL）を軸整列の素材として渡す**ことで、
+ * クロップ枠と画像が常に整合する（CSS transform の枠ズレを避ける）。焼き込みもこの canvas を
+ * `renderSquareImageFromRect` の image 引数に渡せば回転を再現できる（crop 矩形は回転後座標系）。
+ */
+export function renderRotatedCanvas(image: HTMLImageElement, degrees: number): HTMLCanvasElement {
+  const w = image.naturalWidth || image.width;
+  const h = image.naturalHeight || image.height;
+  const box = rotatedBoundingBox(w, h, degrees);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, box.width);
+  canvas.height = Math.max(1, box.height);
+  const ctx = canvas.getContext("2d");
+  if (ctx === null) return canvas;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((degrees * Math.PI) / 180);
+  ctx.drawImage(image, -w / 2, -h / 2, w, h);
+  return canvas;
+}
+
+/**
  * react-image-crop の PixelCrop（表示 px）から、ソース画像内の正方形矩形を計算する純粋関数。
  *
  * @param crop  表示 px の x/y/width/height（aspect=1 なので原則 width≈height だが、非正方形でも安全）
@@ -126,7 +169,8 @@ export function renderSquareImage(
  * 縮小配信するため。生成と POST を短縮）。出力は引き続き正方形（out×out）＝1:1 保証は不変。
  */
 export function renderSquareImageFromRect(
-  image: HTMLImageElement,
+  // 回転（#314）では回転済み canvas を渡せる（drawImage の source・rect は回転後座標系）。
+  image: HTMLImageElement | HTMLCanvasElement,
   rect: SquareCropRect,
   filterCss: string | null,
   vignette = 0,
