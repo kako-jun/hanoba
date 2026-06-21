@@ -14,9 +14,22 @@ export const en: Partial<Record<MessageKey, string>> = {
   "nav.discover": "Everyone's Plants",
   "nav.me": "Your Plants",
   "nav.compose": "Post",
+  "nav.ranking": "Rankings",
   "nav.menu.open": "Open menu",
   "nav.menu.close": "Close menu",
   "nav.home.aria": "Hanōba home",
+
+  "footer.tagline": "Hanōba — an imaginary city of plant lovers — grown by all of us.",
+
+  "scrollToTop.aria": "Back to top",
+
+  "install.title": "Add to Home Screen",
+  "install.ios": "Tap {arrow} in the share menu and choose “Add to Home Screen” to open it like an app.",
+  "install.tagline": "Opens like an app.",
+  "install.add": "Add",
+  "install.later": "Later",
+
+  "common.close": "Close",
 
   "home.hero.title": "Grow it. Show it.",
   "home.hero.lead":
