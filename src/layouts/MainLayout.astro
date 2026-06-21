@@ -54,10 +54,11 @@ const jsonLd = {
   },
 };
 
-// 殻の文言入替マップ（#147 段階2 go-live・flash 回避）。
-// 静的 .astro 殻は ja でビルドされる。en を選んだユーザーには、最初のペイント前に
-// [data-i18n] / [data-i18n-aria] の付いた殻要素だけ en へ差し替える（is:inline スクリプト）。
-// inline スクリプトは import できないので、ここで en（無ければ ja に fallback）を直列化して渡す。
+// 殻の文言入替マップ（#147 段階2 go-live・flash 回避・#376 で swap 方向を非既定言語へ一般化）。
+// 静的 .astro 殻は**既定言語（go-live で en）**でビルドされる。**非既定言語（swapLocale＝ja）**を選んだ
+// ユーザーには、最初のペイント前に [data-i18n] / [data-i18n-aria] の付いた殻要素だけ ja へ差し替える
+// （is:inline スクリプト）。inline スクリプトは import できないので、ここで swapLocale のメッセージ
+// （無ければ原典 ja に fallback）を直列化して渡す。
 //
 // shellKeys ＝ 各 .astro 殻（SiteHeader/SiteFooter/index/discover/me/ranking/vote）の
 // 可視テキスト・aria で data-i18n を付けたキーの集合。市民手帳ラベル（about）と
@@ -89,7 +90,11 @@ const shellKeys: MessageKey[] = [
   "vote.board.bugs.title",
   "vote.board.bugs.intro",
 ];
-const SHELL_SWAP = Object.fromEntries(shellKeys.map((k) => [k, en[k] ?? ja[k]]));
+// swap 先＝**非既定言語**（#376・将来 DEFAULT を変えても自動追従）。go-live で DEFAULT=en なので
+// 殻は en で描画され、swapLocale=ja＝**JA を選んだユーザーに ja へ差し替える**。
+const swapLocale: Locale = DEFAULT_LOCALE === "ja" ? "en" : "ja";
+const swapMessages = swapLocale === "en" ? en : ja;
+const SHELL_SWAP = Object.fromEntries(shellKeys.map((k) => [k, swapMessages[k] ?? ja[k]]));
 const swapJson = JSON.stringify(SHELL_SWAP);
 ---
 
@@ -228,9 +233,9 @@ const swapJson = JSON.stringify(SHELL_SWAP);
       is:inline
       set:html={`(function(){try{
   var L = localStorage.getItem("hanoba:lang");
-  if (L !== "en") return;
+  if (L !== "${swapLocale}") return;
   var M = ${swapJson};
-  document.documentElement.lang = "en";
+  document.documentElement.lang = "${swapLocale}";
   document.querySelectorAll("[data-i18n]").forEach(function(el){ var v = M[el.getAttribute("data-i18n")]; if (v != null) el.textContent = v; });
   document.querySelectorAll("[data-i18n-aria]").forEach(function(el){ var v = M[el.getAttribute("data-i18n-aria")]; if (v != null) el.setAttribute("aria-label", v); });
 }catch(e){}})();`}
