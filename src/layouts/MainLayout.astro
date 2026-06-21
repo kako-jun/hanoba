@@ -94,7 +94,15 @@ const shellKeys: MessageKey[] = [
 // 殻は en で描画され、swapLocale=ja＝**JA を選んだユーザーに ja へ差し替える**。
 const swapLocale: Locale = DEFAULT_LOCALE === "ja" ? "en" : "ja";
 const swapMessages = swapLocale === "en" ? en : ja;
-const SHELL_SWAP = Object.fromEntries(shellKeys.map((k) => [k, swapMessages[k] ?? ja[k]]));
+// home.hero.sub は {link} で割れる文（#380・#147 積み残し回収）。3片（before/link/after）を個別 swap する
+// ため、非既定言語側の home.hero.sub を split して swap マップへ合成する（index.astro が同名 data-i18n を付ける）。
+const [swapSubBefore, swapSubAfter] = (swapMessages["home.hero.sub"] ?? ja["home.hero.sub"]).split("{link}");
+const SHELL_SWAP = {
+  ...Object.fromEntries(shellKeys.map((k) => [k, swapMessages[k] ?? ja[k]])),
+  "home.hero.sub.before": swapSubBefore,
+  "home.hero.sub.link": swapMessages["home.hero.sub.link"] ?? ja["home.hero.sub.link"],
+  "home.hero.sub.after": swapSubAfter,
+};
 const swapJson = JSON.stringify(SHELL_SWAP);
 ---
 
