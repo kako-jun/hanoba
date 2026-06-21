@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFuda, buildVarietyIndex, resolveFuda } from "./fuda.ts";
+import { buildFuda, buildVarietyIndex, fudaForName, resolveFuda } from "./fuda.ts";
 import { VARIETY_CATALOG, type VarietyCategory } from "./variety-catalog.ts";
 
 // 期待値は実カタログ（VARIETY_CATALOG）と実辞書（dictionary.ts）から確定する（#182/#23）。
@@ -305,5 +305,29 @@ describe("buildVarietyIndex / resolveFuda（#257 索引共有）", () => {
     expect(a1).toEqual(a2);
     expect(a1[0]).toMatchObject({ name: "グラキリス" });
     expect(b[0]).toMatchObject({ name: "コシヒカリ" });
+  });
+});
+
+describe("fudaForName（#343・好きな品種の単一名→札1枚）", () => {
+  const index = buildVarietyIndex(VARIETY_CATALOG);
+
+  it("カタログ品種は学名＋和名の札に（投稿の札と同一）", () => {
+    const f = fudaForName("デラウェア", index);
+    expect(f).toMatchObject({ name: "デラウェア", sci: "Vitis 'Delaware'", filterTags: ["デラウェア"] });
+  });
+
+  it("属名は属単独の札に（辞書から属 sci）", () => {
+    const f = fudaForName("パキポディウム", index);
+    expect(f).toMatchObject({ name: "パキポディウム", sci: "Pachypodium", filterTags: ["パキポディウム"] });
+  });
+
+  it("カタログ外の自由入力は和名のみの札へフォールバック（消さない・sci=null）", () => {
+    const f = fudaForName("我が家の謎の木", index);
+    expect(f).toEqual({ key: "我が家の謎の木", name: "我が家の謎の木", sci: null, filterTags: ["我が家の謎の木"] });
+  });
+
+  it("カテゴリ名単独も札にできず和名のみへフォールバック（札はカテゴリを出さない・無回帰）", () => {
+    const f = fudaForName("塊根植物", index);
+    expect(f).toEqual({ key: "塊根植物", name: "塊根植物", sci: null, filterTags: ["塊根植物"] });
   });
 });
