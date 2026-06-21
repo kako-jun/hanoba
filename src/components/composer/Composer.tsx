@@ -46,6 +46,8 @@ type DraftImage = {
 };
 
 const MAX_IMAGES = 4;
+/** アンドゥ履歴の上限（#363・メモリを際限なく食わない。1手以上あれば十分・スナップショットは軽い参照）。 */
+const UNDO_CAP = 30;
 
 function makeDraftImage(file: File): DraftImage {
   const id =
@@ -97,6 +99,12 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   // 「投稿中…」と出す。綿毛（DandelionBurst）が active={posting} で舞い続けるので、ボタンの段階表示と
   // 合わせて「10秒間ずっと動いている＝固まっていない」が伝わる。null は非投稿中。
   const [postProgress, setPostProgress] = useState<{ stage: "upload" | "publish"; done: number; total: number } | null>(null);
+  // #363: 投稿前の画像編集（角度/フィルタ/クロップ/撮影日）を1手アンドゥする履歴。本文（一言）・タグは
+  // 対象外＝images 配列だけスナップショットする。同一画像の同一フィールドの連続変更（スライダのドラッグ等）は
+  // 1手に畳む（lastEditTagRef）。画像の追加/削除など構造変更が入ったら履歴はクリアする（古い blob 参照を
+  // 復元してしまわないため・ephemeral＝下書き永続化はしない）。
+  const [undoStack, setUndoStack] = useState<DraftImage[][]>([]);
+  const lastEditTagRef = useRef<string | null>(null);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
@@ -250,6 +258,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     setImageNotice(rejectedCount > 0 ? t("compose.photos.limitNotice") : null);
     setImages((prev) => [...prev, ...nextImages]);
     setCurrentId(nextImages[0]!.id);
+    clearUndoHistory(); // 構造変更（追加）＝編集アンドゥ履歴をリセット（#363）。
     for (const draft of nextImages) {
       void loadImage(draft.src).then((image) => {
         const crop = centeredSquareRect(image);
@@ -281,7 +290,38 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
 
   function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate" | "shotDateAuto">>) {
     if (currentId === null) return;
+    // #363: 変更前の images を履歴に積む（本文/タグは対象外）。対象は kako-jun 指定の
+    // **角度(rotation)・フィルタ(filters)・Exif撮影日(shotDate/shotDateAuto)** だけ。位置決めの
+    // クロップ(crop)は対象外＝画像ロード時の自動クロップで履歴が汚れる/勝手に有効化するのを防ぐ。
+    // 同一画像の同一フィールドの連続変更（スライダのドラッグ・続けて押す微調整）は1手に畳む＝run の
+    // 最初の状態だけ残す。imagesRef.current は直近コミット済み＝この編集の「変更前」スナップショット。
+    const fields = Object.keys(patch);
+    const undoable = fields.some((f) => f !== "crop");
+    if (undoable) {
+      const tag = `${currentId}:${fields.sort().join(",")}`;
+      if (tag !== lastEditTagRef.current) {
+        const snapshot = imagesRef.current;
+        setUndoStack((s) => [...s, snapshot].slice(-UNDO_CAP));
+        lastEditTagRef.current = tag;
+      }
+    }
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
+  }
+
+  /** 直前の画像編集（角度/フィルタ/クロップ/撮影日）を1手戻す（#363・本文/タグは対象外）。履歴が空なら無効。 */
+  function undoLastEdit() {
+    if (undoStack.length === 0) return;
+    const prev = undoStack[undoStack.length - 1]!;
+    setImages(prev);
+    setUndoStack((s) => s.slice(0, -1));
+    // 戻した直後の編集は新しい1手として積む（畳み込みをリセット）。
+    lastEditTagRef.current = null;
+  }
+
+  /** 画像の追加/削除など構造変更で履歴をクリアする（古い blob 参照の復元を防ぐ・#363）。 */
+  function clearUndoHistory() {
+    setUndoStack([]);
+    lastEditTagRef.current = null;
   }
 
   function removeImage(id: string) {
@@ -294,6 +334,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     });
     setStatus({ kind: "idle" });
     setImageNotice(null);
+    clearUndoHistory(); // 構造変更（削除）＝編集アンドゥ履歴をリセット（古い blob 復元を防ぐ・#363）。
   }
 
   // 写真を 1 つ左/右へ動かす（#274）。先頭=カバー。crop/filters は DraftImage に内包されるので
@@ -301,6 +342,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   // 保存 effect（依存に blobSetKey / images）が発火して並べ替え後の順序が永続化される。
   function moveImage(id: string, delta: number) {
     setImages((prev) => moveById(prev, id, delta));
+    clearUndoHistory(); // 並べ替えも構造変更＝アンドゥ履歴をリセット（#363）。
   }
 
   function resetAll() {
@@ -309,6 +351,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     setCurrentId(null);
     setCaption("");
     setImageNotice(null);
+    clearUndoHistory();
   }
 
   const currentImage = images.find((image) => image.id === currentId) ?? images[0] ?? null;
@@ -490,6 +533,23 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
               onCropComplete={(crop) => updateCurrentImage({ crop })}
               onRotate={(next) => updateCurrentImage({ rotation: next })}
             />
+          )}
+
+          {/* 1手アンドゥ（#363）。直前の画像編集（角度/フィルタ/クロップ/撮影日）を戻す＝角度スライダ誤操作・
+              フィルタ誤選択・Exif撮影日の誤不採用をやり直せる。本文（一言）・タグは対象外。履歴が空なら不活性。 */}
+          {currentImage !== null && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={undoLastEdit}
+                disabled={undoStack.length === 0}
+                aria-label={t("compose.undo.aria")}
+                className="glass inline-flex items-center gap-1.5 self-end rounded-full px-3 py-1.5 text-xs font-medium text-ha-ink/75 transition-colors hover:border-ha-green/50 hover:text-ha-green-deep disabled:pointer-events-none disabled:opacity-40"
+              >
+                <span aria-hidden className="text-sm leading-none">↶</span>
+                {t("compose.undo")}
+              </button>
+            </div>
           )}
 
           <section className="flex flex-col gap-2">

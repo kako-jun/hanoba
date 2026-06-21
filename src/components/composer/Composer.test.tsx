@@ -928,4 +928,27 @@ describe("Composer 下書き配線（#228）", () => {
     expect(errorSpy).not.toHaveBeenCalled();
     errorSpy.mockRestore();
   });
+
+  it("画像の角度編集を1手アンドゥでき、クロップ・初期状態は履歴に積まない（#363）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    // 初期は自動クロップだけ＝履歴は空（クロップは undo 対象外）。アンドゥボタンは無効。
+    const undo = await screen.findByRole("button", { name: "直前の画像編集（角度・フィルタ・撮影日）を1手戻す" });
+    expect(undo).toBeDisabled();
+
+    // 右90°回転＝1手。img の transform に即時反映され、アンドゥが有効になる。
+    await user.click(screen.getByRole("button", { name: "写真を右に90度回転" }));
+    const img = screen.getByAltText("クロップ対象の写真") as HTMLImageElement;
+    expect(img.style.transform).toBe("rotate(90deg)");
+    expect(undo).toBeEnabled();
+
+    // アンドゥで回転が変更前（無回転）へ戻り、履歴が空になりボタンは再び無効。
+    await user.click(undo);
+    expect(img.style.transform).toBe("");
+    expect(undo).toBeDisabled();
+  });
 });
