@@ -2,10 +2,16 @@
 import FeedGrid from "../components/feed/FeedGrid.tsx";
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 // トップ＝hanoba フィード（Issue #4）。
 // FeedGrid は relay 取得を useEffect で行うため client:load（SSR では取得しない）。
 // 「Nostr の表示だけ・mypace でも見られる」等の断り書きは About に集約（重複させない）。
+
+// 表示言語（#147 段階1）。今は既定（ja）固定＝挙動不変。段階2で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
+// サブ見出しは文中にリンクが挟まるので {link} で分割し、間に <a> を差し込む。
+const [subBefore, subAfter] = t(locale, "home.hero.sub").split("{link}");
 ---
 
 <MainLayout>
@@ -15,13 +21,13 @@ import MainLayout from "../layouts/MainLayout.astro";
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
     <section class="ha-rise flex flex-col gap-2">
       <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-ha-green-deep">
-        育てて、見せる。
+        {t(locale, "home.hero.title")}
       </h1>
       <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]">
-        植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。畑もビカクも実生も、この一画に。
+        {t(locale, "home.hero.lead")}
       </p>
       <p class="text-sm leading-relaxed text-ha-ink/55 [word-break:auto-phrase]">
-        ここは Hanōba に置かれた植物のタイムライン。Nostr 全体の植物は<a href="/discover" class="text-ha-green hover:text-ha-green-deep underline underline-offset-2">みんなの植物</a>へ。
+        {subBefore}<a href="/discover" class="text-ha-green hover:text-ha-green-deep underline underline-offset-2">{t(locale, "home.hero.sub.link")}</a>{subAfter}
       </p>
     </section>
 

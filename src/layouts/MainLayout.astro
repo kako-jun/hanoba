@@ -6,14 +6,19 @@ import PostFAB from "../components/ui/PostFAB.tsx";
 import InstallPrompt from "../components/pwa/InstallPrompt.tsx";
 import AmbientWeather from "../components/weather/AmbientWeather.tsx";
 import AmbientCalendar from "../components/weather/AmbientCalendar.tsx";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 interface Props {
   title?: string;
   description?: string;
 }
 
+// 表示言語（#147 段階1）。今は既定（ja）固定＝挙動不変。段階2で URL/クライアントから決める。
+// <html lang> / JSON-LD inLanguage / 既定 description / 島へ流す lang はこの 1 値に揃える。
+const locale: Locale = DEFAULT_LOCALE;
+
 // サイト全体の既定説明（各ページが description を渡さなければこれ。JSON-LD WebSite にも使う）。
-const SITE_DESCRIPTION = "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。";
+const SITE_DESCRIPTION = t(locale, "site.description");
 const { title = "Hanōba", description = SITE_DESCRIPTION } = Astro.props;
 
 // canonical / og:url は本番ドメイン（astro.config の site）＋現在パスの絶対 URL（#107）。
@@ -36,7 +41,7 @@ const jsonLd = {
   url: SITE.href,
   // WebSite はサイト全体を表すので、ページ個別でなくサイト既定の説明を使う。
   description: SITE_DESCRIPTION,
-  inLanguage: "ja",
+  inLanguage: locale,
   potentialAction: {
     "@type": "SearchAction",
     target: {
@@ -49,7 +54,7 @@ const jsonLd = {
 ---
 
 <!doctype html>
-<html lang="ja">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -168,7 +173,7 @@ const jsonLd = {
     <SiteFooter />
     {/* 投稿 FAB（#283）。右下隅の ScrollToTop の左隣に常駐。/compose では出さない
         （isCompose でサーバ側に出し分け＝フラッシュ無し・クライアント判定不要）。 */}
-    {!isCompose && <PostFAB client:idle />}
+    {!isCompose && <PostFAB client:idle lang={locale} />}
     <ScrollToTop client:idle />
     {/* PWA「ホーム画面に追加」促し（#230）。全ページ共通。window/localStorage は
         マウント後 useEffect で参照するため SSR 安全。初期描画を妨げないよう idle で読む。 */}
