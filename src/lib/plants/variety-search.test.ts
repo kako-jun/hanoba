@@ -5,6 +5,7 @@ import {
   findVarietyGenus,
   foldForSearch,
   searchCatalog,
+  tagsToPick,
   tagsToUnpick,
 } from "./variety-search.ts";
 
@@ -132,6 +133,43 @@ describe("searchCatalog", () => {
     const genus = searchCatalog(CATALOG, "アガベ").find((h) => h.kind === "genus")!;
     expect(genus.sci).toBeUndefined();
   });
+
+  it("カテゴリもヒットする（#312・「ハーブ」と打って `#ハーブ` を付けられる）", () => {
+    const hits = searchCatalog(CATALOG, "多肉");
+    const cat = hits.find((h) => h.kind === "category");
+    expect(cat).toMatchObject({ name: "多肉・塊根", kind: "category" });
+  });
+
+  it("カテゴリヒットは fold で拾う（ひらがな・部分一致）", () => {
+    expect(searchCatalog(CATALOG, "ばら").some((h) => h.kind === "category" && h.name === "バラ・草花")).toBe(true);
+  });
+});
+
+describe("tagsToPick（#312・概要→詳細の全階層）", () => {
+  it("品種は カテゴリ→属→品種 の順で返す", () => {
+    expect(tagsToPick(CATALOG, "チタノタ")).toEqual(["多肉・塊根", "アガベ", "チタノタ"]);
+  });
+
+  it("非 pickable 見出し属の品種は カテゴリ→品種（属は前置しない）", () => {
+    expect(tagsToPick(CATALOG, "火星人")).toEqual(["多肉・塊根", "火星人"]);
+  });
+
+  it("pickable 属は カテゴリ→属", () => {
+    expect(tagsToPick(CATALOG, "アガベ")).toEqual(["多肉・塊根", "アガベ"]);
+  });
+
+  it("カテゴリ単独はそれ自身だけ", () => {
+    expect(tagsToPick(CATALOG, "多肉・塊根")).toEqual(["多肉・塊根"]);
+  });
+
+  it("catalog に無いタグ（世話/freeform）は前置せずそのまま", () => {
+    expect(tagsToPick(CATALOG, "水やり")).toEqual(["水やり"]);
+  });
+
+  it("alias で品種を引いても階層は付く（鉄線→テッセン経路の属/カテゴリ）", () => {
+    // alias「鉄線」で引くと canonical でなく来たタグ名を品種位置に置く（UI は canonical を渡すが純関数は名前を尊重）。
+    expect(tagsToPick(CATALOG, "鉄線")).toEqual(["バラ・草花", "クレマチス", "鉄線"]);
+  });
 });
 
 describe("findPickableGenus", () => {
@@ -182,8 +220,18 @@ describe("tagsToUnpick（兄弟ルール）", () => {
     expect(tagsToUnpick(caption, "チタノタ", CATALOG)).toEqual(["チタノタ", "アガベ"]);
   });
 
-  it("属名（品種でない）を外すときは自分だけ", () => {
-    expect(tagsToUnpick("#多肉・塊根 #アガベ", "アガベ", CATALOG)).toEqual(["アガベ"]);
+  it("属を外すと、カテゴリに他属が無ければカテゴリも連動撤去（#312）", () => {
+    // 属はカテゴリと一緒に付くようになったので、属だけ残してカテゴリを孤立させない。
+    expect(tagsToUnpick("#多肉・塊根 #アガベ", "アガベ", CATALOG)).toEqual(["アガベ", "多肉・塊根"]);
+  });
+
+  it("属を外すが同カテゴリに他属（の品種）が残ればカテゴリは残す（#312）", () => {
+    // 火星人＝その他塊根（同カテゴリの別属）の品種が生存 → カテゴリは残す。
+    expect(tagsToUnpick("#多肉・塊根 #アガベ #火星人", "アガベ", CATALOG)).toEqual(["アガベ"]);
+  });
+
+  it("カテゴリ（属でも品種でもない）を外すときは自分だけ（下位は触らない）", () => {
+    expect(tagsToUnpick("#多肉・塊根 #アガベ #チタノタ", "多肉・塊根", CATALOG)).toEqual(["多肉・塊根"]);
   });
 
   it("catalog 未ロード時は自分だけ", () => {

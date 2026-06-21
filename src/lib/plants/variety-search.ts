@@ -40,6 +40,32 @@ export function findVarietyGenus(catalog: VarietyCategory[], name: string): Cata
   return null;
 }
 
+/**
+ * 選んだタグ `name` を本文へ入れるとき、**概要→詳細の全階層**を順に返す（#312・kako-jun
+ * 「ドリルダウンで1回押した言葉がタグにならないのは直感に反する」＝カテゴリ・属もタグにする。
+ * #181/#166 の『カテゴリはタグにしない』を反転）。
+ * - 品種: `[カテゴリ, 属(pickable のみ), 品種]`（例 グラキリス → 塊根植物・パキポディウム・グラキリス）
+ * - pickable 属: `[カテゴリ, 属]`
+ * - カテゴリ: `[カテゴリ]`
+ * - catalog に無い（世話/記録/freeform 等）: `[name]`（前置しない）
+ * 重複は畳む（品種名＝属名/カテゴリ名が一致するデータでも二重に返さない）。
+ * filter モード・catalog 未ロードは呼び出し側で `[name]` に倒す（葉のみ＝AND で過剰に絞らない）。
+ */
+export function tagsToPick(catalog: VarietyCategory[], name: string): string[] {
+  const vloc = findVarietyGenus(catalog, name);
+  if (vloc !== null) {
+    const out = [vloc.category.label];
+    if (vloc.genus.pickable) out.push(vloc.genus.name);
+    out.push(name);
+    return [...new Set(out)];
+  }
+  const gloc = findPickableGenus(catalog, name);
+  if (gloc !== null) return [...new Set([gloc.category.label, name])];
+  // カテゴリ単独（pickable 属/品種でない＝カテゴリ label）はそれ自身を1タグに。
+  if (catalog.some((c) => c.label === name)) return [name];
+  return [name];
+}
+
 /** 検索結果の表示上限（TagPicker と共有）。 */
 export const SEARCH_LIMIT = 40;
 
@@ -55,7 +81,7 @@ export interface VarietyHit {
   genusPickable?: boolean;
   /** 学名（品種ヒットで catalog に sci があるとき・併記表示用 #200）。属ヒット・sci 無しでは undefined。 */
   sci?: string;
-  kind: "genus" | "variety";
+  kind: "genus" | "variety" | "category";
 }
 
 /**
@@ -106,6 +132,9 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
   };
 
   for (const cat of catalog) {
+    // カテゴリ自身もヒット対象にする（#312・「ハーブ」と打って `#ハーブ` を直接付けられる＝
+    // ドリルダウンで止めるのと同じ・品種名が分からない人のため）。タグ文字列＝カテゴリ label。
+    consider({ name: cat.label, category: cat.label, kind: "category" }, [cat.label]);
     for (const g of cat.genera) {
       if (g.pickable) {
         consider(
@@ -126,11 +155,29 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
 }
 
 /**
- * 選択済みの品種タグを外すとき、連動して外すタグ名の一覧を返す（兄弟ルール・#144）。
+ * `category` 内で `targetGenus` 以外に生存（他属の属タグ or 他属の品種タグ）が残るか。
+ * カテゴリタグを連動撤去してよいか（＝他に何も残らないか）の判定に使う（#144/#312）。
+ */
+function categoryHasOtherSurvivor(
+  caption: string,
+  category: VarietyCategory,
+  targetGenus: Genus,
+): boolean {
+  return category.genera.some((g) => {
+    if (g === targetGenus) return false;
+    if (g.pickable && captionHasTag(caption, g.name)) return true;
+    return g.varieties.some((v) => captionHasTag(caption, v.name));
+  });
+}
+
+/**
+ * 選択済みのタグを外すとき、連動して外すタグ名の一覧を返す（兄弟ルール・#144・#312）。
  * - name は必ず含む。
  * - name が**品種**で、外した後その属に**他の品種タグ**が本文に残らなければ、属タグも外す
  *   （pickable かつ本文にある時）。さらにそのカテゴリに他属の品種/属タグが残らなければカテゴリも外す。
- * - name が属/世話など品種でない、または catalog 未ロード時は name 単体（上位は触らない）。
+ * - name が**pickable 属**（#312・属もカテゴリと一緒に付くようになった）で、そのカテゴリに
+ *   他属の生存が残らなければ**カテゴリも連動撤去**する（属だけ残してカテゴリを孤立させない）。
+ * - name がカテゴリ/世話など属でも品種でもない、または catalog 未ロード時は name 単体（上位は触らない）。
  * `caption` は外す前の本文（name 以外の生存判定に使う）。
  */
 export function tagsToUnpick(
@@ -139,25 +186,34 @@ export function tagsToUnpick(
   catalog: VarietyCategory[] | null,
 ): string[] {
   if (catalog === null) return [name];
-  const loc = findVarietyGenus(catalog, name);
-  if (loc === null) return [name];
-  const { category, genus } = loc;
-  const result = [name];
 
-  // 同属の他品種が残るなら上位はそのまま（兄弟が居れば残る）。
-  const siblingRemains = genus.varieties.some((v) => v.name !== name && captionHasTag(caption, v.name));
-  if (siblingRemains) return result;
+  // ── 品種を外す: 兄弟が残らなければ属→カテゴリへ連動撤去（既存ロジック・#144） ──
+  const vloc = findVarietyGenus(catalog, name);
+  if (vloc !== null) {
+    const { category, genus } = vloc;
+    const result = [name];
+    // 同属の他品種が残るなら上位はそのまま（兄弟が居れば残る）。
+    const siblingRemains = genus.varieties.some((v) => v.name !== name && captionHasTag(caption, v.name));
+    if (siblingRemains) return result;
+    if (genus.pickable && captionHasTag(caption, genus.name)) result.push(genus.name);
+    if (!categoryHasOtherSurvivor(caption, category, genus) && captionHasTag(caption, category.label)) {
+      result.push(category.label);
+    }
+    // 品種名＝カテゴリ名/属名が一致するデータ（例: エアプランツ）でも重複を返さない。
+    return [...new Set(result)];
+  }
 
-  if (genus.pickable && captionHasTag(caption, genus.name)) result.push(genus.name);
+  // ── 属を外す（#312・属はカテゴリと一緒に付くのでカテゴリも連動撤去） ──
+  const gloc = findPickableGenus(catalog, name);
+  if (gloc !== null) {
+    const { category, genus } = gloc;
+    const result = [name];
+    if (!categoryHasOtherSurvivor(caption, category, genus) && captionHasTag(caption, category.label)) {
+      result.push(category.label);
+    }
+    return [...new Set(result)];
+  }
 
-  // カテゴリ内に他属の生存（他属タグ or 他属の品種）が残るならカテゴリは残す。
-  const categoryRemains = category.genera.some((g) => {
-    if (g === genus) return false;
-    if (g.pickable && captionHasTag(caption, g.name)) return true;
-    return g.varieties.some((v) => captionHasTag(caption, v.name));
-  });
-  if (!categoryRemains && captionHasTag(caption, category.label)) result.push(category.label);
-
-  // 品種名＝カテゴリ名/属名が一致するデータ（例: エアプランツ）でも重複を返さない。
-  return [...new Set(result)];
+  // カテゴリ直/世話/freeform は自分だけ（上位は無い・下位は触らない）。
+  return [name];
 }

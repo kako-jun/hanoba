@@ -7,8 +7,8 @@ import { TAG_CATEGORIES } from "../../lib/plants/tag-catalog.ts";
 import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import {
   findPickableGenus,
-  findVarietyGenus,
   searchCatalog,
+  tagsToPick,
   tagsToUnpick,
 } from "../../lib/plants/variety-search.ts";
 import { ClearableInput } from "../ui/ClearableInput.tsx";
@@ -108,11 +108,13 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * 1,400件超の品種カタログ（variety-catalog）を**動的 import で code-split**し、
  * カテゴリ→属→品種の多段ドリルダウン＋インクリメンタル検索で少クリック選択する。
  *
- * 規約（kako-jun 指示・#181 でタグと札を分離。#166 のタグ部分を撤回）:
+ * 規約（kako-jun 指示・#181 でタグと札を分離。#166 のタグ部分を撤回。#312 でカテゴリも反転）:
  * - タグ=Twitter式ハッシュタグ＝**概要→詳細の全階層**を付けてよい。品種を選んだら
- *   `#属 #品種` の**両方**を入れる。属止まりなら `#属` だけ。
- *   **カテゴリ（塊根植物/花木 等）はタグにしない**（ドリルダウンの見出し専用）。
- *   札（鉢の名前＝具体1つ）はタグとは別概念（別 Issue）。
+ *   `#カテゴリ #属 #品種` を入れる。属止まりなら `#カテゴリ #属`、**カテゴリ単独でも `#カテゴリ`**。
+ *   **カテゴリ（塊根植物/ハーブ 等）もタグにする**（#312＝「ドリルダウンで1回押した言葉が
+ *   タグにならないのは直感に反する」／品種名が分からない人はカテゴリで止めてタグにできる）。
+ *   階層展開は純関数 `tagsToPick`。札（鉢の名前＝具体1つ）はタグとは別概念で、札は
+ *   カテゴリを出さない（`resolveFuda` がカテゴリ label を札化しない＝無回帰）。
  * - 人気/最近/検索で**属をタップしたら階層に入る**（その属の品種一覧へ誘導）。属だけ欲しい時は
  *   ドリルダウン内の「#属 をこのまま使う」。
  * - 本文に入っているタグは**満たされた色**（緑塗り）にする。
@@ -196,24 +198,25 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
     }
   }
 
-  // タグ挿入＝Twitter式ハッシュタグ。品種を選んだら **#属 #品種 の両方**を本文末尾へ入れる
-  // （概要→詳細の全階層・#181 で #166 のタグ部分を撤回。タグ=全階層／札=具体1つ は別概念）。
-  // 属を選んだとき（findVarietyGenus が null）は #属 のみ＝現状維持。
-  // **カテゴリはタグにしない**（pick 経路にカテゴリ名は来ない＝ドリルダウン見出し専用）。
-  // catalog 未ロード時（engage のフォールバック経路＝ensureCatalog 失敗）は属を引けないので
-  // onPick(name) だけ＝属前置されない（null 安全・設計どおり。辞書が無ければ具体名のみ入る）。
+  // タグ挿入＝Twitter式ハッシュタグ。**概要→詳細の全階層**を本文末尾へ入れる（#181 で #166 の
+  // タグ部分を撤回。タグ=全階層／札=具体1つ は別概念）。#312 で **カテゴリもタグにする**:
+  // 品種を選んだら `#カテゴリ #属 #品種`、属を選んだら `#カテゴリ #属`、カテゴリ単独なら `#カテゴリ`。
+  // この階層展開は純関数 `tagsToPick` に集約する（pickable 判定・dedupe を一元化）。
+  // catalog 未ロード時（engage のフォールバック経路＝ensureCatalog 失敗）は階層を引けないので
+  // onPick(name) だけ＝前置されない（null 安全・設計どおり。辞書が無ければ具体名のみ入る）。
   // 「最近使った」はここでは触らない＝**投稿成功後**に Composer が本文のタグを記録する
   // （タップしただけ・あとで消したタグは最近に残さない）。
   function pick(name: string) {
-    // filter は葉タグのみ（AND 絞り込みで属を足すと、属タグを持たない投稿が落ちて過剰に絞るため）。
-    // compose は品種を選んだら先に #属 を入れる（pickable な見出し属のみ）。onPick を属→品種の順に2連発。
-    // 本文側 Composer.onPick は setCaption の関数型アップデータ＋insertTag（captionHasTag ガード）なので、
-    // 2連発でも属は二重挿入されず `#属 #品種` の順で並ぶ（この契約は hashtag-complete テストで固定）。
-    if (!isFilter) {
-      const loc = catalog === null ? null : findVarietyGenus(catalog, name);
-      if (loc !== null && loc.genus.pickable) onPick(loc.genus.name);
+    // filter は葉タグのみ（AND 絞り込みで上位を足すと、上位タグを持たない投稿が落ちて過剰に絞るため）。
+    // catalog 未ロードも葉のみ（階層を引けない）。
+    if (isFilter || catalog === null) {
+      onPick(name);
+      return;
     }
-    onPick(name);
+    // compose は概要→詳細の全階層を onPick で順に挿入する（#312）。本文側 Composer.onPick は
+    // setCaption の関数型アップデータ＋insertTag（captionHasTag ガード）なので、複数連発でも
+    // 重複挿入されず `#カテゴリ #属 #品種` の順で並ぶ（この契約は hashtag-complete テストで固定）。
+    for (const t of tagsToPick(catalog, name)) onPick(t);
   }
 
   // 選択済みチップの再タップ＝解除。兄弟が残らなければ上位（属・カテゴリ）も連動して外す。
@@ -275,7 +278,11 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
 
   // 検索は**植物カタログだけ**に集中する（世話/記録などの概念は混ぜない・kako-jun 指示）。
   // searchCatalog 内で fold（かな/カナ・大小・全半角無視）＋前方一致優先＋重複排除＋上限済み。
-  const hits = searching ? searchCatalog(catalog ?? [], query) : [];
+  // カテゴリヒット（#312）は compose だけに出す＝filter で `#カテゴリ` 単独だと旧投稿
+  // （カテゴリタグ無し）にほぼ当たらず絞りが空振りするため（葉で絞る方針を維持）。
+  const hits = searching
+    ? searchCatalog(catalog ?? [], query).filter((h) => !isFilter || h.kind !== "category")
+    : [];
   const freeform = query.trim().replace(/^#+/, "").trim();
   const showFreeform =
     freeform !== "" && !hits.some((h) => h.name.toLowerCase() === freeform.toLowerCase());
@@ -465,7 +472,25 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
               )}
               <div className="flex flex-wrap gap-1.5">
                 {hits.map((h) =>
-                  h.kind === "genus" ? (
+                  h.kind === "category" ? (
+                    // カテゴリヒット（#312）。タップで `#カテゴリ` を付ける（ドリルダウンせず葉として確定）。
+                    <button
+                      key={`c-${h.name}`}
+                      type="button"
+                      onClick={() => toggle(h.name, () => pick(h.name))}
+                      aria-pressed={has(h.name)}
+                      className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                        has(h.name)
+                          ? "border border-ha-green bg-ha-green text-ha-white"
+                          : "glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep"
+                      }`}
+                    >
+                      #{h.name}
+                      <span className={`ml-1 text-[10px] ${has(h.name) ? "text-ha-white/70" : "text-ha-ink/40"}`}>
+                        カテゴリ
+                      </span>
+                    </button>
+                  ) : h.kind === "genus" ? (
                     <button
                       key={`g-${h.name}`}
                       type="button"
@@ -524,8 +549,24 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
               ))}
             </div>
           ) : genus === null ? (
-            // 属一覧
+            // 属一覧（pickable な属へドリル＋「このカテゴリをこのまま使う」でカテゴリ単独タグ・#312）
             <div className="flex flex-wrap gap-1.5">
+              {!isFilter && (
+                // カテゴリ単独でタグにする（#312・属の「このまま使う」と対称）。品種名が分からない人は
+                // ここで止めて `#カテゴリ` だけ付けられる。filter は広すぎる絞りになるので出さない（葉で絞る）。
+                <button
+                  type="button"
+                  onClick={() => toggle(cat.label, () => pick(cat.label))}
+                  aria-pressed={has(cat.label)}
+                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                    has(cat.label)
+                      ? "border border-ha-green bg-ha-green text-ha-white"
+                      : "border border-ha-green/60 bg-ha-green/10 text-ha-green-deep hover:bg-ha-green/20"
+                  }`}
+                >
+                  #{cat.label} をこのまま使う
+                </button>
+              )}
               {cat.genera.map((g) => (
                 <button
                   key={g.name}
