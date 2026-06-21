@@ -166,6 +166,104 @@ export const ja = {
   "profile.favorites": "好きな品種",
   "profile.loading.sr": "この市民の植物を読み込み中…",
   "profile.empty": "まだ、この市民の植物はありません。",
+
+  // 投稿コンポーザー（Composer・島ルート・#147 段階2）。
+  // アカウント名の促し（Composer→AccountName へ渡す promptLabel）。
+  "compose.account.prompt": "はじめまして。ハンドルネームは？",
+  // 写真セクション（見出し・枚数・上限案内・サムネ alt・並べ替え）。
+  "compose.photos.heading": "写真",
+  "compose.photos.count": "{count}/{max}枚",
+  "compose.photos.limitNotice": "写真は4枚までです。追加できる分だけ追加しました。",
+  "compose.photos.thumbAlt": "{n}枚目",
+  "compose.reorder.left.aria": "選択中の写真を左へ移動",
+  "compose.reorder.left": "左へ",
+  "compose.reorder.right.aria": "選択中の写真を右へ移動",
+  "compose.reorder.right": "右へ",
+  "compose.reorder.counter": "{index}枚目 / 全{total}枚",
+  // フィルタ節（Composer の見出し）。
+  "compose.filter.heading": "フィルタ",
+  // 撮影日節（#324）。
+  "compose.shotDate.heading": "撮影日",
+  "compose.shotDate.auto": "自動抽出しました。",
+  "compose.shotDate.input.aria": "この写真の撮影日",
+  "compose.shotDate.exclude": "撮影日を含めない",
+  // 不足理由＋送信ボタン群。
+  "compose.shortfall.name": "ユーザー名",
+  "compose.shortfall.photo": "写真",
+  "compose.shortfall.caption": "ひとこと",
+  "compose.shortfall.lead": "あと ",
+  "compose.shortfall.trail": "を入れると投稿できます",
+  "compose.action.removeOne": "この写真を外す",
+  "compose.action.resetImage": "写真を選び直す",
+  "compose.submit.uploading": "写真を送信中 {done}/{total}",
+  "compose.submit.publishing": "投稿中…",
+  "compose.submit": "投稿する",
+  // 投稿の結果メッセージ（done / error）。
+  "compose.done": "投稿しました。あなたの植物へ移動します…",
+  "compose.error.notConfirmed": "投稿を確認できませんでした。電波の良いところでもう一度お試しください（下書きは残っています）。",
+  "compose.error.generic": "投稿に失敗しました。",
+  "compose.error.imageLoad": "画像の読み込みに失敗しました。",
+
+  // CropFrame（クロップ枠・回転・#314）。
+  "crop.image.alt": "クロップ対象の写真",
+  "crop.rotate.label": "回転",
+  "crop.rotate.left90.aria": "写真を左に90度回転",
+  "crop.rotate.left90": "左90°",
+  "crop.rotate.fineLeft.aria": "0.5度 左へ",
+  "crop.rotate.fineRight.aria": "0.5度 右へ",
+  "crop.rotate.slider.aria": "角度の微調整（0.5度きざみ）",
+  "crop.rotate.right90.aria": "写真を右に90度回転",
+  "crop.rotate.right90": "右90°",
+  "crop.dragHint": "枠をドラッグして位置を決めてください。",
+
+  // CaptionInput（一言入力・ハッシュタグ補完・#165）。
+  "caption.label": "ひとこと",
+  "caption.placeholder": "株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。",
+  "caption.suggest.aria": "ハッシュタグ候補",
+
+  // FilterChips（フィルタ強度チップ・#171）。
+  "filter.strength.none": "なし",
+  "filter.strength.weak": "弱",
+  "filter.strength.medium": "中",
+  "filter.strength.strong": "強",
+  "filter.group.aria": "フィルタを重ねる",
+  "filter.chip.aria": "{name}（{strength}）",
+
+  // ImagePicker（画像の選択・撮影/アルバム・#29）。
+  "picker.shoot": "撮影",
+  "picker.album": "アルバム",
+  "picker.hint": "植物の写真を撮るか、アルバムから選んでください。最大4枚まで。",
+  "picker.error.notImage": "画像ファイルを選んでください（動画は投稿できません）。",
+  "picker.error.limit": "写真は4枚までです。",
+  "picker.add.aria": "写真を追加",
+  "picker.camera.aria": "カメラで撮影",
+  "picker.gallery.aria": "アルバムから選ぶ",
+
+  // TagPicker（タグピッカー・ドリルダウン・検索・#22/#312）。
+  "tag.heading.filter": "品種で絞る",
+  "tag.heading.compose": "タグを選ぶ",
+  "tag.fromPlants": "植物から選ぶ",
+  "tag.breadcrumb.root": "植物",
+  "tag.group.recent": "最近使った",
+  "tag.group.popular": "人気",
+  "tag.overflow.button": "その他",
+  "tag.overflow.aria": "{label}のその他のタグ",
+  "tag.overflow.count": "{label}（ほか{n}件）",
+  "tag.overflow.dialog.aria": "{label}のタグ一覧",
+  "tag.overflow.close.aria": "タグ一覧を閉じる",
+  "tag.request": "この植物が無い → 追加をリクエスト",
+  "tag.back.aria": "一つ前に戻る",
+  "tag.back": "‹ 戻る",
+  "tag.close.aria": "ドリルダウンを閉じる",
+  "tag.search.aria": "タグを検索",
+  "tag.search.placeholder": "品種・属を検索（例: チタノタ）",
+  "tag.dict.loading": "辞書を読み込み中…",
+  "tag.dict.error": "辞書を読み込めませんでした。もう一度お試しください。",
+  "tag.noResults": "該当なし",
+  "tag.category.label": "カテゴリ",
+  "tag.useFreeform": "そのまま #{tag} を使う",
+  "tag.useCategory": "#{label} をこのまま使う",
+  "tag.useGenus": "#{name} をこのまま使う",
 } as const;
 
 /** 全文言キーの union（ja を単一ソースに型を導出する）。 */

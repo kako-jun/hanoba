@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import { detectHashtagQuery, filterHashtagCandidates } from "../../lib/image/hashtag-complete.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface CaptionInputProps {
   value: string;
@@ -36,6 +37,7 @@ interface PopupState {
 }
 
 export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0 }: CaptionInputProps) {
+  const t = useT(useLocale());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [popup, setPopup] = useState<PopupState | null>(null);
 
@@ -136,7 +138,7 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
     <ResizableTextarea
       ref={textareaRef}
       id="hanoba-caption"
-      label="ひとこと"
+      label={t("caption.label")}
       value={value}
       onValueChange={handleValueChange}
       onSelect={handleSelect}
@@ -144,12 +146,12 @@ export default function CaptionInput({ value, onChange, pool, focusEndSignal = 0
       onBlur={() => setPopup(null)}
       aria-required="true"
       rows={3}
-      placeholder="株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。"
+      placeholder={t("caption.placeholder")}
     >
       {popup !== null && (
         <ul
           role="listbox"
-          aria-label="ハッシュタグ候補"
+          aria-label={t("caption.suggest.aria")}
           className="glass-strong absolute z-10 left-0 right-0 top-full mt-1 max-h-56 overflow-auto rounded-2xl shadow-2xl"
         >
           {popup.items.map((item, i) => (

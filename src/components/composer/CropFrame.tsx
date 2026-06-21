@@ -8,6 +8,7 @@ import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from
 import "react-image-crop/dist/ReactCrop.css";
 import { MAX_FINE_ROTATION, computeSquareCropRect, rotationFine, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
 import { toneCurvePreviewCss } from "../../lib/image/presets.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface CropFrameProps {
   /** 選択画像の Object URL。 */
@@ -55,6 +56,7 @@ export default function CropFrame({
   rotation = 0,
   onRotate,
 }: CropFrameProps) {
+  const t = useT(useLocale());
   const [crop, setCrop] = useState<Crop>();
   // 画像の表示幅（px）。霞幻プレビューの blur 半径を焼き込み（出力の2%）と同じ縮尺で出すため。
   const [renderedW, setRenderedW] = useState(0);
@@ -131,7 +133,7 @@ export default function CropFrame({
         <img
           ref={imgRef}
           src={src}
-          alt="クロップ対象の写真"
+          alt={t("crop.image.alt")}
           onLoad={handleImageLoad}
           // 回転は CSS transform で即時プレビュー（#314・mypace 方式・blob 再生成の遅延なし）。
           // クロップ枠は元画像の box（軸整列）に引かれ、焼き込みは renderInPlaceRotation で同じ見えを再現する。
@@ -202,14 +204,14 @@ export default function CropFrame({
           return (
             <div className="flex w-full max-w-full flex-col gap-1.5">
               <div className="flex items-center justify-between gap-1.5">
-                <span className="text-xs text-ha-ink/45">回転</span>
+                <span className="text-xs text-ha-ink/45">{t("crop.rotate.label")}</span>
                 <span className="text-xs tabular-nums text-ha-ink/55">{fine.toFixed(1)}°</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <button type="button" onClick={() => onRotate(rotation - 90)} aria-label="写真を左に90度回転" className={quarterBtn}>
-                  左90°
+                <button type="button" onClick={() => onRotate(rotation - 90)} aria-label={t("crop.rotate.left90.aria")} className={quarterBtn}>
+                  {t("crop.rotate.left90")}
                 </button>
-                <button type="button" onClick={() => setFine(fine - 0.5)} aria-label="0.5度 左へ" className={stepBtn}>
+                <button type="button" onClick={() => setFine(fine - 0.5)} aria-label={t("crop.rotate.fineLeft.aria")} className={stepBtn}>
                   −
                 </button>
                 <input
@@ -219,20 +221,20 @@ export default function CropFrame({
                   step={0.5}
                   value={fine}
                   onChange={(e) => setFine(Number(e.target.value))}
-                  aria-label="角度の微調整（0.5度きざみ）"
+                  aria-label={t("crop.rotate.slider.aria")}
                   className="h-9 min-w-0 flex-1 accent-ha-green"
                 />
-                <button type="button" onClick={() => setFine(fine + 0.5)} aria-label="0.5度 右へ" className={stepBtn}>
+                <button type="button" onClick={() => setFine(fine + 0.5)} aria-label={t("crop.rotate.fineRight.aria")} className={stepBtn}>
                   ＋
                 </button>
-                <button type="button" onClick={() => onRotate(rotation + 90)} aria-label="写真を右に90度回転" className={quarterBtn}>
-                  右90°
+                <button type="button" onClick={() => onRotate(rotation + 90)} aria-label={t("crop.rotate.right90.aria")} className={quarterBtn}>
+                  {t("crop.rotate.right90")}
                 </button>
               </div>
             </div>
           );
         })()}
-      <p className="text-xs text-ha-ink/60">枠をドラッグして位置を決めてください。</p>
+      <p className="text-xs text-ha-ink/60">{t("crop.dragHint")}</p>
     </div>
   );
 }

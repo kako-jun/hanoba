@@ -15,6 +15,7 @@ import {
 import { ClearableInput } from "../ui/ClearableInput.tsx";
 import Icon from "../ui/Icon.tsx";
 import SciName from "../ui/SciName.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface Props {
   /** 人気タグ（relay 集計・上位）。空なら人気セクションは出さない。 */
@@ -129,6 +130,7 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * - 値は本文に `#タグ` テキストとして末尾挿入されるだけ（DESIGN §6・t 化しない）。
  */
 export default function TagPicker({ popular, caption, onPick, onRemove, mode = "compose" }: Props) {
+  const t = useT(useLocale());
   const isFilter = mode === "filter";
   const panelRef = useRef<HTMLDivElement>(null);
   // 「その他」ポップアップ（世話/記録の行ごと）。ドリルダウンの open とは独立に管理する（#169）。
@@ -231,7 +233,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
       context !== undefined
         ? tagsToPickAt(context.categoryLabel, context.genusName, name)
         : tagsToPick(catalog, name);
-    for (const t of tags) onPick(t);
+    for (const tag of tags) onPick(tag);
   }
 
   // 選択済みチップの再タップ＝解除。兄弟が残らなければ上位（属・カテゴリ）も連動して外す。
@@ -240,7 +242,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
     if (has(name)) {
       // filter は葉のみ入れるので、そのタグ1つだけ外す。compose は兄弟が残らなければ上位も連動撤去。
       if (isFilter) onRemove(name);
-      else for (const t of tagsToUnpick(caption, name, catalog)) onRemove(t);
+      else for (const tag of tagsToUnpick(caption, name, catalog)) onRemove(tag);
     } else {
       add();
     }
@@ -304,7 +306,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium text-ha-green-deep">{isFilter ? "品種で絞る" : "タグを選ぶ"}</span>
+      <span className="text-sm font-medium text-ha-green-deep">{isFilter ? t("tag.heading.filter") : t("tag.heading.compose")}</span>
 
       {!open ? (
         // ── 畳んだ状態: ドリルダウン入口を最上段に・最近・人気・世話/記録（0〜1タップ） ──────
@@ -316,7 +318,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
             className="glass flex items-center gap-2 self-start rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:border-ha-green/50 transition-colors"
           >
             <Icon name="sprout" className="h-4 w-4" />
-            植物から選ぶ
+            {t("tag.fromPlants")}
             <span aria-hidden className="text-ha-ink/40">›</span>
           </button>
 
@@ -325,22 +327,22 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
           {!isFilter && (
             <>
           {recent.length > 0 && (
-            <ChipGroup label="最近使った">
+            <ChipGroup label={t("tag.group.recent")}>
               {/* 多すぎてスクロールが大変なので先頭 QUICK_SHORTCUT_LIMIT 件だけ出す（kako-jun）。 */}
-              {recent.slice(0, QUICK_SHORTCUT_LIMIT).map((t) => (
-                <Chip key={`recent-${t}`} label={t} active={has(t)} onClick={() => toggle(t, () => engage(t))} />
+              {recent.slice(0, QUICK_SHORTCUT_LIMIT).map((tag) => (
+                <Chip key={`recent-${tag}`} label={tag} active={has(tag)} onClick={() => toggle(tag, () => engage(tag))} />
               ))}
             </ChipGroup>
           )}
 
           {popular.length > 0 && (
-            <ChipGroup label="人気">
-              {popular.slice(0, QUICK_SHORTCUT_LIMIT).map((t) => (
+            <ChipGroup label={t("tag.group.popular")}>
+              {popular.slice(0, QUICK_SHORTCUT_LIMIT).map((pop) => (
                 <Chip
-                  key={`pop-${t.tag}`}
-                  label={t.tag}
-                  active={has(t.tag)}
-                  onClick={() => toggle(t.tag, () => engage(t.tag))}
+                  key={`pop-${pop.tag}`}
+                  label={pop.tag}
+                  active={has(pop.tag)}
+                  onClick={() => toggle(pop.tag, () => engage(pop.tag))}
                 />
               ))}
             </ChipGroup>
@@ -370,11 +372,11 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       onClick={() => setOverflowOpen((o) => (o === c.label ? null : c.label))}
                       aria-haspopup="dialog"
                       aria-expanded={overflowOpen === c.label}
-                      aria-label={`${c.label}のその他のタグ`}
+                      aria-label={t("tag.overflow.aria", { label: c.label })}
                       className="glass flex items-center gap-1 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
                     >
                       <Icon name="plus" className="h-3.5 w-3.5" />
-                      その他
+                      {t("tag.overflow.button")}
                     </button>
                     {overflowOpen === c.label &&
                       typeof document !== "undefined" &&
@@ -387,18 +389,18 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                             ref={overflowRef}
                             role="dialog"
                             aria-modal="true"
-                            aria-label={`${c.label}のタグ一覧`}
+                            aria-label={t("tag.overflow.dialog.aria", { label: c.label })}
                             tabIndex={-1}
                             className="glass-strong flex max-h-[80vh] w-72 max-w-[calc(100vw-2rem)] flex-col gap-2 overflow-y-auto rounded-2xl p-3 shadow-2xl focus:outline-none"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-xs text-ha-ink/55">
-                                {c.label}（ほか{c.tags.length - INLINE_LIMIT}件）
+                                {t("tag.overflow.count", { label: c.label, n: c.tags.length - INLINE_LIMIT })}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => setOverflowOpen(null)}
-                                aria-label="タグ一覧を閉じる"
+                                aria-label={t("tag.overflow.close.aria")}
                                 className="grid h-7 w-7 place-items-center rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
                               >
                                 <Icon name="close" className="h-4 w-4" />
@@ -431,7 +433,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
             rel="noopener noreferrer"
             className="self-start text-xs text-ha-ink/45 underline decoration-dotted underline-offset-2 hover:text-ha-green-deep transition-colors"
           >
-            この植物が無い → 追加をリクエスト
+            {t("tag.request")}
           </a>
             </>
           )}
@@ -444,18 +446,18 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
             <button
               type="button"
               onClick={goBack}
-              aria-label="一つ前に戻る"
+              aria-label={t("tag.back.aria")}
               className="rounded-full px-2 py-1 text-sm text-ha-ink/70 hover:text-ha-green-deep transition-colors"
             >
-              ‹ 戻る
+              {t("tag.back")}
             </button>
             <span className="min-w-0 flex-1 truncate text-center text-xs text-ha-ink/55">
-              植物{cat ? ` › ${cat.label}` : ""}{genus ? ` › ${genus.name}` : ""}
+              {t("tag.breadcrumb.root")}{cat ? ` › ${cat.label}` : ""}{genus ? ` › ${genus.name}` : ""}
             </span>
             <button
               type="button"
               onClick={closeDrilldown}
-              aria-label="ドリルダウンを閉じる"
+              aria-label={t("tag.close.aria")}
               className="grid h-7 w-7 place-items-center rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
             >
               <Icon name="close" className="h-4 w-4" />
@@ -468,8 +470,8 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
             <ClearableInput
               value={query}
               onValueChange={handleQueryChange}
-              aria-label="タグを検索"
-              placeholder="品種・属を検索（例: チタノタ）"
+              aria-label={t("tag.search.aria")}
+              placeholder={t("tag.search.placeholder")}
               className="rounded-full border border-white/30 bg-white/5 py-2 pl-9 text-sm text-ha-ink placeholder:text-ha-ink/40 focus:border-ha-green/50 focus:outline-none"
             />
           </div>
@@ -478,13 +480,13 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
             // ── 検索結果（属→階層へ・品種→その葉だけ挿入・freeform→そのまま） ──
             <div className="flex flex-col gap-1.5">
               {loadingCatalog && catalog === null && (
-                <span className="text-xs text-ha-ink/45">辞書を読み込み中…</span>
+                <span className="text-xs text-ha-ink/45">{t("tag.dict.loading")}</span>
               )}
               {catalogError && (
-                <span className="text-xs text-ha-pink">辞書を読み込めませんでした。もう一度お試しください。</span>
+                <span className="text-xs text-ha-pink">{t("tag.dict.error")}</span>
               )}
               {hits.length === 0 && !showFreeform && !loadingCatalog && (
-                <span className="text-xs text-ha-ink/45">該当なし</span>
+                <span className="text-xs text-ha-ink/45">{t("tag.noResults")}</span>
               )}
               <div className="flex flex-wrap gap-1.5">
                 {hits.map((h) =>
@@ -503,7 +505,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                     >
                       #{h.name}
                       <span className={`ml-1 text-[10px] ${has(h.name) ? "text-ha-white/70" : "text-ha-ink/40"}`}>
-                        カテゴリ
+                        {t("tag.category.label")}
                       </span>
                     </button>
                   ) : h.kind === "genus" ? (
@@ -549,14 +551,14 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                     onClick={() => pick(freeform)}
                     className="rounded-full border border-dashed border-ha-green/50 px-3 py-1 text-sm text-ha-green-deep hover:bg-ha-green/10 transition-colors"
                   >
-                    そのまま #{freeform} を使う
+                    {t("tag.useFreeform", { tag: freeform })}
                   </button>
                 )}
               </div>
             </div>
           ) : catalog === null ? (
             <span className="px-1 py-2 text-xs text-ha-ink/45">
-              {catalogError ? "辞書を読み込めませんでした。もう一度お試しください。" : loadingCatalog ? "辞書を読み込み中…" : "—"}
+              {catalogError ? t("tag.dict.error") : loadingCatalog ? t("tag.dict.loading") : "—"}
             </span>
           ) : cat === null ? (
             // カテゴリ一覧
@@ -588,7 +590,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       : "border border-ha-green/60 bg-ha-green/10 text-ha-green-deep hover:bg-ha-green/20"
                   }`}
                 >
-                  #{cat.label} をこのまま使う
+                  {t("tag.useCategory", { label: cat.label })}
                 </button>
               )}
               {cat.genera.map((g) => (
@@ -618,7 +620,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       : "border border-ha-green/60 bg-ha-green/10 text-ha-green-deep hover:bg-ha-green/20"
                   }`}
                 >
-                  #{genus.name} をこのまま使う
+                  {t("tag.useGenus", { name: genus.name })}
                 </button>
               )}
               {genus.varieties.map((v) => (
