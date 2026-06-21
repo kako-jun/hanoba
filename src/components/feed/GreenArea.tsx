@@ -75,10 +75,11 @@ export default function GreenArea({ posts, subject }: { posts: FeedPost[]; subje
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium text-ha-ink/70">
-        {subject}が街に足した緑
+        {subject}が街に足した緑{" "}
+        <span className="text-xs font-normal text-ha-ink/45">（1マス＝写真1枚・緑が多い写真ほど濃い）</span>
         {capped && <span className="ml-1 text-xs text-ha-ink/40">（直近{GREEN_GRID_CAP}件）</span>}
       </p>
-      {/* 草グリッド。1マス=1投稿・濃淡=緑割合。装飾的なので aria-hidden（意味は上のラベルが担う）。 */}
+      {/* 草グリッド。1マス=1投稿・濃淡=緑割合。装飾的なので aria-hidden（意味は上のラベル＋凡例が担う）。 */}
       <div className="flex flex-wrap gap-1" aria-hidden>
         {targets.map((p, i) => {
           const r = ratios?.[i] ?? null;
@@ -86,6 +87,14 @@ export default function GreenArea({ posts, subject }: { posts: FeedPost[]; subje
           return <span key={p.id} className={`h-3 w-3 rounded-[2px] ${LEVEL_BG[level]}`} />;
         })}
       </div>
+      {/* 濃淡の凡例（緑が少ない → 多い）。何が濃さを表すか一目で分かるように（kako-jun「さっぱりわからない」）。 */}
+      <span className="flex items-center gap-1 text-[10px] text-ha-ink/45" aria-hidden>
+        緑 少
+        {LEVEL_BG.map((bg, i) => (
+          <span key={i} className={`h-3 w-3 rounded-[2px] ${bg}`} />
+        ))}
+        多
+      </span>
     </div>
   );
 }
