@@ -9,6 +9,7 @@ import Icon from "../ui/Icon.tsx";
 import Avatar from "./Avatar.tsx";
 import CitizenStats from "./CitizenStats.tsx";
 import PostGrid from "./PostGrid.tsx";
+import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 type Status = "invalid" | "loading" | "error" | "loaded";
 
@@ -23,7 +24,9 @@ type Status = "invalid" | "loading" | "error" | "loaded";
  * 編集/削除は出さない（/me の MyGrid と違い読み取り専用）。投稿一覧はフィードと同じ読み取り専用 `PostGrid`。
  * 活動スタッツは `/me` と同じ `CitizenStats` を流用（hasName＝相手のプロフィール名の有無）。
  */
-export default function UserProfile() {
+// lang は u.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   // URL の ?npub= を pubkey hex に直す（マウント時に一度・クライアントのみ）。
   // 欠落 / npub でない / decode 失敗は null＝"invalid"（取得に行かない）。
   const [pubkey, setPubkey] = useState<string | null | undefined>(undefined);
@@ -81,7 +84,7 @@ export default function UserProfile() {
   }, [pubkey]);
 
   // 表示名（取れればプロフィール名・無ければ npub 短縮）。見出し・タイトルに使う。
-  const subjectName = profile?.name ?? (typeof pubkey === "string" ? shortNpub(pubkey) : "市民");
+  const subjectName = profile?.name ?? (typeof pubkey === "string" ? shortNpub(pubkey) : t("profile.subject.default"));
   // 自分のページかどうか（ローカルに名乗り済みの名と一致するか）。鍵生成の副作用（getPublicKeyHex は
   // 鍵が無いと生成してしまう）を避け、getDisplayName（localStorage のみ）と表示名の一致で緩く判定する。
   // 表示名の衝突で別人を「あなた」と誤認しうるが、用途は /me への戻り導線だけ＝実害が無い範囲。
@@ -98,19 +101,22 @@ export default function UserProfile() {
 
   if (status === "invalid") {
     return (
-      <div className="py-16 flex flex-col items-center gap-4 text-center">
-        <p className="text-ha-ink/70">この市民のプロフィールが見つかりませんでした。</p>
-        <a
-          href="/discover"
-          className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
-        >
-          みんなの植物へ
-        </a>
-      </div>
+      <LocaleProvider value={lang}>
+        <div className="py-16 flex flex-col items-center gap-4 text-center">
+          <p className="text-ha-ink/70">{t("profile.notFound")}</p>
+          <a
+            href="/discover"
+            className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
+          >
+            {t("profile.toDiscover")}
+          </a>
+        </div>
+      </LocaleProvider>
     );
   }
 
   return (
+    <LocaleProvider value={lang}>
     <section className="flex flex-col gap-5">
       {/* プロフィールヘッダ（アバター・名前・自己紹介・サイトリンク）。取得前/失敗時も npub で骨格を出す。 */}
       <div className="glass rounded-2xl p-5 flex flex-col gap-4">
@@ -122,7 +128,7 @@ export default function UserProfile() {
             </h1>
             {isLikelyMe && (
               <a href="/me" className="text-sm font-medium text-ha-green hover:text-ha-green-deep transition-colors">
-                これはあなたの公開プロフィールです（あなたの植物へ）
+                {t("profile.isMe")}
               </a>
             )}
           </div>
@@ -156,7 +162,7 @@ export default function UserProfile() {
         {/* 好きな品種（#141）。同好の士の手がかり。チップをタップで discover をその品種で絞る。 */}
         {profile !== null && profile.favoriteVarieties.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-ha-ink/55">好きな品種</span>
+            <span className="text-xs font-medium text-ha-ink/55">{t("profile.favorites")}</span>
             <ul className="flex flex-wrap gap-1.5">
               {profile.favoriteVarieties.map((v) => (
                 <li key={v}>
@@ -181,7 +187,7 @@ export default function UserProfile() {
       {status === "loading" && (
         <>
           <p role="status" className="sr-only">
-            この市民の植物を読み込み中…
+            {t("profile.loading.sr")}
           </p>
           <ul className="grid grid-cols-3 sm:grid-cols-4 gap-0.5" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -193,13 +199,13 @@ export default function UserProfile() {
 
       {status === "error" && (
         <div className="py-12 flex flex-col items-center gap-4 text-center">
-          <p className="text-ha-ink/70">読み込めませんでした。</p>
+          <p className="text-ha-ink/70">{t("feed.error.short")}</p>
           <button
             type="button"
             onClick={() => typeof pubkey === "string" && void load(pubkey)}
             className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
           >
-            再試行
+            {t("common.retry")}
           </button>
         </div>
       )}
@@ -207,7 +213,7 @@ export default function UserProfile() {
       {status === "loaded" &&
         (posts.length === 0 ? (
           <div className="py-12 flex flex-col items-center gap-4 text-center">
-            <p className="text-ha-ink/70">まだ、この市民の植物はありません。</p>
+            <p className="text-ha-ink/70">{t("profile.empty")}</p>
           </div>
         ) : (
           // 読み取り専用の投稿一覧（フィードと同じ PostGrid）。タグクリックは discover の再検索へ。
@@ -222,5 +228,6 @@ export default function UserProfile() {
           />
         ))}
     </section>
+    </LocaleProvider>
   );
 }

@@ -5,6 +5,9 @@
 //
 // 純関数: Date.now を内部で呼ばない（now は秒で渡す）。テストは固定値で網羅する。
 
+import { t } from "../i18n/t.ts";
+import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
+
 /** 市民レベル。L0 旅人 / L1 市民 / L2 市民L2（… 以降は市民Ln・#272）。 */
 export type CitizenLevel = 0 | 1 | 2;
 
@@ -45,10 +48,10 @@ export const CITIZEN_TIERS: CitizenTier[] = [
  * - 2 以上 → 「市民L2」「市民L3」…（活動で手帳レベルが進む）。
  * 引数は number で受ける（将来 stats が L3+ を出すため・CitizenLevel に閉じない）。
  */
-export function citizenLevelLabel(level: number): string {
-  if (level <= 0) return "旅人";
-  if (level === 1) return "市民";
-  return `市民L${level}`;
+export function citizenLevelLabel(level: number, locale: Locale = DEFAULT_LOCALE): string {
+  if (level <= 0) return t(locale, "citizen.level.traveler");
+  if (level === 1) return t(locale, "citizen.level.citizen");
+  return t(locale, "citizen.level.citizenN", { n: level });
 }
 
 /** 1 日の秒数。 */

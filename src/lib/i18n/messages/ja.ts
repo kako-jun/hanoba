@@ -122,6 +122,50 @@ export const ja = {
   "vote.board.features.intro": "この市にあったらいい仕組みを請願せよ。市長が善処する（かもしれない）。",
   "vote.board.bugs.title": "バグ報告",
   "vote.board.bugs.intro": "市の不具合を見つけたら、ここへ。直ちに修繕隊を送る。",
+
+  // 市民レベルの表示名（citizen.ts・#272）。Ln は {n} 補間。
+  "citizen.level.traveler": "旅人",
+  "citizen.level.citizen": "市民",
+  "citizen.level.citizenN": "市民L{n}",
+
+  // 活動スタッツ節（CitizenStats・#272）。見出しの主語 {subject} は自分=あなた/他人=表示名。
+  "stats.subject.default": "この市民",
+  "stats.activity.heading": "{subject}の活動",
+  "stats.posts.label": "投稿",
+  "stats.posts.unit": "件",
+  "stats.photos.label": "写真",
+  "stats.photos.unit": "枚",
+  "stats.varieties.label": "品種",
+  "stats.varieties.unit": "種",
+  "stats.tenure.label": "居住",
+  "stats.tenure.unit": "日",
+  "stats.varieties.grown": "育てた品種",
+  "stats.variety.filterTitle": "{label} でみんなの植物を絞る",
+
+  // 緑の総面積（GreenArea・#310）。{subject}=主語・{n}=直近件数の上限。
+  "green.heading": "{subject}が街に足した緑",
+  "green.heading.note": "（1マス＝写真1枚・緑が多い写真ほど濃い）",
+  "green.capped": "（直近{n}件）",
+  "green.legend.low": "緑 少",
+  "green.legend.high": "多",
+
+  // 活動の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。
+  "activity.heading": "活動の草",
+  "activity.heading.note": "（横＝週・縦＝曜日・濃いほどその日の投稿が多い）",
+  "activity.streak.current": "現在の連続",
+  "activity.streak.longest": "最長",
+  "activity.streak.days": "日",
+  "activity.legend.low": "少",
+  "activity.legend.high": "多",
+
+  // 他人の公開プロフィール島（UserProfile・#272）。
+  "profile.subject.default": "市民",
+  "profile.notFound": "この市民のプロフィールが見つかりませんでした。",
+  "profile.toDiscover": "みんなの植物へ",
+  "profile.isMe": "これはあなたの公開プロフィールです（あなたの植物へ）",
+  "profile.favorites": "好きな品種",
+  "profile.loading.sr": "この市民の植物を読み込み中…",
+  "profile.empty": "まだ、この市民の植物はありません。",
 } as const;
 
 /** 全文言キーの union（ja を単一ソースに型を導出する）。 */
