@@ -165,8 +165,13 @@ function categoryHasOtherSurvivor(
 ): boolean {
   return category.genera.some((g) => {
     if (g === targetGenus) return false;
-    if (g.pickable && captionHasTag(caption, g.name)) return true;
-    return g.varieties.some((v) => captionHasTag(caption, v.name));
+    // 属タグ。ただし属名がカテゴリ label と同字なら、その `#タグ` はカテゴリタグと文字列で
+    // 区別できない（#312 衝突ガード）＝独立した属の証拠にならないので数えない。
+    if (g.pickable && g.name !== category.label && captionHasTag(caption, g.name)) return true;
+    // 品種タグ。カテゴリ label・その属名と同字の品種は、カテゴリ/属タグと区別できないので数えない。
+    return g.varieties.some(
+      (v) => v.name !== category.label && v.name !== g.name && captionHasTag(caption, v.name),
+    );
   });
 }
 
@@ -192,8 +197,17 @@ export function tagsToUnpick(
   if (vloc !== null) {
     const { category, genus } = vloc;
     const result = [name];
-    // 同属の他品種が残るなら上位はそのまま（兄弟が居れば残る）。
-    const siblingRemains = genus.varieties.some((v) => v.name !== name && captionHasTag(caption, v.name));
+    // 同属の他品種が残るなら上位はそのまま（兄弟が居れば残る）。ただし **カテゴリ label・属名と
+    // 同字の品種**（例 エアプランツ›チランジア›「エアプランツ」／ビカクシダ›原種›「ビカクシダ」）は、
+    // その `#タグ` が #312 で入るカテゴリ/属タグと文字列で区別できない＝偽の兄弟として数えない
+    // （これを数えると、品種を外してもカテゴリ/属が孤立して残る #312 のリグレッションになる）。
+    const siblingRemains = genus.varieties.some(
+      (v) =>
+        v.name !== name &&
+        v.name !== category.label &&
+        v.name !== genus.name &&
+        captionHasTag(caption, v.name),
+    );
     if (siblingRemains) return result;
     if (genus.pickable && captionHasTag(caption, genus.name)) result.push(genus.name);
     if (!categoryHasOtherSurvivor(caption, category, genus) && captionHasTag(caption, category.label)) {

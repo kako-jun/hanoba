@@ -238,3 +238,44 @@ describe("tagsToUnpick（兄弟ルール）", () => {
     expect(tagsToUnpick("#アガベ #チタノタ", "チタノタ", null)).toEqual(["チタノタ"]);
   });
 });
+
+// 本番カタログには **品種名＝カテゴリ label** が同字のデータがある（エアプランツ›チランジア›「エアプランツ」、
+// ビカクシダ›原種›「ビカクシダ」、シダ、コケ）。#312 でカテゴリが本文タグになると、この `#カテゴリ` タグが
+// 同名品種の兄弟と誤認され、品種を外しても上位が孤立して残るリグレッションが起きる。これを衝突ガードで防ぐ。
+const COLLIDE: VarietyCategory[] = [
+  {
+    // pickable 属配下に label と同字の品種を持つ（エアプランツ相当）。
+    label: "ソラ",
+    genera: [
+      { name: "チラ", pickable: true, varieties: [{ name: "ソラ" }, { name: "イオナ" }] },
+    ],
+  },
+  {
+    // 非 pickable 見出し属配下に label と同字の品種を持つ（ビカクシダ相当）。
+    label: "ビカク",
+    genera: [
+      { name: "原種", pickable: false, varieties: [{ name: "ビカク" }, { name: "リドレ" }] },
+    ],
+  },
+];
+
+describe("tagsToUnpick（#312・カテゴリ label＝品種名 の衝突ガード）", () => {
+  it("compose→解除の往復: 品種を外すと 品種→属→カテゴリ を連動撤去（カテゴリタグを兄弟と誤認しない）", () => {
+    // tagsToPick("イオナ") = ["ソラ","チラ","イオナ"]。caption からイオナを外す。
+    const caption = "#ソラ #チラ #イオナ";
+    expect(tagsToUnpick(caption, "イオナ", COLLIDE)).toEqual(["イオナ", "チラ", "ソラ"]);
+  });
+
+  it("非 pickable 見出し属でも: 品種を外すと 品種→カテゴリ を連動撤去（見出し属はタグでない）", () => {
+    // tagsToPick("リドレ") = ["ビカク","リドレ"]。caption からリドレを外す。
+    const caption = "#ビカク #リドレ";
+    expect(tagsToUnpick(caption, "リドレ", COLLIDE)).toEqual(["リドレ", "ビカク"]);
+  });
+
+  it("label と同字の品種そのもの（ソラ）を外すときも上位（属）を孤立させない", () => {
+    // 「ソラ」品種を選ぶと tagsToPick はカテゴリ=品種で畳んで ["ソラ","チラ"]（#312 dedup）。
+    // この本文からソラを外す＝品種ソラ解除。属チラに他兄弟が無ければチラも外す。
+    const caption = "#ソラ #チラ";
+    expect(tagsToUnpick(caption, "ソラ", COLLIDE)).toEqual(["ソラ", "チラ"]);
+  });
+});

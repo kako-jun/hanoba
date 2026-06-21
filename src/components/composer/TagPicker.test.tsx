@@ -107,6 +107,18 @@ describe("TagPicker", () => {
     expect(onRemove.mock.calls).toEqual([["グラキリス"], ["パキポディウム"], ["塊根植物"]]);
   });
 
+  it("カテゴリ label＝品種名 の衝突でも品種解除で上位を孤立させない（本番カタログ・エアプランツ／イオナンタ・#312）", async () => {
+    // エアプランツ›チランジア›「イオナンタ」。カテゴリ「エアプランツ」と同字の品種「エアプランツ」が
+    // 同属に居るので、衝突ガードが無いと #エアプランツ を兄弟と誤認して上位が残る（リグレッション）。
+    const user = userEvent.setup();
+    const { onRemove } = renderPicker({ caption: "今日の一鉢\n#エアプランツ #チランジア #イオナンタ " });
+    await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
+    await user.type(await screen.findByLabelText("タグを検索"), "イオナンタ");
+    const chip = await screen.findByRole("button", { name: /#イオナンタ/ });
+    await user.click(chip);
+    expect(onRemove.mock.calls).toEqual([["イオナンタ"], ["チランジア"], ["エアプランツ"]]);
+  });
+
   it("人気の“属”をタップしたら挿入せず階層（品種一覧）に入る", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker({ popular: [{ tag: "パキポディウム", count: 5 }] });
