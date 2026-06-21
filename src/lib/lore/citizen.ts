@@ -27,7 +27,7 @@ export interface CitizenTier {
  * 市民Ln の昇格テーブル（#272 段階2・kako-jun 確定の軸＝複合 居住×投稿の AND で進む）。
  * level 昇順。各 tier は「投稿数 >= minPosts かつ 居住日数 >= minDays」を満たすと到達する。
  * L2 は既存条件（TENURE_POSTS / TENURE_DAYS）と一致させる＝CityHallBook・既存テストの不変条件を保つ。
- * 品種コンプ・連続投稿などの「点」の達成はレベルでなく実績バッジ側（lore/achievements.ts）で称える。
+ * 称号/実績バッジは脱ゲーム化で撤去（#272）＝レベルは静かなステータスとして残すだけ。
  */
 export const CITIZEN_TIERS: CitizenTier[] = [
   { level: 2, minPosts: TENURE_POSTS, minDays: TENURE_DAYS },
