@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { RankRunData } from "../../lib/feed/ranking.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 // uPlot のスタイルシート。CSS は副作用 import（window に触れない＝SSG ハザード無し）。本コンポーネント自体が
 // RankingBoard から遅延ロードされるので、この CSS もチャートを出すときに初めて読まれる（CropFrame の
 // react-image-crop CSS と同方式＝動的 import より確実にチャンクへ束ねられる）。
@@ -69,6 +70,7 @@ function weekSplits(weekCount: number): number[] {
 }
 
 export default function RankRunChart({ data }: { data: RankRunData }) {
+  const t = useT(useLocale());
   const hostRef = useRef<HTMLDivElement | null>(null);
 
   // weeks が2未満なら退化グラフを描かない（静かな注記のみ）。フックは常に同数呼ぶため早期 return せず分岐は描画側で。
@@ -181,13 +183,13 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
   if (!enoughWeeks) {
     return (
       <p className="text-sm text-ha-ink/55 [word-break:auto-phrase]">
-        推移グラフは週が2つ以上たまると表示されます。
+        {t("ranking.chart.sparse")}
       </p>
     );
   }
 
   return (
-    <figure className="flex flex-col gap-2" aria-label={chartSummary(data)}>
+    <figure className="flex flex-col gap-2" aria-label={t("ranking.chart.summary", { names: data.series.map((s) => s.name).join("・") })}>
       {/* canvas は装飾（意味は上の表が持つ）＝aria-hidden。 */}
       <div ref={hostRef} aria-hidden="true" className="w-full" />
       {/* 自前の凡例。マーカーは「線＋丸点」でグラフ本体（線＋点）と実体を一致させる（□は使わない）。
@@ -205,7 +207,7 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
         ))}
       </ul>
       <figcaption className="text-xs text-ha-ink/55 [word-break:auto-phrase]">
-        途中経過（変動）— 週ごとの投稿数の推移。詳しい順位は上の表をご覧ください。
+        {t("ranking.chart.caption")}
       </figcaption>
     </figure>
   );
@@ -219,12 +221,6 @@ function LegendMark({ color }: { color: string }) {
       <circle cx="13" cy="5" r="3" fill={color} />
     </svg>
   );
-}
-
-/** 図全体の読み上げ要約（表が正本なので概要のみ）。 */
-function chartSummary(data: RankRunData): string {
-  const names = data.series.map((s) => s.name).join("・");
-  return `上位品種（${names}）の週ごとの投稿数の推移グラフ。詳しくは上の表を参照。`;
 }
 
 /**

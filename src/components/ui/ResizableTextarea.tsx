@@ -19,6 +19,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import Icon from "./Icon.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 /** 高さを [min, max] にクランプする純関数（テスト容易化のため切り出し・#188）。 */
 export function clampHeight(value: number, min: number, max: number): number {
@@ -60,7 +61,7 @@ const ResizableTextarea = forwardRef<HTMLTextAreaElement, ResizableTextareaProps
     value,
     onValueChange,
     label,
-    clearLabel = "入力をクリア",
+    clearLabel,
     initialHeight = 124,
     minHeight = 104,
     maxHeight = 360,
@@ -72,6 +73,7 @@ const ResizableTextarea = forwardRef<HTMLTextAreaElement, ResizableTextareaProps
   },
   ref,
 ) {
+  const t = useT(useLocale());
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
   const innerRef = useRef<HTMLTextAreaElement>(null);
   const [height, setHeight] = useState(initialHeight);
@@ -111,7 +113,7 @@ const ResizableTextarea = forwardRef<HTMLTextAreaElement, ResizableTextareaProps
               onValueChange("");
               innerRef.current?.focus();
             }}
-            aria-label={clearLabel}
+            aria-label={clearLabel ?? t("input.clear")}
             className="absolute right-2.5 top-2.5 grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-white/10 transition-colors"
           >
             <Icon name="close" className="w-4 h-4" />
@@ -120,7 +122,7 @@ const ResizableTextarea = forwardRef<HTMLTextAreaElement, ResizableTextareaProps
         <div
           role="separator"
           tabIndex={0}
-          aria-label="入力欄の高さを調整"
+          aria-label={t("input.resizeHandle.aria")}
           aria-orientation="horizontal"
           aria-valuemin={minHeight}
           aria-valuemax={maxHeight}

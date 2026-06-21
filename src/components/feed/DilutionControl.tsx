@@ -2,6 +2,7 @@ import { type ChangeEvent, useId, useState } from "react";
 import { DILUTION_LEVELS, type DilutionLevel } from "../../lib/feed/dilution.ts";
 import Icon from "../ui/Icon.tsx";
 import { useDilutionFor } from "./useDilution.ts";
+import { useT, useLocale, type MessageKey, type TParams } from "../../lib/i18n/index.ts";
 
 interface Props {
   /** 対象の著者（pubkey hex）。 */
@@ -14,9 +15,9 @@ interface Props {
 // step=1 の range をこの index 配列で「段スナップ」させる＝中間の無意味な値（1/3 等・辞書に無い）を作らない。
 const STOPS: readonly (DilutionLevel | null)[] = [null, ...DILUTION_LEVELS]; // [null, 2, 5, 10]
 
-/** 段の見出しラベル（なし／1/2 …）。 */
-function stopLabel(level: DilutionLevel | null): string {
-  return level === null ? "なし" : `1/${level}`;
+/** 段の見出しラベル（なし／1/2 …）。1/N は数値表記なので語のみ翻訳する。 */
+function stopLabel(level: DilutionLevel | null, t: (key: MessageKey, params?: TParams) => string): string {
+  return level === null ? t("dilution.stop.none") : `1/${level}`;
 }
 
 /**
@@ -34,6 +35,7 @@ function stopLabel(level: DilutionLevel | null): string {
  * 「なし／1/2…」を読み上げる（0〜3 の生 index を読ませない）。
  */
 export default function DilutionControl({ pubkey, authorName }: Props) {
+  const t = useT(useLocale());
   const { level, setLevel } = useDilutionFor(pubkey);
   // 既定は畳む（active かどうかに関わらず）。入口の文言で現在量は見せる。
   const [open, setOpen] = useState(false);
@@ -48,9 +50,11 @@ export default function DilutionControl({ pubkey, authorName }: Props) {
 
   // 畳んだ入口の文言。未設定＝中立（減らす誘導にしない）。設定中＝現在の減量を見せる。
   const triggerLabel =
-    level === null ? `${authorName}さんの表示を調整` : `${authorName}さんを 1/${level} に減らし中`;
+    level === null
+      ? t("dilution.trigger.idle", { name: authorName })
+      : t("dilution.trigger.active", { name: authorName, n: level });
 
-  const heading = `${authorName}さんの投稿をフィードで減らす`;
+  const heading = t("dilution.heading", { name: authorName });
 
   return (
     <div className="flex flex-col gap-2">
@@ -84,8 +88,8 @@ export default function DilutionControl({ pubkey, authorName }: Props) {
             step={1}
             value={index}
             onChange={onSlide}
-            aria-label={`${heading}量`}
-            aria-valuetext={stopLabel(level)}
+            aria-label={t("dilution.slider.aria", { name: authorName })}
+            aria-valuetext={stopLabel(level, t)}
             className="w-full accent-ha-green"
           />
           {/* 段の目盛り（なし／1/2／1/5／1/10）。現在段を強調。値はスライダが伝えるので装飾扱い。 */}
@@ -98,7 +102,7 @@ export default function DilutionControl({ pubkey, authorName }: Props) {
                 key={i}
                 className={i === index ? "font-semibold text-ha-green-deep" : ""}
               >
-                {stopLabel(s)}
+                {stopLabel(s, t)}
               </span>
             ))}
           </div>

@@ -352,4 +352,35 @@ export const en: Partial<Record<MessageKey, string>> = {
   "edit.cancel": "Cancel",
   "edit.saving": "Re-posting…",
   "edit.update": "Update",
+
+  "ranking.board.loading": "Loading…",
+  "ranking.board.error": "Couldn't load the rankings.",
+  "ranking.board.reload": "Reload",
+  "ranking.board.empty": "There aren't enough posts yet to show a ranking.",
+  "ranking.board.firstPost": "Post the first pot",
+  "ranking.board.demo": "Dev preview (?demo) — synthetic data, not real posts.",
+  "ranking.board.firstWeek": "This is the first week of tallying. Comparison with last week (↑↓) starts next week.",
+  "ranking.board.count.unit": "",
+  "ranking.board.chart.loading": "Loading chart…",
+  "ranking.board.delta.new": "new entry",
+  "ranking.board.delta.re": "re-entry",
+  "ranking.board.delta.same": "no change",
+  "ranking.board.delta.up": "up {by}",
+  "ranking.board.delta.down": "down {by}",
+  "ranking.board.rowSummary": "#{rank} {name}{sci} {count} posts {delta}",
+
+  "ranking.chart.sparse": "The trend chart appears once two or more weeks have accumulated.",
+  "ranking.chart.caption": "Progress (movement) — weekly post counts. See the table above for exact ranks.",
+  "ranking.chart.summary": "A chart of weekly post counts for the top varieties ({names}). See the table above for details.",
+
+  "dilution.stop.none": "None",
+  "dilution.trigger.idle": "Adjust how {name} appears",
+  "dilution.trigger.active": "Reducing {name} to 1/{n}",
+  "dilution.heading": "Show less of {name}'s posts in the feed",
+  "dilution.slider.aria": "How much to reduce {name}'s posts in the feed",
+
+  "input.clear": "Clear input",
+  "input.resizeHandle.aria": "Resize the input height",
+
+  "feed.skeleton.loading.sr": "Loading plants…",
 };
