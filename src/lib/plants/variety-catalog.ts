@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,977件 / 222属 / 24カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223・ユッカ リギダ追補）。
+// 品種タグ辞書（カテゴリ→属→品種・1,984件 / 222属 / 24カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223・ユッカ有名種追補）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -406,8 +406,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "レナータ", sci: "Schefflera arboricola 'Renata'" }, { name: "アマテ", sci: "Schefflera actinophylla 'Amate'" },
       ] },
       { name: "ユッカ", pickable: true, aliases: ["Yucca"], varieties: [
-        { name: "エレファンティペス", sci: "Yucca gigantea", aliases: ["青年の木"] }, { name: "ロストラータ", sci: "Yucca rostrata" }, { name: "リギダ", sci: "Yucca rigida", aliases: ["ユッカリギダ"] }, { name: "デスメティアナ", sci: "Yucca desmetiana" }, { name: "アロイフォリア", sci: "Yucca aloifolia" },
-        { name: "グロリオサ", sci: "Yucca gloriosa" },
+        { name: "エレファンティペス", sci: "Yucca gigantea", aliases: ["青年の木"] }, { name: "ロストラータ", sci: "Yucca rostrata" }, { name: "リギダ", sci: "Yucca rigida", aliases: ["ユッカリギダ"] }, { name: "トンプソニアナ", sci: "Yucca thompsoniana" }, { name: "リネアリフォリア", sci: "Yucca linearifolia" }, { name: "ケレタロエンシス", sci: "Yucca queretaroensis" },
+        { name: "デスメティアナ", sci: "Yucca desmetiana" }, { name: "アロイフォリア", sci: "Yucca aloifolia" }, { name: "グロリオサ", sci: "Yucca gloriosa" }, { name: "フィラメントーサ", sci: "Yucca filamentosa", aliases: ["イトラン", "糸蘭"] }, { name: "バッカタ", sci: "Yucca baccata" }, { name: "フィリフェラ", sci: "Yucca filifera" }, { name: "ブレビフォリア", sci: "Yucca brevifolia", aliases: ["ジョシュアツリー"] },
       ] },
       { name: "その他観葉", pickable: false, varieties: [
         { name: "ディフェンバキア", sci: "Dieffenbachia seguine" }, { name: "クワズイモ", sci: "Alocasia odora" }, { name: "アグラオネマ", sci: "Aglaonema" }, { name: "ザミオクルカス", sci: "Zamioculcas zamiifolia" },
