@@ -72,7 +72,8 @@ export async function signAndPublishNote(input: {
   caption: string;
   imageUrls?: string[];
   createdAt?: number;
-  shotDates?: string[];
+  /** 写真ごとの撮影日（#324・imageUrls と同順・無い写真は null）。位置配列タグ `shot_dates` で載る。 */
+  photoShotDates?: Array<string | null>;
 }): Promise<NostrEvent> {
   const template = buildNoteTemplate(input);
   const signed = await signTemplate(template);
@@ -93,11 +94,11 @@ export async function editPost(input: {
   oldEventId: string;
   caption: string;
   imageUrls?: string[];
-  /** 撮影日（#324）。画像 URL と同じく写真メタなので編集でも引き継ぐ（落とすと活動の草が編集日にズレる）。 */
-  shotDates?: string[];
+  /** 撮影日（#324・写真ごと・imageUrls 同順）。画像 URL と同じ写真メタなので編集でも引き継ぐ。 */
+  photoShotDates?: Array<string | null>;
 }): Promise<NostrEvent> {
   // 1) 先に新規を publish（画像 URL・撮影日は再利用＝写真メタを保つ）。
-  const created = await signAndPublishNote({ caption: input.caption, imageUrls: input.imageUrls, shotDates: input.shotDates });
+  const created = await signAndPublishNote({ caption: input.caption, imageUrls: input.imageUrls, photoShotDates: input.photoShotDates });
   // 2) 旧イベントを kind:5 で削除（画像は消さない＝再投稿側で使う）。deletePost と違い実体削除はしない。
   const deletion = await signTemplate(buildDeletionEvent([input.oldEventId]));
   await publishEvent(deletion);

@@ -32,8 +32,14 @@ export function buildNoteTemplate(input: {
   caption: string;
   imageUrls?: string[];
   createdAt?: number;
-  /** 写真の撮影日（#324・`YYYY-MM-DD`）。distinct を `["shot_date", 日付]` タグで載せる（本文は汚さない）。 */
-  shotDates?: string[];
+  /**
+   * 写真ごとの撮影日（#324・`YYYY-MM-DD` or null）。**imageUrls と同じ順**で並べる
+   * （position i ＝ i 枚目の撮影日・無い写真は null）。mypace 流の**位置配列タグ**
+   * `["shot_dates", d0, d1, …]`（無い位置は ""）で載せる＝写真↔日付を保ったまま「1つの被写体の
+   * 1ヶ月を振り返る」投稿が成立する。本文は汚さない・他クライアントは未知タグとして無視。
+   * 植物に依らない汎用（tail-roll の🐱写真でも同タグ・同 parser を流用）。
+   */
+  photoShotDates?: Array<string | null>;
 }): EventTemplate {
   const caption = input.caption.trim();
   if (caption === "") {
@@ -43,11 +49,14 @@ export function buildNoteTemplate(input: {
   const imageUrls = input.imageUrls ?? [];
   const content = imageUrls.length > 0 ? [caption, ...imageUrls].join("\n") : caption;
 
-  // 撮影日（#324）: `YYYY-MM-DD` の妥当なものを distinct で `["shot_date", 日付]` タグにする
-  // （活動の草を撮影日基準にするため・本文は汚さない・他クライアントは未知タグとして無視）。
-  const shotDateTags = [
-    ...new Set((input.shotDates ?? []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))),
-  ].map((d) => ["shot_date", d]);
+  // 撮影日（#324）: 各写真の撮影日を imageUrls 順の**1本の位置配列タグ** `["shot_dates", …]` にする
+  // （aurora 等 mypace のカスタムタグ作法＝1タグに位置で複数値）。妥当な `YYYY-MM-DD` だけ残し他は ""、
+  // 末尾の空は落とす（読み側は足りない位置を null 扱い）。1つでも日付があればタグを付ける。
+  const sanitized = (input.photoShotDates ?? []).map((d) =>
+    typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "",
+  );
+  while (sanitized.length > 0 && sanitized[sanitized.length - 1] === "") sanitized.pop();
+  const shotDateTags = sanitized.length > 0 ? [["shot_dates", ...sanitized]] : [];
 
   return {
     kind: 1,

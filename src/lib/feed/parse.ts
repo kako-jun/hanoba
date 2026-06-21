@@ -26,8 +26,18 @@ export interface FeedPost {
   imageUrls: string[];
   imageUrl: string | null;
   hashtags: string[];
-  /** 写真の撮影日（#324・`YYYY-MM-DD`）。`shot_date` タグ由来・無ければ空。活動の草の集計に使う。 */
+  /**
+   * 撮影日の distinct 集合（#324・`YYYY-MM-DD`）。**活動の草の集計に使う**（どの日をカバーするか）。
+   * 新 `shot_dates` 位置配列の非 null ∪ 旧 `shot_date` タグ。写真対応は持たない（それは photoShotDates）。
+   */
   shotDates: string[];
+  /**
+   * 写真ごとの撮影日（#324・imageUrls と同順・無い写真は null）。新 `["shot_dates", …]` 由来。
+   * **写真↔日付の対応を保つ**＝PostDetail の各写真キャプション・カードの撮影期間レンジに使う。
+   * 旧形式（`shot_date` のみ）の投稿や撮影日無しは空配列（写真対応は出せない＝グレースフル）。
+   * 型上は任意（既存テスト fixture 互換）だが parsePost は常に設定する。消費側は `?? []`。
+   */
+  photoShotDates?: Array<string | null>;
 }
 
 // content 中のインライン画像 URL（クエリ文字列付きも許容）。
@@ -57,13 +67,20 @@ export function parsePost(event: NostrEvent): FeedPost {
   // 空行（段落区切り）は残す。過剰な連続改行（3つ以上）だけ空行1つ（\n\n）に抑え、前後を trim。
   const caption = withoutImages.replace(/\n{3,}/g, "\n\n").trim();
 
-  // 撮影日（#324）: `["shot_date","YYYY-MM-DD"]` タグから妥当な日付だけを distinct で拾う。
+  // 撮影日（#324）。
+  // 新形式: 1本の位置配列タグ `["shot_dates", d0, d1, …]`（imageUrls 順・無い位置は ""）＝写真↔日付を保つ。
+  const perPhotoTag = event.tags.find((t) => t[0] === "shot_dates");
+  const photoShotDates: Array<string | null> = imageUrls.map((_url, i) => {
+    const v = perPhotoTag?.[i + 1];
+    return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  });
+  // 旧形式（後方互換）: `["shot_date", date]`（投稿単位・写真対応なし）。
+  const legacyDates = event.tags
+    .filter((t) => t[0] === "shot_date" && typeof t[1] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t[1]))
+    .map((t) => t[1]!);
+  // 活動の草用の distinct 集合 = per-photo の非 null ∪ 旧 shot_date。
   const shotDates = [
-    ...new Set(
-      event.tags
-        .filter((t) => t[0] === "shot_date" && typeof t[1] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t[1]))
-        .map((t) => t[1]!),
-    ),
+    ...new Set([...photoShotDates.filter((d): d is string => d !== null), ...legacyDates]),
   ];
 
   return {
@@ -75,6 +92,7 @@ export function parsePost(event: NostrEvent): FeedPost {
     imageUrl,
     hashtags: extractHashtags(content),
     shotDates,
+    photoShotDates,
   };
 }
 

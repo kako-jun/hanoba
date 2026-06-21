@@ -163,6 +163,40 @@ describe("parsePost", () => {
     expect(parsePost(makeEvent({ content: "記録" })).shotDates).toEqual([]);
   });
 
+  it("新 shot_dates 位置配列を写真ごとに読む（imageUrls 同順・空/不正は null・#324）", () => {
+    const post = parsePost(
+      makeEvent({
+        // 画像3枚。shot_dates は位置で対応（2枚目は空→null）。3枚目は配列が短く欠落→null。
+        content: "成長記録\nhttps://x/a.jpg\nhttps://x/b.jpg\nhttps://x/c.jpg",
+        tags: [["shot_dates", "2024-06-01", "", "2024-06-22"], ["t", "hanoba"]],
+      }),
+    );
+    expect(post.photoShotDates).toEqual(["2024-06-01", null, "2024-06-22"]);
+    // 活動の草用 distinct は per-photo の非 null。
+    expect(post.shotDates).toEqual(["2024-06-01", "2024-06-22"]);
+  });
+
+  it("shot_dates が imageUrls より短ければ足りない位置は null（#324）", () => {
+    const post = parsePost(
+      makeEvent({
+        content: "記録\nhttps://x/a.jpg\nhttps://x/b.jpg",
+        tags: [["shot_dates", "2024-06-10"]],
+      }),
+    );
+    expect(post.photoShotDates).toEqual(["2024-06-10", null]);
+  });
+
+  it("新 shot_dates と旧 shot_date が混在しても distinct を合算する（後方互換・#324）", () => {
+    const post = parsePost(
+      makeEvent({
+        content: "記録\nhttps://x/a.jpg",
+        tags: [["shot_dates", "2024-06-01"], ["shot_date", "2024-05-20"]],
+      }),
+    );
+    expect(post.photoShotDates).toEqual(["2024-06-01"]);
+    expect(post.shotDates).toEqual(["2024-06-01", "2024-05-20"]);
+  });
+
   it("画像 URL が無ければ imageUrl は null、caption は本文そのまま", () => {
     const post = parsePost(makeEvent({ content: "ただの一言 #植物" }));
     expect(post.imageUrl).toBeNull();

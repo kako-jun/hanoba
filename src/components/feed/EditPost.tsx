@@ -62,7 +62,14 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
     if (stage === "saving") return; // 二重実行（多重 publish/削除）を防ぐ再入ガード。
     setStage("saving");
     try {
-      const created = await editPost({ oldEventId: post.id, caption: trimmed, imageUrls: post.imageUrls, shotDates: post.shotDates });
+      // 撮影日は写真ごと（imageUrls 同順）を引き継ぐ。imageUrls を再利用するので index も保たれる。
+      // （旧形式＝post 単位 shot_date のみの投稿は per-photo 対応が無く photoShotDates 空＝編集で据え置けない edge）。
+      const created = await editPost({
+        oldEventId: post.id,
+        caption: trimmed,
+        imageUrls: post.imageUrls,
+        photoShotDates: post.photoShotDates,
+      });
       onEdited(parsePost(created));
     } catch {
       setStage("error");

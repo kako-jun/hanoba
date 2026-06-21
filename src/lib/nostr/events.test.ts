@@ -103,21 +103,33 @@ describe("buildNoteTemplate", () => {
     expect(t.content).toBe("開花した #アガベ\nhttps://image.nostr.build/xxx.jpg");
   });
 
-  it("撮影日を shot_date タグに載せる（distinct・妥当な YYYY-MM-DD だけ・#324）", () => {
+  it("写真ごとの撮影日を位置配列タグ shot_dates に載せる（imageUrls 順・無い位置は空文字・#324）", () => {
     const t = buildNoteTemplate({
       caption: "記録",
-      shotDates: ["2024-06-15", "2024-06-16", "2024-06-15", "bad-date", "2024/06/17"],
+      // 3枚目は不正→""、null→""。位置は imageUrls と1:1。
+      photoShotDates: ["2024-06-15", null, "2024/06/17", "2024-06-22"],
       createdAt: 1700000000,
     });
-    const shot = t.tags.filter((tag) => tag[0] === "shot_date").map((tag) => tag[1]);
-    expect(shot).toEqual(["2024-06-15", "2024-06-16"]); // distinct・形式不正は落とす
+    const shot = t.tags.find((tag) => tag[0] === "shot_dates");
+    expect(shot).toEqual(["shot_dates", "2024-06-15", "", "", "2024-06-22"]);
     // 自動タグは保つ。
     expect(t.tags).toContainEqual(["t", "hanoba"]);
   });
 
-  it("撮影日が無ければ shot_date タグは付けない（#324）", () => {
-    const t = buildNoteTemplate({ caption: "記録" });
-    expect(t.tags.some((tag) => tag[0] === "shot_date")).toBe(false);
+  it("末尾の空（日付の無い末尾写真）は落とす＝読み側は足りない位置を null 扱い（#324）", () => {
+    const t = buildNoteTemplate({
+      caption: "記録",
+      photoShotDates: ["2024-06-15", null, null],
+    });
+    const shot = t.tags.find((tag) => tag[0] === "shot_dates");
+    expect(shot).toEqual(["shot_dates", "2024-06-15"]);
+  });
+
+  it("撮影日が1つも無ければ shot_dates タグは付けない（#324）", () => {
+    expect(buildNoteTemplate({ caption: "記録" }).tags.some((tag) => tag[0] === "shot_dates")).toBe(false);
+    expect(
+      buildNoteTemplate({ caption: "記録", photoShotDates: [null, null] }).tags.some((tag) => tag[0] === "shot_dates"),
+    ).toBe(false);
   });
 
   it("複数の画像 URL を改行で連結する", () => {
