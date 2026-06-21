@@ -3,6 +3,7 @@ import type { PixelCrop } from "react-image-crop";
 import {
   MAX_OUTPUT_EDGE,
   buildToneLut,
+  clampCropToVisible,
   computeSquareCropRect,
   outputEdge,
   rotationFine,
@@ -213,5 +214,58 @@ describe("buildToneLut", () => {
         expect(lut[i]!).toBeGreaterThanOrEqual(lut[i - 1]!);
       }
     }
+  });
+});
+
+describe("clampCropToVisible（#348・回転後の見えている写真領域にクロップを収める）", () => {
+  // 横長 box（W=400, H=300）。
+  const W = 400, H = 300;
+
+  it("0度は box 全体が見えている＝素通し（退行させない）", () => {
+    const c = { x: 5, y: 10, width: 50, height: 50 };
+    expect(clampCropToVisible(c, 0, W, H)).toEqual(c);
+  });
+
+  it("180度も素通し（quarter 偶数）", () => {
+    const c = { x: 0, y: 0, width: 80, height: 80 };
+    expect(clampCropToVisible(c, 180, W, H)).toEqual(c);
+  });
+
+  it("微調整回転（5度）は quarter 0 扱いで素通し（退行させない）", () => {
+    const c = { x: 12, y: 8, width: 40, height: 40 };
+    expect(clampCropToVisible(c, 5, W, H)).toEqual(c);
+  });
+
+  it("90度・横長: 中心の S=min(W,H)=300 正方形に収める（左の空き帯へ出られない）", () => {
+    // 領域は px で x∈[50,350], y∈[0,300]。左端へドラッグした 200px 角の枠を clamp。
+    // crop %: x=0(=0px), width=50%(=200px), height=66.67%(=200px)。
+    const clamped = clampCropToVisible({ x: 0, y: 0, width: 50, height: 66.6667 }, 90, W, H);
+    // x は左帯(50px)で止まる＝12.5%。サイズは 200px のまま（領域 300px 内）。
+    expect(clamped.x).toBeCloseTo(12.5, 3); // 50/400*100
+    expect((clamped.width / 100) * W).toBeCloseTo(200, 1);
+    expect((clamped.height / 100) * H).toBeCloseTo(200, 1);
+    // 右端がはみ出さない（x_px+side <= 350）。
+    expect((clamped.x / 100) * W + (clamped.width / 100) * W).toBeLessThanOrEqual(350 + 0.01);
+  });
+
+  it("270度も同じ中心正方形に収める", () => {
+    const clamped = clampCropToVisible({ x: 90, y: 0, width: 50, height: 66.6667 }, 270, W, H);
+    // 右へ振っても右帯(x_px+side<=350)で止まる。
+    expect((clamped.x / 100) * W + (clamped.width / 100) * W).toBeLessThanOrEqual(350 + 0.01);
+    expect((clamped.x / 100) * W).toBeGreaterThanOrEqual(50 - 0.01);
+  });
+
+  it("90度・縦長 box（W=300,H=400）は中心 300x300・上下の帯へ出られない", () => {
+    const clamped = clampCropToVisible({ x: 0, y: 90, width: 100, height: 75 }, 90, 300, 400);
+    // 領域 y∈[50,350]（px）。下へ振っても y_px+side<=350。
+    const yPx = (clamped.y / 100) * 400;
+    const sidePx = (clamped.height / 100) * 400;
+    expect(yPx).toBeGreaterThanOrEqual(50 - 0.01);
+    expect(yPx + sidePx).toBeLessThanOrEqual(350 + 0.01);
+  });
+
+  it("box 未測定（0）は素通し（落ちない）", () => {
+    const c = { x: 1, y: 2, width: 3, height: 4 };
+    expect(clampCropToVisible(c, 90, 0, 0)).toEqual(c);
   });
 });

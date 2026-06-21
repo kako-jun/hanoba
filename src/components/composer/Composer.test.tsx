@@ -31,6 +31,9 @@ vi.mock("../../lib/image/crop.ts", () => ({
   // 回転（#314）: 焼き込みの素材生成は canvas なのでスタブ、UI が使う純関数は本物相当を返す。
   renderInPlaceRotation: () => document.createElement("canvas"),
   rotationFine: (deg: number) => deg - Math.round(deg / 90) * 90,
+  // #348: クロップの可視領域 clamp。clamp の正しさは crop.test で検証する。ここは素通しでよい
+  //（Composer テストは 90 度回転後のクロップ枠の clamp 自体は検証しない）。
+  clampCropToVisible: (crop: { x: number; y: number; width: number; height: number }) => crop,
   MAX_FINE_ROTATION: 15,
 }));
 

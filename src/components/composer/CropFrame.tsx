@@ -3,10 +3,10 @@
 //
 // 画像 <img> の ref は親（Composer）から受け取り、クロップ確定時の自然座標計算に使う。
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { MAX_FINE_ROTATION, computeSquareCropRect, rotationFine, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
+import { MAX_FINE_ROTATION, clampCropToVisible, computeSquareCropRect, rotationFine, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
 import { toneCurvePreviewCss } from "../../lib/image/presets.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 
@@ -60,6 +60,19 @@ export default function CropFrame({
   const [crop, setCrop] = useState<Crop>();
   // 画像の表示幅（px）。霞幻プレビューの blur 半径を焼き込み（出力の2%）と同じ縮尺で出すため。
   const [renderedW, setRenderedW] = useState(0);
+  // 表示高さ（px・#348）。90/270 回転後にクロップを見えている写真領域へ clamp する基準に使う。
+  const [renderedH, setRenderedH] = useState(0);
+
+  // 表示中の img box（回転前）の px 寸法。resize に追従するため imgRef を優先し、未測定時は load 時の値。
+  const boxDims = () => ({ w: imgRef.current?.width || renderedW, h: imgRef.current?.height || renderedH });
+  // % クロップを box px の正方形 PixelCrop へ。clamp 後の commit に使う。
+  const toPixelCrop = (c: { x: number; y: number; width: number; height: number }, w: number, h: number): PixelCrop => ({
+    unit: "px",
+    x: (c.x / 100) * w,
+    y: (c.y / 100) * h,
+    width: (c.width / 100) * w,
+    height: (c.height / 100) * h,
+  });
   const sharpenAmount = Math.min(Math.max(sharpen, 0), 1);
   const sharpenEdge = -1.5 * sharpenAmount;
   const sharpenCenter = 1 + 6 * sharpenAmount;
@@ -86,7 +99,8 @@ export default function CropFrame({
   function handleImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
     setRenderedW(width);
-    const initial =
+    setRenderedH(height);
+    const base =
       initialCrop === undefined || initialCrop === null
         ? centeredSquareCrop(width, height)
         : {
@@ -96,17 +110,27 @@ export default function CropFrame({
             width: (initialCrop.size / e.currentTarget.naturalWidth) * 100,
             height: (initialCrop.size / e.currentTarget.naturalHeight) * 100,
           };
+    // 復元時に回転が付いている（restored draft 等）と初期クロップが見えている領域外になりうるので clamp（#348）。
+    const initial = { unit: "%" as const, ...clampCropToVisible(base, rotation, width, height) };
     setCrop(initial);
     // 初期クロップも親へ反映（ユーザーが触らず投稿しても正方形が確定する）。
-    const initialPixelCrop: PixelCrop = {
-      unit: "px",
-      x: ((initial.x ?? 0) / 100) * width,
-      y: ((initial.y ?? 0) / 100) * height,
-      width: ((initial.width ?? 0) / 100) * width,
-      height: ((initial.height ?? 0) / 100) * height,
-    };
-    commitCrop(initialPixelCrop, e.currentTarget);
+    commitCrop(toPixelCrop(initial, width, height), e.currentTarget);
   }
+
+  // #348: 90度成分（quarter）が変わったら、既存クロップを新しい見えている領域へ収め直して commit する
+  // （例: 横長で広く取った枠は 90度回転で中心正方形を超えるので縮めて中へ寄せる）。微調整回転は quarter が
+  // 変わらないので走らない＝0/180・微調整を退行させない。
+  const quarter = ((Math.round(rotation / 90) % 4) + 4) % 4;
+  useEffect(() => {
+    if (crop === undefined) return;
+    const { w, h } = boxDims();
+    if (w === 0 || h === 0) return;
+    const clamped = clampCropToVisible(crop, rotation, w, h);
+    setCrop({ unit: "%", ...clamped });
+    commitCrop(toPixelCrop(clamped, w, h), imgRef.current);
+    // quarter が変わった時だけ走らせる（crop/rotation の都度ではない＝微調整ティックで commit を連発しない）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quarter]);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -123,8 +147,17 @@ export default function CropFrame({
       )}
       <ReactCrop
         crop={crop}
-        onChange={(_pixelCrop, percentCrop) => setCrop(percentCrop)}
-        onComplete={(pixelCrop) => commitCrop(pixelCrop, imgRef.current)}
+        // #348: 90/270 回転後は写真が中心正方形に letterbox されるので、ドラッグ中も見えている領域へ clamp
+        // （空き帯=写真外へ枠を出さない）。0/180・微調整回転は clampCropToVisible が素通し（退行なし）。
+        onChange={(_pixelCrop, percentCrop) => {
+          const { w, h } = boxDims();
+          setCrop({ unit: "%", ...clampCropToVisible(percentCrop, rotation, w, h) });
+        }}
+        onComplete={(_pixelCrop, percentCrop) => {
+          const { w, h } = boxDims();
+          const clamped = clampCropToVisible(percentCrop, rotation, w, h);
+          commitCrop(toPixelCrop(clamped, w, h), imgRef.current);
+        }}
         aspect={1}
         keepSelection
         className="max-w-full rounded-2xl overflow-hidden"
