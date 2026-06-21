@@ -3,6 +3,7 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { computeCitizenStats } from "../../lib/feed/stats.ts";
 import { citizenLevelLabel } from "../../lib/lore/citizen.ts";
+import ActivityHeatmap from "./ActivityHeatmap.tsx";
 import GreenArea from "./GreenArea.tsx";
 import SciName from "../ui/SciName.tsx";
 
@@ -100,6 +101,9 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
       {/* 緑の総面積（#310・称号の置換）。自分が街に足した緑を GitHub の草グリッドで静かに出す。
           画素サンプリングは GreenArea が担う（非CORS画像はスキップ＝概算・グレースフル）。 */}
       <GreenArea posts={posts} subject={subject} />
+
+      {/* 活動の草（#272 段階4）。投稿の頻度/継続を日別ヒートマップ＋連続記録で静かに（緑の総面積と別軸）。 */}
+      <ActivityHeatmap posts={posts} />
     </section>
   );
 }
