@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GREEN_LEVELS, greenLevel, greenRatio, isGreenPixel } from "./green.ts";
+import { cumulativeGreen, greenRatio, isGreenPixel } from "./green.ts";
 
 /** rgba 配列を組む小ヘルパ（[r,g,b,a] の繰り返し）。 */
 function rgba(...px: [number, number, number, number][]): number[] {
@@ -53,21 +53,24 @@ describe("greenRatio", () => {
   });
 });
 
-describe("greenLevel", () => {
-  it("0〜4 に量子化する（境界）", () => {
-    expect(greenLevel(0)).toBe(0);
-    expect(greenLevel(0.04)).toBe(0);
-    expect(greenLevel(0.05)).toBe(1);
-    expect(greenLevel(0.19)).toBe(1);
-    expect(greenLevel(0.2)).toBe(2);
-    expect(greenLevel(0.39)).toBe(2);
-    expect(greenLevel(0.4)).toBe(3);
-    expect(greenLevel(0.59)).toBe(3);
-    expect(greenLevel(0.6)).toBe(4);
-    expect(greenLevel(1)).toBe(4);
+describe("cumulativeGreen（#344・全写真の緑を累計）", () => {
+  it("読めた写真の緑割合の総和＝緑100%換算の枚数、読めた枚数も返す", () => {
+    const r = cumulativeGreen([1, 0.5, 0.25]);
+    expect(r.equivalent).toBeCloseTo(1.75);
+    expect(r.readable).toBe(3);
   });
 
-  it("最大レベルは GREEN_LEVELS（4）に収まる", () => {
-    expect(greenLevel(1)).toBe(GREEN_LEVELS);
+  it("読めない写真（null）は累計にも枚数にも数えない（分母を歪めない）", () => {
+    const r = cumulativeGreen([1, null, 0.5, null]);
+    expect(r.equivalent).toBeCloseTo(1.5);
+    expect(r.readable).toBe(2);
+  });
+
+  it("全部 null は equivalent 0・readable 0", () => {
+    expect(cumulativeGreen([null, null])).toEqual({ equivalent: 0, readable: 0 });
+  });
+
+  it("空は equivalent 0・readable 0", () => {
+    expect(cumulativeGreen([])).toEqual({ equivalent: 0, readable: 0 });
   });
 });

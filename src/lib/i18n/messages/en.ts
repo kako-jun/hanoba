@@ -130,10 +130,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   "stats.variety.filterTitle": "Filter everyone's plants by {label}",
 
   "green.heading": "Green {subject} added to the city",
-  "green.heading.note": "(1 cell = 1 photo; greener photos are darker)",
-  "green.capped": "(latest {n})",
-  "green.legend.low": "Green Low",
-  "green.legend.high": "High",
+  "green.cumulative": "≈{equivalent} fully-green photos",
+  "green.readable": "(from {readable} photos)",
+  "green.measuring": "(measuring green…)",
 
   "activity.heading": "Activity grass",
   "activity.heading.note": "(across = weeks, down = weekdays; darker = more posts that day)",

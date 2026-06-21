@@ -35,17 +35,21 @@ export function greenRatio(rgba: Uint8ClampedArray | number[]): number {
   return opaque === 0 ? 0 : green / opaque;
 }
 
-/** 草グリッドの濃淡段階数（GitHub の草と同じく 0〜4 の 5 段階）。 */
-export const GREEN_LEVELS = 4;
-
 /**
- * 緑割合 [0,1] を草グリッドの濃淡レベル 0–4 に量子化する（純関数・GitHub の草と同型）。
- * 0=ほぼ緑なし（薄い空きマス）→ 4=緑が濃い写真。境界は概算（緑の多い植物写真が 3–4 に乗る目安）。
+ * 全写真の緑割合（`null`＝非CORS等で読めない写真）から「街に足した緑の累計」を出す純関数（#344）。
+ * - `equivalent`: 読めた写真の緑割合の総和＝**緑100%の写真に換算して何枚分**か（例 0.5 が 12 枚→6.0）。
+ * - `readable`: 緑割合を読めた写真数（読めない写真は除外し、ここに数えない＝累計の分母を歪めない）。
+ * 草グリッド・濃淡レベルは #344 で廃止（先頭写真限定・60件上限もやめ、全投稿の全写真の累計にした）。
  */
-export function greenLevel(ratio: number): number {
-  if (ratio < 0.05) return 0;
-  if (ratio < 0.2) return 1;
-  if (ratio < 0.4) return 2;
-  if (ratio < 0.6) return 3;
-  return 4;
+export function cumulativeGreen(
+  ratios: ReadonlyArray<number | null>,
+): { equivalent: number; readable: number } {
+  let equivalent = 0;
+  let readable = 0;
+  for (const r of ratios) {
+    if (r === null) continue;
+    equivalent += r;
+    readable += 1;
+  }
+  return { equivalent, readable };
 }
