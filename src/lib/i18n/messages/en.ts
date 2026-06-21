@@ -62,6 +62,13 @@ export const en: Partial<Record<MessageKey, string>> = {
   "my.delete.photoUnconfirmed":
     "The post was deleted, but we couldn't confirm the photo was removed (it may disappear in a few minutes).",
   "my.delete.failed": "Couldn't delete. Please try again later.",
+  "my.firstPost": "Place your first one",
+  "my.loading.sr": "Loading your plants…",
+  "my.delete.confirm.q": "Delete this, photos and all?",
+  "my.delete.confirm.note": "(Can't be undone)",
+  "my.delete.confirm.yes": "Delete",
+  "my.delete.confirm.no": "Cancel",
+  "my.delete.deleting": "Deleting…",
 
   "home.hero.title": "Grow it. Show it.",
   "home.hero.lead":
