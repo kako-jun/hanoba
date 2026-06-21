@@ -129,6 +129,15 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
 });
 
 describe("カタログの健全性", () => {
+  it("Platycerium bifurcatum は総称でなく「ビフルカツム」1件として登録する（#341）", () => {
+    const bifurcatum = VARIETY_CATALOG
+      .flatMap((category) => category.genera)
+      .flatMap((genus) => genus.varieties)
+      .filter((variety) => variety.sci === "Platycerium bifurcatum");
+
+    expect(bifurcatum).toEqual([{ name: "ビフルカツム", sci: "Platycerium bifurcatum" }]);
+  });
+
   it("カテゴリ label がユニーク", () => {
     const labels = VARIETY_CATALOG.map((c) => c.label);
     expect(new Set(labels).size).toBe(labels.length);
