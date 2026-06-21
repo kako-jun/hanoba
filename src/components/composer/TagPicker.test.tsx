@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import TagPicker from "./TagPicker.tsx";
@@ -72,13 +72,15 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["多肉植物"], ["アガベ"]]);
   });
 
-  it("「#カテゴリ をこのまま使う」でカテゴリ単独タグを入れる（#312）", async () => {
+  it("カテゴリにドリルインしても単体タグ化しない＝『このカテゴリをこのまま使う』は無い（#364・#312 撤回）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
     await user.click(await screen.findByRole("button", { name: /多肉植物/ }));
-    await user.click(await screen.findByRole("button", { name: /#多肉植物 をこのまま使う/ }));
-    expect(onPick.mock.calls).toEqual([["多肉植物"]]);
+    // カテゴリ単独タグの導線は撤去（kako-jun「カテゴリ単体タグを打ちたい場合はない」）。属まで降りて選ぶ。
+    expect(screen.queryByRole("button", { name: /をこのまま使う/ })).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /アガベ/ })).toBeInTheDocument();
+    expect(onPick).not.toHaveBeenCalled();
   });
 
   it("品種選択で #カテゴリ #属 #品種 を入れる・本文の上位は外さない（#312）", async () => {
@@ -146,14 +148,17 @@ describe("TagPicker", () => {
     expect(onPick.mock.calls).toEqual([["塊根植物"], ["パキポディウム"], ["グラキリス"]]);
   });
 
-  it("検索でカテゴリを引いてタップすると #カテゴリ 単独を入れる（#312）", async () => {
+  it("検索でカテゴリをタップすると単体タグでなくその階層へドリルインする（#364・#312 撤回）", async () => {
     const user = userEvent.setup();
     const { onPick } = renderPicker();
     await user.click(screen.getByRole("button", { name: /植物から選ぶ/ }));
-    await user.type(await screen.findByLabelText("タグを検索"), "ハーブ");
-    // カテゴリヒット（「カテゴリ」文脈付き）。タップで `#ハーブ` 単独を入れる。
-    await user.click(await screen.findByRole("button", { name: /#ハーブ\s*カテゴリ/ }));
-    expect(onPick.mock.calls).toEqual([["ハーブ"]]);
+    const search = (await screen.findByLabelText("タグを検索")) as HTMLInputElement;
+    await user.type(search, "ハーブ");
+    // カテゴリヒット（「カテゴリ」文脈付き・# は付かない）。タップで `#ハーブ` を入れず階層へドリルイン。
+    await user.click(await screen.findByRole("button", { name: /ハーブ\s*カテゴリ/ }));
+    expect(onPick).not.toHaveBeenCalled();
+    // ドリルインで検索はクリアされ、ハーブ階層（属一覧）に入る。
+    await waitFor(() => expect(search.value).toBe(""));
   });
 
   it("pickable=false の見出しグループ配下の品種は カテゴリ→品種（見出し属は前置しない・#312）", async () => {
