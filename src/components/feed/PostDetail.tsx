@@ -7,7 +7,7 @@ import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { formatShotDate } from "../../lib/feed/shotDate.ts";
-import { useLocale } from "../../lib/i18n/index.ts";
+import { useLocale, useT } from "../../lib/i18n/index.ts";
 import {
   nextPhotoIndex,
   prevPhotoIndex,
@@ -65,6 +65,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
   const locale = useLocale();
+  const t = useT(locale);
   // 現在表示中の写真の撮影日（#324・写真↔日付の対応を保つ）。無ければ出さない。
   const currentShotDate = post.photoShotDates?.[photoIndex] ?? null;
   // スワイプ中の写真ぼかし（px・#275）。0＝ぼかし無し。指を離すと 0 に戻し、
@@ -223,7 +224,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="投稿の詳細"
+      aria-label={t("detail.dialog.aria")}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     >
@@ -236,7 +237,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
           ref={closeButtonRef}
           type="button"
           onClick={onClose}
-          aria-label="閉じる"
+          aria-label={t("common.close")}
           className="absolute top-3 right-3 z-10 grid place-items-center rounded-full bg-black/40 backdrop-blur-md text-ha-white w-8 h-8 hover:bg-ha-green transition-colors"
         >
           <Icon name="close" className="w-4 h-4" />
@@ -274,7 +275,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   // 写真切替で remount し1枚ごとに blur-up リビールを掛け直す（#145）。
                   key={photoIndex}
                   src={post.imageUrls[photoIndex] ?? post.imageUrls[0] ?? ""}
-                  alt={post.imageUrls.length === 1 ? post.caption : `${post.caption} ${photoIndex + 1}枚目`}
+                  alt={post.imageUrls.length === 1 ? post.caption : t("detail.photo.alt", { caption: post.caption, n: photoIndex + 1 })}
                   className="max-w-full max-h-[70vh] select-none object-contain"
                   draggable={false}
                   // 新画像が高さを持った時点で予約高を実測値に更新（#290）。これで切替中の
@@ -287,7 +288,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   <button
                     type="button"
                     onClick={() => setPhotoIndex((i) => prevPhotoIndex(i, post.imageUrls.length))}
-                    aria-label="前の写真"
+                    aria-label={t("detail.photo.prev")}
                     className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white backdrop-blur-md hover:bg-ha-green transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
                     <Icon name="chevron" className="h-5 w-5 rotate-90" />
@@ -295,7 +296,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   <button
                     type="button"
                     onClick={() => setPhotoIndex((i) => nextPhotoIndex(i, post.imageUrls.length))}
-                    aria-label="次の写真"
+                    aria-label={t("detail.photo.next")}
                     className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white backdrop-blur-md hover:bg-ha-green transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
                     <Icon name="chevron" className="h-5 w-5 -rotate-90" />
@@ -318,7 +319,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                     type="button"
                     key={`${imageUrl}-dot-${i}`}
                     onClick={() => setPhotoIndex(i)}
-                    aria-label={`${i + 1}枚目を表示`}
+                    aria-label={t("detail.photo.goto", { n: i + 1 })}
                     aria-current={photoIndex === i ? "true" : undefined}
                     className={`h-2 w-2 rounded-full transition-colors ${
                       photoIndex === i ? "bg-ha-green" : "bg-ha-green-deep/35 hover:bg-ha-green/70"
@@ -342,7 +343,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
           {fuda.length > 0 && (
             <div className="flex flex-col gap-1.5">
               <span className="text-[11px] font-medium uppercase tracking-wider text-ha-ink/45">
-                この投稿の植物
+                {t("detail.fuda.heading")}
               </span>
               <FudaList fuda={fuda} />
             </div>
@@ -381,7 +382,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 ) : (
                   <a
                     href={href}
-                    aria-label={`${authorName} のプロフィール`}
+                    aria-label={t("card.author.profile", { name: authorName })}
                     className="flex min-w-0 items-center gap-2 rounded-full hover:text-ha-green-deep transition-colors"
                   >
                     {inner}
@@ -392,7 +393,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 {/* いいね（#117）。X シェアより使用頻度が高いので左に置く。黄色い花アイコン（#116）。 */}
                 <span
                   className="inline-flex items-center gap-[5px]"
-                  aria-label={`いいね ${likeCount === null ? "取得中" : likeCount}`}
+                  aria-label={t("reaction.likes.aria", { n: likeCount === null ? t("detail.likes.loading") : likeCount })}
                 >
                   <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
                   <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
@@ -404,7 +405,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 <span className="relative inline-flex">
                   <button
                     type="button"
-                    aria-label="X でシェア"
+                    aria-label={t("detail.share.aria")}
                     aria-haspopup={isSplit ? "true" : undefined}
                     aria-expanded={isSplit ? shareOpen : undefined}
                     onClick={() => {
@@ -424,7 +425,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                     // メニューのセマンティクスを名乗らないため（aria-label 付きの単なるボタン列）。
                     // 開閉トグルの aria-haspopup/aria-expanded はポップオーバーの存在を伝える。
                     <div
-                      aria-label="X でシェア（分割）"
+                      aria-label={t("detail.share.split.aria")}
                       className="glass-strong absolute bottom-full right-0 mb-2 z-20 flex flex-col gap-1 rounded-2xl p-1.5 shadow-xl"
                     >
                       <button
@@ -435,7 +436,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                         }}
                         className="rounded-full px-3 py-1 text-left text-xs font-medium text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
                       >
-                        全文
+                        {t("detail.share.whole")}
                       </button>
                       {shareParts.map((part, i) => (
                         <button

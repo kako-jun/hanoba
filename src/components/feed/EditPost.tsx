@@ -4,6 +4,7 @@ import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import { editPost, fetchCommentCountsBatch, fetchReactionCountsBatch } from "../../lib/nostr/client.ts";
 import { parsePost, type FeedPost } from "../../lib/feed/parse.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface Props {
   /** 編集対象（自分の投稿）。 */
@@ -25,6 +26,7 @@ type Stage = "edit" | "confirm" | "saving" | "error";
  * テキスト規約。タグも本文の一部として直す）。写真は読み取り専用サムネで「何を編集しているか」を示す。
  */
 export default function EditPost({ post, onClose, onEdited }: Props) {
+  const t = useT(useLocale());
   const [caption, setCaption] = useState(post.caption);
   const [stage, setStage] = useState<Stage>("edit");
   // 引き継がれない いいね/コメント 数（確認文に出す）。取得前は null＝数を伏せた文言にする。
@@ -82,7 +84,7 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="投稿を編集"
+      aria-label={t("edit.dialog.aria")}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={() => {
         if (stage === "edit" || stage === "confirm" || stage === "error") onClose();
@@ -93,12 +95,12 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-ha-green-deep">投稿を編集</h2>
+          <h2 className="font-display text-lg font-bold text-ha-green-deep">{t("edit.heading")}</h2>
           <button
             type="button"
             onClick={onClose}
             disabled={stage === "saving"}
-            aria-label="閉じる"
+            aria-label={t("common.close")}
             className="grid h-8 w-8 place-items-center rounded-full text-ha-ink/55 hover:bg-white/10 hover:text-ha-ink disabled:opacity-40 transition"
           >
             <Icon name="close" className="h-4 w-4" />
@@ -110,7 +112,7 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
           <ul className="flex flex-wrap gap-1.5">
             {post.imageUrls.map((url, i) => (
               <li key={url} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-ha-green-soft">
-                <ProgressiveImage src={url} alt={`${i + 1}枚目`} className="h-full w-full object-cover" />
+                <ProgressiveImage src={url} alt={t("compose.photos.thumbAlt", { n: i + 1 })} className="h-full w-full object-cover" />
               </li>
             ))}
           </ul>
@@ -118,16 +120,16 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
 
         <ResizableTextarea
           id="hanoba-edit-caption"
-          label="本文"
+          label={t("edit.caption.label")}
           value={caption}
           onValueChange={setCaption}
-          placeholder="一言（#タグも本文に書けます）"
+          placeholder={t("edit.caption.placeholder")}
           disabled={stage === "saving"}
         />
 
         {stage === "error" && (
           <p role="alert" className="glass rounded-2xl px-4 py-3 text-sm text-ha-ink">
-            編集できませんでした。時間をおいて、もう一度試してください。
+            {t("edit.error")}
           </p>
         )}
 
@@ -135,16 +137,16 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
         {stage === "confirm" ? (
           <div className="flex flex-col gap-3 rounded-2xl bg-white/6 p-4">
             <p className="text-sm leading-relaxed text-ha-ink">
-              編集すると<strong className="font-semibold text-ha-pink">新しい投稿として再投稿</strong>され、
+              {t("edit.confirm.lead")}<strong className="font-semibold text-ha-pink">{t("edit.confirm.repost")}</strong>{t("edit.confirm.mid")}
               {hasReactions ? (
                 <>
-                  この投稿の<strong className="font-semibold">いいね {counts!.likes}・コメント {counts!.comments}</strong>
-                  は引き継がれません。
+                  {t("edit.confirm.has.prefix")}<strong className="font-semibold">{t("edit.confirm.has.counts", { likes: counts!.likes, comments: counts!.comments })}</strong>
+                  {t("edit.confirm.has.suffix")}
                 </>
               ) : (
-                <>元の投稿に付いたいいね・コメントは引き継がれません。</>
+                <>{t("edit.confirm.none")}</>
               )}
-              よろしいですか？
+              {t("edit.confirm.q")}
             </p>
             <div className="flex items-center justify-end gap-2">
               <button
@@ -152,14 +154,14 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
                 onClick={() => setStage("edit")}
                 className="rounded-full bg-white/10 px-4 py-2 text-sm text-ha-ink hover:bg-white/20 transition"
               >
-                もどる
+                {t("edit.back")}
               </button>
               <button
                 type="button"
                 onClick={() => void save()}
                 className="rounded-full bg-ha-pink px-5 py-2 text-sm font-semibold text-ha-white shadow-sm shadow-ha-pink/30 hover:brightness-110 transition"
               >
-                編集して再投稿
+                {t("edit.confirm.submit")}
               </button>
             </div>
           </div>
@@ -171,7 +173,7 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
               disabled={stage === "saving"}
               className="rounded-full bg-white/10 px-4 py-2 text-sm text-ha-ink hover:bg-white/20 disabled:opacity-40 transition"
             >
-              やめる
+              {t("edit.cancel")}
             </button>
             <button
               type="button"
@@ -185,10 +187,10 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
                     aria-hidden="true"
                     className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-ha-white/40 border-t-ha-white motion-reduce:animate-none"
                   />
-                  再投稿中…
+                  {t("edit.saving")}
                 </>
               ) : (
-                "更新する"
+                t("edit.update")
               )}
             </button>
           </div>
