@@ -4,9 +4,8 @@ import {
   MAX_OUTPUT_EDGE,
   buildToneLut,
   computeSquareCropRect,
-  normalizeQuarter,
   outputEdge,
-  rotatedBoundingBox,
+  rotationFine,
 } from "./crop.ts";
 
 function px(x: number, y: number, width: number, height: number): PixelCrop {
@@ -101,39 +100,18 @@ describe("computeSquareCropRect", () => {
   });
 });
 
-describe("normalizeQuarter（#314・90度単位）", () => {
-  it("0/90/180/270 に丸める", () => {
-    expect(normalizeQuarter(0)).toBe(0);
-    expect(normalizeQuarter(90)).toBe(90);
-    expect(normalizeQuarter(180)).toBe(180);
-    expect(normalizeQuarter(270)).toBe(270);
+describe("rotationFine（#314・微調整成分＝最寄り90度からのズレ）", () => {
+  it("90度系ちょうどは 0", () => {
+    expect(rotationFine(0)).toBe(0);
+    expect(rotationFine(90)).toBe(0);
+    expect(rotationFine(-90)).toBe(0);
+    expect(rotationFine(180)).toBe(0);
   });
-  it("負・360超を畳む", () => {
-    expect(normalizeQuarter(-90)).toBe(270);
-    expect(normalizeQuarter(450)).toBe(90);
-    expect(normalizeQuarter(360)).toBe(0);
-    expect(normalizeQuarter(-360)).toBe(0);
-  });
-  it("近い90度へ丸める（微調整 → 90度系へスナップ）", () => {
-    expect(normalizeQuarter(175)).toBe(180);
-    expect(normalizeQuarter(46)).toBe(90);
-    expect(normalizeQuarter(44)).toBe(0);
-  });
-});
-
-describe("rotatedBoundingBox（#314）", () => {
-  it("90/270度は幅高さが入れ替わる", () => {
-    expect(rotatedBoundingBox(100, 50, 90)).toEqual({ width: 50, height: 100 });
-    expect(rotatedBoundingBox(100, 50, 270)).toEqual({ width: 50, height: 100 });
-  });
-  it("0/180度は元のまま", () => {
-    expect(rotatedBoundingBox(100, 50, 0)).toEqual({ width: 100, height: 50 });
-    expect(rotatedBoundingBox(100, 50, 180)).toEqual({ width: 100, height: 50 });
-  });
-  it("任意角は外接矩形が拡大する（将来の微調整用）", () => {
-    const box = rotatedBoundingBox(100, 100, 45);
-    expect(box.width).toBeGreaterThan(100);
-    expect(box.width).toBe(box.height); // 正方形は対称
+  it("90度＋微調整の微調整分を返す", () => {
+    expect(rotationFine(10)).toBeCloseTo(10);
+    expect(rotationFine(100)).toBeCloseTo(10); // 90 + 10
+    expect(rotationFine(-95)).toBeCloseTo(-5); // -90 + -5
+    expect(rotationFine(90.5)).toBeCloseTo(0.5);
   });
 });
 

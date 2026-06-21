@@ -26,6 +26,10 @@ vi.mock("../../lib/nostr/client.ts", () => ({
 vi.mock("../../lib/image/crop.ts", () => ({
   computeSquareCropRect: () => ({ sx: 0, sy: 0, size: 100 }),
   renderSquareImageFromRect: (...args: unknown[]) => renderSquareImageFromRect(...args),
+  // 回転（#314）: 焼き込みの素材生成は canvas なのでスタブ、UI が使う純関数は本物相当を返す。
+  renderInPlaceRotation: () => document.createElement("canvas"),
+  rotationFine: (deg: number) => deg - Math.round(deg / 90) * 90,
+  MAX_FINE_ROTATION: 15,
 }));
 
 // 下書きの永続化境界（#228）をスパイ化する。IndexedDB 実体には触れず、配線（呼び出し有無・引数・

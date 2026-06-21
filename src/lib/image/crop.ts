@@ -42,45 +42,39 @@ export function outputEdge(rectSize: number, maxEdge = MAX_OUTPUT_EDGE): number 
 }
 
 /**
- * 角度を **90度単位**（0/90/180/270）に正規化する純関数（#314 v1＝横倒し写真の向き直し）。
- * 負・360超も畳む。例: -90→270, 450→90, 175→180。
+ * 微調整（水平出し）スライダの範囲（±度・#314）。90度回転はボタン、これは細かい傾き補正。
  */
-export function normalizeQuarter(degrees: number): number {
-  return ((((Math.round(degrees / 90) * 90) % 360) + 360) % 360);
+export const MAX_FINE_ROTATION = 15;
+
+/**
+ * 総回転角の **微調整成分**（最寄り90度からのズレ・±45内）を返す純関数（#314）。
+ * 微調整スライダの値に使う（例 100°→ fine 10°／-95°→ fine -5°）。90度成分はボタンが担う。
+ */
+export function rotationFine(deg: number): number {
+  return deg - Math.round(deg / 90) * 90;
 }
 
 /**
- * 画像を `degrees` 回転したときの**軸整列バウンディングボックス**を返す純関数（#314）。
- * 90度系では幅高さが入れ替わる（例 100×50 を 90度→50×100）。任意角も計算可（将来の微調整用）。
+ * 画像を `degrees` だけ **その場で（natural サイズの canvas に中心回転で）** 描く（ブラウザ専用・#314）。
+ * mypace ImageEditor と同方式: 出力 canvas は元画像と同寸で、中心を軸に回転して描く（四隅は欠けるが
+ * 座標系が元画像と一致する）。これを `renderSquareImageFromRect` の image 引数に渡すと、**プレビューの
+ * CSS `transform: rotate()` と同じ見え**で焼ける（crop 矩形は元画像の自然座標のままで一致＝枠ズレなし・
+ * blob 再生成の遅延なし）。四隅の欠けは白で埋める（JPEG で黒にならないよう）。
  */
-export function rotatedBoundingBox(w: number, h: number, degrees: number): { width: number; height: number } {
-  const rad = (degrees * Math.PI) / 180;
-  const cos = Math.abs(Math.cos(rad));
-  const sin = Math.abs(Math.sin(rad));
-  return { width: Math.round(w * cos + h * sin), height: Math.round(h * cos + w * sin) };
-}
-
-/**
- * 画像を `degrees` 回転して新しい canvas に描く（ブラウザ専用・#314）。canvas は回転後の
- * バウンディングボックスサイズで、四隅の隙間は白で埋める（90度系では隙間が出ないので無影響）。
- * react-image-crop には**この回転済み canvas（の blob URL）を軸整列の素材として渡す**ことで、
- * クロップ枠と画像が常に整合する（CSS transform の枠ズレを避ける）。焼き込みもこの canvas を
- * `renderSquareImageFromRect` の image 引数に渡せば回転を再現できる（crop 矩形は回転後座標系）。
- */
-export function renderRotatedCanvas(image: HTMLImageElement, degrees: number): HTMLCanvasElement {
-  const w = image.naturalWidth || image.width;
-  const h = image.naturalHeight || image.height;
-  const box = rotatedBoundingBox(w, h, degrees);
+export function renderInPlaceRotation(image: HTMLImageElement | HTMLCanvasElement, degrees: number): HTMLCanvasElement {
+  const w = "naturalWidth" in image ? image.naturalWidth || image.width : image.width;
+  const h = "naturalHeight" in image ? image.naturalHeight || image.height : image.height;
   const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, box.width);
-  canvas.height = Math.max(1, box.height);
+  canvas.width = Math.max(1, w);
+  canvas.height = Math.max(1, h);
   const ctx = canvas.getContext("2d");
   if (ctx === null) return canvas;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.translate(w / 2, h / 2);
   ctx.rotate((degrees * Math.PI) / 180);
-  ctx.drawImage(image, -w / 2, -h / 2, w, h);
+  ctx.translate(-w / 2, -h / 2);
+  ctx.drawImage(image, 0, 0, w, h);
   return canvas;
 }
 

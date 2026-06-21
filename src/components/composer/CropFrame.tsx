@@ -6,7 +6,7 @@
 import { useState } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { computeSquareCropRect, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
+import { MAX_FINE_ROTATION, computeSquareCropRect, rotationFine, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
 import { toneCurvePreviewCss } from "../../lib/image/presets.ts";
 
 interface CropFrameProps {
@@ -30,8 +30,10 @@ interface CropFrameProps {
   toneAmount?: number;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
-  /** 90度回転（#314）。delta=-90 左／+90 右。親が回転済み src を作って `src` を差し替える。 */
-  onRotate?: (delta: 90 | -90) => void;
+  /** 現在の総回転角（度・#314）。プレビューは CSS `transform: rotate()` で即時に当てる。 */
+  rotation?: number;
+  /** 回転角を更新する（絶対値・#314）。指定時だけ回転コントロールを出す。 */
+  onRotate?: (nextRotation: number) => void;
 }
 
 /** 画像中央に最大の正方形クロップを作る（% 単位）。 */
@@ -50,6 +52,7 @@ export default function CropFrame({
   toneCurve = null,
   toneAmount = 0.32,
   onCropComplete,
+  rotation = 0,
   onRotate,
 }: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
@@ -130,7 +133,9 @@ export default function CropFrame({
           src={src}
           alt="クロップ対象の写真"
           onLoad={handleImageLoad}
-          style={{ filter: previewFilter, maxHeight: "60vh", display: "block" }}
+          // 回転は CSS transform で即時プレビュー（#314・mypace 方式・blob 再生成の遅延なし）。
+          // クロップ枠は元画像の box（軸整列）に引かれ、焼き込みは renderInPlaceRotation で同じ見えを再現する。
+          style={{ filter: previewFilter, maxHeight: "60vh", display: "block", transform: rotation !== 0 ? `rotate(${rotation}deg)` : undefined }}
         />
         {edgeBlur > 0 && crop !== undefined && crop.width > 0 && crop.height > 0 && (
           // 焼き込みと同じ「中央シャープ・外周ぼかし」をクロップ枠にクリップして近似する。
@@ -184,29 +189,49 @@ export default function CropFrame({
         )}
         </div>
       </ReactCrop>
-      {/* 角度回転（#314 v1＝90度単位・横倒し写真の向き直し）。回転は親が回転済み画像を作って
-          src を差し替える＝クロップ枠と常に整合（CSS transform の枠ズレを避ける）。微調整（0.5度）は別途。 */}
-      {onRotate !== undefined && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-ha-ink/45">回転</span>
-          <button
-            type="button"
-            onClick={() => onRotate(-90)}
-            aria-label="写真を左に90度回転"
-            className="glass inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
-          >
-            左へ 90°
-          </button>
-          <button
-            type="button"
-            onClick={() => onRotate(90)}
-            aria-label="写真を右に90度回転"
-            className="glass inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
-          >
-            右へ 90°
-          </button>
-        </div>
-      )}
+      {/* 角度回転（#314・mypace 方式）。配置: [左90°][−0.5°][===微調整スライダ===][+0.5°][右90°]。
+          90度ボタンは向き直し、スライダ＋0.5刻みボタンは水平出し。プレビューは即時の CSS transform。 */}
+      {onRotate !== undefined &&
+        (() => {
+          const quarter = Math.round(rotation / 90) * 90; // 最寄りの90度成分（ボタンが担う向き）
+          const fine = rotationFine(rotation); // 微調整成分（±MAX）
+          const clampFine = (v: number) => Math.max(-MAX_FINE_ROTATION, Math.min(MAX_FINE_ROTATION, v));
+          const setFine = (v: number) => onRotate(quarter + clampFine(v));
+          const stepBtn = "glass grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors";
+          const quarterBtn = "glass inline-flex min-h-9 shrink-0 items-center rounded-full px-3 py-1.5 text-xs font-medium text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors";
+          return (
+            <div className="flex w-full max-w-full flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-1.5">
+                <span className="text-xs text-ha-ink/45">回転</span>
+                <span className="text-xs tabular-nums text-ha-ink/55">{fine.toFixed(1)}°</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button type="button" onClick={() => onRotate(rotation - 90)} aria-label="写真を左に90度回転" className={quarterBtn}>
+                  左90°
+                </button>
+                <button type="button" onClick={() => setFine(fine - 0.5)} aria-label="0.5度 左へ" className={stepBtn}>
+                  −
+                </button>
+                <input
+                  type="range"
+                  min={-MAX_FINE_ROTATION}
+                  max={MAX_FINE_ROTATION}
+                  step={0.5}
+                  value={fine}
+                  onChange={(e) => setFine(Number(e.target.value))}
+                  aria-label="角度の微調整（0.5度きざみ）"
+                  className="h-9 min-w-0 flex-1 accent-ha-green"
+                />
+                <button type="button" onClick={() => setFine(fine + 0.5)} aria-label="0.5度 右へ" className={stepBtn}>
+                  ＋
+                </button>
+                <button type="button" onClick={() => onRotate(rotation + 90)} aria-label="写真を右に90度回転" className={quarterBtn}>
+                  右90°
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       <p className="text-xs text-ha-ink/60">枠をドラッグして位置を決めてください。</p>
     </div>
   );
