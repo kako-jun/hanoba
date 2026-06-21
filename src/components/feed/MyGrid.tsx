@@ -10,6 +10,7 @@ import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nos
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
+import { useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -20,7 +21,9 @@ type Status = "loading" | "error" | "loaded";
  * - 表示名（ユーザー名）は共通 AccountName で表示・変更（compose と同一の仕組み）。
  * 鍵・ネットワークはクライアントのみ（getPublicKeyHex / fetchMyPosts / deletePost）。
  */
-export default function MyGrid() {
+// lang は me.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   const [status, setStatus] = useState<Status>("loading");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -73,11 +76,11 @@ export default function MyGrid() {
       setPosts((cur) => cur.filter((p) => p.id !== post.id));
       // 写真と一蓮托生のはずが、画像削除が確認できなかった場合は正直に伝える。
       if (post.imageUrls.length > 0 && !imageDeleted) {
-        setNotice("投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。");
+        setNotice(t("my.delete.photoUnconfirmed"));
       }
     } catch {
       if (aliveRef.current) {
-        setNotice("削除できませんでした。時間をおいて再試行してください。");
+        setNotice(t("my.delete.failed"));
       }
     } finally {
       if (aliveRef.current) setDeletingId(null);
@@ -85,6 +88,7 @@ export default function MyGrid() {
   }
 
   return (
+    <LocaleProvider value={lang}>
     <section className="flex flex-col gap-5">
       {/* アカウント＋プロフィールを1枚のカードに統合（#104）。名前（変更/アカウント変更）が
           プロフィール内に収まり、操作ボタンは名前の下段に並ぶ。両者を bare で内包する。
@@ -110,13 +114,13 @@ export default function MyGrid() {
       {/* 活動スタッツ（#272・段階1）。自分の t:hanoba 投稿からクライアント集計（投稿数/写真数/品種/在籍）。
           名乗り有無で市民レベル（旅人/市民/市民Ln）を出す。取得済み（loaded）のときだけ。 */}
       {status === "loaded" && (
-        <CitizenStats posts={posts} hasName={getDisplayName() !== null} subjectName="あなた" />
+        <CitizenStats posts={posts} hasName={getDisplayName() !== null} subjectName={t("my.subject")} />
       )}
 
       {status === "loading" && (
         <>
           <p role="status" className="sr-only">
-            あなたの植物を読み込み中…
+            {t("my.loading.sr")}
           </p>
           <ul className="grid grid-cols-3 sm:grid-cols-4 gap-0.5" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -128,13 +132,13 @@ export default function MyGrid() {
 
       {status === "error" && (
         <div className="py-12 flex flex-col items-center gap-4 text-center">
-          <p className="text-ha-ink/70">読み込めませんでした。</p>
+          <p className="text-ha-ink/70">{t("feed.error.short")}</p>
           <button
             type="button"
             onClick={() => void load()}
             className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
           >
-            再試行
+            {t("common.retry")}
           </button>
         </div>
       )}
@@ -142,12 +146,12 @@ export default function MyGrid() {
       {status === "loaded" &&
         (posts.length === 0 ? (
           <div className="py-12 flex flex-col items-center gap-4 text-center">
-            <p className="text-ha-ink/70">まだ、あなたの植物はありません。</p>
+            <p className="text-ha-ink/70">{t("my.empty")}</p>
             <a
               href="/compose"
               className="rounded-full bg-ha-green text-ha-white px-6 py-2.5 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
             >
-              最初の1枚を置く
+              {t("my.firstPost")}
             </a>
           </div>
         ) : (
@@ -162,7 +166,7 @@ export default function MyGrid() {
                   <button
                     type="button"
                     onClick={() => setSelectedId(post.id)}
-                    aria-label={post.caption === "" ? "写真を拡大" : post.caption}
+                    aria-label={post.caption === "" ? t("card.photo.zoom") : post.caption}
                     className="block w-full h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
                   >
                     <ProgressiveImage
@@ -172,7 +176,7 @@ export default function MyGrid() {
                     />
                     {post.imageUrls.length > 1 && (
                       <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold text-ha-white backdrop-blur-sm">
-                        {post.imageUrls.length}枚
+                        {t("card.photos.count", { n: post.imageUrls.length })}
                       </span>
                     )}
                   </button>
@@ -184,7 +188,7 @@ export default function MyGrid() {
                     <button
                       type="button"
                       onClick={() => setEditingId(post.id)}
-                      aria-label="この投稿を編集"
+                      aria-label={t("my.edit.aria")}
                       className="absolute top-1.5 right-11 grid place-items-center w-8 h-8 rounded-full bg-black/45 backdrop-blur-md text-ha-white opacity-70 hover:opacity-100 hover:bg-ha-green transition"
                     >
                       <Icon name="writing" className="w-4 h-4" />
@@ -192,7 +196,7 @@ export default function MyGrid() {
                     <button
                       type="button"
                       onClick={() => setConfirmId(post.id)}
-                      aria-label="この投稿を削除"
+                      aria-label={t("my.delete.aria")}
                       className="absolute top-1.5 right-1.5 grid place-items-center w-8 h-8 rounded-full bg-black/45 backdrop-blur-md text-ha-white opacity-70 hover:opacity-100 hover:bg-ha-pink transition"
                     >
                       <Icon name="trash" className="w-4 h-4" />
@@ -204,9 +208,9 @@ export default function MyGrid() {
                 {confirmId === post.id && (
                   <div className="absolute inset-0 grid place-items-center gap-2 bg-black/70 backdrop-blur-sm p-2 text-center">
                     <p className="text-xs text-ha-white leading-snug">
-                      写真ごと削除しますか？
+                      {t("my.delete.confirm.q")}
                       <br />
-                      （元に戻せません）
+                      {t("my.delete.confirm.note")}
                     </p>
                     <div className="flex gap-1.5">
                       <button
@@ -214,14 +218,14 @@ export default function MyGrid() {
                         onClick={() => void onDelete(post)}
                         className="rounded-full bg-ha-pink text-ha-white px-3 py-1 text-xs font-semibold hover:brightness-110 transition"
                       >
-                        削除
+                        {t("my.delete.confirm.yes")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setConfirmId(null)}
                         className="rounded-full bg-white/15 text-ha-white px-3 py-1 text-xs hover:bg-white/25 transition"
                       >
-                        やめる
+                        {t("my.delete.confirm.no")}
                       </button>
                     </div>
                   </div>
@@ -230,7 +234,7 @@ export default function MyGrid() {
                 {/* 削除中 */}
                 {deletingId === post.id && (
                   <div className="absolute inset-0 grid place-items-center bg-black/70 text-xs text-ha-white">
-                    削除中…
+                    {t("my.delete.deleting")}
                   </div>
                 )}
               </li>
@@ -251,7 +255,7 @@ export default function MyGrid() {
                 // 旧投稿を新投稿に差し替える（旧は kind:5 で削除済み・順序は据え置き＝跳ねさせない）。
                 setPosts((cur) => cur.map((p) => (p.id === editingId ? newPost : p)));
                 setEditingId(null);
-                setNotice("投稿を編集しました（新しい投稿として再投稿しました）。");
+                setNotice(t("my.edit.done"));
               }}
             />
           );
@@ -277,5 +281,6 @@ export default function MyGrid() {
           );
         })()}
     </section>
+    </LocaleProvider>
   );
 }

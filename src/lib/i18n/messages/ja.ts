@@ -70,6 +70,13 @@ export const ja = {
   "my.edit.done": "投稿を編集しました（新しい投稿として再投稿しました）。",
   "my.delete.photoUnconfirmed": "投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。",
   "my.delete.failed": "削除できませんでした。時間をおいて再試行してください。",
+  "my.firstPost": "最初の1枚を置く",
+  "my.loading.sr": "あなたの植物を読み込み中…",
+  "my.delete.confirm.q": "写真ごと削除しますか？",
+  "my.delete.confirm.note": "（元に戻せません）",
+  "my.delete.confirm.yes": "削除",
+  "my.delete.confirm.no": "やめる",
+  "my.delete.deleting": "削除中…",
 
   // ホーム（index）ヒーロー。世界観文言＝直訳でなく意訳前提（en.ts 参照）。
   "home.hero.title": "育てて、見せる。",
