@@ -28,20 +28,23 @@ describe("DandelionBurst（#148 / #252）", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("active=true で打ち上げバーストぶんの綿毛を描き、オーバーレイは aria-hidden・pointer-events なし", () => {
+  it("active=true で打ち上げバーストぶんの綿毛を body への portal（fixed+overflow-hidden オーバーレイ）に描く", () => {
     stubMatchMedia(false);
-    const { container } = render(<DandelionBurst active={true} />);
-    const overlay = container.querySelector("[aria-hidden='true']");
-    expect(overlay).not.toBeNull();
-    expect(overlay!.className).toContain("pointer-events-none");
-    // 起動直後は打ち上げバースト（14粒）が出ている（連続スポーンの interval はまだ発火していない）。
-    expect(container.querySelectorAll(".ha-seed")).toHaveLength(14);
+    render(<DandelionBurst active={true} />);
+    // 種は body へ portal される（fixed inset-0 overflow-hidden ＝ 文書スクロールに一切影響しない・#148 根治）。
+    const seeds = document.querySelectorAll(".ha-seed");
+    expect(seeds).toHaveLength(14); // 打ち上げバースト14粒（連続スポーンの interval はまだ発火していない）
+    const overlay = seeds[0]!.parentElement!;
+    expect(overlay.className).toContain("pointer-events-none");
+    expect(overlay.className).toContain("fixed");
+    expect(overlay.className).toContain("overflow-hidden");
+    expect(overlay.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("外側に風・上昇・回転・時間・遅れ、横揺れレイヤに振幅・周期・位相の CSS 変数と画像が乗る", () => {
     stubMatchMedia(false);
-    const { container } = render(<DandelionBurst active={true} />);
-    const first = container.querySelector<HTMLElement>(".ha-seed");
+    render(<DandelionBurst active={true} />);
+    const first = document.querySelector<HTMLElement>(".ha-seed");
     expect(first).not.toBeNull();
     // 外側（上昇レイヤ）は位置系の変数。横揺れ（--sway）は別レイヤに移したので外側には乗らない（#260）。
     const style = first!.getAttribute("style") ?? "";
@@ -65,33 +68,33 @@ describe("DandelionBurst（#148 / #252）", () => {
   it("prefers-reduced-motion 時は active でも何も描かない（null）", () => {
     stubMatchMedia(true);
     const { container } = render(<DandelionBurst active={true} />);
-    expect(container.querySelectorAll(".ha-seed")).toHaveLength(0);
+    expect(document.querySelectorAll(".ha-seed")).toHaveLength(0);
     expect(container.firstChild).toBeNull();
   });
 
   it("matchMedia 不在（SSR 相当）でも例外なく描ける（抑制なし扱い）", () => {
     vi.stubGlobal("matchMedia", undefined);
-    const { container } = render(<DandelionBurst active={true} />);
-    expect(container.querySelectorAll(".ha-seed").length).toBeGreaterThan(0);
+    render(<DandelionBurst active={true} />);
+    expect(document.querySelectorAll(".ha-seed").length).toBeGreaterThan(0);
   });
 
   it("綿毛は上昇（ha-seed-rise）の animationend で自分を消す（舞い終わると DOM から外れる）", () => {
     stubMatchMedia(false);
-    const { container } = render(<DandelionBurst active={true} />);
-    const seedsBefore = container.querySelectorAll(".ha-seed");
+    render(<DandelionBurst active={true} />);
+    const seedsBefore = document.querySelectorAll(".ha-seed");
     expect(seedsBefore.length).toBe(14);
     // 上昇アニメの終了で、その粒だけ消える（React の onAnimationEnd に届く形で発火・#260）。
     fireEvent.animationEnd(seedsBefore[0]!, { animationName: "ha-seed-rise" });
-    expect(container.querySelectorAll(".ha-seed")).toHaveLength(13);
+    expect(document.querySelectorAll(".ha-seed")).toHaveLength(13);
   });
 
   it("上昇以外（横揺れ／fade）の animationend では消えない（#260 ガード）", () => {
     stubMatchMedia(false);
-    const { container } = render(<DandelionBurst active={true} />);
-    const seeds = container.querySelectorAll(".ha-seed");
+    render(<DandelionBurst active={true} />);
+    const seeds = document.querySelectorAll(".ha-seed");
     expect(seeds.length).toBe(14);
     // fade の終了が外側へ bubble しても消さない（上昇の終了だけが removeSeed の合図）。
     fireEvent.animationEnd(seeds[0]!, { animationName: "ha-seed-fade" });
-    expect(container.querySelectorAll(".ha-seed")).toHaveLength(14);
+    expect(document.querySelectorAll(".ha-seed")).toHaveLength(14);
   });
 });
