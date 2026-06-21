@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { computeCitizenStats } from "../../lib/feed/stats.ts";
+import { discoverTagsHref } from "../../lib/feed/discoverFilter.ts";
 import { citizenLevelLabel } from "../../lib/lore/citizen.ts";
 import ActivityHeatmap from "./ActivityHeatmap.tsx";
 import GreenArea from "./GreenArea.tsx";
@@ -74,24 +75,27 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
         <Stat label="居住" value={stats.tenureDays} unit="日" />
       </dl>
 
-      {/* 育てた品種の図鑑的な一覧（多い順）。catalog ロード後・1種以上あるときだけ。 */}
+      {/* 育てた品種の図鑑的な一覧（多い順）。catalog ロード後・1種以上あるときだけ。
+          タップでその品種の discover 絞り込みへ（みんなの植物＝全員の同じ植物を辿る・札/タグと同じ行き先・#kako-jun）。 */}
       {catalog !== null && stats.varieties.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-ha-ink/70">育てた品種</p>
           <ul className="flex flex-wrap gap-1.5">
             {stats.varieties.map((v) => (
-              <li
-                key={v.key}
-                className="glass inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
-                title={v.sci !== null ? `${v.sci}（${v.name}）` : v.name}
-              >
-                {v.sci !== null && (
-                  <span className="min-w-0 truncate">
-                    <SciName sci={v.sci} className="font-display text-ha-green-deep" />
-                  </span>
-                )}
-                <span className="min-w-0 truncate font-medium text-ha-ink">{v.name}</span>
-                {v.count > 1 && <span className="shrink-0 text-xs tabular-nums text-ha-ink/55">×{v.count}</span>}
+              <li key={v.key} className="min-w-0 max-w-full">
+                <a
+                  href={discoverTagsHref([v.name])}
+                  className="glass inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors hover:text-ha-green-deep hover:border-ha-green/50 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
+                  title={`${v.sci !== null ? `${v.sci}（${v.name}）` : v.name} でみんなの植物を絞る`}
+                >
+                  {v.sci !== null && (
+                    <span className="min-w-0 truncate">
+                      <SciName sci={v.sci} className="font-display text-ha-green-deep" />
+                    </span>
+                  )}
+                  <span className="min-w-0 truncate font-medium text-ha-ink">{v.name}</span>
+                  {v.count > 1 && <span className="shrink-0 text-xs tabular-nums text-ha-ink/55">×{v.count.toLocaleString("en-US")}</span>}
+                </a>
               </li>
             ))}
           </ul>
@@ -114,7 +118,8 @@ function Stat({ label, value, unit }: { label: string; value: number | null; uni
     <div className="flex flex-col gap-0.5 rounded-xl bg-white/5 px-3 py-2.5">
       <dt className="text-xs text-ha-ink/55">{label}</dt>
       <dd className="font-display text-2xl font-extrabold text-ha-green-deep tabular-nums">
-        {value === null ? "…" : value}
+        {/* 1000超でも読めるよう3桁区切り（#kako-jun）。 */}
+        {value === null ? "…" : value.toLocaleString("en-US")}
         <span className="ml-0.5 text-sm font-semibold text-ha-ink/55">{unit}</span>
       </dd>
     </div>
