@@ -5,6 +5,7 @@ import {
   findVarietyGenus,
   foldForSearch,
   searchCatalog,
+  tagsToPick,
   tagsToUnpick,
 } from "./variety-search.ts";
 
@@ -132,6 +133,43 @@ describe("searchCatalog", () => {
     const genus = searchCatalog(CATALOG, "アガベ").find((h) => h.kind === "genus")!;
     expect(genus.sci).toBeUndefined();
   });
+
+  it("カテゴリもヒットする（#312・「ハーブ」と打って `#ハーブ` を付けられる）", () => {
+    const hits = searchCatalog(CATALOG, "多肉");
+    const cat = hits.find((h) => h.kind === "category");
+    expect(cat).toMatchObject({ name: "多肉・塊根", kind: "category" });
+  });
+
+  it("カテゴリヒットは fold で拾う（ひらがな・部分一致）", () => {
+    expect(searchCatalog(CATALOG, "ばら").some((h) => h.kind === "category" && h.name === "バラ・草花")).toBe(true);
+  });
+});
+
+describe("tagsToPick（#312・概要→詳細の全階層）", () => {
+  it("品種は カテゴリ→属→品種 の順で返す", () => {
+    expect(tagsToPick(CATALOG, "チタノタ")).toEqual(["多肉・塊根", "アガベ", "チタノタ"]);
+  });
+
+  it("非 pickable 見出し属の品種は カテゴリ→品種（属は前置しない）", () => {
+    expect(tagsToPick(CATALOG, "火星人")).toEqual(["多肉・塊根", "火星人"]);
+  });
+
+  it("pickable 属は カテゴリ→属", () => {
+    expect(tagsToPick(CATALOG, "アガベ")).toEqual(["多肉・塊根", "アガベ"]);
+  });
+
+  it("カテゴリ単独はそれ自身だけ", () => {
+    expect(tagsToPick(CATALOG, "多肉・塊根")).toEqual(["多肉・塊根"]);
+  });
+
+  it("catalog に無いタグ（世話/freeform）は前置せずそのまま", () => {
+    expect(tagsToPick(CATALOG, "水やり")).toEqual(["水やり"]);
+  });
+
+  it("alias で品種を引いても階層は付く（鉄線→テッセン経路の属/カテゴリ）", () => {
+    // alias「鉄線」で引くと canonical でなく来たタグ名を品種位置に置く（UI は canonical を渡すが純関数は名前を尊重）。
+    expect(tagsToPick(CATALOG, "鉄線")).toEqual(["バラ・草花", "クレマチス", "鉄線"]);
+  });
 });
 
 describe("findPickableGenus", () => {
@@ -182,11 +220,62 @@ describe("tagsToUnpick（兄弟ルール）", () => {
     expect(tagsToUnpick(caption, "チタノタ", CATALOG)).toEqual(["チタノタ", "アガベ"]);
   });
 
-  it("属名（品種でない）を外すときは自分だけ", () => {
-    expect(tagsToUnpick("#多肉・塊根 #アガベ", "アガベ", CATALOG)).toEqual(["アガベ"]);
+  it("属を外すと、カテゴリに他属が無ければカテゴリも連動撤去（#312）", () => {
+    // 属はカテゴリと一緒に付くようになったので、属だけ残してカテゴリを孤立させない。
+    expect(tagsToUnpick("#多肉・塊根 #アガベ", "アガベ", CATALOG)).toEqual(["アガベ", "多肉・塊根"]);
+  });
+
+  it("属を外すが同カテゴリに他属（の品種）が残ればカテゴリは残す（#312）", () => {
+    // 火星人＝その他塊根（同カテゴリの別属）の品種が生存 → カテゴリは残す。
+    expect(tagsToUnpick("#多肉・塊根 #アガベ #火星人", "アガベ", CATALOG)).toEqual(["アガベ"]);
+  });
+
+  it("カテゴリ（属でも品種でもない）を外すときは自分だけ（下位は触らない）", () => {
+    expect(tagsToUnpick("#多肉・塊根 #アガベ #チタノタ", "多肉・塊根", CATALOG)).toEqual(["多肉・塊根"]);
   });
 
   it("catalog 未ロード時は自分だけ", () => {
     expect(tagsToUnpick("#アガベ #チタノタ", "チタノタ", null)).toEqual(["チタノタ"]);
+  });
+});
+
+// 本番カタログには **品種名＝カテゴリ label** が同字のデータがある（エアプランツ›チランジア›「エアプランツ」、
+// ビカクシダ›原種›「ビカクシダ」、シダ、コケ）。#312 でカテゴリが本文タグになると、この `#カテゴリ` タグが
+// 同名品種の兄弟と誤認され、品種を外しても上位が孤立して残るリグレッションが起きる。これを衝突ガードで防ぐ。
+const COLLIDE: VarietyCategory[] = [
+  {
+    // pickable 属配下に label と同字の品種を持つ（エアプランツ相当）。
+    label: "ソラ",
+    genera: [
+      { name: "チラ", pickable: true, varieties: [{ name: "ソラ" }, { name: "イオナ" }] },
+    ],
+  },
+  {
+    // 非 pickable 見出し属配下に label と同字の品種を持つ（ビカクシダ相当）。
+    label: "ビカク",
+    genera: [
+      { name: "原種", pickable: false, varieties: [{ name: "ビカク" }, { name: "リドレ" }] },
+    ],
+  },
+];
+
+describe("tagsToUnpick（#312・カテゴリ label＝品種名 の衝突ガード）", () => {
+  it("compose→解除の往復: 品種を外すと 品種→属→カテゴリ を連動撤去（カテゴリタグを兄弟と誤認しない）", () => {
+    // tagsToPick("イオナ") = ["ソラ","チラ","イオナ"]。caption からイオナを外す。
+    const caption = "#ソラ #チラ #イオナ";
+    expect(tagsToUnpick(caption, "イオナ", COLLIDE)).toEqual(["イオナ", "チラ", "ソラ"]);
+  });
+
+  it("非 pickable 見出し属でも: 品種を外すと 品種→カテゴリ を連動撤去（見出し属はタグでない）", () => {
+    // tagsToPick("リドレ") = ["ビカク","リドレ"]。caption からリドレを外す。
+    const caption = "#ビカク #リドレ";
+    expect(tagsToUnpick(caption, "リドレ", COLLIDE)).toEqual(["リドレ", "ビカク"]);
+  });
+
+  it("label と同字の品種そのもの（ソラ）を外すときも上位（属）を孤立させない", () => {
+    // 「ソラ」品種を選ぶと tagsToPick はカテゴリ=品種で畳んで ["ソラ","チラ"]（#312 dedup）。
+    // この本文からソラを外す＝品種ソラ解除。属チラに他兄弟が無ければチラも外す。
+    const caption = "#ソラ #チラ";
+    expect(tagsToUnpick(caption, "ソラ", COLLIDE)).toEqual(["ソラ", "チラ"]);
   });
 });
