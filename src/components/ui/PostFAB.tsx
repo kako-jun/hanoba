@@ -10,12 +10,17 @@
  * 真上ビューの放射状（＊状）と紛れない太め抽象グリフを gpt-image-2 で生成し、白い透過 webp に焼いた
  * もの（`public/post-fab.webp`）。線アイコン集（Icon.tsx）は currentColor の SVG だが、これは綿毛の
  * 柔らかさを出すため例外的にラスタ。装飾なので alt 空（リンク側 aria-label が読み上げを担う）。
+ *
+ * lang は MainLayout がページの locale を流す（#147 段階1）。今は既定（ja）固定＝挙動不変。
  */
-export default function PostFAB() {
+import { useT, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+
+export default function PostFAB({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   return (
     <a
       href="/compose"
-      aria-label="投稿する"
+      aria-label={t("fab.compose.aria")}
       className="fixed bottom-5 right-[4.75rem] z-40 grid place-items-center w-11 h-11 rounded-full bg-ha-green text-ha-white shadow-lg hover:brightness-110 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
     >
       <img src="/post-fab.webp" alt="" className="h-7 w-auto" draggable={false} />

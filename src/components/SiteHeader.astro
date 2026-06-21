@@ -11,6 +11,7 @@
 
 import Icon from "./ui/Icon.tsx";
 import { ABOUT_LABEL_VISITOR, ABOUT_LABEL_CITIZEN } from "../lib/lore/aboutLabel.ts";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 interface Props {
   /** 現在ページ。該当リンクを強調する（任意）。 */
@@ -21,15 +22,19 @@ interface Props {
 
 const { current, wide = false } = Astro.props;
 
+// 表示言語（#147 段階1）。今は既定（ja）固定＝挙動不変。段階2で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
+
 // 大画面で広げる幅（フィード）と、文章/フォーム向けの標準幅（compose/about）。
 const maxW = wide ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl";
 
 // compose は塗りボタン（主アクション）なので nav 配列とは別扱い。
 // 並びはフッタの規則に揃える（About→discover→me・#106）。About は情報ページなので i アイコンを付ける。
+// About ラベルだけは「市民手帳」差し替え（#262）のため aboutLabel.ts 由来のまま（文言の所在を分けない）。
 const links = [
   { href: "/about", label: ABOUT_LABEL_VISITOR, key: "about", icon: "info" },
-  { href: "/discover", label: "みんなの植物", key: "discover", icon: null },
-  { href: "/me", label: "あなたの植物", key: "me", icon: null },
+  { href: "/discover", label: t(locale, "nav.discover"), key: "discover", icon: null },
+  { href: "/me", label: t(locale, "nav.me"), key: "me", icon: null },
 ] as const;
 ---
 
@@ -37,7 +42,7 @@ const links = [
   class="sticky top-0 z-40 border-b border-ha-green/10 bg-ha-base/70 backdrop-blur-md supports-[backdrop-filter]:bg-ha-base/55"
 >
   <div class:list={["mx-auto px-5 h-16 flex items-center justify-between gap-4", maxW]}>
-    <a href="/" class="flex items-center gap-2.5 group" aria-label="葉の場 Hanoba トップへ">
+    <a href="/" class="flex items-center gap-2.5 group" aria-label={t(locale, "nav.home.aria")}>
       <svg viewBox="0 0 64 64" class="w-9 h-9 shrink-0" role="img" aria-hidden="true">
         <defs>
           <clipPath id="ha-flag"><rect width="64" height="64" rx="12"></rect></clipPath>
@@ -78,7 +83,7 @@ const links = [
         class="inline-flex items-center gap-[5px] rounded-full bg-ha-green text-ha-white px-5 py-2 font-semibold shadow-sm shadow-ha-green/30 hover:brightness-110 hover:shadow-md transition-all"
       >
         <Icon name="sprout" className="w-4 h-4" />
-        投稿する
+        {t(locale, "nav.compose")}
       </a>
     </nav>
 
@@ -87,7 +92,9 @@ const links = [
       type="button"
       id="ha-menu-btn"
       class="sm:hidden inline-flex items-center justify-center w-10 h-10 -mr-2 rounded-xl text-ha-green-deep hover:bg-ha-green/10 transition-colors"
-      aria-label="メニューを開く"
+      aria-label={t(locale, "nav.menu.open")}
+      data-label-open={t(locale, "nav.menu.open")}
+      data-label-close={t(locale, "nav.menu.close")}
       aria-expanded="false"
       aria-controls="ha-menu"
     >
@@ -127,7 +134,7 @@ const links = [
         class="mt-1 inline-flex items-center justify-center gap-[5px] rounded-xl bg-ha-green text-ha-white px-3 py-3 font-semibold hover:brightness-110 transition-all"
       >
         <Icon name="sprout" className="w-4 h-4" />
-        投稿する
+        {t(locale, "nav.compose")}
       </a>
     </div>
   </nav>
@@ -138,10 +145,13 @@ const links = [
   const btn = document.getElementById("ha-menu-btn");
   const menu = document.getElementById("ha-menu");
   if (btn && menu) {
+    // 開閉の aria-label は data 属性（サーバが t() で描画）から読む＝文言の所在を catalog に一本化（#147）。
+    const labelOpen = btn.dataset.labelOpen ?? "メニューを開く";
+    const labelClose = btn.dataset.labelClose ?? "メニューを閉じる";
     const setOpen = (open: boolean) => {
       menu.classList.toggle("hidden", !open);
       btn.setAttribute("aria-expanded", String(open));
-      btn.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+      btn.setAttribute("aria-label", open ? labelClose : labelOpen);
     };
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
