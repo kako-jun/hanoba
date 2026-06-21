@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface ImagePickerProps {
   /** 画像ファイルが選択されたとき（image/ 以外は呼ばれない）。 */
@@ -21,6 +22,7 @@ interface ImagePickerProps {
 }
 
 export default function ImagePicker({ onSelect, remaining = 4, compact = false }: ImagePickerProps) {
+  const t = useT(useLocale());
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const compactWrapRef = useRef<HTMLDivElement>(null);
@@ -41,12 +43,12 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
     if (files.some((file) => !file.type.startsWith("image/"))) {
-      setError("画像ファイルを選んでください（動画は投稿できません）。");
+      setError(t("picker.error.notImage"));
       e.target.value = "";
       return;
     }
     if (remaining <= 0) {
-      setError("写真は4枚までです。");
+      setError(t("picker.error.limit"));
       e.target.value = "";
       return;
     }
@@ -55,7 +57,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
     onSelect(accepted, files.length - accepted.length);
     setCompactOpen(false);
     if (files.length > accepted.length) {
-      setError("写真は4枚までです。追加できる分だけ追加しました。");
+      setError(t("compose.photos.limitNotice"));
     }
     // 同じファイルを選び直せるよう値をリセット（change が再発火するように）。
     e.target.value = "";
@@ -71,7 +73,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
           className="flex items-center justify-center gap-2 rounded-2xl bg-ha-green px-6 py-3 font-semibold text-ha-white transition-colors hover:brightness-110 disabled:opacity-40"
         >
           <Icon name="camera" className="h-5 w-5" />
-          撮影
+          {t("picker.shoot")}
         </button>
         <button
           type="button"
@@ -80,12 +82,12 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
           className="glass flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-semibold text-ha-ink transition-colors hover:border-ha-green/50 disabled:opacity-40"
         >
           <Icon name="image" className="h-5 w-5" />
-          アルバム
+          {t("picker.album")}
         </button>
       </div>
       {!compact && (
         <p className="text-xs text-ha-ink/60">
-          植物の写真を撮るか、アルバムから選んでください。最大4枚まで。
+          {t("picker.hint")}
         </p>
       )}
     </>
@@ -102,7 +104,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
           onClick={() => setCompactOpen(true)}
           disabled={remaining <= 0}
           className="grid h-16 w-16 shrink-0 place-items-center rounded-lg border-2 border-dashed border-ha-green/45 bg-ha-white/25 text-ha-green-deep transition-colors hover:border-ha-green hover:bg-ha-white/40 disabled:opacity-40"
-          aria-label="写真を追加"
+          aria-label={t("picker.add.aria")}
         >
           <Icon name="plus" className="h-5 w-5" />
         </button>
@@ -116,13 +118,13 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
         <div
           className="glass-strong absolute left-0 top-1/2 z-50 flex w-52 max-w-[calc(100vw-2rem)] -translate-y-8 flex-col gap-2 rounded-2xl p-2 shadow-2xl"
           role="dialog"
-          aria-label="写真を追加"
+          aria-label={t("picker.add.aria")}
         >
           <button
             type="button"
             onClick={() => setCompactOpen(false)}
             className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-full text-ha-white/70 transition-colors hover:bg-ha-white/15"
-            aria-label="閉じる"
+            aria-label={t("common.close")}
           >
             <Icon name="close" className="h-4 w-4" />
           </button>
@@ -134,7 +136,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
               className="flex items-center justify-center gap-2 rounded-2xl bg-ha-green px-5 py-3 font-semibold text-ha-white transition-colors hover:brightness-110 disabled:opacity-40"
             >
               <Icon name="camera" className="h-5 w-5" />
-              撮影
+              {t("picker.shoot")}
             </button>
             <button
               type="button"
@@ -143,7 +145,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
               className="flex items-center justify-center gap-2 rounded-2xl border border-ha-green/45 bg-ha-base px-5 py-3 font-semibold text-ha-green-deep shadow-sm transition-colors hover:border-ha-green/80 disabled:opacity-40"
             >
               <Icon name="image" className="h-5 w-5" />
-              アルバム
+              {t("picker.album")}
             </button>
           </div>
         </div>
@@ -155,7 +157,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
         capture="environment"
         onChange={handleChange}
         className="sr-only"
-        aria-label="カメラで撮影"
+        aria-label={t("picker.camera.aria")}
       />
       <input
         ref={galleryInputRef}
@@ -164,7 +166,7 @@ export default function ImagePicker({ onSelect, remaining = 4, compact = false }
         multiple
         onChange={handleChange}
         className="sr-only"
-        aria-label="アルバムから選ぶ"
+        aria-label={t("picker.gallery.aria")}
       />
       {error !== null && <p className="text-sm text-ha-pink font-medium">{error}</p>}
     </div>

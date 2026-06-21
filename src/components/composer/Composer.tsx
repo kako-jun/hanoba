@@ -25,6 +25,7 @@ import CropFrame from "./CropFrame.tsx";
 import FilterChips from "./FilterChips.tsx";
 import ImagePicker from "./ImagePicker.tsx";
 import TagPicker from "./TagPicker.tsx";
+import { t as translate, useT, LocaleProvider, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 type Status = { kind: "idle" } | { kind: "posting" } | { kind: "done" } | { kind: "error"; message: string };
 type DraftImage = {
@@ -58,7 +59,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+    image.onerror = () => reject(new Error(translate(DEFAULT_LOCALE, "compose.error.imageLoad")));
     image.src = src;
   });
 }
@@ -72,7 +73,9 @@ function centeredSquareRect(image: HTMLImageElement): SquareCropRect {
   };
 }
 
-export default function Composer() {
+// lang は compose.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+  const t = useT(lang);
   const [images, setImages] = useState<DraftImage[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -239,7 +242,7 @@ export default function Composer() {
     const remaining = MAX_IMAGES - images.length;
     const nextImages = picked.slice(0, remaining).map(makeDraftImage);
     if (nextImages.length === 0) return;
-    setImageNotice(rejectedCount > 0 ? "写真は4枚までです。追加できる分だけ追加しました。" : null);
+    setImageNotice(rejectedCount > 0 ? t("compose.photos.limitNotice") : null);
     setImages((prev) => [...prev, ...nextImages]);
     setCurrentId(nextImages[0]!.id);
     for (const draft of nextImages) {
@@ -316,9 +319,9 @@ export default function Composer() {
 
   // 投稿ボタンが押せない理由（不足条件）。ボタン近くに出して「なぜ押せない？」を消す。
   const missing: string[] = [];
-  if (!hasName) missing.push("ユーザー名");
-  if (!hasImage) missing.push("写真");
-  if (caption.trim() === "") missing.push("ひとこと");
+  if (!hasName) missing.push(t("compose.shortfall.name"));
+  if (!hasImage) missing.push(t("compose.shortfall.photo"));
+  if (caption.trim() === "") missing.push(t("compose.shortfall.caption"));
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -371,7 +374,7 @@ export default function Composer() {
         setPostProgress(null);
         setStatus({
           kind: "error",
-          message: "投稿を確認できませんでした。電波の良いところでもう一度お試しください（下書きは残っています）。",
+          message: t("compose.error.notConfirmed"),
         });
         return;
       }
@@ -386,14 +389,15 @@ export default function Composer() {
     } catch (err) {
       await Promise.allSettled(uploadedUrls.map((url) => deleteImage(url)));
       setPostProgress(null);
-      const message = err instanceof Error ? err.message : "投稿に失敗しました。";
+      const message = err instanceof Error ? err.message : t("compose.error.generic");
       setStatus({ kind: "error", message });
     }
   }
 
   return (
+    <LocaleProvider value={lang}>
     <div className="flex flex-col gap-6">
-      <AccountName onChange={setName} promptLabel="はじめまして。ハンドルネームは？" />
+      <AccountName onChange={setName} promptLabel={t("compose.account.prompt")} />
 
       {!hasImage ? (
         <div className="py-6">
@@ -403,8 +407,8 @@ export default function Composer() {
         <>
           <section className="flex flex-col gap-3">
             <div className="flex items-baseline gap-2">
-              <h2 className="text-sm font-medium text-ha-green-deep">写真</h2>
-              <span className="text-sm font-semibold text-ha-ink/70">{images.length}/{MAX_IMAGES}枚</span>
+              <h2 className="text-sm font-medium text-ha-green-deep">{t("compose.photos.heading")}</h2>
+              <span className="text-sm font-semibold text-ha-ink/70">{t("compose.photos.count", { count: images.length, max: MAX_IMAGES })}</span>
             </div>
             {imageNotice !== null && <p className="text-xs font-medium text-ha-pink">{imageNotice}</p>}
             <div className="relative flex gap-2 overflow-visible pb-1">
@@ -423,7 +427,7 @@ export default function Composer() {
                     image.id === currentImage?.id ? "border-ha-green" : "border-ha-white/40"
                   }`}
                 >
-                  <img src={image.src} alt={`${index + 1}枚目`} className="h-full w-full object-cover" />
+                  <img src={image.src} alt={t("compose.photos.thumbAlt", { n: index + 1 })} className="h-full w-full object-cover" />
                 </button>
               ))}
               {images.length < MAX_IMAGES && (
@@ -442,23 +446,23 @@ export default function Composer() {
                   type="button"
                   onClick={() => moveImage(currentImage.id, -1)}
                   disabled={currentIndex <= 0}
-                  aria-label="選択中の写真を左へ移動"
+                  aria-label={t("compose.reorder.left.aria")}
                   className="glass inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ha-ink transition-colors hover:border-ha-green/50 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <span aria-hidden="true">◀</span>
-                  左へ
+                  {t("compose.reorder.left")}
                 </button>
                 <span className="text-xs text-ha-ink/70" aria-live="polite">
-                  {currentIndex + 1}枚目 / 全{images.length}枚
+                  {t("compose.reorder.counter", { index: currentIndex + 1, total: images.length })}
                 </span>
                 <button
                   type="button"
                   onClick={() => moveImage(currentImage.id, +1)}
                   disabled={currentIndex >= images.length - 1}
-                  aria-label="選択中の写真を右へ移動"
+                  aria-label={t("compose.reorder.right.aria")}
                   className="glass inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm text-ha-ink transition-colors hover:border-ha-green/50 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  右へ
+                  {t("compose.reorder.right")}
                   <span aria-hidden="true">▶</span>
                 </button>
               </div>
@@ -484,7 +488,7 @@ export default function Composer() {
           )}
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium text-ha-green-deep">フィルタ</h2>
+            <h2 className="text-sm font-medium text-ha-green-deep">{t("compose.filter.heading")}</h2>
             <FilterChips
               selected={currentImage?.filters ?? []}
               onChange={(filters) => updateCurrentImage({ filters })}
@@ -496,10 +500,10 @@ export default function Composer() {
               説明はくどくしない（kako-jun session692）＝取れた時だけ「自動抽出しました。」、未設定は空欄で自明。 */}
           {currentImage !== null && (
             <section className="flex flex-col gap-1.5">
-              <h2 className="text-sm font-medium text-ha-green-deep">撮影日</h2>
+              <h2 className="text-sm font-medium text-ha-green-deep">{t("compose.shotDate.heading")}</h2>
               {/* 自動抽出由来の時だけ出す（手入力/訂正には出さない＝嘘をつかない・#324 kako-jun）。 */}
               {currentImage.shotDate !== null && currentImage.shotDateAuto && (
-                <p className="text-xs text-ha-ink/55">自動抽出しました。</p>
+                <p className="text-xs text-ha-ink/55">{t("compose.shotDate.auto")}</p>
               )}
               <div className="flex flex-wrap items-center gap-2">
                 <input
@@ -510,7 +514,7 @@ export default function Composer() {
                     // 手入力/訂正＝自動でなくなる（shotDateAuto=false）。空にしたら null。
                     updateCurrentImage({ shotDate: e.target.value === "" ? null : e.target.value, shotDateAuto: false })
                   }
-                  aria-label="この写真の撮影日"
+                  aria-label={t("compose.shotDate.input.aria")}
                   className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                 />
                 {currentImage.shotDate !== null && (
@@ -519,7 +523,7 @@ export default function Composer() {
                     onClick={() => updateCurrentImage({ shotDate: null, shotDateAuto: false })}
                     className="text-xs text-ha-ink/55 underline decoration-dotted underline-offset-2 hover:text-ha-pink transition-colors"
                   >
-                    撮影日を含めない
+                    {t("compose.shotDate.exclude")}
                   </button>
                 )}
               </div>
@@ -551,8 +555,8 @@ export default function Composer() {
               aria-live="polite"
               className="text-right text-xs text-ha-ink/55"
             >
-              あと <span className="text-ha-pink font-medium">{missing.join("、")}</span>{" "}
-              を入れると投稿できます
+              {t("compose.shortfall.lead")}<span className="text-ha-pink font-medium">{missing.join("、")}</span>{" "}
+              {t("compose.shortfall.trail")}
             </p>
           )}
 
@@ -565,7 +569,7 @@ export default function Composer() {
               disabled={posting}
               className="glass rounded-full text-ha-ink px-4 py-3 hover:border-ha-green/50 disabled:opacity-40 transition-colors"
             >
-              {images.length > 1 ? "この写真を外す" : "写真を選び直す"}
+              {images.length > 1 ? t("compose.action.removeOne") : t("compose.action.resetImage")}
             </button>
             {/* 送信ボタンは relative なラッパで包み、綿毛オーバーレイ（#148/#252）をボタンに重ねる。
                 オーバーレイは pointer-events:none・aria-hidden なのでクリックやレイアウトに干渉しない。 */}
@@ -586,15 +590,15 @@ export default function Composer() {
                       className="h-5 w-5 shrink-0 rounded-full border-2 border-ha-white/40 border-t-ha-white animate-spin motion-reduce:animate-none"
                     />
                     {postProgress?.stage === "upload"
-                      ? `写真を送信中 ${postProgress.done}/${postProgress.total}`
-                      : "投稿中…"}
+                      ? t("compose.submit.uploading", { done: postProgress.done, total: postProgress.total })
+                      : t("compose.submit.publishing")}
                   </>
                 ) : (
                   <>
                     {/* アイコンは投稿FAB（#283）と同じ「横から見た綿毛」ラスタ（post-fab.webp）を再利用
                         （線画 Icon "dandelion" から統一・#293）。白い透過 webp なのでピンク地でも映える。 */}
                     <img src="/post-fab.webp" alt="" className="h-5 w-auto" draggable={false} />
-                    投稿する
+                    {t("compose.submit")}
                   </>
                 )}
               </button>
@@ -606,7 +610,7 @@ export default function Composer() {
 
       {status.kind === "done" && (
         <p role="status" className="glass rounded-2xl text-ha-ink px-4 py-3 text-sm">
-          投稿しました。あなたの植物へ移動します…
+          {t("compose.done")}
         </p>
       )}
       {status.kind === "error" && (
@@ -615,5 +619,6 @@ export default function Composer() {
         </p>
       )}
     </div>
+    </LocaleProvider>
   );
 }

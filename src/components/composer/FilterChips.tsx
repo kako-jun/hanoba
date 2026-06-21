@@ -3,6 +3,8 @@
 // 各チップに color のスウォッチ＋name。「なし」は全解除。
 
 import { FILTER_PRESETS, type FilterPreset, type FilterStrength, type SelectedFilter } from "../../lib/image/presets.ts";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
+import type { MessageKey } from "../../lib/i18n/index.ts";
 
 interface FilterChipsProps {
   /** 選択中フィルタ（空配列＝「なし」）。各要素が name＋strength を持つ。 */
@@ -11,9 +13,17 @@ interface FilterChipsProps {
   onChange: (selected: SelectedFilter[]) => void;
 }
 
-const STRENGTH_LABEL: Record<0 | FilterStrength, string> = { 0: "なし", 1: "弱", 2: "中", 3: "強" };
+// 強度（0=なし）→ 文言キーの対応（t.ts で locale 解決する）。
+const STRENGTH_KEY: Record<0 | FilterStrength, MessageKey> = {
+  0: "filter.strength.none",
+  1: "filter.strength.weak",
+  2: "filter.strength.medium",
+  3: "filter.strength.strong",
+};
 
 export default function FilterChips({ selected, onChange }: FilterChipsProps) {
+  const t = useT(useLocale());
+  const strengthLabel = (s: 0 | FilterStrength) => t(STRENGTH_KEY[s]);
   const chipClass =
     "relative flex w-[5.25rem] items-center justify-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1.5 text-sm transition-colors";
 
@@ -31,7 +41,7 @@ export default function FilterChips({ selected, onChange }: FilterChipsProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="フィルタを重ねる">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t("filter.group.aria")}>
       <button
         type="button"
         onClick={() => onChange([])}
@@ -41,7 +51,7 @@ export default function FilterChips({ selected, onChange }: FilterChipsProps) {
         }`}
       >
         <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-white/25 bg-white/10" aria-hidden="true" />
-        なし
+        {t("filter.strength.none")}
       </button>
       {FILTER_PRESETS.map((preset) => {
         const strength = strengthOf(preset);
@@ -52,8 +62,8 @@ export default function FilterChips({ selected, onChange }: FilterChipsProps) {
             type="button"
             onClick={() => cycle(preset)}
             aria-pressed={isActive}
-            aria-label={`${preset.name}（${STRENGTH_LABEL[strength]}）`}
-            aria-valuetext={STRENGTH_LABEL[strength]}
+            aria-label={t("filter.chip.aria", { name: preset.name, strength: strengthLabel(strength) })}
+            aria-valuetext={strengthLabel(strength)}
             data-strength={strength}
             className={`${chipClass} ${
               isActive ? "bg-ha-green/15 text-ha-ink border border-ha-green/40" : "glass text-ha-ink hover:border-ha-green/50"
