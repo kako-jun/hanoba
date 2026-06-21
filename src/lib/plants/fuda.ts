@@ -248,3 +248,14 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
 export function buildFuda(hashtags: readonly string[], catalog: VarietyCategory[]): Fuda[] {
   return resolveFuda(hashtags, buildVarietyIndex(catalog));
 }
+
+/**
+ * 単一の品種/属名から札を1枚解決する（#343・プロフィールの「好きな品種」用）。カタログに在れば
+ * `resolveFuda` と同じ規則で学名＋和名の札（投稿の札と同一表示）を返し、引けない自由入力品種は
+ * **消さず**和名のみの札（`sci=null`）へフォールバックする。`index` は `buildVarietyIndex` の結果。
+ * 名称1つは属コンテキストが無いので、品種は catalog 先頭候補（#223 既定）に倒れる（投稿札と同じ挙動）。
+ */
+export function fudaForName(name: string, index: FudaIndex): Fuda {
+  const resolved = resolveFuda([name], index);
+  return resolved[0] ?? { key: name, name, sci: null, filterTags: [name] };
+}
