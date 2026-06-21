@@ -84,7 +84,11 @@ export default function FavoriteVarietyPicker({
   const searching = query.trim() !== "";
   const hits = searching ? searchCatalog(catalog ?? [], query) : [];
   const freeform = query.trim().replace(/^#+/, "").trim();
-  const showFreeform = freeform !== "" && !hits.some((h) => h.name.toLowerCase() === freeform.toLowerCase());
+  // 既にヒットにある／既に選択済みの語には「そのまま追加」を出さない（押すと逆に外れる混乱を防ぐ）。
+  const showFreeform =
+    freeform !== "" &&
+    !hits.some((h) => h.name.toLowerCase() === freeform.toLowerCase()) &&
+    !selected.some((s) => s.toLowerCase() === freeform.toLowerCase());
 
   // トグル用の小さな選択チップ（選択済み＝緑塗り・再タップで外す）。
   const itemClass = (name: string) =>
