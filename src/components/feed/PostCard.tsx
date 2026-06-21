@@ -2,6 +2,7 @@ import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
+import { shotDateRange } from "../../lib/feed/shotDate.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
@@ -62,6 +63,9 @@ export default function PostCard({
   const t = useT(locale);
   const captionText = stripHashtags(post.caption);
   const photoCount = post.imageUrls.length;
+  // 撮影期間（#324・kako-jun A案）。写真ごとの撮影日があれば表紙に「6/1〜6/22」を出す
+  // ＝「1つの被写体の1ヶ月を振り返る」投稿が一目で分かる。無ければ null（出さない）。
+  const dateRange = shotDateRange(post.photoShotDates ?? [], locale);
   // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
   const authorName = profile?.name ?? shortNpub(post.pubkey);
   const [expanded, setExpanded] = useState(false);
@@ -114,6 +118,14 @@ export default function PostCard({
             {photoCount > 1 && (
               <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">
                 {t("card.photos.count", { n: photoCount })}
+              </span>
+            )}
+            {/* 撮影期間（#324・A案）。表紙左上に控えめに（写真枚数は右上）。レンジ＝この投稿が
+                「ある期間の振り返り」だと一目で示す。撮影日が無ければ出さない。 */}
+            {dateRange !== null && (
+              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-ha-white backdrop-blur-sm">
+                <Icon name="camera" className="h-3 w-3" />
+                {dateRange}
               </span>
             )}
           </button>

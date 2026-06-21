@@ -6,6 +6,8 @@ import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
+import { formatShotDate } from "../../lib/feed/shotDate.ts";
+import { useLocale } from "../../lib/i18n/index.ts";
 import {
   nextPhotoIndex,
   prevPhotoIndex,
@@ -62,6 +64,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const locale = useLocale();
+  // 現在表示中の写真の撮影日（#324・写真↔日付の対応を保つ）。無ければ出さない。
+  const currentShotDate = post.photoShotDates?.[photoIndex] ?? null;
   // スワイプ中の写真ぼかし（px・#275）。0＝ぼかし無し。指を離すと 0 に戻し、
   // index 確定で次画像が中央へ来る＝ぼかしも解ける。1枚／reduced-motion ではかからない。
   const [swipeBlur, setSwipeBlur] = useState(0);
@@ -296,6 +301,14 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                     <Icon name="chevron" className="h-5 w-5 -rotate-90" />
                   </button>
                 </>
+              )}
+              {/* この写真の撮影日（#324・写真ごと）。左下に控えめに重ねる＝めくると日付も変わり
+                  「1ヶ月の変化」が読める。撮影日が無い写真は出さない。 */}
+              {currentShotDate !== null && (
+                <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium text-ha-white backdrop-blur-sm">
+                  <Icon name="camera" className="h-3 w-3" />
+                  {formatShotDate(currentShotDate, locale)}
+                </span>
               )}
             </div>
             {post.imageUrls.length > 1 && (
