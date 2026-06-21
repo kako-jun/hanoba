@@ -82,4 +82,14 @@ describe("CitizenStats（活動スタッツ表示・#272）", () => {
     const section = screen.getByRole("region", { name: "あなたの活動" });
     expect(within(section).getByText("品種").parentElement).toHaveTextContent("2種");
   });
+
+  it("育てた品種のチップはその品種の discover 絞り込みリンク（#kako-jun）", async () => {
+    const posts = [makePost({ id: "1", hashtags: ["パキポディウム", "グラキリス"] })];
+    render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
+    const chip = await screen.findByText("グラキリス");
+    const link = chip.closest("a");
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute("href")).toContain("/discover?tags=");
+    expect(link!.getAttribute("href")).toContain(encodeURIComponent("グラキリス"));
+  });
 });

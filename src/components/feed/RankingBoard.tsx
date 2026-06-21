@@ -184,9 +184,9 @@ export default function RankingBoard() {
               )}
             </div>
 
-            {/* 投稿数（票） */}
+            {/* 投稿数（票）。1000超でも読めるよう3桁区切り（#kako-jun）。 */}
             <span className="shrink-0 text-right tabular-nums text-ha-ink/80">
-              <span className="font-semibold text-ha-ink">{row.count}</span>
+              <span className="font-semibold text-ha-ink">{row.count.toLocaleString("en-US")}</span>
               <span className="text-xs text-ha-ink/55">件</span>
             </span>
           </li>
