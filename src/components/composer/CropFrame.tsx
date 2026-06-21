@@ -30,6 +30,8 @@ interface CropFrameProps {
   toneAmount?: number;
   /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
   onCropComplete: (crop: SquareCropRect) => void;
+  /** 90度回転（#314）。delta=-90 左／+90 右。親が回転済み src を作って `src` を差し替える。 */
+  onRotate?: (delta: 90 | -90) => void;
 }
 
 /** 画像中央に最大の正方形クロップを作る（% 単位）。 */
@@ -48,6 +50,7 @@ export default function CropFrame({
   toneCurve = null,
   toneAmount = 0.32,
   onCropComplete,
+  onRotate,
 }: CropFrameProps) {
   const [crop, setCrop] = useState<Crop>();
   // 画像の表示幅（px）。霞幻プレビューの blur 半径を焼き込み（出力の2%）と同じ縮尺で出すため。
@@ -181,6 +184,29 @@ export default function CropFrame({
         )}
         </div>
       </ReactCrop>
+      {/* 角度回転（#314 v1＝90度単位・横倒し写真の向き直し）。回転は親が回転済み画像を作って
+          src を差し替える＝クロップ枠と常に整合（CSS transform の枠ズレを避ける）。微調整（0.5度）は別途。 */}
+      {onRotate !== undefined && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-ha-ink/45">回転</span>
+          <button
+            type="button"
+            onClick={() => onRotate(-90)}
+            aria-label="写真を左に90度回転"
+            className="glass inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+          >
+            左へ 90°
+          </button>
+          <button
+            type="button"
+            onClick={() => onRotate(90)}
+            aria-label="写真を右に90度回転"
+            className="glass inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+          >
+            右へ 90°
+          </button>
+        </div>
+      )}
       <p className="text-xs text-ha-ink/60">枠をドラッグして位置を決めてください。</p>
     </div>
   );

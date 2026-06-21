@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { PixelCrop } from "react-image-crop";
-import { MAX_OUTPUT_EDGE, buildToneLut, computeSquareCropRect, outputEdge } from "./crop.ts";
+import {
+  MAX_OUTPUT_EDGE,
+  buildToneLut,
+  computeSquareCropRect,
+  normalizeQuarter,
+  outputEdge,
+  rotatedBoundingBox,
+} from "./crop.ts";
 
 function px(x: number, y: number, width: number, height: number): PixelCrop {
   return { unit: "px", x, y, width, height };
@@ -91,6 +98,42 @@ describe("computeSquareCropRect", () => {
       expect(rect.sx + rect.size).toBeLessThanOrEqual(naturalW);
       expect(rect.sy + rect.size).toBeLessThanOrEqual(naturalH);
     }
+  });
+});
+
+describe("normalizeQuarter（#314・90度単位）", () => {
+  it("0/90/180/270 に丸める", () => {
+    expect(normalizeQuarter(0)).toBe(0);
+    expect(normalizeQuarter(90)).toBe(90);
+    expect(normalizeQuarter(180)).toBe(180);
+    expect(normalizeQuarter(270)).toBe(270);
+  });
+  it("負・360超を畳む", () => {
+    expect(normalizeQuarter(-90)).toBe(270);
+    expect(normalizeQuarter(450)).toBe(90);
+    expect(normalizeQuarter(360)).toBe(0);
+    expect(normalizeQuarter(-360)).toBe(0);
+  });
+  it("近い90度へ丸める（微調整 → 90度系へスナップ）", () => {
+    expect(normalizeQuarter(175)).toBe(180);
+    expect(normalizeQuarter(46)).toBe(90);
+    expect(normalizeQuarter(44)).toBe(0);
+  });
+});
+
+describe("rotatedBoundingBox（#314）", () => {
+  it("90/270度は幅高さが入れ替わる", () => {
+    expect(rotatedBoundingBox(100, 50, 90)).toEqual({ width: 50, height: 100 });
+    expect(rotatedBoundingBox(100, 50, 270)).toEqual({ width: 50, height: 100 });
+  });
+  it("0/180度は元のまま", () => {
+    expect(rotatedBoundingBox(100, 50, 0)).toEqual({ width: 100, height: 50 });
+    expect(rotatedBoundingBox(100, 50, 180)).toEqual({ width: 100, height: 50 });
+  });
+  it("任意角は外接矩形が拡大する（将来の微調整用）", () => {
+    const box = rotatedBoundingBox(100, 100, 45);
+    expect(box.width).toBeGreaterThan(100);
+    expect(box.width).toBe(box.height); // 正方形は対称
   });
 });
 

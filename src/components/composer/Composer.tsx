@@ -6,7 +6,7 @@
 // 出力 1:1 は renderSquareImageFromRect（canvas.width=height=size）で構造的に保証。
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
+import { normalizeQuarter, renderRotatedCanvas, renderSquareImageFromRect, type SquareCropRect } from "../../lib/image/crop.ts";
 import { insertTag, removeTag } from "../../lib/image/hashtag-complete.ts";
 import { composeEdgeBlur, composeFilterCss, composeSharpen, composeToneAmount, composeToneCurve, composeVignette, type SelectedFilter } from "../../lib/image/presets.ts";
 import type { RankedTag } from "../../lib/feed/popular.ts";
@@ -32,6 +32,8 @@ type DraftImage = {
   src: string;
   crop: SquareCropRect | null;
   filters: SelectedFilter[];
+  /** 90度回転（#314・0/90/180/270）。crop は回転後座標系。 */
+  rotation: number;
 };
 
 const MAX_IMAGES = 4;
@@ -41,7 +43,7 @@ function makeDraftImage(file: File): DraftImage {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random()}`;
-  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [] };
+  return { id, file, src: URL.createObjectURL(file), crop: null, filters: [], rotation: 0 };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -99,7 +101,7 @@ export default function Composer() {
         if (!alive || snapshot === null) return;
         const restored: DraftImage[] = snapshot.images.map((img) => {
           const file = new File([img.blob], img.name, { type: img.type });
-          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters };
+          return { id: img.id, file, src: URL.createObjectURL(file), crop: img.crop, filters: img.filters, rotation: img.rotation };
         });
         if (restored.length === 0) return;
         // 復元した集合キーを控える（blobSetKey と同じ作り方で揃える）。これで直後に発火する
@@ -182,7 +184,7 @@ export default function Composer() {
       void saveMeta({
         caption,
         currentId,
-        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters })),
+        items: images.map((img) => ({ id: img.id, crop: img.crop, filters: img.filters, rotation: img.rotation })),
       });
     }, 1000);
     return () => clearTimeout(timer);
@@ -243,9 +245,15 @@ export default function Composer() {
     setStatus({ kind: "idle" });
   }
 
-  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters">>) {
+  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation">>) {
     if (currentId === null) return;
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
+  }
+
+  // 90度回転（#314）。crop は回転後座標系なので回転時にリセット（回転後の画像で再センタリングされる）。
+  function rotateCurrentImage(delta: 90 | -90) {
+    if (currentImage === null) return;
+    updateCurrentImage({ rotation: normalizeQuarter(currentImage.rotation + delta), crop: null });
   }
 
   function removeImage(id: string) {
@@ -279,6 +287,39 @@ export default function Composer() {
   // 並べ替え行（#274）用: 選択中の写真の 0 始まり位置。currentImage が無ければ -1（行を出さない）。
   const currentIndex = currentImage === null ? -1 : images.findIndex((image) => image.id === currentImage.id);
   const hasImage = images.length > 0;
+
+  // 回転（#314）: rotation !== 0 のとき、元画像を回転した canvas の blob URL を作って CropFrame の
+  // 素材にする（react-image-crop に**軸整列の素材**を渡す＝クロップ枠が常に整合・CSS transform の枠ズレ回避）。
+  // 焼き込みも renderRotatedCanvas で回転を再現する（crop 矩形は回転後座標系）。
+  const curId = currentImage?.id ?? null;
+  const curRotation = currentImage?.rotation ?? 0;
+  const curSrc = currentImage?.src ?? null;
+  const [rotatedSrc, setRotatedSrc] = useState<string | null>(null);
+  useEffect(() => {
+    setRotatedSrc(null);
+    if (curSrc === null || curRotation === 0) return;
+    let alive = true;
+    let url: string | null = null;
+    void loadImage(curSrc).then((img) => {
+      if (!alive) return;
+      renderRotatedCanvas(img, curRotation).toBlob(
+        (blob) => {
+          if (!alive || blob === null) return;
+          url = URL.createObjectURL(blob);
+          setRotatedSrc(url);
+        },
+        "image/jpeg",
+        0.92,
+      );
+    });
+    return () => {
+      alive = false;
+      if (url !== null) URL.revokeObjectURL(url);
+    };
+  }, [curId, curRotation, curSrc]);
+  // 回転中は回転済み素材を、未回転 or 生成前は元画像を見せる（生成は一瞬・グレースフル）。
+  const displaySrc =
+    currentImage !== null && currentImage.rotation !== 0 && rotatedSrc !== null ? rotatedSrc : (currentImage?.src ?? "");
   const posting = status.kind === "posting";
   // 名前必須（#28）＝「ユーザー名を入れたら投稿できる」。設定は AccountName 側で完了済み。
   const hasName = name !== null && name.trim() !== "";
@@ -309,9 +350,12 @@ export default function Composer() {
       const orderedUrls = await Promise.all(
         images.map(async (draft, index) => {
           if (draft.crop === null) throw new Error("クロップ範囲が未確定です。枠を調整してください。");
-          const image = await loadImage(draft.src);
+          const original = await loadImage(draft.src);
+          // 回転（#314）は焼き込み時に再現＝元画像を回転した canvas を crop の素材にする
+          // （crop 矩形は回転後座標系で確定済み・プレビューと同じ renderRotatedCanvas）。
+          const source = draft.rotation === 0 ? original : renderRotatedCanvas(original, draft.rotation);
           const blob = await renderSquareImageFromRect(
-            image,
+            source,
             draft.crop,
             composeFilterCss(draft.filters),
             composeVignette(draft.filters),
@@ -429,7 +473,7 @@ export default function Composer() {
           {currentImage !== null && (
             <CropFrame
               key={currentImage.id}
-              src={currentImage.src}
+              src={displaySrc}
               imgRef={imgRef}
               initialCrop={currentImage.crop}
               filter={composeFilterCss(currentImage.filters)}
@@ -439,6 +483,7 @@ export default function Composer() {
               toneCurve={composeToneCurve(currentImage.filters)}
               toneAmount={composeToneAmount(currentImage.filters)}
               onCropComplete={(crop) => updateCurrentImage({ crop })}
+              onRotate={rotateCurrentImage}
             />
           )}
 
