@@ -2,18 +2,22 @@
 import Composer from "../components/composer/Composer.tsx";
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 // Composer は canvas / File / react-image-crop（ブラウザ専用）を使うため client:only。
 // SSR では React 島をレンダリングせず、ハイドレーション時のみ実行する。
+
+// 表示言語（#147）。今は既定（ja）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
 ---
 
-<MainLayout title="投稿する — Hanōba">
+<MainLayout title={t(locale, "meta.compose.title")}>
   <SiteHeader current="compose" wide />
 
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
     <h1 class="ha-rise font-display text-3xl font-extrabold tracking-tight text-ha-green-deep">
-      投稿する
+      {t(locale, "nav.compose")}
     </h1>
 
     <div class="ha-rise" style="--i:1">

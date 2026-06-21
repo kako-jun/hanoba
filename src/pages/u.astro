@@ -2,6 +2,7 @@
 import UserProfile from "../components/feed/UserProfile.tsx";
 import SiteHeader from "../components/SiteHeader.astro";
 import MainLayout from "../layouts/MainLayout.astro";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 // 他人の公開プロフィール（#272 段階3）。静的サイト（output:static）ゆえ動的ルート /u/[npub] は
 // 持てないので、/u?npub=<npub> のクエリで対象を渡す（discover の ?tags= と同型）。
@@ -9,12 +10,12 @@ import MainLayout from "../layouts/MainLayout.astro";
 // 鍵・relay・window 参照はクライアントのみ＝client:only（SSR では取得しない・静的生成）。
 //
 // タイトル/説明は静的なので汎用にし、相手の名前はロード後に島が document.title を補完する。
+
+// 表示言語（#147）。今は既定（ja）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
 ---
 
-<MainLayout
-  title="市民のプロフィール — Hanōba"
-  description="Hanōba の市民の公開プロフィール。置いた植物と活動スタッツ（投稿・写真・育てた品種・居住日数）を眺める。"
->
+<MainLayout title={t(locale, "meta.u.title")} description={t(locale, "meta.u.description")}>
   <SiteHeader wide />
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
