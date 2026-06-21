@@ -108,6 +108,18 @@ describe("buildFuda", () => {
     expect(fuda[0]!.name).not.toContain("原種");
   });
 
+  it("ビカクシダのカテゴリタグをビフルカツムの別名札にせず、品種名をビフルカツムに保つ（#341）", () => {
+    const fuda = buildFuda(["ビカクシダ", "ビフルカツム"], VARIETY_CATALOG);
+    expect(fuda).toEqual([
+      {
+        key: "ビフルカツム",
+        name: "ビフルカツム",
+        sci: "Platycerium bifurcatum",
+        filterTags: ["ビフルカツム"],
+      },
+    ]);
+  });
+
   it("非 pickable 見出し属はタグしても札にしない（見出し語は表に出ない）", () => {
     // 「原種」は pickable:false の見出し属＝札にならない。
     expect(buildFuda(["原種"], VARIETY_CATALOG)).toEqual([]);

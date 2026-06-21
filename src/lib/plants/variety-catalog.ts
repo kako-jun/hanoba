@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,978件 / 222属 / 24カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223）。
+// 品種タグ辞書（カテゴリ→属→品種・1,976件 / 222属 / 24カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -308,7 +308,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "ビカクシダ",
     genera: [
       { name: "原種", pickable: false, varieties: [
-        { name: "ビカクシダ", sci: "Platycerium bifurcatum" }, { name: "コウモリラン", sci: "Platycerium bifurcatum" }, { name: "リドレイ", sci: "Platycerium ridleyi" }, { name: "ウィリンキー", sci: "Platycerium willinckii" },
+        { name: "リドレイ", sci: "Platycerium ridleyi" }, { name: "ウィリンキー", sci: "Platycerium willinckii" },
         { name: "グランデ", sci: "Platycerium grande" }, { name: "コロナリウム", sci: "Platycerium coronarium" }, { name: "ビフルカツム", sci: "Platycerium bifurcatum" }, { name: "エレファントティス", sci: "Platycerium elephantotis" },
         { name: "ヴェイチー", sci: "Platycerium veitchii" }, { name: "ベイチー", sci: "Platycerium veitchii" }, { name: "ステマリア", sci: "Platycerium stemaria" }, { name: "ヒリー", sci: "Platycerium hillii" },
         { name: "スパーバム", sci: "Platycerium superbum" }, { name: "マダガスカリエンセ", sci: "Platycerium madagascariense" }, { name: "ワンダエ", sci: "Platycerium wandae" }, { name: "アルシコルネ", sci: "Platycerium alcicorne" },
@@ -1174,4 +1174,3 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     ],
   },
 ];
-
