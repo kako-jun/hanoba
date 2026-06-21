@@ -142,12 +142,11 @@ export const ja = {
   "stats.varieties.grown": "育てた品種",
   "stats.variety.filterTitle": "{label} でみんなの植物を絞る",
 
-  // 緑の総面積（GreenArea・#310）。{subject}=主語・{n}=直近件数の上限。
+  // 緑の総面積（GreenArea・#310/#344）。{subject}=主語・{equivalent}=緑100%換算枚数・{readable}=読めた写真数。
   "green.heading": "{subject}が街に足した緑",
-  "green.heading.note": "（1マス＝写真1枚・緑が多い写真ほど濃い）",
-  "green.capped": "（直近{n}件）",
-  "green.legend.low": "緑 少",
-  "green.legend.high": "多",
+  "green.cumulative": "緑100%の写真 約{equivalent}枚分",
+  "green.readable": "（{readable}枚から算出）",
+  "green.measuring": "（緑を計測中…）",
 
   // 活動の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。
   "activity.heading": "活動の草",
