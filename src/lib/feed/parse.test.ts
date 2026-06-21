@@ -56,8 +56,25 @@ describe("parseProfile (#35)", () => {
     expect(parseProfile('{"display_name":"葉子"}').name).toBe("葉子");
   });
 
+  it("好きな品種 favorite_varieties を取り出す（文字列のみ・dedupe・#141）", () => {
+    const p = parseProfile(
+      '{"name":"x","favorite_varieties":["グラキリス","チタノタ","グラキリス","",123]}',
+    );
+    expect(p.favoriteVarieties).toEqual(["グラキリス", "チタノタ"]);
+  });
+
+  it("favorite_varieties が無ければ空配列（#141）", () => {
+    expect(parseProfile('{"name":"x"}').favoriteVarieties).toEqual([]);
+  });
+
   it("不正 JSON は空 Profile", () => {
-    expect(parseProfile("nope")).toEqual({ name: null, picture: null, about: null, websites: [] });
+    expect(parseProfile("nope")).toEqual({
+      name: null,
+      picture: null,
+      about: null,
+      websites: [],
+      favoriteVarieties: [],
+    });
   });
 });
 

@@ -63,6 +63,19 @@ describe("buildProfileEvent", () => {
     expect(JSON.parse(t.content)).toEqual({ name: "カコ", websites: [{ url: "https://ok.example" }] });
   });
 
+  it("好きな品種を favorite_varieties に載せる（trim・空除去・dedupe・#141）", () => {
+    const t = buildProfileEvent({
+      name: "カコ",
+      favoriteVarieties: ["グラキリス", "  チタノタ  ", "", "グラキリス"],
+    });
+    expect(JSON.parse(t.content)).toEqual({ name: "カコ", favorite_varieties: ["グラキリス", "チタノタ"] });
+  });
+
+  it("好きな品種が空なら favorite_varieties を載せない（#141）", () => {
+    const t = buildProfileEvent({ name: "カコ", favoriteVarieties: ["", "  "] });
+    expect(JSON.parse(t.content)).toEqual({ name: "カコ" });
+  });
+
   it("空名は throw", () => {
     expect(() => buildProfileEvent({ name: "   " })).toThrow();
   });

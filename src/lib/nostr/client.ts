@@ -30,6 +30,7 @@ import {
   getProfileExtra,
   getPublicKeyHex,
   mergeProfileExtra,
+  type ProfileExtra,
   setDisplayName,
   setProfileExtra,
   signTemplate,
@@ -460,6 +461,7 @@ export async function saveProfile(fields: ProfileFields): Promise<NostrEvent> {
     picture: fields.picture?.trim() || null,
     about: fields.about?.trim() || null,
     websites: (fields.websites ?? []).map((w) => w.trim()).filter((w) => w !== ""),
+    favoriteVarieties: (fields.favoriteVarieties ?? []).map((v) => v.trim()).filter((v) => v !== ""),
   });
   return publishProfile(fields);
 }
@@ -486,9 +488,9 @@ function sleep(ms: number): Promise<void> {
  * 編集欄が空のまま固定され、その空控えが saveDisplayName の clobber（websites:[] で
  * relay の正本を上書き）を招く（#93 の data-loss 経路）。
  *
- * websites を1件でも掴めたら即確定して返す（websites 取りこぼしが主因なので、解消したら止める）。
- * まだ空の間は最大 attempts 回まで引き直し、その時点で最も豊富（websites 件数が多い）な結果を
- * 保持する＝早期確定しない all-empty 経路では richest を返す。全部空振りなら null。
+ * websites/好きな品種を1件でも掴めたら即確定して返す（取りこぼしが主因なので、解消したら止める）。
+ * まだ空の間は最大 attempts 回まで引き直し、その時点で最も豊富（websites＋好きな品種の件数が多い）な
+ * 結果を保持する＝早期確定しない all-empty 経路では richest を返す。全部空振りなら null。
  * 取得は非ブロッキング（呼び出し側は先にローカル控えで描画済み）なので、待ちは UI を止めない。
  */
 export async function fetchMyProfileResilient(
@@ -499,14 +501,16 @@ export async function fetchMyProfileResilient(
   fetchOnce: (pubkey: string) => Promise<Profile | null> = fetchMyProfile,
   wait: (ms: number) => Promise<void> = sleep,
 ): Promise<Profile | null> {
+  // 取りこぼしやすい配列項目（websites＋好きな品種）の合計件数を「豊富さ」とする（#141）。
+  const richness = (p: Profile): number => p.websites.length + p.favoriteVarieties.length;
   let best: Profile | null = null;
   for (let i = 0; i < attempts; i++) {
     const p = await fetchOnce(pubkey);
-    if (p !== null && (best === null || p.websites.length > best.websites.length)) {
+    if (p !== null && (best === null || richness(p) > richness(best))) {
       best = p;
     }
-    // websites は最も取りこぼしやすい項目。掴めたら確定する（無駄な再取得をしない）。
-    if (best !== null && best.websites.length > 0) return best;
+    // 配列項目を1件でも掴めたら確定する（無駄な再取得をしない）。
+    if (best !== null && richness(best) > 0) return best;
     if (i < attempts - 1) await wait(delayMs);
   }
   return best;
@@ -589,8 +593,8 @@ export async function saveDisplayName(name: string): Promise<void> {
 }
 
 /** Profile（kind:0 全体）から付加項目（ProfileExtra）を取り出す。 */
-function profileToExtra(p: Profile): { picture: string | null; about: string | null; websites: string[] } {
-  return { picture: p.picture, about: p.about, websites: p.websites };
+function profileToExtra(p: Profile): ProfileExtra {
+  return { picture: p.picture, about: p.about, websites: p.websites, favoriteVarieties: p.favoriteVarieties };
 }
 
 /**

@@ -19,8 +19,9 @@ const withSites: Profile = {
   picture: null,
   about: null,
   websites: ["https://midori-en.example.com", "https://x.com/midori_test"],
+  favoriteVarieties: [],
 };
-const noSites: Profile = { name: "みどり園", picture: null, about: null, websites: [] };
+const noSites: Profile = { name: "みどり園", picture: null, about: null, websites: [], favoriteVarieties: [] };
 const noWait = () => Promise.resolve();
 
 describe("fetchMyProfileResilient (#93 bounded retry)", () => {
@@ -70,7 +71,7 @@ describe("fetchMyProfileResilient (#93 bounded retry)", () => {
   });
 
   it("websites を1件でも掴めたら早期確定し、より豊富な版を待たない", async () => {
-    const one: Profile = { name: "x", picture: null, about: null, websites: ["https://a.example.com"] };
+    const one: Profile = { name: "x", picture: null, about: null, websites: ["https://a.example.com"], favoriteVarieties: [] };
     const fetchOnce = vi
       .fn<(p: string) => Promise<Profile | null>>()
       .mockResolvedValueOnce(one) // websites 1 件 → 即確定するので…

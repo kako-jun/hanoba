@@ -6,7 +6,7 @@ import type { Profile } from "../../lib/feed/parse.ts";
 // 取得を試みた pubkey は、リトライ予算を使い切ってから空 Profile を入れて無限再取得を防ぐ。
 const cache = new Map<string, Profile>();
 
-const EMPTY: Profile = { name: null, picture: null, about: null, websites: [] };
+const EMPTY: Profile = { name: null, picture: null, about: null, websites: [], favoriteVarieties: [] };
 
 // 著者プロフィールの bounded retry（#103 デグレ修正）。
 // 単発の fetchProfiles は、接続直後やモバイル回線で lagging relay が EOSE 前に

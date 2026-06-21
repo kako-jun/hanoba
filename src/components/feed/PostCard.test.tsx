@@ -234,7 +234,7 @@ describe("PostCard", () => {
           now={2000}
           onOpen={noop}
           onSelectHashtag={noop}
-          profile={{ name: "カコ栽培家", picture: null, about: null, websites: [] }}
+          profile={{ name: "カコ栽培家", picture: null, about: null, websites: [], favoriteVarieties: [] }}
         />,
       );
       expect(screen.getByText("カコ栽培家")).toBeInTheDocument();

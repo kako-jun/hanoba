@@ -80,6 +80,7 @@ export default function AccountName({ onChange, promptLabel = "はじめまし�
           picture: existing.picture,
           about: existing.about,
           websites: existing.websites,
+          favoriteVarieties: existing.favoriteVarieties,
         });
       }
     } catch {
