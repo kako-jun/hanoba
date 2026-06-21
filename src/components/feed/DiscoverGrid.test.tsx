@@ -60,6 +60,7 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     fetchReactionCount.mockResolvedValue(0);
     window.history.replaceState(null, "", "/discover");
     window.localStorage.clear();
+    localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
   });
 
   afterEach(() => {

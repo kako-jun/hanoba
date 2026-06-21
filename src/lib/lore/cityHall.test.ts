@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { BOOK_PAGES, type HubLink } from "./cityHall.ts";
+import { buildCityHallBook, type HubLink } from "./cityHall.ts";
 
 // 市役所ハブ（P2・#163）のリンクデータの正本テスト。
 // 役所が「開庁」したか（実在ルート）／「近日開庁」（route:null）かを、
 // 表示テキストでなくデータ側で固定する（cityHall.ts が単一ソース・#160）。
 
 function hubLinks(): HubLink[] {
-  const page2 = BOOK_PAGES.find((p) => p.page === 2);
+  const page2 = buildCityHallBook("ja").find((p) => p.page === 2);
   expect(page2?.kind).toBe("hub");
   // 型ナローイング（hub ページのみ groups を持つ）。群をまたいで全リンクを平らに見る（#263）。
   return page2 && page2.kind === "hub" ? page2.groups.flatMap((g) => g.links) : [];

@@ -150,10 +150,10 @@ describe("applyClientFilter", () => {
 
 describe("filterSummary", () => {
   it("空は『みんなの植物』", () => {
-    expect(filterSummary(EMPTY_FILTER)).toBe("みんなの植物");
+    expect(filterSummary(EMPTY_FILTER, "ja")).toBe("みんなの植物");
   });
   it("タグを ・ で連結", () => {
-    expect(filterSummary({ tags: ["トマト", "実生"] })).toBe("トマト・実生");
+    expect(filterSummary({ tags: ["トマト", "実生"] }, "ja")).toBe("トマト・実生");
   });
 });
 
