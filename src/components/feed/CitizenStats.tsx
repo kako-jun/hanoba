@@ -7,6 +7,7 @@ import { citizenLevelLabel } from "../../lib/lore/citizen.ts";
 import ActivityHeatmap from "./ActivityHeatmap.tsx";
 import GreenArea from "./GreenArea.tsx";
 import SciName from "../ui/SciName.tsx";
+import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface Props {
   /** その市民の t:hanoba 投稿（fetchMyPosts(pubkey)・自分/他人共通）。 */
@@ -29,6 +30,8 @@ interface Props {
  * 静かなステータスラベルで出す。称号の置換＝「緑の総面積」（#310・街に足した緑）は別途。
  */
 export default function CitizenStats({ posts, hasName, subjectName }: Props) {
+  const locale = useLocale();
+  const t = useT(locale);
   // 品種同定用カタログ（buildFuda）。動的 import・失敗時は null＝品種数を伏せるだけ。
   const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
   useEffect(() => {
@@ -54,13 +57,13 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
     [posts, catalog, hasName],
   );
 
-  const subject = subjectName ?? "この市民";
-  const levelLabel = citizenLevelLabel(stats.level);
+  const subject = subjectName ?? t("stats.subject.default");
+  const levelLabel = citizenLevelLabel(stats.level, locale);
 
   return (
-    <section className="glass rounded-2xl p-5 flex flex-col gap-4" aria-label={`${subject}の活動`}>
+    <section className="glass rounded-2xl p-5 flex flex-col gap-4" aria-label={t("stats.activity.heading", { subject })}>
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-display text-lg font-bold text-ha-green-deep">{subject}の活動</h2>
+        <h2 className="font-display text-lg font-bold text-ha-green-deep">{t("stats.activity.heading", { subject })}</h2>
         {/* 市民レベル（旅人/市民/市民Ln）。名乗り前は旅人＝まだ市民でない。脱ゲーム化（#272）で
             塗りピル（CTA 見え）でなく、うっすい囲みの静かなステータスラベルにする。 */}
         <span className="rounded-full border border-ha-green/30 px-2.5 py-0.5 text-xs font-medium text-ha-green-deep/70">
@@ -69,24 +72,24 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
       </div>
 
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="投稿" value={stats.postCount} unit="件" />
-        <Stat label="写真" value={stats.photoCount} unit="枚" />
-        <Stat label="品種" value={catalog === null ? null : stats.varietyCount} unit="種" />
-        <Stat label="居住" value={stats.tenureDays} unit="日" />
+        <Stat label={t("stats.posts.label")} value={stats.postCount} unit={t("stats.posts.unit")} />
+        <Stat label={t("stats.photos.label")} value={stats.photoCount} unit={t("stats.photos.unit")} />
+        <Stat label={t("stats.varieties.label")} value={catalog === null ? null : stats.varietyCount} unit={t("stats.varieties.unit")} />
+        <Stat label={t("stats.tenure.label")} value={stats.tenureDays} unit={t("stats.tenure.unit")} />
       </dl>
 
       {/* 育てた品種の図鑑的な一覧（多い順）。catalog ロード後・1種以上あるときだけ。
           タップでその品種の discover 絞り込みへ（みんなの植物＝全員の同じ植物を辿る・札/タグと同じ行き先・#kako-jun）。 */}
       {catalog !== null && stats.varieties.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-ha-ink/70">育てた品種</p>
+          <p className="text-sm font-medium text-ha-ink/70">{t("stats.varieties.grown")}</p>
           <ul className="flex flex-wrap gap-1.5">
             {stats.varieties.map((v) => (
               <li key={v.key} className="min-w-0 max-w-full">
                 <a
                   href={discoverTagsHref([v.name])}
                   className="glass inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors hover:text-ha-green-deep hover:border-ha-green/50 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
-                  title={`${v.sci !== null ? `${v.sci}（${v.name}）` : v.name} でみんなの植物を絞る`}
+                  title={t("stats.variety.filterTitle", { label: v.sci !== null ? `${v.sci}（${v.name}）` : v.name })}
                 >
                   {v.sci !== null && (
                     <span className="min-w-0 truncate">
