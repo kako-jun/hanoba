@@ -307,6 +307,7 @@ export default function CropFrame({
                   // ドラッグ中の tick は連続入力（continuous=true）＝1ドラッグを1手に畳む（#403）。
                   onChange={(e) => setFine(Number(e.target.value), true)}
                   // ドラッグ終端（マウス/タッチ/キーボード）で畳み込みをリセット＝次のドラッグは別の1手（#403）。
+                  // ※キーボードの矢印操作は各キーアップが境界＝1キー押下=1手（±0.5 ボタンと同じ離散粒度・設計どおり）。
                   onPointerUp={() => onRotateGestureEnd?.()}
                   onTouchEnd={() => onRotateGestureEnd?.()}
                   onMouseUp={() => onRotateGestureEnd?.()}

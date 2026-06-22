@@ -319,16 +319,17 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     const userCrop = opts?.userCrop === true && fields.includes("crop");
     const undoable = fields.some((f) => f !== "crop") || userCrop; // 自動 crop（fromUser でない）は非対象を維持（#393）。
     if (undoable) {
-      // 連続入力＝回転微調整スライダのドラッグ tick（continuousRotation=true）だけ run の最初だけ積んで畳む。それ以外
-      //（90°/±0.5 ボタン・filter/crop/shotDate＝離散編集）は毎回1手として積む。ドラッグ終端で onRotateGestureEnd が
-      // lastEditTagRef をクリアするので、2回目のドラッグは別の1手になる。
-      const isContinuous = opts?.continuousRotation === true;
-      const tag = `${currentId}:${fields.slice().sort().join(",")}`;
-      if (!isContinuous || tag !== lastEditTagRef.current) {
+      // 連続入力＝回転微調整スライダのドラッグ tick（continuousRotation=true）だけ run の最初だけ積んで畳む。
+      // ドラッグ終端で onRotateGestureEnd が lastEditTagRef をクリアするので、2回目のドラッグは別の1手になる。
+      // 離散編集（90°/±0.5 ボタン・filter/crop/shotDate）は毎回1手として積み、タグをクリアして次も独立させる。
+      if (opts?.continuousRotation === true) {
+        const tag = `${currentId}:${fields.slice().sort().join(",")}`;
+        if (tag !== lastEditTagRef.current) setUndoStack((s) => [...s, imagesRef.current].slice(-UNDO_CAP));
+        lastEditTagRef.current = tag;
+      } else {
         setUndoStack((s) => [...s, imagesRef.current].slice(-UNDO_CAP));
+        lastEditTagRef.current = null;
       }
-      // 連続入力は run を畳むためタグを覚える。離散編集は次も独立した1手にするためタグをクリアする。
-      lastEditTagRef.current = isContinuous ? tag : null;
     }
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
   }
