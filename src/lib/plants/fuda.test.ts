@@ -63,10 +63,11 @@ describe("buildFuda", () => {
   });
 
   it("学名は catalog の variety.sci を最優先する（塊根植物の実データ）", () => {
-    // ブレビカウレ → catalog.sci = Pachypodium brevicaule。品種札は属＋品種で立てる（#272）。
+    // ブレビカウレ → #409 で正準「恵比寿笑い」へ統合（alias）。catalog.sci = Pachypodium brevicaule。
+    // 旧投稿のタグ「ブレビカウレ」も alias 経由で正準 name に解決し、品種札は属＋品種で立てる（#272）。
     const fuda = buildFuda(["パキポディウム", "ブレビカウレ"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "ブレビカウレ", sci: "Pachypodium brevicaule" });
+    expect(fuda[0]).toMatchObject({ name: "恵比寿笑い", sci: "Pachypodium brevicaule" });
   });
 
   it("catalog.sci が無くても dictionary に品種があれば品種 sci を併記する", () => {
@@ -283,9 +284,11 @@ describe("buildFuda", () => {
   });
 
   it("#223 属共起で品種確定: ディオスコレア＋エレファンティペス→亀甲竜系（塊根側・Dioscorea）", () => {
+    // #409 で Dioscorea「エレファンティペス」は正準「亀甲竜」へ統合（alias）。属共起で塊根側（Dioscorea）の
+    // 亀甲竜に確定し、同名 alias を持つ Yucca（Yucca gigantea）側へは化けないこと（sci で別物を排除）。
     const fuda = buildFuda(["ディオスコレア", "エレファンティペス"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "エレファンティペス", sci: "Dioscorea elephantipes" });
+    expect(fuda[0]).toMatchObject({ name: "亀甲竜", sci: "Dioscorea elephantipes" });
   });
 
   it("#223 variety-variety も属共起で確定: アエオニウム＋夕映→アエオニウムの夕映", () => {
