@@ -34,8 +34,10 @@ describe("keys: 決定性（nostr-tools 配線の実証）", () => {
 
     // 同入力 → 同 id
     expect(ev1.id).toBe(ev2.id);
-    // バイト互換の回帰検出用に既知値で固定（mypace と同じ event id を生む配線）
-    expect(ev1.id).toBe("38c1cf5750e87342a11a0d0c644eaf3f74ca4529b8601c0ebc547454264033b8");
+    // バイト互換の回帰検出用に既知値で固定（mypace と同じ event id を生む配線）。
+    // content が "開花した #アガベ #plantstr\n<url>" になった（#408・本文 #plantstr 自動併記）
+    // ため既知 id を更新。pubkey は鍵由来で content に依らないので不変。
+    expect(ev1.id).toBe("f9d7f79e2e1d342d73aa63e0a3cb31a9a94b5325e4405428bdee31147a845c7c");
     expect(ev1.pubkey).toBe("84bf7562262bbd6940085748f3be6afa52ae317155181ece31b66351ccffa4b0");
   });
 });

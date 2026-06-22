@@ -95,13 +95,47 @@ describe("buildNoteTemplate", () => {
     expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "アガベ")).toBe(false);
   });
 
-  it("画像 URL をインラインのプレーン URL で content に連結する", () => {
+  it("画像 URL をインラインのプレーン URL で content に連結する（caption と URL の間に #plantstr を併記・#408）", () => {
     const t = buildNoteTemplate({
       caption: "開花した #アガベ",
       imageUrls: ["https://image.nostr.build/xxx.jpg"],
       createdAt: 1700000000,
     });
-    expect(t.content).toBe("開花した #アガベ\nhttps://image.nostr.build/xxx.jpg");
+    expect(t.content).toBe("開花した #アガベ #plantstr\nhttps://image.nostr.build/xxx.jpg");
+  });
+
+  it("本文 caption 末尾に #plantstr を自動併記する（画像なし・#408）", () => {
+    const t = buildNoteTemplate({ caption: "開花した", createdAt: 1700000000 });
+    expect(t.content).toBe("開花した #plantstr");
+  });
+
+  it("#plantstr は caption と画像 URL の間（URL より前）に来る（#408）", () => {
+    const t = buildNoteTemplate({
+      caption: "成長記録",
+      imageUrls: ["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.jpg"],
+      createdAt: 1700000000,
+    });
+    expect(t.content).toBe("成長記録 #plantstr\nhttps://image.nostr.build/a.jpg\nhttps://image.nostr.build/b.jpg");
+    // URL より前に #plantstr が出る。
+    expect(t.content.indexOf("#plantstr")).toBeLessThan(t.content.indexOf("https://"));
+  });
+
+  it("caption に既に #plantstr があれば二重化しない（手書き尊重・#408）", () => {
+    const t = buildNoteTemplate({ caption: "開花した #plantstr", createdAt: 1700000000 });
+    expect(t.content).toBe("開花した #plantstr");
+    // #plantstr は1回だけ。
+    expect(t.content.match(/#plantstr/gi)?.length).toBe(1);
+  });
+
+  it("caption の #Plantstr など大小違いも重複扱いで足さない（#408）", () => {
+    const t = buildNoteTemplate({
+      caption: "開花した #Plantstr",
+      imageUrls: ["https://image.nostr.build/xxx.jpg"],
+      createdAt: 1700000000,
+    });
+    expect(t.content).toBe("開花した #Plantstr\nhttps://image.nostr.build/xxx.jpg");
+    // #plantstr 系は手書きの1つだけ（小文字版を足さない）。
+    expect(t.content.match(/#plantstr/gi)?.length).toBe(1);
   });
 
   it("写真ごとの撮影日を位置配列タグ shot_dates に載せる（imageUrls 順・無い位置は空文字・#324）", () => {
@@ -133,22 +167,22 @@ describe("buildNoteTemplate", () => {
     ).toBe(false);
   });
 
-  it("複数の画像 URL を改行で連結する", () => {
+  it("複数の画像 URL を改行で連結する（caption の後・#plantstr の後）", () => {
     const t = buildNoteTemplate({
       caption: "成長記録",
       imageUrls: ["https://image.nostr.build/a.jpg", "https://image.nostr.build/b.jpg"],
     });
-    expect(t.content).toBe("成長記録\nhttps://image.nostr.build/a.jpg\nhttps://image.nostr.build/b.jpg");
+    expect(t.content).toBe("成長記録 #plantstr\nhttps://image.nostr.build/a.jpg\nhttps://image.nostr.build/b.jpg");
   });
 
-  it("imageUrls 省略時は caption（trim 済み）のみ", () => {
+  it("imageUrls 省略時は caption（trim 済み）＋#plantstr のみ", () => {
     const t = buildNoteTemplate({ caption: "  種まきした  " });
-    expect(t.content).toBe("種まきした");
+    expect(t.content).toBe("種まきした #plantstr");
   });
 
-  it("imageUrls が空配列なら caption のみ", () => {
+  it("imageUrls が空配列なら caption＋#plantstr のみ", () => {
     const t = buildNoteTemplate({ caption: "一言だけ", imageUrls: [] });
-    expect(t.content).toBe("一言だけ");
+    expect(t.content).toBe("一言だけ #plantstr");
   });
 
   it("createdAt を反映する", () => {
