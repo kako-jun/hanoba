@@ -310,7 +310,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "原種", pickable: false, varieties: [
         { name: "リドレイ", sci: "Platycerium ridleyi" }, { name: "ウィリンキー", sci: "Platycerium willinckii" },
         { name: "グランデ", sci: "Platycerium grande" }, { name: "コロナリウム", sci: "Platycerium coronarium" }, { name: "ビフルカツム", sci: "Platycerium bifurcatum" }, { name: "エレファントティス", sci: "Platycerium elephantotis" },
-        { name: "ヴェイチー", sci: "Platycerium veitchii" }, { name: "ベイチー", sci: "Platycerium veitchii" }, { name: "ステマリア", sci: "Platycerium stemaria" }, { name: "ヒリー", sci: "Platycerium hillii" },
+        { name: "ベイチー", sci: "Platycerium veitchii", aliases: ["ヴェイチー"] }, { name: "ステマリア", sci: "Platycerium stemaria" }, { name: "ヒリー", sci: "Platycerium hillii" },
         { name: "スパーバム", sci: "Platycerium superbum" }, { name: "マダガスカリエンセ", sci: "Platycerium madagascariense" }, { name: "ワンダエ", sci: "Platycerium wandae" }, { name: "アルシコルネ", sci: "Platycerium alcicorne" },
         { name: "ホルタミー", sci: "Platycerium holttumii" }, { name: "ワリチー", sci: "Platycerium wallichii" }, { name: "エリシー", sci: "Platycerium ellisii" }, { name: "クアドリディコトマム", sci: "Platycerium quadridichotomum" },
         { name: "アンゴレンセ", sci: "Platycerium angolense" }, { name: "アンディナム", sci: "Platycerium andinum" }, { name: "ヴァッセイ", sci: "Platycerium vassei" },
@@ -806,8 +806,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "マンリョウ", sci: "Ardisia crenata" }, { name: "ムクゲ", sci: "Hibiscus syriacus" }, { name: "フヨウ", sci: "Hibiscus mutabilis" }, { name: "キョウチクトウ", sci: "Nerium oleander" },
       ] },
       { name: "モミジ", pickable: true, aliases: ["紅葉", "カエデ", "もみじ"], varieties: [
-        { name: "イロハモミジ", sci: "Acer palmatum" }, { name: "ヤマモミジ", sci: "Acer palmatum subsp. matsumurae" }, { name: "出猩々", sci: "Acer palmatum 'Deshojo'" }, { name: "野村もみじ", sci: "Acer palmatum 'Nomura'" },
-        { name: "獅子頭", sci: "Acer palmatum 'Shishigashira'" }, { name: "青枝垂れ", sci: "Acer palmatum 'Ao-shidare'" }, { name: "デショウジョウ", sci: "Acer palmatum 'Deshojo'" }, { name: "トウカエデ", sci: "Acer buergerianum" },
+        { name: "イロハモミジ", sci: "Acer palmatum" }, { name: "ヤマモミジ", sci: "Acer palmatum subsp. matsumurae" }, { name: "デショウジョウ", sci: "Acer palmatum 'Deshojo'", aliases: ["出猩々"] }, { name: "野村もみじ", sci: "Acer palmatum 'Nomura'" },
+        { name: "獅子頭", sci: "Acer palmatum 'Shishigashira'" }, { name: "青枝垂れ", sci: "Acer palmatum 'Ao-shidare'" }, { name: "トウカエデ", sci: "Acer buergerianum" },
       ] },
       { name: "ウメ", pickable: true, aliases: ["梅"], varieties: [
         { name: "南高", sci: "Prunus mume 'Nankou'" }, { name: "白加賀", sci: "Prunus mume 'Shirakaga'" }, { name: "豊後", sci: "Prunus mume 'Bungo'" }, { name: "鶯宿", sci: "Prunus mume 'Ōshuku'" },
@@ -949,7 +949,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "小松菜", sci: "Brassica rapa var. perviridis" }, { name: "レタス", sci: "Lactuca sativa" }, { name: "サニーレタス", sci: "Lactuca sativa var. crispa 'Sunny'" }, { name: "サンチュ", sci: "Lactuca sativa var. angustana" },
         { name: "ロメインレタス", sci: "Lactuca sativa var. longifolia" }, { name: "リーフレタス", sci: "Lactuca sativa var. crispa" }, { name: "フリルレタス", sci: "Lactuca sativa var. crispa 'Frill'" }, { name: "玉レタス", sci: "Lactuca sativa var. capitata" },
         { name: "サラダ菜", sci: "Lactuca sativa var. capitata" }, { name: "グリーンカール", sci: "Lactuca sativa var. crispa 'Green Curl'" }, { name: "春菊", sci: "Glebionis coronaria" }, { name: "水菜", sci: "Brassica rapa var. nipposinica" },
-        { name: "ルッコラ", sci: "Eruca vesicaria" }, { name: "パクチー", sci: "Coriandrum sativum" }, { name: "コリアンダー", sci: "Coriandrum sativum" }, { name: "大葉", sci: "Perilla frutescens var. crispa" },
+        { name: "ルッコラ", sci: "Eruca vesicaria" }, { name: "パクチー", sci: "Coriandrum sativum", aliases: ["コリアンダー"] }, { name: "大葉", sci: "Perilla frutescens var. crispa" },
         { name: "青じそ", sci: "Perilla frutescens var. crispa f. viridis" }, { name: "赤じそ", sci: "Perilla frutescens var. crispa f. purpurea" }, { name: "ケール", sci: "Brassica oleracea var. acephala" }, { name: "カーボロネロ", sci: "Brassica oleracea var. acephala 'Cavolo Nero'" },
         { name: "カリーノケール", sci: "Brassica oleracea var. acephala 'Carino'" }, { name: "スイスチャード", sci: "Beta vulgaris var. cicla" }, { name: "ふだん草", sci: "Beta vulgaris var. cicla" },
       ] },

@@ -160,4 +160,35 @@ describe("カタログの健全性", () => {
       }
     }
   });
+
+  it("#409 同一属内に同じ品種 name が重複しない（真の重複は1エントリに収束）", () => {
+    const dups: string[] = [];
+    for (const cat of VARIETY_CATALOG) {
+      for (const genus of cat.genera) {
+        const seen = new Map<string, number>();
+        for (const v of genus.varieties) seen.set(v.name, (seen.get(v.name) ?? 0) + 1);
+        for (const [name, n] of seen) if (n > 1) dups.push(`${cat.label}/${genus.name}: ${name} x${n}`);
+      }
+    }
+    expect(dups).toEqual([]);
+  });
+
+  it("#409 Platycerium veitchii はベイチー1件＋alias ヴェイチー に統合（表記揺れを1エントリへ）", () => {
+    const veitchii = VARIETY_CATALOG
+      .flatMap((category) => category.genera)
+      .flatMap((genus) => genus.varieties)
+      .filter((variety) => variety.sci === "Platycerium veitchii");
+    expect(veitchii).toEqual([{ name: "ベイチー", sci: "Platycerium veitchii", aliases: ["ヴェイチー"] }]);
+    // 別検索（ヴェイチー）でも正準「ベイチー」に到達する。
+    expect(searchCatalog(VARIETY_CATALOG, "ヴェイチー").map((h) => h.name)).toContain("ベイチー");
+  });
+
+  it("#409/#315 ベイチーは Anthurium veitchii（別属の同名）と混ざらない（属文脈で別管理）", () => {
+    const anthurium = VARIETY_CATALOG
+      .flatMap((category) => category.genera)
+      .flatMap((genus) => genus.varieties)
+      .filter((variety) => variety.sci === "Anthurium veitchii");
+    // Anthurium 側の「ベイチー」は別植物として温存（統合・移動しない）。
+    expect(anthurium).toEqual([{ name: "ベイチー", sci: "Anthurium veitchii" }]);
+  });
 });

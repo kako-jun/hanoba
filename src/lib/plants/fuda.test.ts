@@ -125,6 +125,31 @@ describe("buildFuda", () => {
     expect(buildFuda(["原種"], VARIETY_CATALOG)).toEqual([]);
   });
 
+  it("#409 別名 #ヴェイチー の旧投稿も正準 name『ベイチー』に解決する（read=別名→正準）", () => {
+    // ビカクシダ › 原種 › { name:"ベイチー", aliases:["ヴェイチー"] } に統合済み。
+    // 別名タグで打った投稿も札の name は正準「ベイチー」になる（学名は Platycerium veitchii）。
+    const fuda = buildFuda(["ヴェイチー"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]!.name).toBe("ベイチー");
+    expect(fuda[0]!.sci).toBe("Platycerium veitchii");
+  });
+
+  it("#409/#315 ベイチー単独は Platycerium（catalog 先頭候補）に倒れ、Anthurium に化けない", () => {
+    // ベイチー は Platycerium（ビカクシダ）と Anthurium（観葉植物）に同名で存在する。
+    // 親属タグ無しの単独は catalog 出現順の先頭＝ビカクシダの Platycerium veitchii に倒す。
+    const fuda = buildFuda(["ベイチー"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]!.name).toBe("ベイチー");
+    expect(fuda[0]!.sci).toBe("Platycerium veitchii");
+  });
+
+  it("#409/#315 アンスリウム共起なら ベイチー は Anthurium 側に確定する（同名跨ぎ・属共起解決が無回帰）", () => {
+    const fuda = buildFuda(["アンスリウム", "ベイチー"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]!.name).toBe("ベイチー");
+    expect(fuda[0]!.sci).toBe("Anthurium veitchii");
+  });
+
   it("辞書外・世話タグ・他クライアント由来タグは無視する", () => {
     const fuda = buildFuda(["水やり", "謎タグ", "アガベ"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
