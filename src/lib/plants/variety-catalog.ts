@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,984件 / 222属 / 24カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223・ユッカ有名種追補）。
+// 品種タグ辞書（カテゴリ→属→品種・1,958件 / 222属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409・ユッカ有名種追補）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -512,28 +512,6 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     ],
   },
   {
-    label: "盆栽",
-    genera: [
-      { name: "盆栽樹種", pickable: false, varieties: [
-        { name: "黒松", sci: "Pinus thunbergii" }, { name: "五葉松", sci: "Pinus parviflora" }, { name: "赤松", sci: "Pinus densiflora" }, { name: "錦松", sci: "Pinus thunbergii 'Nishikimatsu'" },
-        { name: "真柏", sci: "Juniperus chinensis var. sargentii" }, { name: "糸魚川真柏", sci: "Juniperus chinensis var. sargentii" }, { name: "杜松", sci: "Juniperus rigida" }, { name: "蝦夷松", sci: "Picea jezoensis" },
-        { name: "唐松", sci: "Larix kaempferi" }, { name: "杉", sci: "Cryptomeria japonica" }, { name: "桧", sci: "Chamaecyparis obtusa" }, { name: "石化檜", sci: "Chamaecyparis obtusa" },
-        { name: "一位", sci: "Taxus cuspidata" }, { name: "山もみじ", sci: "Acer palmatum var. matsumurae" }, { name: "出猩々", sci: "Acer palmatum 'Deshojo'" }, { name: "楓", sci: "Acer" },
-        { name: "唐楓", sci: "Acer buergerianum" }, { name: "欅", sci: "Zelkova serrata" }, { name: "ブナ", sci: "Fagus crenata" }, { name: "長寿梅", sci: "Chaenomeles japonica" },
-        { name: "盆梅", sci: "Prunus mume" }, { name: "旭山桜", sci: "Prunus serrulata 'Asahiyama'" }, { name: "富士桜", sci: "Prunus incisa" }, { name: "椿", sci: "Camellia japonica" },
-        { name: "皐月", sci: "Rhododendron indicum" }, { name: "ボケ", sci: "Chaenomeles speciosa" }, { name: "南天", sci: "Nandina domestica" }, { name: "ピラカンサ", sci: "Pyracantha" },
-        { name: "花梨", sci: "Pseudocydonia sinensis" }, { name: "老爺柿", sci: "Diospyros rhombifolia" }, { name: "姫りんご", sci: "Malus prunifolia" }, { name: "ウメモドキ", sci: "Ilex serrata" },
-        { name: "蝋梅", sci: "Chimonanthus praecox" }, { name: "クチナシ", sci: "Gardenia jasminoides" }, { name: "苔盆栽" }, { name: "草もの盆栽" },
-        { name: "ミニ盆栽" }, { name: "寄せ植え盆栽" },
-      ] },
-      { name: "さつき盆栽", pickable: false, aliases: ["皐月の銘"], varieties: [
-        { name: "大盃", sci: "Rhododendron indicum 'Osakazuki'" }, { name: "日光", sci: "Rhododendron indicum 'Nikko'" }, { name: "月光", sci: "Rhododendron indicum 'Gekko'" }, { name: "晃山", sci: "Rhododendron indicum 'Kozan'" },
-        { name: "白光", sci: "Rhododendron indicum 'Hakko'" }, { name: "暁天", sci: "Rhododendron indicum 'Gyoten'" }, { name: "松鏡", sci: "Rhododendron indicum 'Matsukagami'" }, { name: "長寿宝", sci: "Rhododendron indicum 'Chojuho'" },
-        { name: "鹿沼", sci: "Rhododendron indicum 'Kanuma'" },
-      ] },
-    ],
-  },
-  {
     label: "シダ",
     genera: [
       { name: "アジアンタム", pickable: true, varieties: [
@@ -787,9 +765,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "クルメツツジ", sci: "Rhododendron × obtusum" }, { name: "ヒラドツツジ", sci: "Rhododendron × pulchrum" }, { name: "オオムラサキ", sci: "Rhododendron × pulchrum 'Oomurasaki'" }, { name: "ミツバツツジ", sci: "Rhododendron dilatatum" },
         { name: "ヤマツツジ", sci: "Rhododendron kaempferi" }, { name: "レンゲツツジ", sci: "Rhododendron japonicum" }, { name: "シャクナゲ", sci: "Rhododendron" },
       ] },
-      { name: "サツキ", pickable: true, aliases: ["皐月"], varieties: [
+      { name: "サツキ", pickable: true, aliases: ["皐月", "さつき盆栽"], varieties: [
         { name: "大盃", sci: "Rhododendron indicum 'Oosakazuki'" }, { name: "日光", sci: "Rhododendron indicum 'Nikko'" }, { name: "鹿沼", sci: "Rhododendron indicum 'Kanuma'" }, { name: "暁天", sci: "Rhododendron indicum 'Gyoten'" },
-        { name: "晃山", sci: "Rhododendron indicum 'Kozan'" },
+        { name: "晃山", sci: "Rhododendron indicum 'Kozan'" }, { name: "月光", sci: "Rhododendron indicum 'Gekko'" }, { name: "白光", sci: "Rhododendron indicum 'Hakko'" }, { name: "松鏡", sci: "Rhododendron indicum 'Matsukagami'" }, { name: "長寿宝", sci: "Rhododendron indicum 'Chojuho'" },
       ] },
       { name: "ツバキ", pickable: true, aliases: ["椿", "カメリア"], varieties: [
         { name: "侘助", sci: "Camellia 'Wabisuke'" }, { name: "乙女椿", sci: "Camellia japonica 'Otome'" }, { name: "数寄屋侘助", sci: "Camellia 'Sukiya'" }, { name: "卜伴", sci: "Camellia japonica 'Bokuhan'" },
@@ -804,10 +782,11 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "サルスベリ", sci: "Lagerstroemia indica", aliases: ["百日紅"] }, { name: "ライラック", sci: "Syringa vulgaris" }, { name: "ユキヤナギ", sci: "Spiraea thunbergii" }, { name: "レンギョウ", sci: "Forsythia suspensa" },
         { name: "ボケ", sci: "Chaenomeles speciosa" }, { name: "コデマリ", sci: "Spiraea cantoniensis" }, { name: "ナンテン", sci: "Nandina domestica", aliases: ["南天"] }, { name: "センリョウ", sci: "Sarcandra glabra" },
         { name: "マンリョウ", sci: "Ardisia crenata" }, { name: "ムクゲ", sci: "Hibiscus syriacus" }, { name: "フヨウ", sci: "Hibiscus mutabilis" }, { name: "キョウチクトウ", sci: "Nerium oleander" },
+        { name: "ロウバイ", sci: "Chimonanthus praecox", aliases: ["蝋梅"] }, { name: "ピラカンサ", sci: "Pyracantha" }, { name: "ウメモドキ", sci: "Ilex serrata" }, { name: "ロウヤガキ", sci: "Diospyros rhombifolia", aliases: ["老爺柿"] },
       ] },
-      { name: "モミジ", pickable: true, aliases: ["紅葉", "カエデ", "もみじ"], varieties: [
-        { name: "イロハモミジ", sci: "Acer palmatum" }, { name: "ヤマモミジ", sci: "Acer palmatum subsp. matsumurae" }, { name: "デショウジョウ", sci: "Acer palmatum 'Deshojo'", aliases: ["出猩々"] }, { name: "野村もみじ", sci: "Acer palmatum 'Nomura'" },
-        { name: "獅子頭", sci: "Acer palmatum 'Shishigashira'" }, { name: "青枝垂れ", sci: "Acer palmatum 'Ao-shidare'" }, { name: "トウカエデ", sci: "Acer buergerianum" },
+      { name: "モミジ", pickable: true, aliases: ["紅葉", "カエデ", "もみじ", "楓"], varieties: [
+        { name: "イロハモミジ", sci: "Acer palmatum" }, { name: "ヤマモミジ", sci: "Acer palmatum subsp. matsumurae", aliases: ["山もみじ"] }, { name: "デショウジョウ", sci: "Acer palmatum 'Deshojo'", aliases: ["出猩々"] }, { name: "野村もみじ", sci: "Acer palmatum 'Nomura'" },
+        { name: "獅子頭", sci: "Acer palmatum 'Shishigashira'" }, { name: "青枝垂れ", sci: "Acer palmatum 'Ao-shidare'" }, { name: "トウカエデ", sci: "Acer buergerianum", aliases: ["唐楓"] },
       ] },
       { name: "ウメ", pickable: true, aliases: ["梅"], varieties: [
         { name: "南高", sci: "Prunus mume 'Nankou'" }, { name: "白加賀", sci: "Prunus mume 'Shirakaga'" }, { name: "豊後", sci: "Prunus mume 'Bungo'" }, { name: "鶯宿", sci: "Prunus mume 'Ōshuku'" },
@@ -822,7 +801,20 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "鎌田藤", sci: "Paeonia suffruticosa 'Kamada-fuji'" }, { name: "鎌田錦", sci: "Paeonia suffruticosa 'Kamada-nishiki'" }, { name: "ハイヌーン", sci: "Paeonia × 'High Noon'" },
         { name: "太陽", sci: "Paeonia suffruticosa 'Taiyo'" },
       ] },
-      { name: "コニファー", pickable: true, varieties: [
+      // #409 P-dissolve: 旧「盆栽」カテゴリ解体。針葉樹（松柏類・園芸コニファー）は「庭木」＝ここに一本化する
+      // （花を咲かせない裸子植物だが「花木・庭木」の庭木側に属する＝kako-jun）。今後の針葉樹も全てここ＝特別扱いしない。
+      // 松柏（盆栽の松/真柏…）と園芸コニファー（ゴールドクレスト…）は性格が違うので2属に分けるが、どちらも aliases に
+      // 「針葉樹」を持たせ "針葉樹" 検索で1か所に揃う。
+      { name: "松柏類", pickable: false, aliases: ["針葉樹", "松柏"], varieties: [
+        { name: "黒松", sci: "Pinus thunbergii" }, { name: "五葉松", sci: "Pinus parviflora" }, { name: "赤松", sci: "Pinus densiflora" }, { name: "錦松", sci: "Pinus thunbergii 'Nishikimatsu'" },
+        { name: "真柏", sci: "Juniperus chinensis var. sargentii" }, { name: "糸魚川真柏", sci: "Juniperus chinensis var. sargentii" }, { name: "杜松", sci: "Juniperus rigida" }, { name: "蝦夷松", sci: "Picea jezoensis" },
+        { name: "唐松", sci: "Larix kaempferi" }, { name: "杉", sci: "Cryptomeria japonica" }, { name: "桧", sci: "Chamaecyparis obtusa" }, { name: "石化檜", sci: "Chamaecyparis obtusa" },
+        { name: "一位", sci: "Taxus cuspidata" },
+      ] },
+      { name: "雑木", pickable: true, aliases: ["落葉樹", "雑木盆栽"], varieties: [
+        { name: "ケヤキ", sci: "Zelkova serrata", aliases: ["欅"] }, { name: "ブナ", sci: "Fagus crenata" },
+      ] },
+      { name: "コニファー", pickable: true, aliases: ["針葉樹"], varieties: [
         { name: "ゴールドクレスト", sci: "Cupressus macrocarpa 'Goldcrest'" }, { name: "エメラルドグリーン", sci: "Thuja occidentalis 'Smaragd'" }, { name: "ブルーアイス", sci: "Cupressus arizonica 'Blue Ice'" }, { name: "ブルーヘブン", sci: "Juniperus scopulorum 'Blue Heaven'" },
         { name: "カイヅカイブキ", sci: "Juniperus chinensis 'Kaizuka'" },
       ] },
@@ -1102,6 +1094,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ザクロ", sci: "Punica granatum" }, { name: "ジューンベリー", sci: "Amelanchier canadensis" }, { name: "ポポー", sci: "Asimina triloba" }, { name: "アケビ", sci: "Akebia quinata" },
         { name: "パッションフルーツ", sci: "Passiflora edulis" }, { name: "グミ", sci: "Elaeagnus" }, { name: "カシス", sci: "Ribes nigrum" }, { name: "グーズベリー", sci: "Ribes uva-crispa" },
         { name: "クランベリー", sci: "Vaccinium macrocarpon" }, { name: "桑", sci: "Morus" }, { name: "マルベリー", sci: "Morus" }, { name: "パイナップル", sci: "Ananas comosus" },
+        { name: "カリン", sci: "Pseudocydonia sinensis", aliases: ["花梨"] },
       ] },
     ],
   },
