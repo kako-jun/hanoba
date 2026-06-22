@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,939件 / 222属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409・ユッカ有名種追補）。
+// 品種タグ辞書（カテゴリ→属→品種・1,909件 / 222属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409・ユッカ有名種追補）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -233,7 +233,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "怒涛", sci: "Faucaria tuberculosa" }, { name: "四海波", sci: "Faucaria tigrina" }, { name: "雪波", sci: "Faucaria felina" },
       ] },
       { name: "チタノプシス", pickable: true, varieties: [
-        { name: "天女", sci: "Titanopsis calcarea" }, { name: "カルカレア", sci: "Titanopsis calcarea" },
+        { name: "天女", sci: "Titanopsis calcarea", aliases: ["カルカレア"] },
       ] },
       { name: "アルギロデルマ", pickable: true, varieties: [
         { name: "金鈴", sci: "Argyroderma delaetii" }, { name: "国宝玉", sci: "Argyroderma delaetii" },
@@ -258,8 +258,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "豊明丸", sci: "Mammillaria bombycina" }, { name: "白鳥", sci: "Mammillaria herrerae" }, { name: "カルメナエ", sci: "Mammillaria carmenae" }, { name: "猩々丸", sci: "Mammillaria spinosissima" },
       ] },
       { name: "アストロフィツム", pickable: true, varieties: [
-        { name: "兜", sci: "Astrophytum asterias" }, { name: "兜丸", sci: "Astrophytum asterias" }, { name: "スーパー兜", sci: "Astrophytum asterias 'Super Kabuto'" }, { name: "ゼブラスーパー兜", sci: "Astrophytum asterias 'Zebra Super Kabuto'" },
-        { name: "アロースーパー兜", sci: "Astrophytum asterias 'Arrow Super Kabuto'" }, { name: "V兜", sci: "Astrophytum asterias 'V Kabuto'" }, { name: "鸞鳳玉", sci: "Astrophytum myriostigma" }, { name: "ランポー玉", sci: "Astrophytum myriostigma" },
+        { name: "兜", sci: "Astrophytum asterias", aliases: ["兜丸"] }, { name: "スーパー兜", sci: "Astrophytum asterias 'Super Kabuto'" }, { name: "ゼブラスーパー兜", sci: "Astrophytum asterias 'Zebra Super Kabuto'" },
+        { name: "アロースーパー兜", sci: "Astrophytum asterias 'Arrow Super Kabuto'" }, { name: "V兜", sci: "Astrophytum asterias 'V Kabuto'" }, { name: "ランポー玉", sci: "Astrophytum myriostigma", aliases: ["鸞鳳玉"] },
         { name: "般若", sci: "Astrophytum ornatum" }, { name: "瑞鳳玉", sci: "Astrophytum capricorne" }, { name: "恩塚ランポー", sci: "Astrophytum myriostigma 'Onzuka'" }, { name: "ヘキラン", sci: "Astrophytum myriostigma var. nudum" },
         { name: "兜錦", sci: "Astrophytum asterias f. variegata" },
       ] },
@@ -326,8 +326,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     genera: [
       { name: "チランジア", pickable: true, varieties: [
         { name: "エアプランツ", sci: "Tillandsia" }, { name: "イオナンタ", sci: "Tillandsia ionantha" }, { name: "ウスネオイデス", sci: "Tillandsia usneoides" }, { name: "キセログラフィカ", sci: "Tillandsia xerographica" },
-        { name: "ストレプトフィラ", sci: "Tillandsia streptophylla" }, { name: "カピタータ", sci: "Tillandsia capitata" }, { name: "ブルボーサ", sci: "Tillandsia bulbosa" }, { name: "フックシー", sci: "Tillandsia fuchsii" },
-        { name: "フクシー", sci: "Tillandsia fuchsii" }, { name: "テクトラム", sci: "Tillandsia tectorum" }, { name: "ハリシー", sci: "Tillandsia harrisii" }, { name: "コットンキャンディ", sci: "Tillandsia 'Cotton Candy'" },
+        { name: "ストレプトフィラ", sci: "Tillandsia streptophylla" }, { name: "カピタータ", sci: "Tillandsia capitata" }, { name: "ブルボーサ", sci: "Tillandsia bulbosa" },
+        { name: "フクシー", sci: "Tillandsia fuchsii", aliases: ["フックシー"] }, { name: "テクトラム", sci: "Tillandsia tectorum" }, { name: "ハリシー", sci: "Tillandsia harrisii" }, { name: "コットンキャンディ", sci: "Tillandsia 'Cotton Candy'" },
         { name: "ジュンセア", sci: "Tillandsia juncea" }, { name: "カプトメドゥーサエ", sci: "Tillandsia caput-medusae" }, { name: "ブラキカウロス", sci: "Tillandsia brachycaulos" }, { name: "ベルゲリ", sci: "Tillandsia bergeri" },
         { name: "ドゥラティ", sci: "Tillandsia duratii" }, { name: "パウシフォリア", sci: "Tillandsia paucifolia" }, { name: "セレリアナ", sci: "Tillandsia seleriana" }, { name: "ファシクラータ", sci: "Tillandsia fasciculata" },
         { name: "ストリクタ", sci: "Tillandsia stricta" }, { name: "レクルビフォリア", sci: "Tillandsia recurvifolia" },
@@ -338,7 +338,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "観葉植物",
     genera: [
       { name: "モンステラ", pickable: true, varieties: [
-        { name: "デリシオサ", sci: "Monstera deliciosa" }, { name: "デリシオーサ", sci: "Monstera deliciosa" }, { name: "アダンソニー", sci: "Monstera adansonii" }, { name: "ヒメモンステラ", sci: "Rhaphidophora tetrasperma" },
+        { name: "デリシオーサ", sci: "Monstera deliciosa", aliases: ["デリシオサ"] }, { name: "アダンソニー", sci: "Monstera adansonii" }, { name: "ヒメモンステラ", sci: "Rhaphidophora tetrasperma" },
         { name: "ボルシギアナ", sci: "Monstera deliciosa var. borsigiana" }, { name: "ジェイドシャトルコック", sci: "Monstera deliciosa 'Jade Shuttlecock'" }, { name: "スタンドレヤナ", sci: "Monstera standleyana" }, { name: "ドゥビア", sci: "Monstera dubia" },
         { name: "オブリクア", sci: "Monstera obliqua" }, { name: "レクレリアナ", sci: "Monstera lechleriana" }, { name: "ペルー", sci: "Monstera karstenianum" }, { name: "ピナッティパルティタ", sci: "Monstera pinnatipartita" },
         { name: "タイコンステレーション", sci: "Monstera deliciosa 'Thai Constellation'" }, { name: "ホワイトタイガー", sci: "Monstera deliciosa 'White Tiger'" }, { name: "アルボ", sci: "Monstera deliciosa 'Albo Variegata'" }, { name: "アルボバリエガータ", sci: "Monstera deliciosa 'Albo Variegata'" },
@@ -358,11 +358,11 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ワトソニアナ", sci: "Alocasia watsoniana" }, { name: "スカルプラム", sci: "Alocasia scalprum" }, { name: "レッドシークレット", sci: "Alocasia cuprea 'Red Secret'" },
       ] },
       { name: "アンスリウム", pickable: true, varieties: [
-        { name: "クラリネルビウム", sci: "Anthurium clarinervium" }, { name: "ウォロケウシー", sci: "Anthurium warocqueanum" }, { name: "クリスタリナム", sci: "Anthurium crystallinum" }, { name: "フーケリー", sci: "Anthurium hookeri" },
-        { name: "ベイチー", sci: "Anthurium veitchii" }, { name: "ワロクアナム", sci: "Anthurium warocqueanum" }, { name: "マグニフィカム", sci: "Anthurium magnificum" }, { name: "シロシマウチワ", sci: "Anthurium andraeanum" },
+        { name: "クラリネルビウム", sci: "Anthurium clarinervium" }, { name: "クリスタリナム", sci: "Anthurium crystallinum" }, { name: "フーケリー", sci: "Anthurium hookeri" },
+        { name: "ベイチー", sci: "Anthurium veitchii" }, { name: "ワロクアナム", sci: "Anthurium warocqueanum", aliases: ["ウォロケウシー"] }, { name: "マグニフィカム", sci: "Anthurium magnificum" }, { name: "シロシマウチワ", sci: "Anthurium andraeanum" },
       ] },
       { name: "ホヤ", pickable: true, varieties: [
-        { name: "サクララン", sci: "Hoya carnosa" }, { name: "カルノーサ", sci: "Hoya carnosa" }, { name: "ケリー", sci: "Hoya kerrii" }, { name: "リネアリス", sci: "Hoya linearis" },
+        { name: "サクララン", sci: "Hoya carnosa", aliases: ["カルノーサ"] }, { name: "ケリー", sci: "Hoya kerrii" }, { name: "リネアリス", sci: "Hoya linearis" },
         { name: "プビカリクス", sci: "Hoya pubicalyx" }, { name: "クミンギアナ", sci: "Hoya cumingiana" }, { name: "マクロフィラ", sci: "Hoya macrophylla" }, { name: "カウダータ", sci: "Hoya caudata" },
         { name: "ベラ", sci: "Hoya lanceolata subsp. bella" }, { name: "オボバタ", sci: "Hoya obovata" }, { name: "リップカラー", sci: "Hoya wayetii" },
       ] },
@@ -371,8 +371,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "根茎性ベゴニア", sci: "Begonia" }, { name: "球根性ベゴニア", sci: "Begonia" },
       ] },
       { name: "カラテア", pickable: true, varieties: [
-        { name: "マコヤナ", sci: "Goeppertia makoyana" }, { name: "オルナータ", sci: "Goeppertia ornata" }, { name: "ホワイトスター", sci: "Goeppertia majestica 'White Star'" }, { name: "ランキフォリア", sci: "Goeppertia lancifolia" },
-        { name: "ゼブリナ", sci: "Goeppertia zebrina" }, { name: "ムサイカ", sci: "Goeppertia bella" }, { name: "ロゼオピクタ", sci: "Goeppertia roseopicta" }, { name: "インシグニス", sci: "Goeppertia lancifolia" },
+        { name: "マコヤナ", sci: "Goeppertia makoyana" }, { name: "オルナータ", sci: "Goeppertia ornata" }, { name: "ホワイトスター", sci: "Goeppertia majestica 'White Star'" }, { name: "ランキフォリア", sci: "Goeppertia lancifolia", aliases: ["インシグニス"] },
+        { name: "ゼブリナ", sci: "Goeppertia zebrina" }, { name: "ムサイカ", sci: "Goeppertia bella" }, { name: "ロゼオピクタ", sci: "Goeppertia roseopicta" },
       ] },
       { name: "シンゴニウム", pickable: true, varieties: [
         { name: "ピンク", sci: "Syngonium podophyllum 'Pink'" }, { name: "ネオン", sci: "Syngonium podophyllum 'Neon Robusta'" }, { name: "アルボ", sci: "Syngonium podophyllum 'Albo Variegatum'" }, { name: "パンサー", sci: "Syngonium podophyllum 'Panther'" },
@@ -385,11 +385,11 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
       { name: "フィカス", pickable: true, aliases: ["ゴムの木"], varieties: [
         { name: "ウンベラータ", sci: "Ficus umbellata" }, { name: "ベンガレンシス", sci: "Ficus benghalensis" }, { name: "アルテシマ", sci: "Ficus altissima" }, { name: "バーガンディ", sci: "Ficus elastica 'Burgundy'" },
-        { name: "ベンジャミン", sci: "Ficus benjamina" }, { name: "ベンジャミナ", sci: "Ficus benjamina" }, { name: "ガジュマル", sci: "Ficus microcarpa" }, { name: "ティネケ", sci: "Ficus elastica 'Tineke'" },
+        { name: "ベンジャミン", sci: "Ficus benjamina", aliases: ["ベンジャミナ"] }, { name: "ガジュマル", sci: "Ficus microcarpa" }, { name: "ティネケ", sci: "Ficus elastica 'Tineke'" },
         { name: "ルビギノーサ", sci: "Ficus rubiginosa" }, { name: "ペティオラリス", sci: "Ficus petiolaris" }, { name: "リラータ", sci: "Ficus lyrata" }, { name: "プミラ", sci: "Ficus pumila" },
       ] },
       { name: "ドラセナ", pickable: true, varieties: [
-        { name: "幸福の木", sci: "Dracaena fragrans" }, { name: "マッサンゲアナ", sci: "Dracaena fragrans 'Massangeana'" }, { name: "コンシンネ", sci: "Dracaena marginata" }, { name: "マジナータ", sci: "Dracaena marginata" },
+        { name: "幸福の木", sci: "Dracaena fragrans" }, { name: "マッサンゲアナ", sci: "Dracaena fragrans 'Massangeana'" }, { name: "コンシンネ", sci: "Dracaena marginata", aliases: ["マジナータ"] },
         { name: "ソング・オブ・インディア", sci: "Dracaena reflexa 'Song of India'" }, { name: "ソング・オブ・ジャマイカ", sci: "Dracaena reflexa 'Song of Jamaica'" }, { name: "コンパクタ", sci: "Dracaena fragrans 'Compacta'" }, { name: "レモンライム", sci: "Dracaena fragrans 'Lemon Lime'" },
         { name: "ワーネッキー", sci: "Dracaena fragrans 'Warneckei'" }, { name: "ドラド", sci: "Dracaena fragrans 'Dorado'" }, { name: "デレメンシス", sci: "Dracaena fragrans 'Deremensis'" },
       ] },
@@ -397,7 +397,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "グラブラ", sci: "Pachira glabra" }, { name: "アクアティカ", sci: "Pachira aquatica" }, { name: "ミルキーウェイ", sci: "Pachira aquatica 'Milky Way'" },
       ] },
       { name: "アイビー", pickable: true, aliases: ["ヘデラ"], varieties: [
-        { name: "ヘデラ", sci: "Hedera helix" }, { name: "ヘリックス", sci: "Hedera helix" }, { name: "グレーシャー", sci: "Hedera helix 'Glacier'" }, { name: "ゴールドチャイルド", sci: "Hedera helix 'Goldchild'" },
+        { name: "ヘデラ", sci: "Hedera helix", aliases: ["ヘリックス"] }, { name: "グレーシャー", sci: "Hedera helix 'Glacier'" }, { name: "ゴールドチャイルド", sci: "Hedera helix 'Goldchild'" },
         { name: "ホワイトワンダー", sci: "Hedera helix 'White Wonder'" }, { name: "ピッツバーグ", sci: "Hedera helix 'Pittsburgh'" }, { name: "カナリエンシス", sci: "Hedera canariensis" }, { name: "雪の妖精", sci: "Hedera helix 'Yuki no Yosei'" },
       ] },
       { name: "シェフレラ", pickable: true, aliases: ["カポック"], varieties: [
@@ -419,7 +419,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "食虫植物",
     genera: [
       { name: "ハエトリソウ", pickable: true, varieties: [
-        { name: "ディオネア", sci: "Dionaea muscipula" }, { name: "ハエトリグサ", sci: "Dionaea muscipula" }, { name: "マスシプラ", sci: "Dionaea muscipula" }, { name: "B52", sci: "Dionaea muscipula 'B52'" },
+        { name: "ハエトリグサ", sci: "Dionaea muscipula", aliases: ["ディオネア", "マスシプラ"] }, { name: "B52", sci: "Dionaea muscipula 'B52'" },
         { name: "レッドピラニア", sci: "Dionaea muscipula 'Red Piranha'" }, { name: "シャークティース", sci: "Dionaea muscipula 'Shark Teeth'" }, { name: "レッドドラゴン", sci: "Dionaea muscipula 'Akai Ryu'" }, { name: "ホエール", sci: "Dionaea muscipula 'Whale'" },
         { name: "ビッグマウス", sci: "Dionaea muscipula 'Big Mouth'" }, { name: "ピンクビーナス", sci: "Dionaea muscipula 'Pink Venus'" }, { name: "カップトラップ", sci: "Dionaea muscipula 'Cupped Trap'" }, { name: "エイリアン", sci: "Dionaea muscipula 'Alien'" },
         { name: "ジョーズ", sci: "Dionaea muscipula 'Jaws'" }, { name: "ダーウィンレッドピラニア", sci: "Dionaea muscipula 'Darwin Red Piranha'" },
@@ -440,9 +440,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
       { name: "ドロセラ", pickable: true, varieties: [
         { name: "モウセンゴケ", sci: "Drosera rotundifolia" }, { name: "カペンシス", sci: "Drosera capensis" }, { name: "カペンシスレッド", sci: "Drosera capensis 'Red'" }, { name: "カペンシスアルバ", sci: "Drosera capensis 'Alba'" },
-        { name: "アデラエ", sci: "Drosera adelae" }, { name: "スパチュラータ", sci: "Drosera spatulata" }, { name: "ビナータ", sci: "Drosera binata" }, { name: "ブルマニー", sci: "Drosera burmannii" },
+        { name: "アデラエ", sci: "Drosera adelae" }, { name: "ビナータ", sci: "Drosera binata" }, { name: "ブルマニー", sci: "Drosera burmannii" },
         { name: "フィリフォルミス", sci: "Drosera filiformis" }, { name: "マダガスカリエンシス", sci: "Drosera madagascariensis" }, { name: "トウカイエンシス", sci: "Drosera × tokaiensis" }, { name: "ピグミードロセラ", sci: "Drosera" },
-        { name: "塊根ドロセラ", sci: "Drosera" }, { name: "コモウセンゴケ", sci: "Drosera spatulata" }, { name: "ナガバノモウセンゴケ", sci: "Drosera anglica" },
+        { name: "塊根ドロセラ", sci: "Drosera" }, { name: "コモウセンゴケ", sci: "Drosera spatulata", aliases: ["スパチュラータ"] }, { name: "ナガバノモウセンゴケ", sci: "Drosera anglica" },
       ] },
       { name: "ピンギキュラ", pickable: true, varieties: [
         { name: "ムシトリスミレ", sci: "Pinguicula" }, { name: "エセリアナ", sci: "Pinguicula esseriana" }, { name: "モラネンシス", sci: "Pinguicula moranensis" }, { name: "ギガンテア", sci: "Pinguicula gigantea" },
@@ -451,7 +451,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "アフロディーテ", sci: "Pinguicula 'Aphrodite'" }, { name: "コウシンソウ", sci: "Pinguicula ramosa" },
       ] },
       { name: "その他", pickable: false, varieties: [
-        { name: "セファロタス", sci: "Cephalotus follicularis" }, { name: "フクロユキノシタ", sci: "Cephalotus follicularis" }, { name: "ヘリアンフォラ", sci: "Heliamphora" }, { name: "ゲンリセア", sci: "Genlisea" },
+        { name: "セファロタス", sci: "Cephalotus follicularis", aliases: ["フクロユキノシタ"] }, { name: "ヘリアンフォラ", sci: "Heliamphora" }, { name: "ゲンリセア", sci: "Genlisea" },
         { name: "ウトリクラリア", sci: "Utricularia" }, { name: "ミミカキグサ", sci: "Utricularia bifida" }, { name: "タヌキモ", sci: "Utricularia australis" },
       ] },
     ],
@@ -460,7 +460,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "蘭",
     genera: [
       { name: "胡蝶蘭", pickable: true, varieties: [
-        { name: "ファレノプシス", sci: "Phalaenopsis" }, { name: "コチョウラン", sci: "Phalaenopsis" }, { name: "ミディ胡蝶蘭", sci: "Phalaenopsis" }, { name: "アマビリス", sci: "Phalaenopsis amabilis" },
+        { name: "コチョウラン", sci: "Phalaenopsis", aliases: ["ファレノプシス"] }, { name: "ミディ胡蝶蘭", sci: "Phalaenopsis" }, { name: "アマビリス", sci: "Phalaenopsis amabilis" },
         { name: "シレリアナ", sci: "Phalaenopsis schilleriana" }, { name: "アフロディーテ", sci: "Phalaenopsis aphrodite" },
       ] },
       { name: "カトレア", pickable: true, varieties: [
@@ -475,7 +475,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "パフィオ", sci: "Paphiopedilum" }, { name: "ロスチャイルディアナム", sci: "Paphiopedilum rothschildianum" }, { name: "デレナティ", sci: "Paphiopedilum delenatii" }, { name: "多花性パフィオ", sci: "Paphiopedilum" },
       ] },
       { name: "富貴蘭", pickable: true, varieties: [
-        { name: "フウラン", sci: "Vanda falcata" }, { name: "風蘭", sci: "Vanda falcata" }, { name: "建国殿", sci: "Vanda falcata 'Kenkokuden'" }, { name: "富貴殿", sci: "Vanda falcata 'Fukiden'" },
+        { name: "フウラン", sci: "Vanda falcata", aliases: ["風蘭"] }, { name: "建国殿", sci: "Vanda falcata 'Kenkokuden'" }, { name: "富貴殿", sci: "Vanda falcata 'Fukiden'" },
         { name: "金兜", sci: "Vanda falcata 'Kinkabuto'" }, { name: "羽衣", sci: "Vanda falcata 'Hagoromo'" }, { name: "御城覆輪", sci: "Vanda falcata 'Gojofukurin'" }, { name: "金牡丹", sci: "Vanda falcata 'Kinbotan'" },
         { name: "朝日殿", sci: "Vanda falcata 'Asahiden'" }, { name: "西出都", sci: "Vanda falcata 'Nishidemiyako'" }, { name: "豊明殿", sci: "Vanda falcata 'Houmeiden'" }, { name: "青海", sci: "Vanda falcata 'Seikai'" },
         { name: "金孔雀", sci: "Vanda falcata 'Kinkujaku'" }, { name: "翡翠", sci: "Vanda falcata 'Hisui'" }, { name: "羆", sci: "Vanda falcata 'Higuma'" }, { name: "紅扇", sci: "Vanda falcata 'Beniogi'" },
@@ -529,8 +529,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "オオタニワタリ", sci: "Asplenium antiquum" }, { name: "コブラ", sci: "Asplenium nidus 'Cobra'" }, { name: "エメラルドウェーブ", sci: "Asplenium nidus 'Emerald Wave'" }, { name: "アビス", sci: "Asplenium nidus 'Avis'" },
       ] },
       { name: "その他シダ", pickable: false, aliases: ["シダ"], varieties: [
-        { name: "シダ" }, { name: "リュウビンタイ", sci: "Angiopteris lygodiifolia" }, { name: "ヒノキシダ", sci: "Asplenium prolongatum" }, { name: "クサソテツ", sci: "Matteuccia struthiopteris" },
-        { name: "コゴミ", sci: "Matteuccia struthiopteris" }, { name: "ゼンマイ", sci: "Osmunda japonica" }, { name: "ワラビ", sci: "Pteridium aquilinum" }, { name: "イノモトソウ", sci: "Pteris multifida" },
+        { name: "シダ" }, { name: "リュウビンタイ", sci: "Angiopteris lygodiifolia" }, { name: "ヒノキシダ", sci: "Asplenium prolongatum" }, { name: "クサソテツ", sci: "Matteuccia struthiopteris", aliases: ["コゴミ"] },
+        { name: "ゼンマイ", sci: "Osmunda japonica" }, { name: "ワラビ", sci: "Pteridium aquilinum" }, { name: "イノモトソウ", sci: "Pteris multifida" },
         { name: "トキワシダ" }, { name: "ブレクナム", sci: "Blechnum" }, { name: "ヘミオニティス", sci: "Hemionitis" }, { name: "イワヒバ", sci: "Selaginella tamariscina" },
       ] },
     ],
@@ -594,7 +594,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "温帯性スイレン", sci: "Nymphaea" }, { name: "熱帯性スイレン", sci: "Nymphaea" }, { name: "姫スイレン", sci: "Nymphaea tetragona" }, { name: "ヒツジグサ", sci: "Nymphaea tetragona" },
       ] },
       { name: "ハス", pickable: true, aliases: ["蓮"], varieties: [
-        { name: "茶碗蓮", sci: "Nelumbo nucifera" }, { name: "大賀蓮", sci: "Nelumbo nucifera 'Oga'" }, { name: "舞妃蓮", sci: "Nelumbo 'Maihiren'" }, { name: "ミニ蓮", sci: "Nelumbo nucifera" },
+        { name: "茶碗蓮", sci: "Nelumbo nucifera", aliases: ["ミニ蓮"] }, { name: "大賀蓮", sci: "Nelumbo nucifera 'Oga'" }, { name: "舞妃蓮", sci: "Nelumbo 'Maihiren'" },
       ] },
       { name: "水生植物各種", pickable: false, varieties: [
         { name: "ホテイアオイ", sci: "Eichhornia crassipes" }, { name: "アサザ", sci: "Nymphoides peltata" }, { name: "ウォーターマッシュルーム", sci: "Hydrocotyle verticillata" }, { name: "ナガバオモダカ", sci: "Sagittaria graminea" },
@@ -636,7 +636,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "伊予獅子てまり", sci: "Hydrangea serrata 'Iyo Shishi Temari'" }, { name: "城ヶ崎", sci: "Hydrangea macrophylla f. normalis 'Jogasaki'" },
       ] },
       { name: "ゼラニウム", pickable: true, aliases: ["ペラルゴニウム"], varieties: [
-        { name: "パンジーゼラニウム", sci: "Pelargonium × domesticum" }, { name: "アイビーゼラニウム", sci: "Pelargonium peltatum" }, { name: "センテッドゼラニウム", sci: "Pelargonium" }, { name: "ニオイゼラニウム", sci: "Pelargonium" },
+        { name: "パンジーゼラニウム", sci: "Pelargonium × domesticum" }, { name: "アイビーゼラニウム", sci: "Pelargonium peltatum" }, { name: "ニオイゼラニウム", sci: "Pelargonium", aliases: ["センテッドゼラニウム"] },
         { name: "八重咲きゼラニウム", sci: "Pelargonium" },
       ] },
       { name: "原種シクラメン", pickable: true, varieties: [
@@ -668,8 +668,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "フレンチマリーゴールド", sci: "Tagetes patula" }, { name: "アフリカンマリーゴールド", sci: "Tagetes erecta" }, { name: "ストロベリーブロンド", sci: "Tagetes 'Strawberry Blonde'" }, { name: "ボナンザ", sci: "Tagetes patula 'Bonanza'" },
       ] },
       { name: "サルビア", pickable: true, aliases: ["セージ"], varieties: [
-        { name: "スプレンデンス", sci: "Salvia splendens" }, { name: "ファリナセア", sci: "Salvia farinacea" }, { name: "ブルーサルビア", sci: "Salvia farinacea" }, { name: "ガラニチカ", sci: "Salvia guaranitica" },
-        { name: "メキシカンセージ", sci: "Salvia leucantha" }, { name: "レウカンサ", sci: "Salvia leucantha" }, { name: "ネモローサ", sci: "Salvia nemorosa" },
+        { name: "スプレンデンス", sci: "Salvia splendens" }, { name: "ブルーサルビア", sci: "Salvia farinacea", aliases: ["ファリナセア"] }, { name: "ガラニチカ", sci: "Salvia guaranitica" },
+        { name: "メキシカンセージ", sci: "Salvia leucantha", aliases: ["レウカンサ"] }, { name: "ネモローサ", sci: "Salvia nemorosa" },
       ] },
       { name: "ガーベラ", pickable: true, varieties: [
         { name: "ガービー", sci: "Gerbera 'Gerbie'" }, { name: "スパイダー咲き", sci: "Gerbera" }, { name: "ミニガーベラ", sci: "Gerbera" }, { name: "パスタ", sci: "Gerbera 'Pasta'" },
@@ -680,8 +680,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "厚物", sci: "Chrysanthemum × morifolium" }, { name: "管物", sci: "Chrysanthemum × morifolium" }, { name: "イソギク", sci: "Chrysanthemum pacificum" },
       ] },
       { name: "ナデシコ", pickable: true, aliases: ["ダイアンサス"], varieties: [
-        { name: "カワラナデシコ", sci: "Dianthus superbus var. longicalycinus" }, { name: "なでしこ", sci: "Dianthus" }, { name: "テルスター", sci: "Dianthus 'Telstar'" }, { name: "ビジョナデシコ", sci: "Dianthus barbatus" },
-        { name: "アメリカナデシコ", sci: "Dianthus barbatus" },
+        { name: "カワラナデシコ", sci: "Dianthus superbus var. longicalycinus" }, { name: "なでしこ", sci: "Dianthus" }, { name: "テルスター", sci: "Dianthus 'Telstar'" }, { name: "ビジョナデシコ", sci: "Dianthus barbatus", aliases: ["アメリカナデシコ"] },
       ] },
       { name: "ジニア", pickable: true, aliases: ["百日草", "ヒャクニチソウ"], varieties: [
         { name: "プロフュージョン", sci: "Zinnia 'Profusion'" }, { name: "ジニアリネアリス", sci: "Zinnia angustifolia" }, { name: "ザハラ", sci: "Zinnia 'Zahara'" }, { name: "クイーンライム", sci: "Zinnia elegans 'Queen Lime'" },
@@ -752,7 +751,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
       { name: "その他球根", pickable: false, varieties: [
         { name: "スノードロップ", sci: "Galanthus nivalis" }, { name: "スノーフレーク", sci: "Leucojum aestivum" }, { name: "アネモネ", sci: "Anemone coronaria" }, { name: "ラナンキュラス", sci: "Ranunculus asiaticus" },
-        { name: "フリージア", sci: "Freesia" }, { name: "チオノドクサ", sci: "Scilla forbesii" }, { name: "イフェイオン", sci: "Ipheion uniflorum" }, { name: "ハナニラ", sci: "Ipheion uniflorum" },
+        { name: "フリージア", sci: "Freesia" }, { name: "チオノドクサ", sci: "Scilla forbesii" }, { name: "ハナニラ", sci: "Ipheion uniflorum", aliases: ["イフェイオン"] },
         { name: "アリウム", sci: "Allium" }, { name: "コルチカム", sci: "Colchicum autumnale" }, { name: "ネリネ", sci: "Nerine" }, { name: "ダッチアイリス", sci: "Iris × hollandica" },
       ] },
     ],
@@ -898,7 +897,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "青首大根", sci: "Raphanus sativus 'Aokubi'" }, { name: "耐病総太り", sci: "Raphanus sativus 'Taibyo Sobutori'" }, { name: "宮重大根", sci: "Raphanus sativus 'Miyashige'" }, { name: "三浦大根", sci: "Raphanus sativus 'Miura'" },
         { name: "聖護院大根", sci: "Raphanus sativus 'Shogoin'" }, { name: "桜島大根", sci: "Raphanus sativus 'Sakurajima'" }, { name: "守口大根", sci: "Raphanus sativus 'Moriguchi'" }, { name: "源助大根", sci: "Raphanus sativus 'Gensuke'" },
         { name: "紅芯大根", sci: "Raphanus sativus 'Koshin'" }, { name: "紅くるり大根", sci: "Raphanus sativus 'Beni Kururi'" }, { name: "ビタミン大根", sci: "Raphanus sativus 'Vitamin'" }, { name: "ねずみ大根", sci: "Raphanus sativus 'Nezumi'" },
-        { name: "黒大根", sci: "Raphanus sativus 'Kuro Daikon'" }, { name: "辛味大根", sci: "Raphanus sativus 'Karami'" }, { name: "二十日大根", sci: "Raphanus sativus var. sativus" }, { name: "ラディッシュ", sci: "Raphanus sativus var. sativus" },
+        { name: "黒大根", sci: "Raphanus sativus 'Kuro Daikon'" }, { name: "辛味大根", sci: "Raphanus sativus 'Karami'" }, { name: "二十日大根", sci: "Raphanus sativus var. sativus", aliases: ["ラディッシュ"] },
       ] },
       { name: "人参", pickable: true, varieties: [
         { name: "向陽二号", sci: "Daucus carota 'Koyo No.2'" }, { name: "ベーターリッチ", sci: "Daucus carota 'Beta Rich'" }, { name: "黒田五寸", sci: "Daucus carota 'Kuroda Gosun'" }, { name: "ひとみ五寸", sci: "Daucus carota 'Hitomi Gosun'" },
@@ -942,15 +941,15 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "サラダ菜", sci: "Lactuca sativa var. capitata" }, { name: "グリーンカール", sci: "Lactuca sativa var. crispa 'Green Curl'" }, { name: "春菊", sci: "Glebionis coronaria" }, { name: "水菜", sci: "Brassica rapa var. nipposinica" },
         { name: "ルッコラ", sci: "Eruca vesicaria" }, { name: "パクチー", sci: "Coriandrum sativum", aliases: ["コリアンダー"] }, { name: "大葉", sci: "Perilla frutescens var. crispa" },
         { name: "青じそ", sci: "Perilla frutescens var. crispa f. viridis" }, { name: "赤じそ", sci: "Perilla frutescens var. crispa f. purpurea" }, { name: "ケール", sci: "Brassica oleracea var. acephala" }, { name: "カーボロネロ", sci: "Brassica oleracea var. acephala 'Cavolo Nero'" },
-        { name: "カリーノケール", sci: "Brassica oleracea var. acephala 'Carino'" }, { name: "スイスチャード", sci: "Beta vulgaris var. cicla" }, { name: "ふだん草", sci: "Beta vulgaris var. cicla" },
+        { name: "カリーノケール", sci: "Brassica oleracea var. acephala 'Carino'" }, { name: "ふだん草", sci: "Beta vulgaris var. cicla", aliases: ["スイスチャード"] },
       ] },
       { name: "豆類・その他", pickable: false, varieties: [
         { name: "そら豆", sci: "Vicia faba" }, { name: "一寸そら豆", sci: "Vicia faba 'Issun'" }, { name: "スナップエンドウ", sci: "Pisum sativum var. macrocarpon" }, { name: "さやいんげん", sci: "Phaseolus vulgaris" },
         { name: "つるありインゲン", sci: "Phaseolus vulgaris" }, { name: "モロッコいんげん", sci: "Phaseolus vulgaris 'Morocco'" }, { name: "ケンタッキーワンダー", sci: "Phaseolus vulgaris 'Kentucky Wonder'" }, { name: "落花生", sci: "Arachis hypogaea" },
-        { name: "おおまさり", sci: "Arachis hypogaea 'Omasari'" }, { name: "千葉半立", sci: "Arachis hypogaea 'Chiba Handachi'" }, { name: "さといも", sci: "Colocasia esculenta" }, { name: "里芋", sci: "Colocasia esculenta" },
+        { name: "おおまさり", sci: "Arachis hypogaea 'Omasari'" }, { name: "千葉半立", sci: "Arachis hypogaea 'Chiba Handachi'" }, { name: "里芋", sci: "Colocasia esculenta", aliases: ["さといも"] },
         { name: "土垂", sci: "Colocasia esculenta 'Dodare'" }, { name: "石川早生", sci: "Colocasia esculenta 'Ishikawa Wase'" }, { name: "セレベス", sci: "Colocasia esculenta 'Celebes'" }, { name: "八つ頭", sci: "Colocasia esculenta 'Yatsugashira'" },
         { name: "海老芋", sci: "Colocasia esculenta 'Ebi Imo'" }, { name: "ニンニク", sci: "Allium sativum" }, { name: "ホワイト六片", sci: "Allium sativum 'White Roppen'" }, { name: "ジャンボニンニク", sci: "Allium ampeloprasum" },
-        { name: "食用ほおずき", sci: "Physalis pruinosa" }, { name: "ストロベリートマト", sci: "Physalis pruinosa" },
+        { name: "食用ほおずき", sci: "Physalis pruinosa", aliases: ["ストロベリートマト"] },
       ] },
     ],
   },
@@ -977,8 +976,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ゴールデンセージ", sci: "Salvia officinalis 'Aurea'" }, { name: "パープルセージ", sci: "Salvia officinalis 'Purpurascens'" },
       ] },
       { name: "ラベンダー", pickable: true, varieties: [
-        { name: "イングリッシュラベンダー", sci: "Lavandula angustifolia" }, { name: "フレンチラベンダー", sci: "Lavandula stoechas" }, { name: "グロッソ", sci: "Lavandula × intermedia 'Grosso'" }, { name: "ラバンディン", sci: "Lavandula × intermedia" },
-        { name: "デンタータ", sci: "Lavandula dentata" }, { name: "ストエカス", sci: "Lavandula stoechas" },
+        { name: "イングリッシュラベンダー", sci: "Lavandula angustifolia" }, { name: "フレンチラベンダー", sci: "Lavandula stoechas", aliases: ["ストエカス"] }, { name: "グロッソ", sci: "Lavandula × intermedia 'Grosso'" }, { name: "ラバンディン", sci: "Lavandula × intermedia" },
+        { name: "デンタータ", sci: "Lavandula dentata" },
       ] },
       { name: "カモミール", pickable: true, varieties: [
         { name: "ジャーマンカモミール", sci: "Matricaria chamomilla" }, { name: "ローマンカモミール", sci: "Chamaemelum nobile" },
@@ -1092,7 +1091,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "利平", sci: "Castanea crenata 'Rihei'" }, { name: "ラズベリー", sci: "Rubus idaeus" }, { name: "ブラックベリー", sci: "Rubus fruticosus" },
         { name: "ザクロ", sci: "Punica granatum" }, { name: "ジューンベリー", sci: "Amelanchier canadensis" }, { name: "ポポー", sci: "Asimina triloba" }, { name: "アケビ", sci: "Akebia quinata" },
         { name: "パッションフルーツ", sci: "Passiflora edulis" }, { name: "グミ", sci: "Elaeagnus" }, { name: "カシス", sci: "Ribes nigrum" }, { name: "グーズベリー", sci: "Ribes uva-crispa" },
-        { name: "クランベリー", sci: "Vaccinium macrocarpon" }, { name: "桑", sci: "Morus" }, { name: "マルベリー", sci: "Morus" }, { name: "パイナップル", sci: "Ananas comosus" },
+        { name: "クランベリー", sci: "Vaccinium macrocarpon" }, { name: "桑", sci: "Morus", aliases: ["マルベリー"] }, { name: "パイナップル", sci: "Ananas comosus" },
         { name: "カリン", sci: "Pseudocydonia sinensis", aliases: ["花梨"] },
       ] },
     ],
