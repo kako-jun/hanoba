@@ -82,8 +82,8 @@ describe("t()", () => {
 });
 
 describe("カタログ整合", () => {
-  it("LOCALES は ja/en/es/zh（#384 で es・zh 追加）", () => {
-    expect([...LOCALES]).toEqual(["ja", "en", "es", "zh"]);
+  it("LOCALES は ja/en/zh/es（#384・並びは reach 上位 zh→es・#385）", () => {
+    expect([...LOCALES]).toEqual(["ja", "en", "zh", "es"]);
   });
 
   it("en の全キーは ja に存在する（孤児キーを作らない）", () => {

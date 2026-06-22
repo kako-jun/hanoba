@@ -24,6 +24,7 @@ import FudaList from "./FudaList.tsx";
 import Avatar from "./Avatar.tsx";
 import CommentSection from "./CommentSection.tsx";
 import DilutionControl from "./DilutionControl.tsx";
+import { useCaptionTranslation } from "./useCaptionTranslation.ts";
 
 interface Props {
   post: FeedPost;
@@ -176,6 +177,8 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
   const captionText = stripHashtags(post.caption);
+  // caption のオンデマンド翻訳（#385・表示層のみ・on-device 無料・エフェメラル）。閲覧言語と違う投稿だけボタンが出る。
+  const captionTr = useCaptionTranslation(captionText, locale);
 
   // 写真領域のタッチスワイプ（#184）。←→ボタン・キーボード矢印と同じ wrap で切り替える。
   // 1枚のときは無効。水平優位＋しきい値（swipeDirection）のときだけ確定し、
@@ -336,7 +339,25 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
         <div className="flex flex-col gap-3 p-5">
           {captionText !== "" && (
-            <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{captionText}</p>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-base leading-relaxed text-ha-ink whitespace-pre-wrap">{captionTr.text}</p>
+              {/* 翻訳ボタン（#385）。閲覧言語と違う投稿だけ出る・on-device 無料・トグルで原文へ戻る。
+                  失敗・非対応ブラウザはそもそも出ない（写真ファーストで破綻しない）。 */}
+              {captionTr.offer && (
+                <button
+                  type="button"
+                  onClick={captionTr.toggle}
+                  disabled={captionTr.busy}
+                  className="self-start text-xs font-medium text-ha-green-deep/70 hover:text-ha-green-deep disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green rounded"
+                >
+                  {captionTr.busy
+                    ? t("detail.translate.busy")
+                    : captionTr.mode === "translated"
+                      ? t("detail.translate.original")
+                      : t("detail.translate")}
+                </button>
+              )}
+            </div>
           )}
 
           {/* 投稿の札（鉢の名前＝学名＋最も有名な和名を1枚・#182/#23）。カテゴリ・属単独に畳む。
