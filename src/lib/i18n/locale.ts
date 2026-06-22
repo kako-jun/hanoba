@@ -7,9 +7,9 @@
 // 段階1 ではランタイムの locale は常に DEFAULT_LOCALE（ja）に固定する＝挙動不変。
 // locale の決定方式（URL ルーティング or クライアント切替）は段階2で確定する（#147）。
 
-// #384 多言語: es（スペイン語）をパイロットで追加（reach 桁違い）。島は useT で自動対応・
+// #384 多言語: es（スペイン語）・zh（簡体中文）を reach 狙いで追加。島は useT で自動対応・
 // 静的殻は MainLayout の N-locale swap が当てる。未訳は t.ts が ja へ fallback（graceful）。
-export const LOCALES = ["ja", "en", "es"] as const;
+export const LOCALES = ["ja", "en", "es", "zh"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 

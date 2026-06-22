@@ -4,6 +4,7 @@ import { isLocale, DEFAULT_LOCALE, LOCALES } from "./locale.ts";
 import { ja } from "./messages/ja.ts";
 import { en } from "./messages/en.ts";
 import { es } from "./messages/es.ts";
+import { zh } from "./messages/zh.ts";
 
 describe("i18n locale", () => {
   it("既定言語は en（#147 go-live＝世界の正面を英語に）", () => {
@@ -14,6 +15,7 @@ describe("i18n locale", () => {
     expect(isLocale("ja")).toBe(true);
     expect(isLocale("en")).toBe(true);
     expect(isLocale("es")).toBe(true);
+    expect(isLocale("zh")).toBe(true);
     expect(isLocale("fr")).toBe(false);
     expect(isLocale("")).toBe(false);
     expect(isLocale(undefined)).toBe(false);
@@ -39,6 +41,18 @@ describe("t()", () => {
     for (const key of Object.keys(ja) as (keyof typeof ja)[]) {
       const expected = (es as Record<string, string>)[key] ?? ja[key];
       expect(t("es", key)).toBe(expected);
+    }
+  });
+
+  it("zh の文言を引く（#384・非空で解決）", () => {
+    expect(t("zh", "nav.discover").length).toBeGreaterThan(0);
+  });
+
+  it("zh 虫食いは ja に fallback する（完備を要求しない・graceful）", () => {
+    // zh に無いキーは t() が ja へ落ちる。解決規則 zh[key] ?? ja[key] を全キーで網羅。
+    for (const key of Object.keys(ja) as (keyof typeof ja)[]) {
+      const expected = (zh as Record<string, string>)[key] ?? ja[key];
+      expect(t("zh", key)).toBe(expected);
     }
   });
 
@@ -68,8 +82,8 @@ describe("t()", () => {
 });
 
 describe("カタログ整合", () => {
-  it("LOCALES は ja/en/es（#384 で es パイロット追加）", () => {
-    expect([...LOCALES]).toEqual(["ja", "en", "es"]);
+  it("LOCALES は ja/en/es/zh（#384 で es・zh 追加）", () => {
+    expect([...LOCALES]).toEqual(["ja", "en", "es", "zh"]);
   });
 
   it("en の全キーは ja に存在する（孤児キーを作らない）", () => {
