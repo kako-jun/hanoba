@@ -110,9 +110,11 @@ describe("buildFuda", () => {
 
   it("ビカクシダのカテゴリタグをビフルカツムの別名札にせず、品種名をビフルカツムに保つ（#341）", () => {
     const fuda = buildFuda(["ビカクシダ", "ビフルカツム"], VARIETY_CATALOG);
+    // #409 P1: key は canonical キー＝学名(sci)＝Platycerium bifurcatum（旧: 和名 ビフルカツム）。
+    // name/sci/filterTags は不変。
     expect(fuda).toEqual([
       {
-        key: "ビフルカツム",
+        key: "Platycerium bifurcatum",
         name: "ビフルカツム",
         sci: "Platycerium bifurcatum",
         filterTags: ["ビフルカツム"],
@@ -153,9 +155,32 @@ describe("buildFuda", () => {
     expect(fuda[0]!.name).toBe("ホソバオキナゴケ");
   });
 
-  it("key は name で組む（dedupe 鍵）", () => {
-    expect(buildFuda(["パキポディウム", "グラキリス"], VARIETY_CATALOG)[0]!.key).toBe("グラキリス");
-    expect(buildFuda(["アガベ"], VARIETY_CATALOG)[0]!.key).toBe("アガベ");
+  it("key は canonical キー＝学名(sci) で組む（dedupe 鍵・#409 P1）", () => {
+    // グラキリスは catalog.sci=Pachypodium rosulatum var. gracilius・アガベは属 sci=Agave。
+    // canonical キーは sci（言語非依存）。sci を引けない品種/属だけ和名キーに倒れる。
+    expect(buildFuda(["パキポディウム", "グラキリス"], VARIETY_CATALOG)[0]!.key).toBe(
+      "Pachypodium rosulatum var. gracilius",
+    );
+    expect(buildFuda(["アガベ"], VARIETY_CATALOG)[0]!.key).toBe("Agave");
+  });
+
+  it("#409 P1 同一 sci の別名は1札に統一する（canonical キー化の核）", () => {
+    // レッドキャットウィーズル と 赤猫 は別 Variety だが sci は同じ Agave titanota 'Red Catweezle'。
+    // 属アガベと併記して両品種タグを立てても、canonical=sci で畳んで1札に統一される（同じ植物＝1札）。
+    const fuda = buildFuda(["アガベ", "レッドキャットウィーズル", "赤猫"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]!.sci).toBe("Agave titanota 'Red Catweezle'");
+    expect(fuda[0]!.key).toBe("Agave titanota 'Red Catweezle'");
+    // 表示名は先勝ち（catalog 出現順）＝レッドキャットウィーズル（赤猫より前に出る）。表示は不変。
+    expect(fuda[0]!.name).toBe("レッドキャットウィーズル");
+  });
+
+  it("#409 P1 sci を引けない品種は和名キーに倒す（グレースフル・合成カタログ）", () => {
+    // 合成種C は catalog.sci 無し・dict 外、属「ゲンクウ属」も dict 外 → sci=null → key は和名。
+    const fuda = buildFuda(["ゲンクウ属", "合成種C"], SYNTH);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]!.sci).toBe(null);
+    expect(fuda[0]!.key).toBe("合成種C");
   });
 
   // 穀物カテゴリ（#214）。イネは alias（稲/コメ/米/水稲/陸稲）を持つ pickable 属。

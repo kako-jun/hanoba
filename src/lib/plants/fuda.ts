@@ -23,9 +23,12 @@ import type { VarietyCategory } from "./variety-catalog.ts";
  * 最も具体的な和名（品種名 or 属名）を name に、学名を sci に持つ。
  */
 export interface Fuda {
-  /** React key・dedupe 用。 */
+  /**
+   * **canonical キー＝学名(sci)**（言語非依存・#409 P1）。React key・dedupe 用。同一 sci の別名
+   * （例 レッドキャットウィーズル/赤猫）は同一キーに畳む。sci を引けない品種/属は和名キーに倒す。
+   */
   key: string;
-  /** 和名（最も具体的な著名表記＝品種名 or 属名）。属配下の見出し語は出さない。 */
+  /** 和名（最も具体的な著名表記＝品種名 or 属名）。属配下の見出し語は出さない。表示名は当面 和名（多言語表示は P2・#409）。 */
   name: string;
   /** 学名（catalog の variety.sci 優先 → dictionary lookup → 引けなければ null）。 */
   sci: string | null;
@@ -76,7 +79,8 @@ function lookupSci(name: string): string | null {
  * - 品種札: catalog の canonical 品種名（alias でヒットしても canonical 優先・引けなければ来たタグ）
  * - 属単独札: 属名
  *
- * 戻り値は安定順（catalog の出現順）。同一 name は1件に dedupe する。
+ * 戻り値は安定順（catalog の出現順）。dedupe / key は **canonical キー＝学名(sci)** で行う（#409 P1・
+ * 言語非依存）＝同一 sci の別名は1札に統一する。sci を引けない品種/属は和名キーに倒す（グレースフル）。
  */
 // 照合キーの正規化（小文字・前後 trim・**内部の空白と `_` を同一視**）。catalog の品種名は空白入り
 // （例「フィカス ペティオラリス」）だが、投稿本文のタグは insertTag(normalizeTagForBody) で空白→`_`
@@ -203,20 +207,29 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
   }
 
   // catalog 出現順で安定化しつつ Fuda を組む（品種を優先・品種が無い属だけ属単独）。
+  // #409 P1: dedupe / key は **canonical キー＝学名(sci)** で行う（言語非依存）。同一 sci の別名
+  // （例 レッドキャットウィーズル/赤猫 → Agave titanota 'Red Catweezle'）は1札に統一する。sci を
+  // 引けない品種/属は従来どおり和名キーに倒す（キーが空/undefined にならない・グレースフル）。
+  // 表示名（name）・絞り込み（filterTags）・sci フィールドの意味は不変＝多言語表示と discover の
+  // sci 横断展開は P2（#409）に分離する。
   const result: Fuda[] = [];
-  const emitted = new Set<string>();
-  // 品種札: name=品種名 / sci=catalog.sci → dict(品種) → dict(属) → null / filterTags=札を生んだタグ集合。
+  const emitted = new Set<string>(); // canonical キー（sci or 名）の集合。
+  // 品種札: canonical=sci(catalog.sci → dict(品種) → dict(属)) ?? 品種名 / name=品種名（和名・表示不変）
+  // / sci=catalog.sci → dict(品種) → dict(属) → null / filterTags=札を生んだタグ集合。
   const emitVariety = (entry: VarietyIndexEntry, filterTags: string[]) => {
-    if (emitted.has(entry.varietyName)) return;
-    emitted.add(entry.varietyName);
     const sci = entry.sci ?? lookupSci(entry.varietyName) ?? lookupSci(entry.genus);
-    result.push({ key: entry.varietyName, name: entry.varietyName, sci, filterTags });
+    const key = sci ?? entry.varietyName; // canonical: sci があればそれ、無ければ和名に倒す。
+    if (emitted.has(key)) return;
+    emitted.add(key);
+    result.push({ key, name: entry.varietyName, sci, filterTags });
   };
-  // 属単独札: name=属名 / sci=dict(属) → null / filterTags=[属名]。
+  // 属単独札: canonical=dict(属) ?? 属名 / name=属名（表示不変） / sci=dict(属) → null / filterTags=[属名]。
   const emitGenus = (genus: string) => {
-    if (emitted.has(genus)) return;
-    emitted.add(genus);
-    result.push({ key: genus, name: genus, sci: lookupSci(genus), filterTags: [genus] });
+    const sci = lookupSci(genus);
+    const key = sci ?? genus; // canonical: 属の学名があればそれ、無ければ属名に倒す。
+    if (emitted.has(key)) return;
+    emitted.add(key);
+    result.push({ key, name: genus, sci, filterTags: [genus] });
   };
 
   for (const category of catalog) {
