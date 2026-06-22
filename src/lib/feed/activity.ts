@@ -67,7 +67,7 @@ export function activityLevel(count: number): number {
  * - 各列＝1週（日曜始まり）、各行＝曜日（0=日 … 6=土）。今日を含む週が末尾列。
  * - 範囲外（最初の週の今日より前・最終週の今日より後）はパディング（day:null）。
  */
-export function activityHeatmap(posts: FeedPost[], now: number, weeks = 13): HeatCell[][] {
+export function activityHeatmap(posts: FeedPost[], now: number, weeks = 12): HeatCell[][] {
   const today = jstDayIndex(now);
   const firstDay = today - (weeks * 7 - 1); // 表示する最古日
   const firstSunday = firstDay - weekdayOf(firstDay); // その週の日曜まで遡る（列の起点）

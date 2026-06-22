@@ -136,9 +136,6 @@ export const en: Partial<Record<MessageKey, string>> = {
 
   "green.heading": "Green {subject} added to the city",
   "green.cumulative": "≈{equivalent} fully-green photos",
-  "green.readable": "(from {readable} photos)",
-  // #387: extrapolated from a sample for large photo counts (readable is an estimate).
-  "green.readableApprox": "(from ≈{readable} photos)",
   "green.measuring": "(measuring green…)",
 
   "activity.heading": "Activity grass",
