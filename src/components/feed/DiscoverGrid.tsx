@@ -35,9 +35,10 @@ function readTagsFromUrl(): string[] {
  *   replaceState/無書き込み（popstate ループ防止）。`latestRef` で stale 応答を破棄。
  * - 正方形グリッド＋詳細モーダルは PostGrid（FeedGrid と共有）。relay/window 参照はクライアントのみ。
  */
-// lang は discover.astro がページの locale を流す（#147）。今は既定（ja）固定＝挙動不変。
+// lang は discover.astro がページの locale を流す（#147）＝SSR の種（既定言語＝go-live で en）。
 export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  // lang は SSR/初期描画の種（既定 en）。マウント後にクライアント解決値（ja を選んでいれば ja）へ loc を寄せる。
+  // **表示文字列は必ず loc で組む**（lang は SSR の種でしかなく選択言語に追従しない・#399）。
   const [loc, setLoc] = useState<Locale>(lang);
   useEffect(() => {
     setLoc(resolveClientLocale());
@@ -104,7 +105,9 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const summary = filterSummary({ ...EMPTY_FILTER, tags }, lang);
+  // #399: 表示用サマリは loc（クライアント解決の選択言語）で組む。lang（SSR の種＝既定 en）で組むと、
+  // ja 表示でも既定スコープ名が「Everyone's Plants」と英語で漏れる（#147 go-live の DEFAULT→en で顕在化）。
+  const summary = filterSummary({ ...EMPTY_FILTER, tags }, loc);
 
   return (
     <LocaleProvider value={loc}>
