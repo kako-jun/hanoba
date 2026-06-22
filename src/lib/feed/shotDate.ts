@@ -19,6 +19,14 @@ function parseYmd(ymd: string): { y: number; mo: number; d: number } | null {
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /**
+ * 撮影期間レンジのセパレータ＝全角チルダ ～(U+FF5E)。em box に左右対称に描かれる標準字（#397）。
+ * 波ダッシュ 〜(U+301C) はフォント/OS により左に余白・右に詰まる非対称な描画になりやすい（Windows 系で顕著）ため避ける。
+ * **producer（`shotDateRange`）と consumer（`PostCard` の split/再挿入＝長レンジの改行位置）でこの定数を共有し、
+ * 文字のドリフト（producer だけ変えて consumer の split が外れる回帰）を防ぐ。**
+ */
+export const SHOT_DATE_RANGE_SEP = "～";
+
+/**
  * 撮影日の完全表記。全言語で保存形式と同じ `YYYY-MM-DD` をそのまま返す（#347）。locale を取らず、
  * 年月日順・月名・区切りを変換しない＝写真オーバーレイ等で言語によらず `2026-05-21` で揃う。
  * 不正な入力（形式違い・範囲外）はそのまま返す。
@@ -42,7 +50,5 @@ export function shotDateRange(dates: ReadonlyArray<string | null>): string | nul
   const min = valid[0]!;
   const max = valid[valid.length - 1]!;
   if (min === max) return formatShotDate(min);
-  // セパレータは全角チルダ ～(U+FF5E)＝em box に左右対称に描かれる（#397）。波ダッシュ 〜(U+301C) は
-  // フォント/OS により左に余白・右に詰まる非対称な描画になりやすい（Windows 系で顕著）ため避ける。
-  return `${formatShotDate(min)}～${formatShotDate(max)}`;
+  return `${formatShotDate(min)}${SHOT_DATE_RANGE_SEP}${formatShotDate(max)}`;
 }

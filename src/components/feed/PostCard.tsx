@@ -2,7 +2,7 @@ import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
-import { shotDateRange } from "../../lib/feed/shotDate.ts";
+import { shotDateRange, SHOT_DATE_RANGE_SEP } from "../../lib/feed/shotDate.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
@@ -63,7 +63,7 @@ export default function PostCard({
   const t = useT(locale);
   const captionText = stripHashtags(post.caption);
   const photoCount = post.imageUrls.length;
-  // 撮影期間（#324・kako-jun A案）。写真ごとの撮影日があれば表紙に「2024-06-01〜2024-06-22」を出す
+  // 撮影期間（#324・kako-jun A案）。写真ごとの撮影日があれば表紙に「2024-06-01～2024-06-22」を出す
   // ＝「1つの被写体の1ヶ月を振り返る」投稿が一目で分かる。無ければ null（出さない）。全言語 ISO 固定（#347）。
   const dateRange = shotDateRange(post.photoShotDates ?? []);
   // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
@@ -127,10 +127,11 @@ export default function PostCard({
             {dateRange !== null && (
               <span className="absolute left-2 bottom-2 inline-flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-x-1 gap-y-0.5 rounded-2xl bg-black/55 px-2.5 py-1 text-xs font-medium text-ha-white backdrop-blur-sm">
                 <Icon name="camera" className="h-3 w-3 shrink-0" />
-                {/* レンジが長い時は 〜 の位置だけで改行（各 YYYY-MM-DD は whitespace-nowrap で途中で割らない・#347 kako-jun「長くなったら改行すればいい」）。 */}
-                {dateRange.split("〜").map((part, i) => (
+                {/* レンジが長い時は セパレータ(～)の位置だけで改行（各 YYYY-MM-DD は whitespace-nowrap で途中で割らない・
+                    #347 kako-jun「長くなったら改行すればいい」）。producer と同じ SHOT_DATE_RANGE_SEP で split/再挿入し文字のドリフトを防ぐ（#397）。 */}
+                {dateRange.split(SHOT_DATE_RANGE_SEP).map((part, i) => (
                   <span key={i} className="whitespace-nowrap">
-                    {i > 0 ? "〜" : ""}
+                    {i > 0 ? SHOT_DATE_RANGE_SEP : ""}
                     {part}
                   </span>
                 ))}

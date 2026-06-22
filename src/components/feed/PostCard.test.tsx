@@ -136,6 +136,25 @@ describe("PostCard", () => {
     }
   });
 
+  it("複数撮影日は表紙左下に撮影期間を ～(U+FF5E) 区切りで出し、～位置で改行できるよう分割する（#324/#397）", () => {
+    // photoShotDates が2日以上 → 「最古～最新」を出す。長レンジの改行のため producer(shotDateRange) と同じ
+    // SHOT_DATE_RANGE_SEP(=U+FF5E) で split/再挿入する。producer だけ U+FF5E にして consumer の split が U+301C の
+    // ままだと split が外れて単一塊になる回帰（#397 review）を、分割表示の有無で固定する。
+    render(
+      <PostCard
+        post={makePost({ photoShotDates: ["2024-06-22", "2024-06-01"] })}
+        index={0}
+        now={2000}
+        onOpen={noop}
+        onSelectHashtag={noop}
+      />,
+    );
+    // 分割は ～(U+FF5E) で行われ [「2024-06-01」][「～2024-06-22」] の2部品になる。U+301C split のままなら単一塊で
+    // この2部品は現れず getByText が落ちる＝回帰検知。
+    expect(screen.getByText("2024-06-01")).toBeInTheDocument();
+    expect(screen.getByText("～2024-06-22")).toBeInTheDocument();
+  });
+
   it("収まりきる時は「続きを読む」を出さない", () => {
     const restore = mockSizes(100, 100); // scrollHeight == clientHeight ＝ clip なし
     try {
