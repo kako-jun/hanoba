@@ -168,7 +168,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "compose.reorder.right": "Right",
   "compose.reorder.counter": "Photo {index} / {total}",
   "compose.undo": "Undo",
-  "compose.undo.aria": "Undo the last image edit (rotation, filter, shot date)",
+  "compose.undo.aria": "Undo the last image edit (rotation, filter, crop, shot date)",
   "compose.filter.heading": "Filters",
   "compose.shotDate.heading": "Date taken",
   "compose.shotDate.auto": "Detected automatically.",

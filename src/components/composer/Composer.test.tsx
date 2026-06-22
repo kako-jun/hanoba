@@ -977,8 +977,8 @@ describe("Composer 下書き配線（#228）", () => {
     await user.upload(input, makeImageFile());
     fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
 
-    // 初期は自動クロップだけ＝履歴は空（クロップは undo 対象外）。アンドゥボタンは無効。
-    const undo = await screen.findByRole("button", { name: "直前の画像編集（角度・フィルタ・撮影日）を1手戻す" });
+    // 初期は自動クロップだけ＝履歴は空（自動クロップは undo 対象外。ユーザー操作の crop は #393 で対象）。アンドゥボタンは無効。
+    const undo = await screen.findByRole("button", { name: "直前の画像編集（角度・フィルタ・クロップ・撮影日）を1手戻す" });
     expect(undo).toBeDisabled();
 
     // 右90°回転＝1手。img の transform に即時反映され、アンドゥが有効になる。
@@ -994,7 +994,7 @@ describe("Composer 下書き配線（#228）", () => {
   });
 
   // #393: 矩形ドラッグ(crop)もユーザー操作なら1手アンドゥ対象。自動センタークロップ・回転由来の commit は対象外を維持する。
-  const undoAria = "直前の画像編集（角度・フィルタ・撮影日）を1手戻す";
+  const undoAria = "直前の画像編集（角度・フィルタ・クロップ・撮影日）を1手戻す";
 
   it("プログラム由来の crop（画像ロードの自動センタークロップ）はアンドゥ対象に積まない（#393）", async () => {
     const user = userEvent.setup();
