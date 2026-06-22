@@ -83,7 +83,8 @@ describe("searchCatalog", () => {
     expect(other.some((h) => h.kind === "genus")).toBe(false);
   });
 
-  it("alias でもヒットする（鉄線→テッセン）", () => {
+  it("#409 alias で検索しても hit.name は正準（鉄線→テッセン・write 正規化）", () => {
+    // 別名「鉄線」でヒットしても hit.name は正準「テッセン」＝本文に書かれるタグは正準名に収束する。
     const hits = searchCatalog(CATALOG, "鉄線");
     expect(hits.map((h) => h.name)).toEqual(["テッセン"]);
   });
@@ -169,9 +170,9 @@ describe("tagsToPick（#312・概要→詳細の全階層）", () => {
     expect(tagsToPick(CATALOG, "水やり")).toEqual(["水やり"]);
   });
 
-  it("alias で品種を引いても階層は付く（鉄線→テッセン経路の属/カテゴリ）", () => {
-    // alias「鉄線」で引くと canonical でなく来たタグ名を品種位置に置く（UI は canonical を渡すが純関数は名前を尊重）。
-    expect(tagsToPick(CATALOG, "鉄線")).toEqual(["バラ・草花", "クレマチス", "鉄線"]);
+  it("#409 alias で品種を引くと正準 name に収束する（鉄線→テッセン・write 正規化）", () => {
+    // 別名「鉄線」で引いても品種位置には正準 name「テッセン」を置く（read=別名→正準・write=正準で表記が収束）。
+    expect(tagsToPick(CATALOG, "鉄線")).toEqual(["バラ・草花", "クレマチス", "テッセン"]);
   });
 });
 

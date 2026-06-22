@@ -5,12 +5,17 @@
 // （呼び出し側が `await import("./variety-catalog.ts")` してから渡す）。
 
 import { captionHasTag } from "../image/hashtag-complete.ts";
-import type { Genus, VarietyCategory } from "./variety-catalog.ts";
+import type { Genus, Variety, VarietyCategory } from "./variety-catalog.ts";
 
 /** 属 or 品種の所在（カテゴリ＋属）。階層への誘導・上位属の補完に使う。 */
 export interface CatalogLocation {
   category: VarietyCategory;
   genus: Genus;
+  /**
+   * 一致した品種（品種ヒットのときのみ・属ヒットでは undefined）。#409: 別名で当てても
+   * `variety.name`＝正準名が分かる＝書き込みは正準名へ収束させる（read=別名→正準・write=正準）。
+   */
+  variety?: Variety;
 }
 
 /** name に完全一致する **pickable な属** の所在を返す（無ければ null・大小無視）。 */
@@ -33,7 +38,7 @@ export function findVarietyGenus(catalog: VarietyCategory[], name: string): Cata
     for (const genus of category.genera) {
       for (const v of genus.varieties) {
         const names = [v.name, ...(v.aliases ?? [])].map((s) => s.toLowerCase());
-        if (names.includes(n)) return { category, genus };
+        if (names.includes(n)) return { category, genus, variety: v };
       }
     }
   }
@@ -101,7 +106,9 @@ export function tagsToPick(catalog: VarietyCategory[], name: string): string[] {
   if (vloc !== null) {
     const out = [vloc.category.label];
     if (vloc.genus.pickable) out.push(vloc.genus.name);
-    out.push(name);
+    // #409 write 正規化: 別名（ヴェイチー 等）で当たっても書き込むのは正準 name（ベイチー）。
+    // 別名→正準で表記が収束する（read 側 buildFuda も別名→正準で解決するので往復が一致）。
+    out.push(vloc.variety?.name ?? name);
     return [...new Set(out)];
   }
   const gloc = findPickableGenus(catalog, name);
