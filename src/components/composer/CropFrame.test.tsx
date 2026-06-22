@@ -46,14 +46,26 @@ afterEach(() => cleanup());
 function Harness({
   rotation = 0,
   onRotate,
+  onRotateGestureEnd,
   onCropComplete = () => {},
 }: {
   rotation?: number;
-  onRotate?: (n: number) => void;
+  onRotate?: (n: number, continuous?: boolean) => void;
+  onRotateGestureEnd?: () => void;
   onCropComplete?: (crop: unknown, fromUser: boolean) => void;
 }) {
   const ref = useRef<HTMLImageElement>(null);
-  return <CropFrame src="x.jpg" imgRef={ref} filter={null} onCropComplete={onCropComplete} rotation={rotation} onRotate={onRotate} />;
+  return (
+    <CropFrame
+      src="x.jpg"
+      imgRef={ref}
+      filter={null}
+      onCropComplete={onCropComplete}
+      rotation={rotation}
+      onRotate={onRotate}
+      onRotateGestureEnd={onRotateGestureEnd}
+    />
+  );
 }
 
 describe("CropFrame 回転（#314・mypace 方式）", () => {
@@ -67,21 +79,35 @@ describe("CropFrame 回転（#314・mypace 方式）", () => {
     expect(onRotate).toHaveBeenLastCalledWith(100); // 10 + 90
   });
 
-  it("±0.5°ボタンは最寄り90度成分＋微調整で onRotate を呼ぶ（90度を保ったまま微調整）", async () => {
+  // #403: ±0.5°ボタンは離散＝continuous=false で呼ぶ（各クリックを親で1手に積ませる）。
+  it("±0.5°ボタンは最寄り90度成分＋微調整で onRotate を呼ぶ（90度を保ったまま微調整・離散=false）", async () => {
     const user = userEvent.setup();
     const onRotate = vi.fn();
     render(<Harness rotation={90} onRotate={onRotate} />); // quarter=90, fine=0
     await user.click(screen.getByRole("button", { name: "0.5度 右へ" }));
-    expect(onRotate).toHaveBeenLastCalledWith(90.5);
+    expect(onRotate).toHaveBeenLastCalledWith(90.5, false);
     await user.click(screen.getByRole("button", { name: "0.5度 左へ" }));
-    expect(onRotate).toHaveBeenLastCalledWith(89.5);
+    expect(onRotate).toHaveBeenLastCalledWith(89.5, false);
   });
 
-  it("微調整スライダは最寄り90度成分＋スライダ値を渡す", () => {
+  // #403: 微調整スライダは連続入力＝continuous=true で呼ぶ（親で1ドラッグを1手に畳ませる）。
+  it("微調整スライダは最寄り90度成分＋スライダ値を渡す（連続=true）", () => {
     const onRotate = vi.fn();
     render(<Harness rotation={180} onRotate={onRotate} />); // quarter=180
     fireEvent.change(screen.getByLabelText("角度の微調整（0.5度きざみ）"), { target: { value: "3.5" } });
-    expect(onRotate).toHaveBeenLastCalledWith(183.5);
+    expect(onRotate).toHaveBeenLastCalledWith(183.5, true);
+  });
+
+  // #403: スライダのドラッグ終端（pointerUp 等）で onRotateGestureEnd を呼ぶ（親が畳み込みをリセット）。
+  it("スライダのドラッグ終端で onRotateGestureEnd を呼ぶ（pointerUp/mouseUp/touchEnd/keyUp・#403）", () => {
+    const onRotateGestureEnd = vi.fn();
+    render(<Harness rotation={0} onRotate={() => {}} onRotateGestureEnd={onRotateGestureEnd} />);
+    const slider = screen.getByLabelText("角度の微調整（0.5度きざみ）");
+    fireEvent.pointerUp(slider);
+    fireEvent.mouseUp(slider);
+    fireEvent.touchEnd(slider);
+    fireEvent.keyUp(slider);
+    expect(onRotateGestureEnd).toHaveBeenCalledTimes(4);
   });
 
   it("onRotate 未指定なら回転コントロールを出さない", () => {

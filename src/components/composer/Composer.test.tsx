@@ -38,6 +38,12 @@ vi.mock("../../lib/image/crop.ts", () => ({
   // #348: クロップの可視領域 clamp。clamp の正しさは crop.test で検証する。ここは素通しでよい
   //（Composer テストは 90 度回転後のクロップ枠の clamp 自体は検証しない）。
   clampCropToVisible: (crop: { x: number; y: number; width: number; height: number }) => crop,
+  // #403: 自然座標矩形→% 変換。純関数の境界は crop.test が担保するので、ここは本物相当の素直な変換でよい
+  //（undo の cropSyncToken 再同期 effect が initialCrop から矩形を引き直すのに使う）。
+  squareRectToPercentCrop: (rect: { sx: number; sy: number; size: number }, naturalW: number, naturalH: number) =>
+    naturalW <= 0 || naturalH <= 0
+      ? { x: 0, y: 0, width: 0, height: 0 }
+      : { x: (rect.sx / naturalW) * 100, y: (rect.sy / naturalH) * 100, width: (rect.size / naturalW) * 100, height: (rect.size / naturalH) * 100 },
   MAX_FINE_ROTATION: 15,
 }));
 
@@ -1063,7 +1069,9 @@ describe("Composer 下書き配線（#228）", () => {
     expect(undo).toBeDisabled();
   });
 
-  it("フィルタの連続変更は従来どおり1手に畳む（crop 追加で退行しない・#363/#393）", async () => {
+  // #403: フィルタは離散編集＝1アクション=1手（畳まない）。複数 on→off の後に undo で off 直前（複数 on）へ戻る。
+  // 旧挙動は同一 field 連続変更として畳み、唯一の snapshot が「最初=空」になり off→undo で空のまま無変化だった（実機バグ）。
+  it("フィルタを複数 on→off の後に undo すると off 直前（複数 on）へ戻る（#403）", async () => {
     const user = userEvent.setup();
     render(<Composer />);
     const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
@@ -1073,15 +1081,140 @@ describe("Composer 下書き配線（#228）", () => {
     const undo = await screen.findByRole("button", { name: undoAria });
     expect(undo).toBeDisabled();
 
-    // 同じフィルタを連続で巡回（なし→弱→中…）＝同一フィールドの連続変更は1手に畳む。
-    const chip = screen.getByRole("button", { name: /翠露/ });
-    await user.click(chip); // なし→弱（ここで1手積む）
-    expect(undo).toBeEnabled();
-    await user.click(chip); // 弱→中（畳む＝積み増さない）
-    await user.click(chip); // 中→強（畳む）
+    // フィルタを複数オン（翠露 弱→中、別フィルタも1段）。各クリックが独立した1手。
+    const sui = screen.getByRole("button", { name: /翠露/ });
+    await user.click(sui); // なし→弱（翠露 1段）
+    await user.click(sui); // 弱→中（翠露 2段）
+    expect(sui).toHaveAttribute("aria-pressed", "true");
+    expect(sui).toHaveAttribute("data-strength", "2");
+    // 「なし」（全 off）チップで全フィルタを外す＝この直前は「翠露=中」が選ばれている状態。
+    const noneChip = screen.getByRole("button", { name: "なし" });
+    await user.click(noneChip);
+    expect(sui).toHaveAttribute("aria-pressed", "false");
+    expect(sui).toHaveAttribute("data-strength", "0");
+    expect(noneChip).toHaveAttribute("aria-pressed", "true"); // 全 off 状態。
 
-    // 1手戻すと畳んだ run の最初（フィルタ無し）へ一気に戻り、履歴は空＝ボタン無効。
+    // 1手戻す＝off の直前（翠露=中が選ばれた複数 on 状態）へ戻る。空のままにならない（#403 の核心）。
     await user.click(undo);
+    expect(sui).toHaveAttribute("aria-pressed", "true");
+    expect(sui).toHaveAttribute("data-strength", "2");
+    expect(screen.getByRole("button", { name: "なし" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  // #363/#403: 回転の微調整スライダ（連続入力＝1ドラッグ）は従来どおり1ドラッグ run を1手に畳む（退行確認）。
+  // 離散編集（フィルタ/クロップ）や 90°/±0.5 ボタンが1手ずつになっても、スライダ1ドラッグの畳み込みは保つ。
+  it("回転の微調整スライダ（連続入力）は1ドラッグ run を1手に畳む（#363 回帰）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    expect(undo).toBeDisabled();
+
+    // 微調整スライダを連続で動かす（1ドラッグ内の連 tick）＝run の最初だけ積んで畳む。
+    const slider = screen.getByLabelText("角度の微調整（0.5度きざみ）");
+    fireEvent.change(slider, { target: { value: "1.5" } });
+    expect(undo).toBeEnabled();
+    fireEvent.change(slider, { target: { value: "3" } });
+    fireEvent.change(slider, { target: { value: "4.5" } });
+
+    // 1手戻すと畳んだ run の最初（無回転）へ一気に戻り、履歴は空＝ボタン無効。
+    const img = screen.getByAltText("クロップ対象の写真") as HTMLImageElement;
+    await user.click(undo);
+    expect(img.style.transform).toBe("");
+    expect(undo).toBeDisabled();
+  });
+
+  // #403: 90°回転ボタンは離散＝各クリック=1手。複数回押しても1手に畳まれず、undo で1回ずつ戻る
+  //（旧挙動は rotation 単独＝連続扱いで複数回が1手にまとまっていた＝kako-jun の不満）。
+  it("90°回転ボタンを2回押すと2手＝undo で1回ずつ戻る（離散・#403）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    expect(undo).toBeDisabled();
+
+    const img = screen.getByAltText("クロップ対象の写真") as HTMLImageElement;
+    const right90 = screen.getByRole("button", { name: "写真を右に90度回転" });
+    await user.click(right90); // 0→90（1手目）
+    expect(img.style.transform).toBe("rotate(90deg)");
+    await user.click(right90); // 90→180（2手目・畳まれない）
+    expect(img.style.transform).toBe("rotate(180deg)");
+
+    // 1手戻すと 90 へ（まだ履歴がある＝畳まれていない）。
+    await user.click(undo);
+    expect(img.style.transform).toBe("rotate(90deg)");
+    expect(undo).toBeEnabled();
+    // もう1手戻すと無回転＝履歴は空・ボタン無効。
+    await user.click(undo);
+    expect(img.style.transform).toBe("");
+    expect(undo).toBeDisabled();
+  });
+
+  // #403: ±0.5°ボタンは離散＝各クリック=1手。複数回押しても畳まれず、undo で1回ずつ戻る。
+  it("±0.5°ボタンを2回押すと2手＝undo で1回ずつ戻る（離散・#403）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    expect(undo).toBeDisabled();
+
+    const img = screen.getByAltText("クロップ対象の写真") as HTMLImageElement;
+    const plus = screen.getByRole("button", { name: "0.5度 右へ" });
+    await user.click(plus); // 0→0.5（1手目）
+    expect(img.style.transform).toBe("rotate(0.5deg)");
+    await user.click(plus); // 0.5→1.0（2手目・畳まれない）
+    expect(img.style.transform).toBe("rotate(1deg)");
+
+    // 1手戻すと 0.5 へ（まだ履歴がある＝畳まれていない）。
+    await user.click(undo);
+    expect(img.style.transform).toBe("rotate(0.5deg)");
+    expect(undo).toBeEnabled();
+    // もう1手戻すと無回転＝履歴は空・ボタン無効。
+    await user.click(undo);
+    expect(img.style.transform).toBe("");
+    expect(undo).toBeDisabled();
+  });
+
+  // #403: スライダの1ドラッグは1手に畳むが、ドラッグ終端（pointerUp）後の2回目のドラッグは別の1手。
+  // undo で2ドラッグ目だけが戻る（1ドラッグ目は残る）＝ジェスチャ単位のアンドゥ。
+  it("スライダはドラッグ終端で畳み込みをリセットし、2回目のドラッグは別の1手になる（#403）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    const img = screen.getByAltText("クロップ対象の写真") as HTMLImageElement;
+    const slider = screen.getByLabelText("角度の微調整（0.5度きざみ）");
+
+    // 1回目のドラッグ（連 tick・1手に畳む）→ pointerUp で終端。
+    fireEvent.change(slider, { target: { value: "1.5" } });
+    fireEvent.change(slider, { target: { value: "3" } });
+    fireEvent.pointerUp(slider);
+    expect(img.style.transform).toBe("rotate(3deg)");
+
+    // 2回目のドラッグ（pointerUp 後＝別の1手）。
+    fireEvent.change(slider, { target: { value: "4.5" } });
+    fireEvent.change(slider, { target: { value: "6" } });
+    expect(img.style.transform).toBe("rotate(6deg)");
+
+    // 1手戻すと2ドラッグ目だけが戻り、1ドラッグ目の終了状態（3°）へ。履歴はまだある（畳まれていない）。
+    await user.click(undo);
+    expect(img.style.transform).toBe("rotate(3deg)");
+    expect(undo).toBeEnabled();
+    // もう1手戻すと1ドラッグ目も戻って無回転＝履歴は空・ボタン無効。
+    await user.click(undo);
+    expect(img.style.transform).toBe("");
     expect(undo).toBeDisabled();
   });
 });

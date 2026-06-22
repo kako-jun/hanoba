@@ -127,6 +127,23 @@ export interface PercentCrop {
 }
 
 /**
+ * 自然座標の正方形矩形（SquareCropRect）を react-image-crop の % クロップへ変換する純関数（#403）。
+ *
+ * 自然座標（sx/sy/size）を画像の自然寸法（naturalW/naturalH）で割って % に直す。CropFrame の onImageLoad
+ * と undo 時の表示再同期（cropSyncToken effect）の両方が同じ変換を使うためにここへ切り出した（ロジック二重化を避ける）。
+ * naturalW/naturalH が 0 以下なら 0 除算を避けて中央寄りの安全な既定（中央 90% 正方形相当ではなく素直に 0,0）を返す。
+ */
+export function squareRectToPercentCrop(rect: SquareCropRect, naturalW: number, naturalH: number): PercentCrop {
+  if (naturalW <= 0 || naturalH <= 0) return { x: 0, y: 0, width: 0, height: 0 };
+  return {
+    x: (rect.sx / naturalW) * 100,
+    y: (rect.sy / naturalH) * 100,
+    width: (rect.size / naturalW) * 100,
+    height: (rect.size / naturalH) * 100,
+  };
+}
+
+/**
  * 回転後の「見えている写真の領域」に正方形クロップ(%)を収める純関数（#348）。
  *
  * 焼き込み（`renderInPlaceRotation`）もプレビュー（CSS `transform: rotate()`）も**元画像と同寸（W×H）の
