@@ -61,8 +61,12 @@ const jsonLd = {
 // （無ければ原典 ja に fallback）を直列化して渡す。
 //
 // shellKeys ＝ 各 .astro 殻（SiteHeader/SiteFooter/index/discover/me/ranking/vote）の
-// 可視テキスト・aria で data-i18n を付けたキーの集合。市民手帳ラベル（about）と
-// ホームのリンク割れサブ文・vote の {title} 補間 aria は対象外（ja のまま据え置き・既知の積み残し）。
+// 可視テキスト・aria で data-i18n を付けたキーの集合。
+// about ラベルは (言語)×(訪問者/市民) の 2 軸で決まる（#390）:
+//   訪問者ラベル（about.label.visitor）はこの言語 swap で当てる（shellKeys に含める）。
+//   市民ラベル（about.label.citizen）は名乗り swap（#262）と競合するため言語 swap には載せず、
+//   要素に data-citizen-swap（swapLocale の市民ラベル）を持たせて #262 側で言語追従させる。
+// vote の {title} 補間 aria・ホームのリンク割れサブ文（home.hero.sub）は別経路（後者は下で split 合成）。
 const shellKeys: MessageKey[] = [
   // 共通ナビ（SiteHeader / SiteFooter）。
   "nav.discover",
@@ -70,6 +74,8 @@ const shellKeys: MessageKey[] = [
   "nav.compose",
   "nav.ranking",
   "nav.menu.open",
+  // /about の訪問者ラベル（名乗り前）。市民ラベルは名乗り swap が言語追従する（#390）。
+  "about.label.visitor",
   // 共通フッタ。
   "footer.tagline",
   // ホーム（index）ヒーロー。サブ文（リンク割れ）は対象外。
@@ -231,11 +237,14 @@ const swapJson = JSON.stringify(SHELL_SWAP);
     {/* PWA「ホーム画面に追加」促し（#230）。全ページ共通。window/localStorage は
         マウント後 useEffect で参照するため SSR 安全。初期描画を妨げないよう idle で読む。 */}
     <InstallPrompt client:idle lang={locale} />
-    {/* 表示言語の殻入替（#147 段階2 go-live・flash 回避）。静的殻は ja。en を選んだユーザーだけ、
-        最初のペイント前に [data-i18n]/[data-i18n-aria] の殻要素を en へ差し替える。
+    {/* 表示言語の殻入替（#147 段階2 go-live・flash 回避・#376 で swap 方向を非既定言語へ一般化）。
+        静的殻は既定言語（go-live で en）で焼かれる。非既定言語（swapLocale＝ja）を選んだユーザーだけ、
+        最初のペイント前に [data-i18n]/[data-i18n-aria] の殻要素を swapLocale へ差し替える。
+        about の訪問者ラベル（about.label.visitor）もこの swap に含む＝言語追従する（#390）。
+        市民ラベルは名乗り swap（#262）が言語追従するので、この後段の script に任せる。
         about-label（市民手帳）swap と同手法で、body 末尾（header/footer の後）に is:inline 同期で置く
         ＝対象要素が既に DOM にあり、かつペイント前に textContent/aria を書き換えられる。
-        is:inline は import 不可なので en マップ（swapJson）を直列化して埋め込む。キーは
+        is:inline は import 不可なので swapLocale マップ（swapJson）を直列化して埋め込む。キーは
         clientLocale.ts の LOCALE_STORAGE_KEY="hanoba:lang" と一致。 */}
     <script
       is:inline
@@ -249,20 +258,28 @@ const swapJson = JSON.stringify(SHELL_SWAP);
 }catch(e){}})();`}
     />
     {/* ヘッダ/フッタの「Hanōba とは」を、名乗り済みの市民には「市民手帳」に差し替える（#262）。
+        この script は上の言語 swap（#147）の**後**に走る＝合成順は「言語→名乗り」（#390）。
+        言語 swap が訪問者ラベルを当てた上で、名乗り済みなら同じ言語の市民ラベルで上書きする。
+        市民ラベルの言語追従: 殻は既定言語（en）で焼かれ data-citizen＝en 市民ラベルを持つ。選択言語が
+        swapLocale（=非既定言語）なら data-citizen-swap（swapLocale の市民ラベル）を、そうでなければ
+        data-citizen を使う＝(言語)×(市民) の 4 象限すべてを 2 つの swap の合成で解決する。
         フラッシュを一瞬も出さないため、is:inline の同期スクリプトを body 末尾（header/footer の後）に置き、
         最初のペイント前に textContent を書き換える（type=module だと defer されて切替が見えてしまう）。
         is:inline は Vite を通らない＝import 不可なので localStorage を直読みする（キーは keys.ts の
-        NAME_KEY="hanoba:name" と一致。名乗り有無の 2 状態だけ＝ネットワーク不要・backendless）。 */}
-    <script is:inline>
-      try {
-        if (localStorage.getItem("hanoba:name")) {
-          for (const el of document.querySelectorAll("[data-about-label][data-citizen]")) {
-            el.textContent = el.dataset.citizen;
-          }
-        }
-      } catch (e) {
-        /* localStorage 不可（プライベートブラウズ等）なら訪問者表記のまま＝安全側 */
-      }
-    </script>
+        NAME_KEY="hanoba:name" / clientLocale.ts の "hanoba:lang" と一致。名乗り有無の 2 状態だけ＝
+        ネットワーク不要・backendless）。 */}
+    <script
+      is:inline
+      set:html={`(function(){try{
+  if (!localStorage.getItem("hanoba:name")) return;
+  var swap = localStorage.getItem("hanoba:lang") === "${swapLocale}";
+  document.querySelectorAll("[data-about-label][data-citizen]").forEach(function(el){
+    var v = swap ? el.dataset.citizenSwap : el.dataset.citizen;
+    if (v != null) el.textContent = v;
+  });
+}catch(e){
+  /* localStorage 不可（プライベートブラウズ等）なら訪問者表記のまま＝安全側 */
+}})();`}
+    />
   </body>
 </html>

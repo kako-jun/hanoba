@@ -9,7 +9,11 @@
 // ＝フラッシュ最小・backendless。SSG は訪問者表記で焼き、クライアントで市民なら差し替える。
 //
 // 文言は #147 で i18n カタログ（about.label.*）へ移管。locale を受けて t() で引く（aboutLabel）。
-// 後方互換のため DEFAULT_LOCALE で解決した定数も従来どおり export する（SiteHeader/SiteFooter）。
+//
+// about ラベルの最終文言は (言語)×(訪問者/市民) の 2 軸で決まる（#390）。SiteHeader/SiteFooter は
+// 既定言語で訪問者/市民ラベルを焼き、両軸の入替を MainLayout 末尾の 2 つの is:inline swap が合成する
+// （言語＝#147・名乗り＝#262）。ここはその 4 文字列を locale 引数で素直に引ける純関数だけを持つ
+// ＝呼び出し側が「どの言語・どの状態」を SSG で焼き、どれを data 属性に積むかを決める（単一責務）。
 
 import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
@@ -23,7 +27,3 @@ export function aboutLabelVisitor(locale: Locale = DEFAULT_LOCALE): string {
 export function aboutLabelCitizen(locale: Locale = DEFAULT_LOCALE): string {
   return t(locale, "about.label.citizen");
 }
-
-/** 後方互換 const（ja 既定）。SiteHeader/SiteFooter が import する。 */
-export const ABOUT_LABEL_VISITOR = aboutLabelVisitor(DEFAULT_LOCALE);
-export const ABOUT_LABEL_CITIZEN = aboutLabelCitizen(DEFAULT_LOCALE);

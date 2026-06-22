@@ -11,7 +11,7 @@
 
 import Icon from "./ui/Icon.tsx";
 import LangSwitcher from "./ui/LangSwitcher.tsx";
-import { ABOUT_LABEL_VISITOR, ABOUT_LABEL_CITIZEN } from "../lib/lore/aboutLabel.ts";
+import { aboutLabelVisitor, aboutLabelCitizen } from "../lib/lore/aboutLabel.ts";
 import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 interface Props {
@@ -23,17 +23,22 @@ interface Props {
 
 const { current, wide = false } = Astro.props;
 
-// 表示言語（#147 段階1）。今は既定（ja）固定＝挙動不変。段階2で URL/クライアントから決める。
+// 表示言語（#147 段階1）。今は既定（en）固定＝殻はこの言語で焼く。段階2で非既定言語は
+// MainLayout 末尾の言語 swap がクライアントで差し替える（flash 回避）。
 const locale: Locale = DEFAULT_LOCALE;
+
+// 殻が焼かれる言語の「逆」＝非既定言語（swapLocale）。about の市民ラベルは名乗り swap（#262）が
+// この言語へ追従させるので、その文言を data-citizen-swap に持たせる（#390・MainLayout と同じ規則）。
+const swapLocale: Locale = DEFAULT_LOCALE === "ja" ? "en" : "ja";
 
 // 大画面で広げる幅（フィード）と、文章/フォーム向けの標準幅（compose/about）。
 const maxW = wide ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl";
 
 // compose は塗りボタン（主アクション）なので nav 配列とは別扱い。
 // 並びはフッタの規則に揃える（About→discover→me・#106）。About は情報ページなので i アイコンを付ける。
-// About ラベルだけは「市民手帳」差し替え（#262）のため aboutLabel.ts 由来のまま（文言の所在を分けない）。
+// About ラベルは (言語)×(訪問者/市民) の 2 軸で決まる（#390）。文言は aboutLabel.ts 由来で一本化。
 const links = [
-  { href: "/about", label: ABOUT_LABEL_VISITOR, key: "about", icon: "info" },
+  { href: "/about", label: aboutLabelVisitor(locale), key: "about", icon: "info" },
   { href: "/discover", label: t(locale, "nav.discover"), key: "discover", icon: null },
   { href: "/me", label: t(locale, "nav.me"), key: "me", icon: null },
 ] as const;
@@ -70,11 +75,19 @@ const links = [
             ]}
           >
             {l.icon && <Icon name={l.icon} className="w-4 h-4 shrink-0" />}
-            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。
-                en 入替は about だけ citizen swap と競合するため対象外（ja のまま・#147 既知）。
-                それ以外（discover/me）は data-i18n="nav.{key}" で en へ入替できる。 */}
+            {/* about ラベルは (言語)×(訪問者/市民) の 2 軸で解決する（#390）。
+                訪問者ラベルは data-i18n="about.label.visitor" で言語 swap（#147）に載せ、
+                市民ラベルは名乗り swap（#262）が data-citizen(既定言語) / data-citizen-swap(非既定言語)
+                を選んで言語追従させる。それ以外（discover/me）は data-i18n="nav.{key}" で言語入替。 */}
             {l.key === "about" ? (
-              <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{l.label}</span>
+              <span
+                data-about-label
+                data-i18n="about.label.visitor"
+                data-citizen={aboutLabelCitizen(locale)}
+                data-citizen-swap={aboutLabelCitizen(swapLocale)}
+              >
+                {l.label}
+              </span>
             ) : (
               <span data-i18n={`nav.${l.key}`}>{l.label}</span>
             )}
@@ -125,10 +138,17 @@ const links = [
             ]}
           >
             {l.icon && <Icon name={l.icon} className="w-4 h-4 shrink-0" />}
-            {/* about ラベルは名乗り済みなら「市民手帳」に差し替える（MainLayout の script・#262）。
-                en 入替は about だけ citizen swap と競合するため対象外。discover/me は data-i18n で入替。 */}
+            {/* about ラベルは (言語)×(訪問者/市民) の 2 軸で解決する（#390・上のデスクトップ nav と同じ）。
+                訪問者＝言語 swap（#147）／市民＝名乗り swap（#262）が言語追従。discover/me は data-i18n。 */}
             {l.key === "about" ? (
-              <span data-about-label data-citizen={ABOUT_LABEL_CITIZEN}>{l.label}</span>
+              <span
+                data-about-label
+                data-i18n="about.label.visitor"
+                data-citizen={aboutLabelCitizen(locale)}
+                data-citizen-swap={aboutLabelCitizen(swapLocale)}
+              >
+                {l.label}
+              </span>
             ) : (
               <span data-i18n={`nav.${l.key}`}>{l.label}</span>
             )}
