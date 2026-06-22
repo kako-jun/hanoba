@@ -199,6 +199,11 @@ describe("buildReplyTemplate", () => {
     expect(t.tags.some((tag) => tag[0] === "client" && tag[1] === "hanoba")).toBe(true);
   });
 
+  it("t:plantstr を付けない（#383 の plantstr 自動付与はポスト限定＝reply には波及しない）", () => {
+    const t = buildReplyTemplate("コメント", "parent123");
+    expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "plantstr")).toBe(false);
+  });
+
   it("createdAt 省略時は現在時刻（秒）を入れる", () => {
     const before = Math.floor(Date.now() / 1000);
     const t = buildReplyTemplate("x", "parent123");
