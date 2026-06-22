@@ -10,16 +10,16 @@ import { useT, useLocale } from "../../lib/i18n/index.ts";
  * backendless＝t:hanoba 投稿のクライアント集計。集計は純関数 `lib/feed/activity.ts`（鼓門 JST・テスト済み）。
  */
 
-/** 草マスの濃淡（0=投稿なし → 4=濃い・#310 GreenArea と同じ 5 段階で世界観を揃える）。 */
-const LEVEL_BG = ["bg-white/5", "bg-ha-green/25", "bg-ha-green/45", "bg-ha-green/70", "bg-ha-green"] as const;
+/** 草マスの濃淡（0=投稿なし → 2=多い・#389 で 3 段階に集約＝細かい濃淡差より「あった/少し/多い」を素直に）。 */
+const LEVEL_BG = ["bg-white/5", "bg-ha-green/45", "bg-ha-green"] as const;
 const WEEKS = 13;
 
 /**
- * 活動の草の曜日軸（#345）。**全言語で英語フル表記の7日を固定**し、省略・間引きをしない
- * （旧: ロケール由来の narrow を 月/水/金 だけ間引き＝軸が欠け、言語で表記も変わって意図が伝わらなかった）。
- * 行 0=日 … 6=土＝集計 `activityHeatmap` のグリッド行順（grid 行 0 が日曜）と一致させる。
+ * 活動の草の曜日軸（#345）。**全7行・英語・曖昧なし**という #345 の意図はそのままに、3文字略で短縮する
+ * （行を間引かない／ロケール依存にしない＝narrow を 月/水/金 だけ間引いて軸が欠けた過去の失敗は再発しない）。
+ * 行 0=日 … 6=土＝集計 `activityHeatmap` のグリッド行順（grid 行 0 が日曜）と一致させる（行順は不変）。
  */
-const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
   const locale = useLocale();
@@ -33,11 +33,12 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium text-ha-ink/70">
-        {t("activity.heading")} <span className="text-xs font-normal text-ha-ink/45">{t("activity.heading.note")}</span>
+        {t("activity.heading")}{" "}
+        <span className="text-xs font-normal text-ha-ink/45">{t("activity.heading.note", { weeks: WEEKS })}</span>
       </p>
       {/* 週列×7曜日のヒートマップ。縦横の意味が分かるよう曜日ラベルを左に添える（kako-jun）。 */}
       <div className="flex gap-1 overflow-x-auto" aria-hidden>
-        {/* 曜日ラベル列（#345・英語フル表記7日を省略せず全行に・行位置を草マスと揃える）。 */}
+        {/* 曜日ラベル列（#345・英語3文字略7日を省略せず全行に・行位置を草マスと揃える・#389）。 */}
         <div className="flex shrink-0 flex-col gap-0.5 pr-1">
           {WEEKDAY_LABELS.map((d, r) => (
             <span key={r} className="flex h-2.5 items-center whitespace-nowrap text-[8px] leading-none text-ha-ink/40">
@@ -46,7 +47,10 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
           ))}
         </div>
         {grid.map((col, w) => (
-          <div key={w} className="flex shrink-0 flex-col gap-0.5">
+          // 各週列に、7行ぶんを貫くうっすい連続した縦トラックを敷く（#389）。最古週の頭・今週の今日以降に
+          // 必ず出る day:null パディング（左上/右下の空白角）も、この列の上に乗るので「週という列の中の、
+          // まだ無い日」と読め、欠けたタイルに見えない。空白セルはトラックを透過し、塗りセルは緑が乗る。
+          <div key={w} className="flex shrink-0 flex-col gap-0.5 rounded-[2px] bg-white/[0.02]">
             {col.map((cell, r) => (
               <span
                 key={r}

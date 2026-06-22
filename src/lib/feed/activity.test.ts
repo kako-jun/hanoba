@@ -61,12 +61,12 @@ describe("jstDayIndex / weekdayOf", () => {
 });
 
 describe("activityLevel", () => {
-  it("投稿数を 0〜4 段階に量子化", () => {
+  it("投稿数を 0〜2 段階に量子化（0=なし / 1〜2=少し / 3〜=多い）", () => {
     expect(activityLevel(0)).toBe(0);
     expect(activityLevel(1)).toBe(1);
-    expect(activityLevel(2)).toBe(2);
-    expect(activityLevel(4)).toBe(3);
-    expect(activityLevel(5)).toBe(4);
+    expect(activityLevel(2)).toBe(1);
+    expect(activityLevel(3)).toBe(2);
+    expect(activityLevel(5)).toBe(2);
   });
 });
 
