@@ -343,6 +343,10 @@ export const ja = {
   "detail.photo.next": "次の写真",
   "detail.photo.goto": "{n}枚目を表示",
   "detail.fuda.heading": "この投稿の植物",
+  // 翻訳ボタン（#385・PostDetail のみ・caption を閲覧言語へオンデマンド翻訳・on-device 無料）。
+  "detail.translate": "翻訳",
+  "detail.translate.original": "原文を表示",
+  "detail.translate.busy": "翻訳中…",
   // いいね aria は「いいね {n}」を reaction.likes.aria と共有。取得中はこの語を {n} に差す。
   "detail.likes.loading": "取得中",
   "detail.share.aria": "X でシェア",
