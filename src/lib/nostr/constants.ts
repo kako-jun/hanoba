@@ -15,6 +15,9 @@ export const TAG_MYPACE = "mypace";
 /** hanoba フィードの絞り込みタグ値。 */
 export const TAG_HANOBA = "hanoba";
 
+/** Nostr 全体の植物界隈（#plantstr）へ投稿を露出させる reciprocity タグ値（#383）。 */
+export const TAG_PLANTSTR = "plantstr";
+
 /** client タグの値。可視性には影響しない。 */
 export const CLIENT_NAME = "hanoba";
 

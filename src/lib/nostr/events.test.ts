@@ -88,6 +88,7 @@ describe("buildNoteTemplate", () => {
     expect(t.tags).toEqual([
       ["t", "mypace"],
       ["t", "hanoba"],
+      ["t", "plantstr"],
       ["client", "hanoba"],
     ]);
     // 本文の #アガベ は content に残るだけで、t タグには出ない
