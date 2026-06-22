@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
-import { resolveClientLocale, setClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { LOCALES, resolveClientLocale, setClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+
+/** 各言語の短いボタン表記と aria（#384 多言語・N 言語へ一般化）。LOCALES に言語を足したらここに追記する。 */
+const LABEL: Record<Locale, string> = { en: "EN", ja: "JA", es: "ES" };
+const ARIA: Record<Locale, string> = { en: "English", ja: "日本語", es: "Español" };
+// 表示順＝既定言語を先頭に（世界に出す殻の素地＝既定が基準の向き）、残りは LOCALES の順。
+const ORDER: Locale[] = [DEFAULT_LOCALE, ...LOCALES.filter((l) => l !== DEFAULT_LOCALE)];
 
 /**
- * 表示言語のセグメント切替（#147 段階2 go-live）。ヘッダに常駐。
+ * 表示言語のセグメント切替（#147 段階2 go-live・#384 で N 言語へ一般化）。ヘッダに常駐。
  *
- * 並びは「EN / JA」で EN 先（en が基準の向き＝世界に出す殻の素地）。
- * - マウント前は SSR/初期 HTML と一致させるため DEFAULT_LOCALE（ja）で描く。
- * - マウント後に resolveClientLocale() で現在言語を確定（en を選んでいれば EN を強調）。
+ * - マウント前は SSR/初期 HTML と一致させるため DEFAULT_LOCALE で描く。
+ * - マウント後に resolveClientLocale() で現在言語を確定（選んでいる言語を強調）。
  *   これで hydration mismatch を起こさず、post-mount の更新で正す。
- * - 非アクティブ側を押すと setClientLocale() が保存＋フルリロード（静的殻を確実に入替）。
+ * - 非アクティブを押すと setClientLocale() が保存＋フルリロード（静的殻を確実に入替）。
  *
  * 殻の文言入替（flash 回避）は MainLayout の is:inline スクリプトが担う。ここは「選ぶ」だけ。
  */
 export default function LangSwitcher() {
-  // SSR 種は ja（初期 HTML と一致）。マウント後にクライアント解決値へ寄せる。
+  // SSR 種は既定言語（初期 HTML と一致）。マウント後にクライアント解決値へ寄せる。
   const [loc, setLoc] = useState<Locale>(DEFAULT_LOCALE);
   useEffect(() => {
     setLoc(resolveClientLocale());
@@ -30,24 +35,18 @@ export default function LangSwitcher() {
       aria-label="Language"
       className="inline-flex items-center gap-0.5 rounded-full border border-ha-green/30 p-0.5 text-xs"
     >
-      <button
-        type="button"
-        aria-label="English"
-        aria-pressed={loc === "en"}
-        onClick={() => loc !== "en" && setClientLocale("en")}
-        className={`${base} ${loc === "en" ? active : idle}`}
-      >
-        EN
-      </button>
-      <button
-        type="button"
-        aria-label="日本語"
-        aria-pressed={loc === "ja"}
-        onClick={() => loc !== "ja" && setClientLocale("ja")}
-        className={`${base} ${loc === "ja" ? active : idle}`}
-      >
-        JA
-      </button>
+      {ORDER.map((l) => (
+        <button
+          key={l}
+          type="button"
+          aria-label={ARIA[l]}
+          aria-pressed={loc === l}
+          onClick={() => loc !== l && setClientLocale(l)}
+          className={`${base} ${loc === l ? active : idle}`}
+        >
+          {LABEL[l]}
+        </button>
+      ))}
     </div>
   );
 }

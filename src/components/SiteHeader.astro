@@ -12,7 +12,7 @@
 import Icon from "./ui/Icon.tsx";
 import LangSwitcher from "./ui/LangSwitcher.tsx";
 import { aboutLabelVisitor, aboutLabelCitizen } from "../lib/lore/aboutLabel.ts";
-import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+import { t, LOCALES, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 interface Props {
   /** 現在ページ。該当リンクを強調する（任意）。 */
@@ -27,9 +27,10 @@ const { current, wide = false } = Astro.props;
 // MainLayout 末尾の言語 swap がクライアントで差し替える（flash 回避）。
 const locale: Locale = DEFAULT_LOCALE;
 
-// 殻が焼かれる言語の「逆」＝非既定言語（swapLocale）。about の市民ラベルは名乗り swap（#262）が
-// この言語へ追従させるので、その文言を data-citizen-swap に持たせる（#390・MainLayout と同じ規則）。
-const swapLocale: Locale = DEFAULT_LOCALE === "ja" ? "en" : "ja";
+// 非既定の全言語（#384 で N 言語へ一般化）。about の市民ラベルは名乗り swap（#262）が選択言語へ
+// 追従させるので、各非既定言語の市民ラベルを data-citizen-{言語} に持たせる（#390・MainLayout と同じ規則）。
+const swapLocales: Locale[] = LOCALES.filter((l) => l !== DEFAULT_LOCALE);
+const citizenSwapAttrs = Object.fromEntries(swapLocales.map((l) => [`data-citizen-${l}`, aboutLabelCitizen(l)]));
 
 // 大画面で広げる幅（フィード）と、文章/フォーム向けの標準幅（compose/about）。
 const maxW = wide ? "max-w-3xl lg:max-w-5xl" : "max-w-3xl";
@@ -84,7 +85,7 @@ const links = [
                 data-about-label
                 data-i18n="about.label.visitor"
                 data-citizen={aboutLabelCitizen(locale)}
-                data-citizen-swap={aboutLabelCitizen(swapLocale)}
+                {...citizenSwapAttrs}
               >
                 {l.label}
               </span>
@@ -145,7 +146,7 @@ const links = [
                 data-about-label
                 data-i18n="about.label.visitor"
                 data-citizen={aboutLabelCitizen(locale)}
-                data-citizen-swap={aboutLabelCitizen(swapLocale)}
+                {...citizenSwapAttrs}
               >
                 {l.label}
               </span>

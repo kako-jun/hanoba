@@ -10,8 +10,9 @@
 import type { Locale } from "./locale.ts";
 import { ja, type MessageKey } from "./messages/ja.ts";
 import { en } from "./messages/en.ts";
+import { es } from "./messages/es.ts";
 
-const CATALOGS: Record<Locale, Partial<Record<MessageKey, string>>> = { ja, en };
+const CATALOGS: Record<Locale, Partial<Record<MessageKey, string>>> = { ja, en, es };
 
 export type TParams = Record<string, string | number>;
 

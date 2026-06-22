@@ -6,13 +6,14 @@
 // GitHub＝この OSS のリポジトリ（Octocat）。GitHub は React の Icon を Astro が静的描画。
 import Icon from "./ui/Icon.tsx";
 import { aboutLabelVisitor, aboutLabelCitizen } from "../lib/lore/aboutLabel.ts";
-import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+import { t, LOCALES, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 
 // 表示言語（#147）。今は既定（en）固定＝殻はこの言語で焼く。非既定言語は MainLayout 末尾の言語 swap が差し替える。
 const locale: Locale = DEFAULT_LOCALE;
 
-// 殻が焼かれる言語の「逆」＝非既定言語（swapLocale）。about の市民ラベルの言語追従用（#390・SiteHeader と同じ規則）。
-const swapLocale: Locale = DEFAULT_LOCALE === "ja" ? "en" : "ja";
+// 非既定の全言語（#384 で N 言語へ一般化）。about の市民ラベルの言語追従用（#390・SiteHeader と同じ規則）。
+const swapLocales: Locale[] = LOCALES.filter((l) => l !== DEFAULT_LOCALE);
+const citizenSwapAttrs = Object.fromEntries(swapLocales.map((l) => [`data-citizen-${l}`, aboutLabelCitizen(l)]));
 
 const external = [
   { label: "mypace", href: "https://mypace.llll-ll.com", img: "/mypace-icon.webp", icon: null },
@@ -34,7 +35,7 @@ const external = [
             data-about-label
             data-i18n="about.label.visitor"
             data-citizen={aboutLabelCitizen(locale)}
-            data-citizen-swap={aboutLabelCitizen(swapLocale)}
+            {...citizenSwapAttrs}
           >{aboutLabelVisitor(locale)}</span>
         </a>
         <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.discover">{t(locale, "nav.discover")}</a>
