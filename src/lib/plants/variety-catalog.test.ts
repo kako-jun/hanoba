@@ -192,3 +192,75 @@ describe("カタログの健全性", () => {
     expect(anthurium).toEqual([{ name: "ベイチー", sci: "Anthurium veitchii" }]);
   });
 });
+
+describe("#409 P-dissolve: 盆栽カテゴリ解体・針葉樹は庭木へ一本化", () => {
+  const labels = VARIETY_CATALOG.map((c) => c.label);
+  const niwaki = () => VARIETY_CATALOG.find((c) => c.label === "花木・庭木")!;
+  const allNames = () =>
+    VARIETY_CATALOG.flatMap((c) => c.genera).flatMap((g) => g.varieties).map((v) => v.name);
+
+  it("「盆栽」カテゴリは解体されて存在しない（盆栽は品種でなく仕立て＝tag-catalog 側 #413）", () => {
+    expect(labels).not.toContain("盆栽");
+  });
+
+  it("針葉樹は独立カテゴリを作らず花木・庭木へ一本化する（コニファー以外の針葉樹も特別扱いしない・kako-jun）", () => {
+    expect(labels).not.toContain("針葉樹");
+    expect(labels).not.toContain("針葉樹・コニファー");
+    const generaNames = niwaki().genera.map((g) => g.name);
+    expect(generaNames).toContain("松柏類"); // 盆栽の松柏（黒松・真柏…）
+    expect(generaNames).toContain("コニファー"); // 園芸針葉樹（据え置き）
+  });
+
+  it("松柏類・コニファー の両属が alias「針葉樹」を持ち1検索で揃う", () => {
+    for (const name of ["松柏類", "コニファー"]) {
+      const g = niwaki().genera.find((x) => x.name === name)!;
+      expect(g.aliases ?? []).toContain("針葉樹");
+    }
+  });
+
+  it("松柏類は黒松・五葉松・真柏・杜松・杉・桧・一位 を含む（盆栽から移設）", () => {
+    const names = niwaki().genera.find((g) => g.name === "松柏類")!.varieties.map((v) => v.name);
+    expect(names).toEqual(
+      expect.arrayContaining(["黒松", "五葉松", "真柏", "糸魚川真柏", "杜松", "杉", "桧", "一位"]),
+    );
+  });
+
+  it("さつき品種（月光・白光・松鏡・長寿宝）は花木・庭木 > サツキ へ統合", () => {
+    const names = niwaki().genera.find((g) => g.name === "サツキ")!.varieties.map((v) => v.name);
+    expect(names).toEqual(expect.arrayContaining(["月光", "白光", "松鏡", "長寿宝"]));
+  });
+
+  it("行き場のない実体（雑木・実もの観賞・花梨）が botanical へ移った", () => {
+    const names = allNames();
+    expect(names).toEqual(
+      expect.arrayContaining(["ケヤキ", "ブナ", "ロウバイ", "ピラカンサ", "ウメモドキ", "ロウヤガキ", "カリン"]),
+    );
+  });
+
+  // 検索到達性: 変種名で拾える。
+  for (const term of ["黒松", "真柏", "杜松", "ケヤキ", "カリン", "月光"]) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // 旧表記（盆栽カタログのカタカナ/漢字）でも alias 経由で正準へ到達する（read=別名→正準）。
+  const aliasPairs: Array<[string, string]> = [
+    ["蝋梅", "ロウバイ"],
+    ["老爺柿", "ロウヤガキ"],
+    ["欅", "ケヤキ"],
+    ["花梨", "カリン"],
+  ];
+  for (const [term, canonical] of aliasPairs) {
+    it(`旧表記 alias「${term}」が正準「${canonical}」へ到達する`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).map((h) => h.name)).toContain(canonical);
+    });
+  }
+
+  it("仕立てスタイルの擬似エントリ（苔盆栽/草もの盆栽/ミニ盆栽/寄せ植え盆栽）はカタログから消えた", () => {
+    const names = allNames();
+    for (const style of ["苔盆栽", "草もの盆栽", "ミニ盆栽", "寄せ植え盆栽"]) {
+      expect(names).not.toContain(style);
+    }
+  });
+});
