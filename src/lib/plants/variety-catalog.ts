@@ -784,9 +784,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "マンリョウ", sci: "Ardisia crenata" }, { name: "ムクゲ", sci: "Hibiscus syriacus" }, { name: "フヨウ", sci: "Hibiscus mutabilis" }, { name: "キョウチクトウ", sci: "Nerium oleander" },
         { name: "ロウバイ", sci: "Chimonanthus praecox", aliases: ["蝋梅"] }, { name: "ピラカンサ", sci: "Pyracantha" }, { name: "ウメモドキ", sci: "Ilex serrata" }, { name: "ロウヤガキ", sci: "Diospyros rhombifolia", aliases: ["老爺柿"] },
       ] },
-      { name: "モミジ", pickable: true, aliases: ["紅葉", "カエデ", "もみじ"], varieties: [
-        { name: "イロハモミジ", sci: "Acer palmatum" }, { name: "ヤマモミジ", sci: "Acer palmatum subsp. matsumurae" }, { name: "デショウジョウ", sci: "Acer palmatum 'Deshojo'", aliases: ["出猩々"] }, { name: "野村もみじ", sci: "Acer palmatum 'Nomura'" },
-        { name: "獅子頭", sci: "Acer palmatum 'Shishigashira'" }, { name: "青枝垂れ", sci: "Acer palmatum 'Ao-shidare'" }, { name: "トウカエデ", sci: "Acer buergerianum" },
+      { name: "モミジ", pickable: true, aliases: ["紅葉", "カエデ", "もみじ", "楓"], varieties: [
+        { name: "イロハモミジ", sci: "Acer palmatum" }, { name: "ヤマモミジ", sci: "Acer palmatum subsp. matsumurae", aliases: ["山もみじ"] }, { name: "デショウジョウ", sci: "Acer palmatum 'Deshojo'", aliases: ["出猩々"] }, { name: "野村もみじ", sci: "Acer palmatum 'Nomura'" },
+        { name: "獅子頭", sci: "Acer palmatum 'Shishigashira'" }, { name: "青枝垂れ", sci: "Acer palmatum 'Ao-shidare'" }, { name: "トウカエデ", sci: "Acer buergerianum", aliases: ["唐楓"] },
       ] },
       { name: "ウメ", pickable: true, aliases: ["梅"], varieties: [
         { name: "南高", sci: "Prunus mume 'Nankou'" }, { name: "白加賀", sci: "Prunus mume 'Shirakaga'" }, { name: "豊後", sci: "Prunus mume 'Bungo'" }, { name: "鶯宿", sci: "Prunus mume 'Ōshuku'" },
