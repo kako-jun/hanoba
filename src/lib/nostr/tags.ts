@@ -1,21 +1,26 @@
 // タグ関連の純粋関数。
 //
 // 確定済みの契約（DESIGN §6）:
-//   自動付与タグは [["t","mypace"],["t","hanoba"],["client","hanoba"]] のみ（この順序）。
-//   本文の #ハッシュタグは t タグ化しない（mypace と完全一致＝独自化禁止）。
+//   自動付与タグは [["t","mypace"],["t","hanoba"],["t","plantstr"],["client","hanoba"]]（この順序）。
+//   t:plantstr は mypace 完全一致からの意図的逸脱（#383）＝Nostr 全体の #plantstr 界隈へ
+//   自分の投稿も露出させ discover の read/write 非対称を解消する reciprocity。
+//   コミュニティ・ハッシュタグの自動付与であって、本文の # を t タグ化するルールではない。
+//   本文の #ハッシュタグは依然 t タグ化しない（別軸のルール・独自化禁止）。
 //   集約（読み取り）の二段構え検索は #3/#4 の責務でここには無い（書き込み側だけ）。
 
-import { CLIENT_NAME, TAG_HANOBA, TAG_MYPACE } from "./constants.ts";
+import { CLIENT_NAME, TAG_HANOBA, TAG_MYPACE, TAG_PLANTSTR } from "./constants.ts";
 
 /**
  * 全投稿に自動付与するタグを返す。
- * 厳密にこの順序: [["t","mypace"],["t","hanoba"],["client","hanoba"]]。
+ * 厳密にこの順序: [["t","mypace"],["t","hanoba"],["t","plantstr"],["client","hanoba"]]。
+ * t:plantstr は Nostr 全体の植物界隈への露出（reciprocity・#383）で、本文 # の t 化とは別軸。
  * 本文の # は一切含めない。
  */
 export function buildAutoTags(): string[][] {
   return [
     ["t", TAG_MYPACE],
     ["t", TAG_HANOBA],
+    ["t", TAG_PLANTSTR],
     ["client", CLIENT_NAME],
   ];
 }

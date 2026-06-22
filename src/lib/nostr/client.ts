@@ -407,7 +407,7 @@ const POP_LIMIT_FILTERED = 300;
  * discover（みんなの植物）を取得する（#239 / #258: 品種で絞るだけ・新着順）。
  *
  * 設計原則: **品種は Nostr のルーティングタグ（t タグ）ではなく hanoba の意味タグ。** 投稿の品種は
- * 本文 #ハッシュタグにだけ宿り（buildAutoTags は t:hanoba/t:mypace のみ）、絞り込みは「みんなの植物
+ * 本文 #ハッシュタグにだけ宿り（buildAutoTags はコミュニティタグ t:mypace/t:hanoba/t:plantstr のみで、品種の t タグは持たない）、絞り込みは「みんなの植物
  * フィード」の上のクライアント側ビューとして確定する（fetchPopularHashtags が #t:hanoba を取って
  * extractHashtags で数えるのと同じ土俵）。
  *

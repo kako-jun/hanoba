@@ -88,6 +88,7 @@ describe("buildNoteTemplate", () => {
     expect(t.tags).toEqual([
       ["t", "mypace"],
       ["t", "hanoba"],
+      ["t", "plantstr"],
       ["client", "hanoba"],
     ]);
     // 本文の #アガベ は content に残るだけで、t タグには出ない
@@ -196,6 +197,11 @@ describe("buildReplyTemplate", () => {
     // mypace と client は付く。
     expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "mypace")).toBe(true);
     expect(t.tags.some((tag) => tag[0] === "client" && tag[1] === "hanoba")).toBe(true);
+  });
+
+  it("t:plantstr を付けない（#383 の plantstr 自動付与はポスト限定＝reply には波及しない）", () => {
+    const t = buildReplyTemplate("コメント", "parent123");
+    expect(t.tags.some((tag) => tag[0] === "t" && tag[1] === "plantstr")).toBe(false);
   });
 
   it("createdAt 省略時は現在時刻（秒）を入れる", () => {

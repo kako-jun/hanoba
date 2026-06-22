@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { buildAutoTags, extractHashtags, stripHashtags } from "./tags.ts";
 
 describe("buildAutoTags", () => {
-  it("厳密にこの順序のタグを返す（mypace / hanoba / client）", () => {
+  it("厳密にこの順序のタグを返す（mypace / hanoba / plantstr / client）", () => {
     expect(buildAutoTags()).toEqual([
       ["t", "mypace"],
       ["t", "hanoba"],
+      ["t", "plantstr"],
       ["client", "hanoba"],
     ]);
   });
