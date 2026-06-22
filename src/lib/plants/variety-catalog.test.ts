@@ -338,3 +338,88 @@ describe("同義語統合（#409 P-canonical）", () => {
     });
   }
 });
+
+// #409 P-canonical 第2弾: 同一学名で重複していた 29 組（うち 1 組は alias 2 件）を
+// 「正準名 + alias」に畳んだ（合計 30 エントリ削減）。canonical が検索でヒットし、
+// 旧 alias 名で検索しても canonical へ到達すること（read 吸収）を担保する。
+// 「ミディ胡蝶蘭」「八重咲きゼラニウム」は別物なので畳まずに残す（distinct guard）。
+describe("同義語統合（#409 P-canonical 第2弾）", () => {
+  // 全エントリ（品種タグ）の name を平坦化する。
+  const allVarietyNames = () =>
+    VARIETY_CATALOG.flatMap((cat) => cat.genera.flatMap((g) => g.varieties.map((v) => v.name)));
+
+  // catalog から学名でエントリを引く（[name, sci] の組を平坦化）。
+  const allVarietyEntries = () =>
+    VARIETY_CATALOG.flatMap((cat) =>
+      cat.genera.flatMap((g) => g.varieties.map((v) => [v.name, v.sci] as const)),
+    );
+
+  // [canonical, alias, sci] の組。canonical は存在し、alias で引くと canonical に到達する。
+  // sci は統合対象の学名（この sci を持つ alias 名の重複エントリが消えていること）。
+  // ハエトリグサは alias 2 件（ディオネア / マスシプラ）なので 2 行に展開する。
+  const canonicalAliasPairs: Array<[string, string, string]> = [
+    ["天女", "カルカレア", "Titanopsis calcarea"],
+    ["兜", "兜丸", "Astrophytum asterias"],
+    ["ランポー玉", "鸞鳳玉", "Astrophytum myriostigma"],
+    ["フクシー", "フックシー", "Tillandsia fuchsii"],
+    ["デリシオーサ", "デリシオサ", "Monstera deliciosa"],
+    ["ワロクアナム", "ウォロケウシー", "Anthurium warocqueanum"],
+    ["サクララン", "カルノーサ", "Hoya carnosa"],
+    ["ランキフォリア", "インシグニス", "Goeppertia lancifolia"],
+    ["ベンジャミン", "ベンジャミナ", "Ficus benjamina"],
+    ["コンシンネ", "マジナータ", "Dracaena marginata"],
+    ["ヘデラ", "ヘリックス", "Hedera helix"],
+    ["ハエトリグサ", "ディオネア", "Dionaea muscipula"],
+    ["ハエトリグサ", "マスシプラ", "Dionaea muscipula"],
+    ["コモウセンゴケ", "スパチュラータ", "Drosera spatulata"],
+    ["セファロタス", "フクロユキノシタ", "Cephalotus follicularis"],
+    ["コチョウラン", "ファレノプシス", "Phalaenopsis"],
+    ["フウラン", "風蘭", "Vanda falcata"],
+    ["クサソテツ", "コゴミ", "Matteuccia struthiopteris"],
+    ["茶碗蓮", "ミニ蓮", "Nelumbo nucifera"],
+    ["ニオイゼラニウム", "センテッドゼラニウム", "Pelargonium"],
+    ["ブルーサルビア", "ファリナセア", "Salvia farinacea"],
+    ["メキシカンセージ", "レウカンサ", "Salvia leucantha"],
+    ["ビジョナデシコ", "アメリカナデシコ", "Dianthus barbatus"],
+    ["ハナニラ", "イフェイオン", "Ipheion uniflorum"],
+    ["フレンチラベンダー", "ストエカス", "Lavandula stoechas"],
+    ["二十日大根", "ラディッシュ", "Raphanus sativus var. sativus"],
+    ["ふだん草", "スイスチャード", "Beta vulgaris var. cicla"],
+    ["里芋", "さといも", "Colocasia esculenta"],
+    ["食用ほおずき", "ストロベリートマト", "Physalis pruinosa"],
+    ["桑", "マルベリー", "Morus"],
+  ];
+
+  // (a) 各 canonical 名が searchCatalog で 1 件以上ヒットする。
+  const canonicals = [...new Set(canonicalAliasPairs.map(([c]) => c))];
+  for (const canonical of canonicals) {
+    it(`正準「${canonical}」が検索でヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, canonical).length).toBeGreaterThan(0);
+    });
+  }
+
+  // (b) 旧 alias 名で引くと canonical 名が結果に含まれる（read=別名→正準）。
+  //     別カテゴリ同名と混同しないよう、ヒット結果に canonical name が含まれることで判定する。
+  for (const [canonical, alias] of canonicalAliasPairs) {
+    it(`旧別名「${alias}」が正準「${canonical}」へ到達する`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, alias).map((h) => h.name)).toContain(canonical);
+    });
+  }
+
+  // (c) 統合した学名を持つ alias 名の重複エントリは消えている（canonical へ畳まれた）。
+  //     同名でも別学名の別物は残るので name 単独でなく [name, sci] 組で判定する。
+  for (const [, alias, sci] of canonicalAliasPairs) {
+    it(`旧別名「${alias}」の重複エントリ（${sci}）は独立では存在しない`, () => {
+      const dup = allVarietyEntries().some(([name, s]) => name === alias && s === sci);
+      expect(dup).toBe(false);
+    });
+  }
+
+  // (d) distinct guard: 別物として残すべき「ミディ胡蝶蘭」「八重咲きゼラニウム」は存続する。
+  const distinctSurvivors = ["ミディ胡蝶蘭", "八重咲きゼラニウム"];
+  for (const name of distinctSurvivors) {
+    it(`別物「${name}」は統合されず存在し続ける`, () => {
+      expect(allVarietyNames()).toContain(name);
+    });
+  }
+});
