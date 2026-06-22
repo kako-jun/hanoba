@@ -171,7 +171,7 @@ mypace と同じ Nostr 空間・同じタグ規約に準拠する（独自化し
   - `['t','plantstr']` … **自動付与（#383・mypace 完全一致からの意図的逸脱）**。Nostr 全体の植物界隈（`#plantstr`）へ hanoba の投稿も露出させ、discover が `#plantstr` を「読む」のに「書かない」非対称を解消する（reciprocity・生態系への還元）。**kill switch**＝`buildAutoTags()` のこの1行を消して再デプロイすれば全ユーザー分が止まる（可逆）。**これはコミュニティ・ハッシュタグの自動付与であって、本文 `#` を `t` タグ化するルールではない**（下記の「本文 `#` は `t` 化しない」とは別軸）。
   - `['client','hanoba']` … 自動付与。可視性には影響しない。
   - **植物トピック・種別は、一言（本文）にユーザーが書く `#ハッシュタグ`** で表現（例: `#アガベ #パキポ`）。本文に見えるテキストとして残す。**hanoba 側に固定の植物 taxonomy は持たない**。**本文 `#` は `t` タグ化しない**（mypace と完全一致＝独自化禁止。確定）。集約は書き込み側のタグでなく、読み取り側の二段構え検索で行う（下記）。
-- **content**: 必須の一言 ＋ 画像 URL（1〜4個）を**インラインのプレーン URL**で（`https://image.nostr.build/<hash>.<ext>`。imeta タグは使わない）。**一言が空（URL のみ）は弾く**。
+- **content**: 必須の一言 ＋ 画像 URL（1〜4個）を**インラインのプレーン URL**で（`https://image.nostr.build/<hash>.<ext>`。imeta タグは使わない）。**一言が空（URL のみ）は弾く**。**本文 caption 末尾に `#plantstr` も自動併記する（#408・#383 follow-up）**＝`t:plantstr` タグに加え本文文字列としても `#plantstr` を残し、① NIP-50 全文検索（本文の "#plantstr" を引く層）／② 本文 `#` を parse する他クライアント の双方へ hanoba 投稿を届かせ reach を最大化する（`buildNoteTemplate` の content 合成・画像 URL より前＝caption 側）。**重複ガード**＝caption に既に `#plantstr`（大小無視）があれば足さない（手書きを二重化しない・`extractHashtags` で判定）。**kill switch**＝`buildNoteTemplate` のこの併記数行を消せば止まる（可逆）。これは `t:plantstr` 自動付与（コミュニティ・ハッシュタグ）の本文側補完であって、**品種など本文 `#` を `t` 化するルールではない**（その別軸は不変）。
 - **画像アップロード**: `POST https://nostr.build/api/v2/upload/files`（NIP-98 認証）。EXIF はサーバ側で自動削除。
 - **リレー**: `wss://relay.damus.io`, `wss://nos.lol`（必要時に検索 `wss://search.nos.today`）。
 - **鍵**: ブラウザ生成・localStorage 保存、NIP-07 任意。

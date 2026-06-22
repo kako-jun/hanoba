@@ -1,7 +1,7 @@
 // イベントテンプレート構築の純粋関数。署名・送信はしない（keys / client の責務）。
 
-import { CLIENT_NAME, TAG_MYPACE } from "./constants.ts";
-import { buildAutoTags } from "./tags.ts";
+import { CLIENT_NAME, TAG_MYPACE, TAG_PLANTSTR } from "./constants.ts";
+import { buildAutoTags, extractHashtags } from "./tags.ts";
 import type { EventTemplate } from "./types.ts";
 
 function nowSec(): number {
@@ -24,9 +24,10 @@ function isHttpUrl(u: string): boolean {
  * - caption.trim() が空なら throw（一言必須＝hanoba の心臓部・DESIGN §1）。
  * - tags は buildAutoTags() のみ（本文 # は t タグ化しない）。
  * - content は「一言」＋画像 URL をインラインのプレーン URL で連結:
- *     caption.trim() の後に各 imageUrl を改行で連結。
- *     例: "開花した #アガベ\nhttps://image.nostr.build/xxx.jpg"
- *   imeta タグは使わない。imageUrls 省略/空なら caption のみ。
+ *     caption.trim() の末尾に `#plantstr` を自動併記し、その後に各 imageUrl を改行で連結。
+ *     例: "開花した #アガベ #plantstr\nhttps://image.nostr.build/xxx.jpg"
+ *   imeta タグは使わない。imageUrls 省略/空なら caption（＋#plantstr）のみ。
+ *   `#plantstr` 併記の意図と kill switch は下の content 合成箇所のコメントを参照（#408）。
  */
 export function buildNoteTemplate(input: {
   caption: string;
@@ -46,8 +47,24 @@ export function buildNoteTemplate(input: {
     throw new Error("一言は必須です（写真だけの投稿はできません）");
   }
 
+  // 本文 caption 末尾に `#plantstr` を自動併記する（#408・#383 follow-up）。
+  // 狙い: t:plantstr タグ（buildAutoTags）に加え、本文文字列としても `#plantstr` を残し、
+  //   ① NIP-50 全文検索（本文の "#plantstr" を引く層）／② 本文の `#` を parse する他クライアント
+  //   の双方へ hanoba 投稿を届かせ reach を最大化する。
+  // 重複ガード: caption に既に `#plantstr`（大小無視）があれば足さない（手書きを二重化しない）。
+  //   判定は extractHashtags（読み取り側と同じ規則）で拾った語に "plantstr"（小文字化）が
+  //   あるかで行う。caption は非空（上で throw 済み）なのでここは正常パスのみ。
+  //   ※割り切り: 抽出規則は `#` が先頭/空白/`>` の直後の時だけ拾うので、区切りの無い手書き（例「…です。#plantstr」
+  //   ＝直前が非空白）は拾えず二重化し得る。読み取り側 extractHashtags と一貫させた割り切り（多くは `#` 前に空白が
+  //   あり、`#plantstrong` 等の部分一致は === 完全一致ガードで誤爆しない＝付け損ねない・#408 review）。
+  // ★kill switch★: この併記を止めるには下の3行（hasPlantstrTag / captionWithPlantstr）を
+  //   消し、content の合成で caption をそのまま使うように戻すだけでよい（可逆）。
+  const hasPlantstrTag = extractHashtags(caption).some((h) => h.toLowerCase() === TAG_PLANTSTR);
+  const captionWithPlantstr = hasPlantstrTag ? caption : `${caption} #${TAG_PLANTSTR}`;
+
   const imageUrls = input.imageUrls ?? [];
-  const content = imageUrls.length > 0 ? [caption, ...imageUrls].join("\n") : caption;
+  const content =
+    imageUrls.length > 0 ? [captionWithPlantstr, ...imageUrls].join("\n") : captionWithPlantstr;
 
   // 撮影日（#324）: 各写真の撮影日を imageUrls 順の**1本の位置配列タグ** `["shot_dates", …]` にする
   // （aurora 等 mypace のカスタムタグ作法＝1タグに位置で複数値）。妥当な `YYYY-MM-DD` だけ残し他は ""、
