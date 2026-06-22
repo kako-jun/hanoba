@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { LOCALES, resolveClientLocale, setClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
 /** 各言語の短いボタン表記と aria（#384 多言語・N 言語へ一般化）。LOCALES に言語を足したらここに追記する。 */
-const LABEL: Record<Locale, string> = { en: "EN", ja: "JA", es: "ES" };
-const ARIA: Record<Locale, string> = { en: "English", ja: "日本語", es: "Español" };
+const LABEL: Record<Locale, string> = { en: "EN", ja: "JA", es: "ES", zh: "ZH" };
+const ARIA: Record<Locale, string> = { en: "English", ja: "日本語", es: "Español", zh: "中文" };
 // 表示順＝既定言語を先頭に（世界に出す殻の素地＝既定が基準の向き）、残りは LOCALES の順。
 const ORDER: Locale[] = [DEFAULT_LOCALE, ...LOCALES.filter((l) => l !== DEFAULT_LOCALE)];
 
