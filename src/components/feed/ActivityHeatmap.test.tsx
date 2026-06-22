@@ -46,4 +46,13 @@ describe("ActivityHeatmap（#272 段階4・活動の草）", () => {
     expect(screen.queryByText("日")).not.toBeInTheDocument();
     expect(screen.getByText("Wed")).toBeInTheDocument();
   });
+
+  it("ヒートマップは横スクロールのみ＝縦は hidden（最初から縦スクロールバーが出る連鎖を断つ）", () => {
+    // `overflow-x-auto` だけだと overflow-y が auto に計算され、横スクロールバー/サブピクセルのはみ出しで
+    // 縦スクロールバーが出る。草は7行固定で縦スクロール不要なので overflow-y-hidden を明示する（kako-jun 実機指摘）。
+    const { container } = render(<ActivityHeatmap posts={[post(0), post(1)]} />);
+    const scroll = container.querySelector("div[aria-hidden]");
+    expect(scroll?.className).toContain("overflow-x-auto");
+    expect(scroll?.className).toContain("overflow-y-hidden");
+  });
 });

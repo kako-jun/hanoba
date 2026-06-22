@@ -36,8 +36,11 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
         {t("activity.heading")}{" "}
         <span className="text-xs font-normal text-ha-ink/45">{t("activity.heading.note", { weeks: WEEKS })}</span>
       </p>
-      {/* 週列×7曜日のヒートマップ。縦横の意味が分かるよう曜日ラベルを左に添える（kako-jun）。 */}
-      <div className="flex gap-1 overflow-x-auto" aria-hidden>
+      {/* 週列×7曜日のヒートマップ。縦横の意味が分かるよう曜日ラベルを左に添える（kako-jun）。
+          草は常に7行固定＝縦スクロールは不要。`overflow-x-auto` だけだと overflow-y が auto に計算され、
+          横スクロールバーが高さを食う/サブピクセルのはみ出しで**最初から縦スクロールバーが出る**ので
+          overflow-y-hidden を明示して連鎖を断つ（kako-jun 実機指摘）。 */}
+      <div className="flex gap-1 overflow-x-auto overflow-y-hidden" aria-hidden>
         {/* 曜日ラベル列（#345・英語3文字略7日を省略せず全行に・行位置を草マスと揃える・#389）。 */}
         <div className="flex shrink-0 flex-col gap-0.5 pr-1">
           {WEEKDAY_LABELS.map((d, r) => (
