@@ -86,7 +86,8 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     // loc は mount 後 effect で ja に解決＝読込サマリが ja の既定スコープ名で出る。
     expect(await screen.findByText(/「みんなの植物」を探して/)).toBeInTheDocument();
     expect(screen.queryByText(/Everyone's Plants/)).not.toBeInTheDocument();
-    resolveFetch([]); // pending を解消（cleanup 前に await されない promise を残さない）
+    resolveFetch([]); // pending を解消し、state 更新を flush（act 警告を残さない）。
+    await waitFor(() => expect(screen.queryByText(/探して/)).not.toBeInTheDocument());
   });
 
   it("既定が 0 件なら idle（案内・カードを出さない）。品種で絞る UI は出す", async () => {
