@@ -55,13 +55,11 @@ export interface HeatCell {
   count: number;
 }
 
-/** ヒートマップの濃淡段階（GitHub の草と同じ 0〜4・0=投稿なし）。 */
+/** ヒートマップの濃淡段階（0〜2・0=投稿なし / 1=少し〔1〜2件〕 / 2=多い〔3件〜〕）。 */
 export function activityLevel(count: number): number {
   if (count <= 0) return 0;
-  if (count === 1) return 1;
-  if (count === 2) return 2;
-  if (count <= 4) return 3;
-  return 4;
+  if (count <= 2) return 1;
+  return 2;
 }
 
 /**

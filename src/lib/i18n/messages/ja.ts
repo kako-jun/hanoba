@@ -150,7 +150,7 @@ export const ja = {
 
   // 活動の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。
   "activity.heading": "活動の草",
-  "activity.heading.note": "（横＝週・縦＝曜日・濃いほどその日の投稿が多い）",
+  "activity.heading.note": "（直近{weeks}週）",
   "activity.streak.current": "現在の連続",
   "activity.streak.longest": "最長",
   "activity.streak.days": "日",

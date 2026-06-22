@@ -135,7 +135,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "green.measuring": "(measuring green…)",
 
   "activity.heading": "Activity grass",
-  "activity.heading.note": "(across = weeks, down = weekdays; darker = more posts that day)",
+  "activity.heading.note": "(last {weeks} weeks)",
   "activity.streak.current": "Current streak",
   "activity.streak.longest": "Longest",
   "activity.streak.days": "d",
