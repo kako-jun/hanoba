@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,958件 / 222属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409・ユッカ有名種追補）。
+// 品種タグ辞書（カテゴリ→属→品種・1,939件 / 222属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409・ユッカ有名種追補）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -55,26 +55,25 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "皇冠", sci: "Agave titanota 'Crown'" }, { name: "クラウン", sci: "Agave titanota 'Crown'" }, { name: "SAD", sci: "Agave titanota 'SAD'" }, { name: "南アフリカダイヤモンド", sci: "Agave titanota 'South Africa Diamond'" },
         { name: "狼人", sci: "Agave titanota 'Langren'" }, { name: "覇王龍", sci: "Agave titanota 'Haouryu'" }, { name: "鳳凰", sci: "Agave titanota 'Hoou'" }, { name: "黒豹", sci: "Agave titanota 'Kurohyo'" },
         { name: "鬼爪", sci: "Agave titanota 'Onizume'" }, { name: "雪峰", sci: "Agave titanota 'Seppou'" }, { name: "柊月", sci: "Agave titanota 'Hiiragizuki'" }, { name: "悪魔くん", sci: "Agave titanota 'Akuma-kun'" },
-        { name: "麻花龍", sci: "Agave titanota 'Mahanglong'" }, { name: "シャークソーイ", sci: "Agave titanota 'Shark Soei'" }, { name: "FO-076", sci: "Agave titanota 'FO-076'" }, { name: "笹の雪", sci: "Agave victoriae-reginae" },
-        { name: "ビクトリアレジーナ", sci: "Agave victoriae-reginae" }, { name: "吉祥天", sci: "Agave parryi var. truncata" }, { name: "パリー", sci: "Agave parryi" }, { name: "吉祥冠", sci: "Agave potatorum 'Kisshokan'" },
+        { name: "麻花龍", sci: "Agave titanota 'Mahanglong'" }, { name: "シャークソーイ", sci: "Agave titanota 'Shark Soei'" }, { name: "FO-076", sci: "Agave titanota 'FO-076'" }, { name: "笹の雪", sci: "Agave victoriae-reginae", aliases: ["ビクトリアレジーナ"] },
+        { name: "吉祥天", sci: "Agave parryi var. truncata" }, { name: "パリー", sci: "Agave parryi" }, { name: "吉祥冠", sci: "Agave potatorum 'Kisshokan'" },
         { name: "雷神", sci: "Agave potatorum" }, { name: "王妃雷神", sci: "Agave potatorum 'Ouhi Raijin'" }, { name: "五色万代", sci: "Agave lophantha 'Quadricolor'" }, { name: "滝の白糸", sci: "Agave schidigera" },
-        { name: "乱れ雪", sci: "Agave filifera 'Midaresetsu'" }, { name: "吹上", sci: "Agave stricta" }, { name: "ストリクタ", sci: "Agave stricta" }, { name: "アテナータ", sci: "Agave attenuata" },
+        { name: "乱れ雪", sci: "Agave filifera 'Midaresetsu'" }, { name: "吹上", sci: "Agave stricta", aliases: ["ストリクタ"] }, { name: "アテナータ", sci: "Agave attenuata" },
         { name: "アメリカーナ", sci: "Agave americana" }, { name: "オバティフォリア", sci: "Agave ovatifolia" }, { name: "パラサナ", sci: "Agave parrasana" }, { name: "モンタナ", sci: "Agave montana" },
         { name: "サルミアナ", sci: "Agave salmiana" }, { name: "フェロックス", sci: "Agave salmiana var. ferox" }, { name: "ベネズエラ", sci: "Agave desmetiana 'Variegata'" },
       ] },
       { name: "ユーフォルビア", pickable: true, varieties: [
         { name: "オベサ", sci: "Euphorbia obesa" }, { name: "バリダ", sci: "Euphorbia valida" }, { name: "鉄甲丸", sci: "Euphorbia bupleurifolia" }, { name: "ホリダ", sci: "Euphorbia horrida" },
         { name: "ラクテア", sci: "Euphorbia lactea" }, { name: "ホワイトゴースト", sci: "Euphorbia lactea 'White Ghost'" }, { name: "マハラジャ", sci: "Euphorbia lactea 'Cristata'" }, { name: "白樺キリン", sci: "Euphorbia mammillaris 'Variegata'" },
-        { name: "瑠璃晃", sci: "Euphorbia suzannae" }, { name: "スザンナエ", sci: "Euphorbia suzannae" }, { name: "笹蟹丸", sci: "Euphorbia pulvinata" }, { name: "ステラータ", sci: "Euphorbia stellata" },
-        { name: "飛竜", sci: "Euphorbia stellata" }, { name: "ギラウミニアナ", sci: "Euphorbia guillauminiana" }, { name: "ポイゾニー", sci: "Euphorbia poissonii" }, { name: "デカリー", sci: "Euphorbia decaryi" },
-        { name: "峨眉山", sci: "Euphorbia 'Gabizan'" }, { name: "グロボーサ", sci: "Euphorbia globosa" }, { name: "玉鱗宝", sci: "Euphorbia globosa" }, { name: "ソテツキリン", sci: "Euphorbia bupleurifolia" },
-        { name: "蓬莱島", sci: "Euphorbia bupleurifolia × susannae" }, { name: "奇怪ヶ島", sci: "Euphorbia squarrosa" }, { name: "鬼笑い", sci: "Euphorbia knuthii" }, { name: "エクロニー", sci: "Euphorbia ecklonii" },
-        { name: "スクアローサ", sci: "Euphorbia squarrosa" }, { name: "デシデュア", sci: "Euphorbia decidua" }, { name: "トゥレアレンシス", sci: "Euphorbia tulearensis" }, { name: "ブルアナ", sci: "Euphorbia bruynsii" },
+        { name: "瑠璃晃", sci: "Euphorbia suzannae", aliases: ["スザンナエ"] }, { name: "笹蟹丸", sci: "Euphorbia pulvinata" },
+        { name: "飛竜", sci: "Euphorbia stellata", aliases: ["ステラータ"] }, { name: "ギラウミニアナ", sci: "Euphorbia guillauminiana" }, { name: "ポイゾニー", sci: "Euphorbia poissonii" }, { name: "デカリー", sci: "Euphorbia decaryi" },
+        { name: "峨眉山", sci: "Euphorbia 'Gabizan'" }, { name: "グロボーサ", sci: "Euphorbia globosa", aliases: ["玉鱗宝"] }, { name: "ソテツキリン", sci: "Euphorbia bupleurifolia" },
+        { name: "蓬莱島", sci: "Euphorbia bupleurifolia × susannae" }, { name: "奇怪ヶ島", sci: "Euphorbia squarrosa", aliases: ["スクアローサ"] }, { name: "鬼笑い", sci: "Euphorbia knuthii" }, { name: "エクロニー", sci: "Euphorbia ecklonii" },
+        { name: "デシデュア", sci: "Euphorbia decidua" }, { name: "トゥレアレンシス", sci: "Euphorbia tulearensis" }, { name: "ブルアナ", sci: "Euphorbia bruynsii" },
         { name: "ダイヤモンドフロスト", sci: "Euphorbia hypericifolia 'Diamond Frost'" },
       ] },
       { name: "チレコドン", pickable: true, varieties: [
-        { name: "万物想", sci: "Tylecodon reticulatus" }, { name: "阿房宮", sci: "Tylecodon paniculatus" }, { name: "奇峰錦", sci: "Tylecodon wallichii" }, { name: "砂夜叉姫", sci: "Tylecodon pearsonii" },
-        { name: "レティキュラータス", sci: "Tylecodon reticulatus" }, { name: "パニクラーツス", sci: "Tylecodon paniculatus" },
+        { name: "万物想", sci: "Tylecodon reticulatus", aliases: ["レティキュラータス"] }, { name: "阿房宮", sci: "Tylecodon paniculatus", aliases: ["パニクラーツス"] }, { name: "奇峰錦", sci: "Tylecodon wallichii" }, { name: "砂夜叉姫", sci: "Tylecodon pearsonii" },
       ] },
       { name: "コチレドン", pickable: true, varieties: [
         { name: "熊童子", sci: "Cotyledon tomentosa subsp. ladismithiensis" }, { name: "熊童子錦", sci: "Cotyledon tomentosa subsp. ladismithiensis 'Variegata'" }, { name: "子猫の爪", sci: "Cotyledon tomentosa" }, { name: "福娘", sci: "Cotyledon orbiculata var. oophylla" },
@@ -97,9 +96,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
       { name: "カランコエ", pickable: true, varieties: [
         { name: "月兎耳", sci: "Kalanchoe tomentosa" }, { name: "福兎耳", sci: "Kalanchoe eriophylla" }, { name: "黒兎耳", sci: "Kalanchoe tomentosa 'Chocolate Soldier'" }, { name: "唐印", sci: "Kalanchoe luciae" },
-        { name: "デザートローズ", sci: "Kalanchoe thyrsiflora" }, { name: "仙女の舞", sci: "Kalanchoe beharensis" }, { name: "胡蝶の舞", sci: "Kalanchoe laxiflora" }, { name: "白銀の舞", sci: "Kalanchoe pumila" },
+        { name: "デザートローズ", sci: "Kalanchoe thyrsiflora" }, { name: "仙女の舞", sci: "Kalanchoe beharensis", aliases: ["ベハレンシス"] }, { name: "胡蝶の舞", sci: "Kalanchoe laxiflora" }, { name: "白銀の舞", sci: "Kalanchoe pumila" },
         { name: "不死鳥", sci: "Kalanchoe daigremontiana × delagoensis" }, { name: "子宝草", sci: "Kalanchoe daigremontiana × delagoensis" }, { name: "朱蓮", sci: "Kalanchoe longiflora var. coccinea" }, { name: "ミロッティー", sci: "Kalanchoe millotii" },
-        { name: "チョコレートソルジャー", sci: "Kalanchoe tomentosa 'Chocolate Soldier'" }, { name: "ベハレンシス", sci: "Kalanchoe beharensis" }, { name: "ファング", sci: "Kalanchoe beharensis 'Fang'" },
+        { name: "チョコレートソルジャー", sci: "Kalanchoe tomentosa 'Chocolate Soldier'" }, { name: "ファング", sci: "Kalanchoe beharensis 'Fang'" },
       ] },
       { name: "アロエ", pickable: true, varieties: [
         { name: "ディコトマ", sci: "Aloidendron dichotomum" }, { name: "ポリフィラ", sci: "Aloe polyphylla" }, { name: "不夜城", sci: "Aloe nobilis" }, { name: "千代田錦", sci: "Aloe variegata" },
@@ -111,9 +110,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "臥牛", sci: "Gasteria armstrongii" }, { name: "グロメラータ", sci: "Gasteria glomerata" }, { name: "バイリシアナ", sci: "Gasteria baylissiana" }, { name: "子宝錦", sci: "Gasteria gracilis var. minima 'Variegata'" },
       ] },
       { name: "ハオルチア", pickable: true, varieties: [
-        { name: "オブツーサ", sci: "Haworthia cooperi var. truncata" }, { name: "ブラックオブツーサ", sci: "Haworthia cooperi 'Black Obtusa'" }, { name: "雫石", sci: "Haworthia cooperi var. truncata 'Shizukuishi'" }, { name: "レツーサ", sci: "Haworthia retusa" },
+        { name: "オブツーサ", sci: "Haworthia cooperi var. truncata" }, { name: "ブラックオブツーサ", sci: "Haworthia cooperi 'Black Obtusa'" }, { name: "雫石", sci: "Haworthia cooperi var. truncata 'Shizukuishi'" }, { name: "レツーサ", sci: "Haworthia retusa", aliases: ["寿"] },
         { name: "コレクタ", sci: "Haworthia correcta" }, { name: "京の舞", sci: "Haworthia 'Kyo no Mai'" }, { name: "玉扇", sci: "Haworthia truncata" }, { name: "万象", sci: "Haworthia maughanii" },
-        { name: "寿", sci: "Haworthia retusa" }, { name: "ピクタ", sci: "Haworthia picta" }, { name: "スプレンデンス", sci: "Haworthia splendens" }, { name: "クーペリー", sci: "Haworthia cooperi" },
+        { name: "ピクタ", sci: "Haworthia picta" }, { name: "スプレンデンス", sci: "Haworthia splendens" }, { name: "クーペリー", sci: "Haworthia cooperi" },
         { name: "ベヌスタ", sci: "Haworthia cooperi var. venusta" }, { name: "ムチカ", sci: "Haworthia mutica" }, { name: "十二の巻", sci: "Haworthiopsis fasciata" }, { name: "竜鱗", sci: "Haworthiopsis tessellata" },
         { name: "宝草", sci: "Haworthia cuspidata" },
       ] },
@@ -131,8 +130,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "メキシカンジャイアント", sci: "Echeveria 'Mexican Giant'" },
       ] },
       { name: "グラプトペタルム", pickable: true, varieties: [
-        { name: "朧月", sci: "Graptopetalum paraguayense" }, { name: "姫秋麗", sci: "Graptopetalum mendozae" }, { name: "ブロンズ姫", sci: "Graptosedum 'Bronze'" }, { name: "銀天女", sci: "Graptopetalum rusbyi" },
-        { name: "秋麗", sci: "Graptosedum 'Francesco Baldi'" }, { name: "ダルマ秋麗", sci: "Graptosedum 'Francesco Baldi Compactum'" }, { name: "パラグアイエンセ", sci: "Graptopetalum paraguayense" }, { name: "淡雪", sci: "Graptopetalum 'Awayuki'" },
+        { name: "朧月", sci: "Graptopetalum paraguayense", aliases: ["パラグアイエンセ"] }, { name: "姫秋麗", sci: "Graptopetalum mendozae" }, { name: "ブロンズ姫", sci: "Graptosedum 'Bronze'" }, { name: "銀天女", sci: "Graptopetalum rusbyi" },
+        { name: "秋麗", sci: "Graptosedum 'Francesco Baldi'" }, { name: "ダルマ秋麗", sci: "Graptosedum 'Francesco Baldi Compactum'" }, { name: "淡雪", sci: "Graptopetalum 'Awayuki'" },
       ] },
       { name: "セダム", pickable: true, varieties: [
         { name: "虹の玉", sci: "Sedum × rubrotinctum" }, { name: "オーロラ", sci: "Sedum × rubrotinctum 'Aurora'" }, { name: "乙女心", sci: "Sedum pachyphyllum" }, { name: "玉つづり", sci: "Sedum morganianum" },
@@ -141,8 +140,8 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "新玉つづり", sci: "Sedum 'Little Gem'" }, { name: "ヒスパニクム", sci: "Sedum hispanicum" },
       ] },
       { name: "パキフィツム", pickable: true, varieties: [
-        { name: "桃美人", sci: "Pachyphytum 'Momobijin'" }, { name: "星美人", sci: "Pachyphytum oviferum" }, { name: "月美人", sci: "Pachyphytum 'Tsukibijin'" }, { name: "群雀", sci: "Pachyphytum hookeri" },
-        { name: "ベビーフィンガー", sci: "Pachyphytum 'Baby Finger'" }, { name: "千代田の松", sci: "Pachyphytum compactum" }, { name: "京美人", sci: "Pachyphytum 'Kyobijin'" }, { name: "フーケリー", sci: "Pachyphytum hookeri" },
+        { name: "桃美人", sci: "Pachyphytum 'Momobijin'" }, { name: "星美人", sci: "Pachyphytum oviferum" }, { name: "月美人", sci: "Pachyphytum 'Tsukibijin'" },
+        { name: "ベビーフィンガー", sci: "Pachyphytum 'Baby Finger'" }, { name: "千代田の松", sci: "Pachyphytum compactum" }, { name: "京美人", sci: "Pachyphytum 'Kyobijin'" }, { name: "フーケリー", sci: "Pachyphytum hookeri", aliases: ["群雀"] },
       ] },
       { name: "アエオニウム", pickable: true, varieties: [
         { name: "黒法師", sci: "Aeonium arboreum 'Atropurpureum'" }, { name: "サンバースト", sci: "Aeonium 'Sunburst'" }, { name: "夕映", sci: "Aeonium decorum f. variegata" }, { name: "愛染錦", sci: "Aeonium × domesticum 'Variegatum'" },
@@ -163,24 +162,24 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     label: "塊根植物",
     genera: [
       { name: "パキポディウム", pickable: true, varieties: [
-        { name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius" }, { name: "象牙宮", sci: "Pachypodium rosulatum var. gracilius" }, { name: "恵比寿笑い", sci: "Pachypodium brevicaule" }, { name: "ブレビカウレ", sci: "Pachypodium brevicaule" },
+        { name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius", aliases: ["象牙宮"] }, { name: "恵比寿笑い", sci: "Pachypodium brevicaule", aliases: ["ブレビカウレ"] },
         { name: "恵比寿大黒", sci: "Pachypodium 'Densicaule'" }, { name: "デンシフローラム", sci: "Pachypodium densiflorum" }, { name: "ウィンゾリー", sci: "Pachypodium windsorii" }, { name: "ラメリー", sci: "Pachypodium lamerei" },
         { name: "ゲアイー", sci: "Pachypodium geayi" }, { name: "ロスラーツム", sci: "Pachypodium rosulatum" }, { name: "カクチペス", sci: "Pachypodium rosulatum subsp. cactipes" }, { name: "レウコキサンツム", sci: "Pachypodium rosulatum subsp. leucoxanthum" },
         { name: "エブルネウム", sci: "Pachypodium eburneum" }, { name: "ホロンベンセ", sci: "Pachypodium horombense" }, { name: "イノピナツム", sci: "Pachypodium rosulatum subsp. inopinatum" }, { name: "マカイエンセ", sci: "Pachypodium makayense" },
         { name: "ラモスム", sci: "Pachypodium ramosum" }, { name: "フィヘレネンセ", sci: "Pachypodium lamerei var. fiherenense" }, { name: "デカリー", sci: "Pachypodium decaryi" }, { name: "ルーテンベルギアヌム", sci: "Pachypodium rutenbergianum" },
-        { name: "アンボンゲンセ", sci: "Pachypodium ambongense" }, { name: "バロニー", sci: "Pachypodium baronii" }, { name: "サンデルシー", sci: "Pachypodium saundersii" }, { name: "白馬城", sci: "Pachypodium saundersii" },
-        { name: "ビスピノーサム", sci: "Pachypodium bispinosum" }, { name: "サキュレンタム", sci: "Pachypodium succulentum" }, { name: "ナマクアナム", sci: "Pachypodium namaquanum" }, { name: "光堂", sci: "Pachypodium namaquanum" },
+        { name: "アンボンゲンセ", sci: "Pachypodium ambongense" }, { name: "バロニー", sci: "Pachypodium baronii" }, { name: "サンデルシー", sci: "Pachypodium saundersii", aliases: ["白馬城"] },
+        { name: "ビスピノーサム", sci: "Pachypodium bispinosum" }, { name: "サキュレンタム", sci: "Pachypodium succulentum" }, { name: "光堂", sci: "Pachypodium namaquanum", aliases: ["ナマクアナム"] },
         { name: "リーアリー", sci: "Pachypodium lealii" },
       ] },
       { name: "アデニウム", pickable: true, varieties: [
-        { name: "砂漠のバラ", sci: "Adenium obesum" }, { name: "オベスム", sci: "Adenium obesum" }, { name: "アラビカム", sci: "Adenium arabicum" }, { name: "ソコトラナム", sci: "Adenium socotranum" },
+        { name: "オベスム", sci: "Adenium obesum", aliases: ["砂漠のバラ"] }, { name: "アラビカム", sci: "Adenium arabicum" }, { name: "ソコトラナム", sci: "Adenium socotranum" },
         { name: "ソマレンセ", sci: "Adenium somalense" },
       ] },
       { name: "オペルクリカリア", pickable: true, varieties: [
         { name: "パキプス", sci: "Operculicarya pachypus" }, { name: "デカリー", sci: "Operculicarya decaryi" },
       ] },
       { name: "ディオスコレア", pickable: true, varieties: [
-        { name: "亀甲竜", sci: "Dioscorea elephantipes" }, { name: "アフリカ亀甲竜", sci: "Dioscorea sylvatica" }, { name: "エレファンティペス", sci: "Dioscorea elephantipes" },
+        { name: "亀甲竜", sci: "Dioscorea elephantipes", aliases: ["エレファンティペス"] }, { name: "アフリカ亀甲竜", sci: "Dioscorea sylvatica" },
       ] },
       { name: "ステファニア", pickable: true, varieties: [
         { name: "エレクタ", sci: "Stephania erecta" }, { name: "ピエレイ", sci: "Stephania pierrei" }, { name: "スベローサ", sci: "Stephania suberosa" },
@@ -204,7 +203,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "アペンディクラツム", sci: "Pelargonium appendiculatum" }, { name: "ミラビレ", sci: "Pelargonium mirabile" }, { name: "カルノーサム", sci: "Pelargonium carnosum" },
       ] },
       { name: "その他塊根", pickable: false, varieties: [
-        { name: "フォッケア", sci: "Fockea edulis" }, { name: "火星人", sci: "Fockea edulis" }, { name: "モンソニア", sci: "Monsonia sp." }, { name: "サルコカウロン", sci: "Sarcocaulon sp." },
+        { name: "火星人", sci: "Fockea edulis", aliases: ["フォッケア"] }, { name: "モンソニア", sci: "Monsonia sp." }, { name: "サルコカウロン", sci: "Sarcocaulon sp." },
         { name: "オトンナ", sci: "Othonna sp." }, { name: "キフォステンマ", sci: "Cyphostemma juttae" }, { name: "フィカス ペティオラリス", sci: "Ficus petiolaris" }, { name: "ブーファン", sci: "Boophone disticha" },
         { name: "ウンカリーナ", sci: "Uncarina grandidieri" }, { name: "パキコルムス", sci: "Pachycormus discolor" }, { name: "ゲラルダンサス", sci: "Gerrardanthus macrorhizus" }, { name: "ヤトロファ", sci: "Jatropha sp." },
         { name: "センナ メリディオナリス", sci: "Senna meridionalis" }, { name: "サンセベリア", sci: "Sansevieria sp." }, { name: "スタッキー", sci: "Sansevieria stuckyi" },
