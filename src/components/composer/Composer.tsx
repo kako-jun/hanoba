@@ -99,10 +99,12 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   // 「投稿中…」と出す。綿毛（DandelionBurst）が active={posting} で舞い続けるので、ボタンの段階表示と
   // 合わせて「10秒間ずっと動いている＝固まっていない」が伝わる。null は非投稿中。
   const [postProgress, setPostProgress] = useState<{ stage: "upload" | "publish"; done: number; total: number } | null>(null);
-  // #363: 投稿前の画像編集（角度/フィルタ/クロップ/撮影日）を1手アンドゥする履歴。本文（一言）・タグは
-  // 対象外＝images 配列だけスナップショットする。同一画像の同一フィールドの連続変更（スライダのドラッグ等）は
-  // 1手に畳む（lastEditTagRef）。画像の追加/削除など構造変更が入ったら履歴はクリアする（古い blob 参照を
-  // 復元してしまわないため・ephemeral＝下書き永続化はしない）。
+  // #363/#393: 投稿前の画像編集（角度/フィルタ/クロップ/撮影日）を1手アンドゥする履歴。本文（一言）・タグは
+  // 対象外＝images 配列だけスナップショットする。crop はユーザーのドラッグ/リサイズ操作だけが対象で、画像ロード時の
+  // 自動センタークロップ・90度clamp 由来の commit は対象外（#393・勝手にアンドゥを有効化しない）。角度/フィルタ等の
+  // 同一画像・同一フィールドの連続変更（スライダのドラッグ等）は1手に畳む（lastEditTagRef）。crop の各ドラッグ終了は
+  // 離散イベントなので畳まず、それぞれ独立した1手にする。画像の追加/削除など構造変更が入ったら履歴はクリアする
+  //（古い blob 参照を復元してしまわないため・ephemeral＝下書き永続化はしない）。
   const [undoStack, setUndoStack] = useState<DraftImage[][]>([]);
   const lastEditTagRef = useRef<string | null>(null);
 
@@ -288,15 +290,21 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     setStatus({ kind: "idle" });
   }
 
-  function updateCurrentImage(patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate" | "shotDateAuto">>) {
+  function updateCurrentImage(
+    patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate" | "shotDateAuto">>,
+    opts?: { userCrop?: boolean },
+  ) {
     if (currentId === null) return;
-    // #363: 変更前の images を履歴に積む（本文/タグは対象外）。対象は kako-jun 指定の
-    // **角度(rotation)・フィルタ(filters)・Exif撮影日(shotDate/shotDateAuto)** だけ。位置決めの
-    // クロップ(crop)は対象外＝画像ロード時の自動クロップで履歴が汚れる/勝手に有効化するのを防ぐ。
-    // 同一画像の同一フィールドの連続変更（スライダのドラッグ・続けて押す微調整）は1手に畳む＝run の
-    // 最初の状態だけ残す。imagesRef.current は直近コミット済み＝この編集の「変更前」スナップショット。
+    // #363/#393: 変更前の images を履歴に積む（本文/タグは対象外）。対象は kako-jun 指定の
+    // **角度(rotation)・フィルタ(filters)・Exif撮影日(shotDate/shotDateAuto)** と、**ユーザー操作由来の
+    // クロップ(crop)**。crop は画像ロード時の自動センタークロップ・90度clamp 由来の commit（opts.userCrop が無い/false）
+    // では積まない＝履歴が汚れる/勝手にアンドゥが有効化するのを防ぐ。ユーザーのドラッグ/リサイズ（opts.userCrop===true）
+    // だけ1手として積む。角度/フィルタ等の連続変更（スライダのドラッグ・続けて押す微調整）は1手に畳む＝run の最初の状態だけ
+    // 残す。crop の onComplete はドラッグ終了ごとの離散イベントなので、ユーザー crop を積んだ後は lastEditTagRef を
+    // リセットして次のドラッグを独立した1手にする。imagesRef.current は直近コミット済み＝この編集の「変更前」スナップショット。
     const fields = Object.keys(patch);
-    const undoable = fields.some((f) => f !== "crop");
+    const userCrop = opts?.userCrop === true && fields.includes("crop");
+    const undoable = fields.some((f) => f !== "crop") || userCrop;
     if (undoable) {
       const tag = `${currentId}:${fields.sort().join(",")}`;
       if (tag !== lastEditTagRef.current) {
@@ -304,11 +312,14 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
         setUndoStack((s) => [...s, snapshot].slice(-UNDO_CAP));
         lastEditTagRef.current = tag;
       }
+      // ユーザー crop は各ドラッグ終了が独立した1手＝連続して別の枠へドラッグしても潰れず個別に戻せるよう、
+      // 積んだ後はタグをリセットする（rotation/filter の連続畳み込みはここを通らず従来どおり）。
+      if (userCrop) lastEditTagRef.current = null;
     }
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
   }
 
-  /** 直前の画像編集（角度/フィルタ/クロップ/撮影日）を1手戻す（#363・本文/タグは対象外）。履歴が空なら無効。 */
+  /** 直前の画像編集（角度/フィルタ/ユーザー操作のクロップ/撮影日）を1手戻す（#363/#393・本文/タグは対象外）。履歴が空なら無効。 */
   function undoLastEdit() {
     if (undoStack.length === 0) return;
     const prev = undoStack[undoStack.length - 1]!;
@@ -530,7 +541,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
               edgeBlur={composeEdgeBlur(currentImage.filters)}
               toneCurve={composeToneCurve(currentImage.filters)}
               toneAmount={composeToneAmount(currentImage.filters)}
-              onCropComplete={(crop) => updateCurrentImage({ crop })}
+              onCropComplete={(crop, fromUser) => updateCurrentImage({ crop }, { userCrop: fromUser })}
               onRotate={(next) => updateCurrentImage({ rotation: next })}
             />
           )}

@@ -29,8 +29,12 @@ interface CropFrameProps {
   toneCurve?: ToneCurve;
   /** トーンカーブの効き具合（#171・弱/中/強）。プレビューの contrast 近似に反映する。 */
   toneAmount?: number;
-  /** クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。 */
-  onCropComplete: (crop: SquareCropRect) => void;
+  /**
+   * クロップ確定（resize/drag 終了）ごとに自然座標の正方形矩形を親へ。
+   * fromUser=true はユーザーのドラッグ/リサイズ操作由来（#393・1手アンドゥ対象）、
+   * false は画像ロード時の初期 commit・90度成分(quarter)変更の clamp 再 commit などプログラム由来（アンドゥ対象外）。
+   */
+  onCropComplete: (crop: SquareCropRect, fromUser: boolean) => void;
   /** 現在の総回転角（度・#314）。プレビューは CSS `transform: rotate()` で即時に当てる。 */
   rotation?: number;
   /** 回転角を更新する（絶対値・#314）。指定時だけ回転コントロールを出す。 */
@@ -81,7 +85,8 @@ export default function CropFrame({
     .filter((item): item is string => item !== null && item !== "")
     .join(" ") || "none";
 
-  function commitCrop(pixelCrop: PixelCrop, image: HTMLImageElement | null) {
+  // fromUser=true はユーザーのドラッグ/リサイズ終了由来（#393・1手アンドゥ対象）。初期 commit・quarter clamp は false。
+  function commitCrop(pixelCrop: PixelCrop, image: HTMLImageElement | null, fromUser: boolean) {
     if (image === null) return;
     const displayW = image.width || image.naturalWidth;
     const displayH = image.height || image.naturalHeight;
@@ -93,6 +98,7 @@ export default function CropFrame({
         image.naturalWidth,
         image.naturalHeight,
       ),
+      fromUser,
     );
   }
 
@@ -113,8 +119,8 @@ export default function CropFrame({
     // 復元時に回転が付いている（restored draft 等）と初期クロップが見えている領域外になりうるので clamp（#348）。
     const initial = { unit: "%" as const, ...clampCropToVisible(base, rotation, width, height) };
     setCrop(initial);
-    // 初期クロップも親へ反映（ユーザーが触らず投稿しても正方形が確定する）。
-    commitCrop(toPixelCrop(initial, width, height), e.currentTarget);
+    // 初期クロップも親へ反映（ユーザーが触らず投稿しても正方形が確定する）。プログラム由来＝fromUser=false（#393・アンドゥ対象外）。
+    commitCrop(toPixelCrop(initial, width, height), e.currentTarget, false);
   }
 
   // #348: 90度成分（quarter）が変わったら、既存クロップを新しい見えている領域へ収め直して commit する
@@ -127,7 +133,8 @@ export default function CropFrame({
     if (w === 0 || h === 0) return;
     const clamped = clampCropToVisible(crop, rotation, w, h);
     setCrop({ unit: "%", ...clamped });
-    commitCrop(toPixelCrop(clamped, w, h), imgRef.current);
+    // 回転(quarter)の副作用＝fromUser=false（#393）。回転自体は別途 onRotate が1手アンドゥ対象なので、ここで crop を別に積まない。
+    commitCrop(toPixelCrop(clamped, w, h), imgRef.current, false);
     // quarter が変わった時だけ走らせる（crop/rotation の都度ではない＝微調整ティックで commit を連発しない）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quarter]);
@@ -156,7 +163,8 @@ export default function CropFrame({
         onComplete={(_pixelCrop, percentCrop) => {
           const { w, h } = boxDims();
           const clamped = clampCropToVisible(percentCrop, rotation, w, h);
-          commitCrop(toPixelCrop(clamped, w, h), imgRef.current);
+          // ユーザーのドラッグ/リサイズ終了＝fromUser=true（#393・本命の1手アンドゥ対象）。
+          commitCrop(toPixelCrop(clamped, w, h), imgRef.current, true);
         }}
         aspect={1}
         keepSelection
