@@ -127,6 +127,12 @@ describe("buildNoteTemplate", () => {
     expect(t.content.match(/#plantstr/gi)?.length).toBe(1);
   });
 
+  it("#plantstrong など部分一致は別語＝#plantstr を付け損ねない（=== 完全一致ガード・#408 review）", () => {
+    const t = buildNoteTemplate({ caption: "強い植物 #plantstrong", createdAt: 1700000000 });
+    // 部分一致（plantstrong）は別語なので #plantstr を併記する（付け損ねない）。
+    expect(t.content).toBe("強い植物 #plantstrong #plantstr");
+  });
+
   it("caption の #Plantstr など大小違いも重複扱いで足さない（#408）", () => {
     const t = buildNoteTemplate({
       caption: "開花した #Plantstr",

@@ -54,6 +54,9 @@ export function buildNoteTemplate(input: {
   // 重複ガード: caption に既に `#plantstr`（大小無視）があれば足さない（手書きを二重化しない）。
   //   判定は extractHashtags（読み取り側と同じ規則）で拾った語に "plantstr"（小文字化）が
   //   あるかで行う。caption は非空（上で throw 済み）なのでここは正常パスのみ。
+  //   ※割り切り: 抽出規則は `#` が先頭/空白/`>` の直後の時だけ拾うので、区切りの無い手書き（例「…です。#plantstr」
+  //   ＝直前が非空白）は拾えず二重化し得る。読み取り側 extractHashtags と一貫させた割り切り（多くは `#` 前に空白が
+  //   あり、`#plantstrong` 等の部分一致は === 完全一致ガードで誤爆しない＝付け損ねない・#408 review）。
   // ★kill switch★: この併記を止めるには下の3行（hasPlantstrTag / captionWithPlantstr）を
   //   消し、content の合成で caption をそのまま使うように戻すだけでよい（可逆）。
   const hasPlantstrTag = extractHashtags(caption).some((h) => h.toLowerCase() === TAG_PLANTSTR);
