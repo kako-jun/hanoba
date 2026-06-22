@@ -76,6 +76,19 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER);
   });
 
+  it("既定スコープの読込サマリは loc(選択言語)で組む＝SSR種 lang=en でも ja 表示なら『みんなの植物』(#399)", async () => {
+    // hanoba:lang=ja（beforeEach）・lang prop は既定 en（DEFAULT_LOCALE）。取得を pending のままにして
+    // loading 文言「「{summary}」を探しています…」を観測する。summary が lang(en) で組まれていた頃は
+    // 「Everyone's Plants」と英語が漏れていた（#399）。loc(ja) で組めば既定スコープ名は「みんなの植物」。
+    let resolveFetch: (v: FeedPost[]) => void = () => {};
+    fetchDiscoverFiltered.mockImplementation(() => new Promise<FeedPost[]>((r) => (resolveFetch = r)));
+    render(<DiscoverGrid />);
+    // loc は mount 後 effect で ja に解決＝読込サマリが ja の既定スコープ名で出る。
+    expect(await screen.findByText(/「みんなの植物」を探して/)).toBeInTheDocument();
+    expect(screen.queryByText(/Everyone's Plants/)).not.toBeInTheDocument();
+    resolveFetch([]); // pending を解消（cleanup 前に await されない promise を残さない）
+  });
+
   it("既定が 0 件なら idle（案内・カードを出さない）。品種で絞る UI は出す", async () => {
     render(<DiscoverGrid />);
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(EMPTY_FILTER));
