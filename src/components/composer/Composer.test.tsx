@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ネットワーク・canvas 焼き込みはモック境界で止める（実ネットワーク・実 canvas を呼ばない）。
@@ -25,8 +26,11 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   saveDisplayName: (...args: unknown[]) => saveDisplayName(...args),
   fetchProfileName: (...args: unknown[]) => fetchProfileName(...args),
 }));
+// crop の正方形矩形算出はスパイ化（#393）。既定は中央正方形相当 {0,0,100}。ユーザー crop の undo テストは
+// 「変更前と異なる矩形」が要るので、テスト側で computeSquareCropRect.mockReturnValueOnce を差し込んで区別する。
+const computeSquareCropRect = vi.fn((..._args: unknown[]) => ({ sx: 0, sy: 0, size: 100 }));
 vi.mock("../../lib/image/crop.ts", () => ({
-  computeSquareCropRect: () => ({ sx: 0, sy: 0, size: 100 }),
+  computeSquareCropRect: (...args: unknown[]) => computeSquareCropRect(...args),
   renderSquareImageFromRect: (...args: unknown[]) => renderSquareImageFromRect(...args),
   // 回転（#314）: 焼き込みの素材生成は canvas なのでスタブ、UI が使う純関数は本物相当を返す。
   renderInPlaceRotation: () => document.createElement("canvas"),
@@ -36,6 +40,37 @@ vi.mock("../../lib/image/crop.ts", () => ({
   clampCropToVisible: (crop: { x: number; y: number; width: number; height: number }) => crop,
   MAX_FINE_ROTATION: 15,
 }));
+
+// react-image-crop の実ドラッグは pointer 計測に依存し happy-dom では onComplete が発火しない（#393）。
+// crop の clamp/座標の正しさは crop.test/CropFrame.test が担保するので、ここでは ReactCrop を「children を
+// そのまま描き、onComplete をテストから叩けるダミー」に差し替え、ユーザードラッグ由来の crop が1手アンドゥ
+// 対象になる Composer 統合だけを検証する。centerCrop/makeAspectCrop は初期クロップ算出に要るので実物を借りる。
+vi.mock("react-image-crop", async () => {
+  const actual = await vi.importActual<typeof import("react-image-crop")>("react-image-crop");
+  const ReactCrop = ({
+    children,
+    onComplete,
+  }: {
+    children?: ReactNode;
+    onComplete?: (pixelCrop: unknown, percentCrop: unknown) => void;
+    [key: string]: unknown;
+  }) => (
+    <div className="ReactCrop">
+      <button
+        type="button"
+        data-testid="reactcrop-complete"
+        onClick={() =>
+          onComplete?.(
+            { unit: "px", x: 0, y: 0, width: 60, height: 60 },
+            { unit: "%", x: 20, y: 20, width: 60, height: 60 },
+          )
+        }
+      />
+      {children}
+    </div>
+  );
+  return { ...actual, default: ReactCrop };
+});
 
 // 下書きの永続化境界（#228）をスパイ化する。IndexedDB 実体には触れず、配線（呼び出し有無・引数・
 // hydration ガード・デバウンス）だけを検証する。loadDraft の既定は「下書き無し（null）」で、
@@ -76,6 +111,8 @@ describe("Composer", () => {
     fetchProfileName.mockReset().mockResolvedValue(null);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
     renderSquareImageFromRect.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    // crop 矩形算出（#393）は既定 {0,0,100}。ユーザー crop の undo テストだけ mockReturnValueOnce で別矩形を出す。
+    computeSquareCropRect.mockReset().mockReturnValue({ sx: 0, sy: 0, size: 100 });
     // 下書き境界（#228）: 既定は「下書き無し」。保存系は resolve する no-op スパイ。
     loadDraft.mockReset().mockResolvedValue(null);
     syncBlobs.mockReset().mockResolvedValue(undefined);
@@ -584,6 +621,7 @@ describe("Composer 下書き配線（#228）", () => {
     fetchProfileName.mockReset().mockResolvedValue(null);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
     renderSquareImageFromRect.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    computeSquareCropRect.mockReset().mockReturnValue({ sx: 0, sy: 0, size: 100 });
     vi.stubGlobal(
       "Image",
       class {
@@ -939,8 +977,8 @@ describe("Composer 下書き配線（#228）", () => {
     await user.upload(input, makeImageFile());
     fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
 
-    // 初期は自動クロップだけ＝履歴は空（クロップは undo 対象外）。アンドゥボタンは無効。
-    const undo = await screen.findByRole("button", { name: "直前の画像編集（角度・フィルタ・撮影日）を1手戻す" });
+    // 初期は自動クロップだけ＝履歴は空（自動クロップは undo 対象外。ユーザー操作の crop は #393 で対象）。アンドゥボタンは無効。
+    const undo = await screen.findByRole("button", { name: "直前の画像編集（角度・フィルタ・クロップ・撮影日）を1手戻す" });
     expect(undo).toBeDisabled();
 
     // 右90°回転＝1手。img の transform に即時反映され、アンドゥが有効になる。
@@ -952,6 +990,98 @@ describe("Composer 下書き配線（#228）", () => {
     // アンドゥで回転が変更前（無回転）へ戻り、履歴が空になりボタンは再び無効。
     await user.click(undo);
     expect(img.style.transform).toBe("");
+    expect(undo).toBeDisabled();
+  });
+
+  // #393: 矩形ドラッグ(crop)もユーザー操作なら1手アンドゥ対象。自動センタークロップ・回転由来の commit は対象外を維持する。
+  const undoAria = "直前の画像編集（角度・フィルタ・クロップ・撮影日）を1手戻す";
+
+  it("プログラム由来の crop（画像ロードの自動センタークロップ）はアンドゥ対象に積まない（#393）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    // 画像ロード＝初期 commit（fromUser=false）。これだけではアンドゥは有効化しない。
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    expect(undo).toBeDisabled();
+  });
+
+  it("ユーザーのドラッグ由来の crop は1手アンドゥでき、undo で前の crop に戻る（#393）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    expect(undo).toBeDisabled(); // 初期（自動クロップ）はまだ積まれていない。
+
+    // ユーザーのドラッグ確定＝変更前と異なる矩形を返させて crop を動かす（fromUser=true）。
+    computeSquareCropRect.mockReturnValueOnce({ sx: 10, sy: 10, size: 80 });
+    await user.click(screen.getByTestId("reactcrop-complete"));
+    // 投稿時に焼き込む crop が動いた矩形になっている＝ユーザー crop が反映された。
+    expect(undo).toBeEnabled();
+
+    // アンドゥで crop が変更前（自動センタークロップ）へ戻り、履歴が空になりボタンは再び無効。
+    await user.click(undo);
+    expect(undo).toBeDisabled();
+
+    // 焼き込みに渡る crop が変更前の {0,0,100} に戻っていることを投稿で確認する。
+    await user.type(screen.getByLabelText("ひとこと"), "位置を戻した");
+    await waitFor(() => expect(screen.getByRole("button", { name: /投稿する/ })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: /投稿する/ }));
+    await waitFor(() => expect(renderSquareImageFromRect).toHaveBeenCalled());
+    // renderSquareImageFromRect(source, crop, ...) の crop（第2引数）が undo 後の {0,0,100}。
+    expect(renderSquareImageFromRect.mock.calls.at(-1)![1]).toEqual({ sx: 0, sy: 0, size: 100 });
+  });
+
+  it("連続したユーザー crop ドラッグはそれぞれ独立した1手として戻せる（畳まない・#393）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+
+    // 1回目のユーザードラッグ。
+    computeSquareCropRect.mockReturnValueOnce({ sx: 10, sy: 10, size: 80 });
+    await user.click(screen.getByTestId("reactcrop-complete"));
+    expect(undo).toBeEnabled();
+    // 2回目のユーザードラッグ（同じ画像・同じ crop フィールドだが、別の1手として積まれるべき）。
+    computeSquareCropRect.mockReturnValueOnce({ sx: 20, sy: 20, size: 60 });
+    await user.click(screen.getByTestId("reactcrop-complete"));
+    expect(undo).toBeEnabled();
+
+    // 1手戻してもまだ有効（2手分積まれている＝畳まれていない）。
+    await user.click(undo);
+    expect(undo).toBeEnabled();
+    // もう1手戻すと初期（自動クロップ）まで戻り、ボタンは無効。
+    await user.click(undo);
+    expect(undo).toBeDisabled();
+  });
+
+  it("フィルタの連続変更は従来どおり1手に畳む（crop 追加で退行しない・#363/#393）", async () => {
+    const user = userEvent.setup();
+    render(<Composer />);
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+
+    const undo = await screen.findByRole("button", { name: undoAria });
+    expect(undo).toBeDisabled();
+
+    // 同じフィルタを連続で巡回（なし→弱→中…）＝同一フィールドの連続変更は1手に畳む。
+    const chip = screen.getByRole("button", { name: /翠露/ });
+    await user.click(chip); // なし→弱（ここで1手積む）
+    expect(undo).toBeEnabled();
+    await user.click(chip); // 弱→中（畳む＝積み増さない）
+    await user.click(chip); // 中→強（畳む）
+
+    // 1手戻すと畳んだ run の最初（フィルタ無し）へ一気に戻り、履歴は空＝ボタン無効。
+    await user.click(undo);
     expect(undo).toBeDisabled();
   });
 });
