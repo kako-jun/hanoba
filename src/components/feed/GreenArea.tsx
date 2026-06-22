@@ -87,7 +87,10 @@ async function sampleGreenRatio(url: string): Promise<number | null> {
   const cached = greenCache.get(url);
   if (cached !== undefined) return cached;
   const ratio = await decodeGreenRatio(url);
-  greenCache.set(url, ratio);
+  // 成功（非null）だけキャッシュする（#387 review）。null は一時失敗（ネットワーク瞬断・5xx）も含むので、
+  // セッション中ずっと「読めない」に固定せず次の再計測で再試行できるようにする（恒久的な非CORSは稀＝
+  // /me・/u は自分の t:hanoba 投稿＝nostr.build CORS 可読。再デコードしても結果は同じで実害小）。
+  if (ratio !== null) greenCache.set(url, ratio);
   return ratio;
 }
 
