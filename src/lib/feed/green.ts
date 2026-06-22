@@ -53,3 +53,45 @@ export function cumulativeGreen(
   }
   return { equivalent, readable };
 }
+
+/**
+ * 全 `total` 枚から最大 `cap` 枚を**均等抽出**するインデックス列を返す純関数（#387）。
+ * - `total <= cap` → `[0..total)` の全件（抽出しない）。
+ * - 超過 → `Math.floor(i*total/cap)`（i=0..cap-1）で全域に散らす＝決定的・昇順・重複なし。
+ * - 「投稿の多い市民（例 1000 枚）でも DL/デコードを一定枚数に抑える」ための代表サンプリング。
+ * - 端: `total<=0` または `cap<=0` は空配列（読むものが無い）。
+ */
+export function pickSampleIndices(total: number, cap: number): number[] {
+  if (total <= 0 || cap <= 0) return [];
+  if (total <= cap) return Array.from({ length: total }, (_, i) => i);
+  return Array.from({ length: cap }, (_, i) => Math.floor((i * total) / cap));
+}
+
+/**
+ * 代表サンプルの緑割合配列（`sampled`・`null`＝読めず）と全写真数（`totalCount`）から、
+ * 「街に足した緑の累計」を**外挿で概算**する純関数（#387）。**概算＝代表サンプルからの外挿**。
+ * - `sampled` の非null合計 `sum`・非null数 `read`・`sampledCount=sampled.length`。
+ * - `sampledCount===0` → `{equivalent:0, readable:0, sampled:false}`（読むものが無い）。
+ * - `sampledCount >= totalCount`（抽出なし＝全件読んだ）→ `{equivalent:sum, readable:read, sampled:false}`
+ *   ＝ `cumulativeGreen` と同義（厳密値）。
+ * - それ以外（一部だけ読んだ）→ `scale=totalCount/sampledCount` でサンプル和を全数へ外挿し、
+ *   `{equivalent: sum*scale, readable: Math.round(read*scale), sampled:true}`（概算）。
+ * `sampled:true` は「外挿した概算値」を意味し、表示側で文言を「約」へ調整するためのフラグ。
+ */
+export function estimateCumulativeGreen(
+  sampled: ReadonlyArray<number | null>,
+  totalCount: number,
+): { equivalent: number; readable: number; sampled: boolean } {
+  let sum = 0;
+  let read = 0;
+  for (const r of sampled) {
+    if (r === null) continue;
+    sum += r;
+    read += 1;
+  }
+  const sampledCount = sampled.length;
+  if (sampledCount === 0) return { equivalent: 0, readable: 0, sampled: false };
+  if (sampledCount >= totalCount) return { equivalent: sum, readable: read, sampled: false };
+  const scale = totalCount / sampledCount;
+  return { equivalent: sum * scale, readable: Math.round(read * scale), sampled: true };
+}
