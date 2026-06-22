@@ -3,10 +3,10 @@
 //
 // 画像 <img> の ref は親（Composer）から受け取り、クロップ確定時の自然座標計算に使う。
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { MAX_FINE_ROTATION, clampCropToVisible, computeSquareCropRect, rotationFine, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
+import { MAX_FINE_ROTATION, clampCropToVisible, computeSquareCropRect, rotationFine, squareRectToPercentCrop, type SquareCropRect, type ToneCurve } from "../../lib/image/crop.ts";
 import { toneCurvePreviewCss } from "../../lib/image/presets.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 
@@ -17,6 +17,13 @@ interface CropFrameProps {
   imgRef: React.RefObject<HTMLImageElement | null>;
   /** 保存済みの自然座標クロップ。写真を切り替えて戻った時に復元する。 */
   initialCrop?: SquareCropRect | null;
+  /**
+   * undo で crop を外部から戻したときに矩形表示を再同期させる合図（#403・increment するたびに反映）。
+   * crop は当コンポーネントの内部 state（uncontrolled）なので、id 不変のままの crop 復元（undo）は再マウントされず
+   * 矩形が動かない。このトークンが変わった時だけ initialCrop（復元値）＋imgRef の自然寸法から % crop を引き直す。
+   * 0（初期値）では走らせない＝初回は onImageLoad が初期化を担う。
+   */
+  cropSyncToken?: number;
   /** プレビューにライブ適用する CSS filter（未選択は null）。 */
   filter: string | null;
   /** プレビューに重ねる周辺減光の強さ（0〜1）。 */
@@ -50,6 +57,7 @@ export default function CropFrame({
   src,
   imgRef,
   initialCrop,
+  cropSyncToken = 0,
   filter,
   vignette = 0,
   sharpen = 0,
@@ -102,26 +110,47 @@ export default function CropFrame({
     );
   }
 
+  // 復元値（SquareCropRect）から表示用の % crop を引き直す純ロジック（onImageLoad と undo 再同期 effect で共通・#403/#403）。
+  // rect が null/undefined なら中央 90% 正方形に再導出（onImageLoad の null 分岐と同じ）。回転が付いていると初期クロップが
+  // 見えている領域外になりうるので clampCropToVisible を当てる（#348・両経路で揃える）。
+  function deriveCrop(rect: SquareCropRect | null | undefined, naturalW: number, naturalH: number, width: number, height: number): Crop {
+    const base =
+      rect === undefined || rect === null
+        ? centeredSquareCrop(width, height)
+        : { unit: "%" as const, ...squareRectToPercentCrop(rect, naturalW, naturalH) };
+    return { unit: "%" as const, ...clampCropToVisible(base, rotation, width, height) };
+  }
+
   function handleImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
     setRenderedW(width);
     setRenderedH(height);
-    const base =
-      initialCrop === undefined || initialCrop === null
-        ? centeredSquareCrop(width, height)
-        : {
-            unit: "%" as const,
-            x: (initialCrop.sx / e.currentTarget.naturalWidth) * 100,
-            y: (initialCrop.sy / e.currentTarget.naturalHeight) * 100,
-            width: (initialCrop.size / e.currentTarget.naturalWidth) * 100,
-            height: (initialCrop.size / e.currentTarget.naturalHeight) * 100,
-          };
-    // 復元時に回転が付いている（restored draft 等）と初期クロップが見えている領域外になりうるので clamp（#348）。
-    const initial = { unit: "%" as const, ...clampCropToVisible(base, rotation, width, height) };
+    const initial = deriveCrop(initialCrop, e.currentTarget.naturalWidth, e.currentTarget.naturalHeight, width, height);
     setCrop(initial);
     // 初期クロップも親へ反映（ユーザーが触らず投稿しても正方形が確定する）。プログラム由来＝fromUser=false（#393・アンドゥ対象外）。
     commitCrop(toPixelCrop(initial, width, height), e.currentTarget, false);
   }
+
+  // #403: undo で crop が外部から戻された合図（cropSyncToken の increment）で、矩形表示を復元値へ引き直す。
+  // crop は内部 state（uncontrolled）なので、id 不変のままの undo（crop 復元）は再マウントされず矩形が動かない。
+  // ここでだけ外部復元値で setCrop し直す（CropFrame 自身の commit では token は変わらない＝ループしない）。
+  // **初回（token 初期値 0）では走らせない／imgRef 未ロード時はスキップ**（onImageLoad が初期化を担う）。親へは再 commit しない
+  // （undo は親 state の crop を既に戻しており、ここで commitCrop すると同じ crop を再び親へ送るだけ＝無駄かつ fromUser 判定も増やさない）。
+  const firstSyncRef = useRef(true);
+  useEffect(() => {
+    if (firstSyncRef.current) {
+      firstSyncRef.current = false;
+      return; // 初回（マウント時の token=0）は何もしない。
+    }
+    const img = imgRef.current;
+    if (img === null) return; // 未ロードなら onImageLoad が初期化する。
+    const width = img.width || renderedW;
+    const height = img.height || renderedH;
+    if (width === 0 || height === 0) return;
+    setCrop(deriveCrop(initialCrop, img.naturalWidth, img.naturalHeight, width, height));
+    // 再同期は cropSyncToken の変化時だけ走らせる（crop/initialCrop の都度ではない）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cropSyncToken]);
 
   // #348: 90度成分（quarter）が変わったら、既存クロップを新しい見えている領域へ収め直して commit する
   // （例: 横長で広く取った枠は 90度回転で中心正方形を超えるので縮めて中へ寄せる）。微調整回転は quarter が

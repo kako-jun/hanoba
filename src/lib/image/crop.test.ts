@@ -7,6 +7,7 @@ import {
   computeSquareCropRect,
   outputEdge,
   rotationFine,
+  squareRectToPercentCrop,
 } from "./crop.ts";
 
 function px(x: number, y: number, width: number, height: number): PixelCrop {
@@ -267,5 +268,28 @@ describe("clampCropToVisible（#348・回転後の見えている写真領域に
   it("box 未測定（0）は素通し（落ちない）", () => {
     const c = { x: 1, y: 2, width: 3, height: 4 };
     expect(clampCropToVisible(c, 90, 0, 0)).toEqual(c);
+  });
+});
+
+describe("squareRectToPercentCrop（#403・自然座標矩形→% 変換）", () => {
+  it("中央正方形（200x200 内の 0,0,100）を 0/0/50/50% に変換する", () => {
+    expect(squareRectToPercentCrop({ sx: 0, sy: 0, size: 100 }, 200, 200)).toEqual({ x: 0, y: 0, width: 50, height: 50 });
+  });
+
+  it("オフセット付き正方形（横長 400x300）の x/y/size を各寸法で割って % にする", () => {
+    const p = squareRectToPercentCrop({ sx: 100, sy: 60, size: 150 }, 400, 300);
+    expect(p.x).toBeCloseTo(25, 6); // 100/400
+    expect(p.y).toBeCloseTo(20, 6); // 60/300
+    expect(p.width).toBeCloseTo(37.5, 6); // 150/400
+    expect(p.height).toBeCloseTo(50, 6); // 150/300
+  });
+
+  it("画像全体を覆う矩形（size=natural）は width/height=100% になる", () => {
+    expect(squareRectToPercentCrop({ sx: 0, sy: 0, size: 300 }, 300, 300)).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  it("自然寸法 0 以下（未ロード）は 0 除算を避けて 0,0,0,0 を返す", () => {
+    expect(squareRectToPercentCrop({ sx: 5, sy: 5, size: 90 }, 0, 0)).toEqual({ x: 0, y: 0, width: 0, height: 0 });
+    expect(squareRectToPercentCrop({ sx: 5, sy: 5, size: 90 }, 100, 0)).toEqual({ x: 0, y: 0, width: 0, height: 0 });
   });
 });

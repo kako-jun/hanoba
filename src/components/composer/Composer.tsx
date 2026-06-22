@@ -107,6 +107,11 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   //（古い blob 参照を復元してしまわないため・ephemeral＝下書き永続化はしない）。
   const [undoStack, setUndoStack] = useState<DraftImage[][]>([]);
   const lastEditTagRef = useRef<string | null>(null);
+  // #403: undo で crop を戻したとき、CropFrame の内部 state（uncontrolled な矩形）を外部値へ再同期させる合図。
+  // crop は CropFrame が内部 useState で持ち（initialCrop は onImageLoad の初期値専用＝prop 変化で追従しない）、
+  // undo は同じ画像の crop を戻すだけで id 不変＝CropFrame は再マウントされないので、このトークンを increment して
+  // CropFrame 側の effect に「外部復元値で矩形を引き直せ」と伝える。0 は初期値（発火しない）。
+  const [cropSyncToken, setCropSyncToken] = useState(0);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
@@ -295,26 +300,30 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     opts?: { userCrop?: boolean },
   ) {
     if (currentId === null) return;
-    // #363/#393: 変更前の images を履歴に積む（本文/タグは対象外）。対象は kako-jun 指定の
+    // #363/#393/#403: 変更前の images を履歴に積む（本文/タグは対象外）。対象は kako-jun 指定の
     // **角度(rotation)・フィルタ(filters)・Exif撮影日(shotDate/shotDateAuto)** と、**ユーザー操作由来の
     // クロップ(crop)**。crop は画像ロード時の自動センタークロップ・90度clamp 由来の commit（opts.userCrop が無い/false）
-    // では積まない＝履歴が汚れる/勝手にアンドゥが有効化するのを防ぐ。ユーザーのドラッグ/リサイズ（opts.userCrop===true）
-    // だけ1手として積む。角度/フィルタ等の連続変更（スライダのドラッグ・続けて押す微調整）は1手に畳む＝run の最初の状態だけ
-    // 残す。crop の onComplete はドラッグ終了ごとの離散イベントなので、ユーザー crop を積んだ後は lastEditTagRef を
-    // リセットして次のドラッグを独立した1手にする。imagesRef.current は直近コミット済み＝この編集の「変更前」スナップショット。
+    // では積まない＝履歴が汚れる/勝手にアンドゥが有効化するのを防ぐ（#393）。ユーザーのドラッグ/リサイズ（opts.userCrop===true）
+    // だけ1手として積む。
+    //
+    // 畳み込みは「連続入力」だけ＝**回転（rotation 単独）の連続変更（微調整スライダの1ドラッグ run）** のみを1手に潰す
+    //（run の最初の状態だけ残す・連打する微調整を1手にまとめる）。**離散編集（フィルタ/クロップ/撮影日）は1アクション=1手**＝
+    // 毎回積んで畳まない（#403。フィルタを on A→on B→off と続けて変えたとき、従来は同一 field 連続変更として畳み、唯一の
+    // snapshot が「最初=空」になり off→undo で空のまま無変化だった。離散は畳まないことで off 直前の snapshot を積み、戻せる）。
+    // imagesRef.current は直近コミット済み＝この編集の「変更前」スナップショット（離散はティック間に render が入るので freshness 問題なし）。
     const fields = Object.keys(patch);
     const userCrop = opts?.userCrop === true && fields.includes("crop");
-    const undoable = fields.some((f) => f !== "crop") || userCrop;
+    const undoable = fields.some((f) => f !== "crop") || userCrop; // 自動 crop（fromUser でない）は非対象を維持（#393）。
     if (undoable) {
-      const tag = `${currentId}:${fields.sort().join(",")}`;
-      if (tag !== lastEditTagRef.current) {
-        const snapshot = imagesRef.current;
-        setUndoStack((s) => [...s, snapshot].slice(-UNDO_CAP));
-        lastEditTagRef.current = tag;
+      // 連続入力＝rotation 単独の更新（微調整スライダのドラッグ）だけ run の最初だけ積んで畳む。それ以外（filter/crop/
+      // shotDate＝離散編集）は毎回1手として積む。
+      const isContinuous = fields.length === 1 && fields[0] === "rotation";
+      const tag = `${currentId}:${fields.slice().sort().join(",")}`;
+      if (!isContinuous || tag !== lastEditTagRef.current) {
+        setUndoStack((s) => [...s, imagesRef.current].slice(-UNDO_CAP));
       }
-      // ユーザー crop は各ドラッグ終了が独立した1手＝連続して別の枠へドラッグしても潰れず個別に戻せるよう、
-      // 積んだ後はタグをリセットする（rotation/filter の連続畳み込みはここを通らず従来どおり）。
-      if (userCrop) lastEditTagRef.current = null;
+      // 連続入力は run を畳むためタグを覚える。離散編集は次も独立した1手にするためタグをクリアする。
+      lastEditTagRef.current = isContinuous ? tag : null;
     }
     setImages((prev) => prev.map((image) => (image.id === currentId ? { ...image, ...patch } : image)));
   }
@@ -327,6 +336,9 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     setUndoStack((s) => s.slice(0, -1));
     // 戻した直後の編集は新しい1手として積む（畳み込みをリセット）。
     lastEditTagRef.current = null;
+    // #403: crop は CropFrame の内部 state（uncontrolled）なので、戻した値を矩形表示へ反映させるために
+    // 再同期トークンを increment する（CropFrame の effect が外部復元値で矩形を引き直す）。
+    setCropSyncToken((n) => n + 1);
   }
 
   /** 画像の追加/削除など構造変更で履歴をクリアする（古い blob 参照の復元を防ぐ・#363）。 */
@@ -534,6 +546,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
               src={currentImage.src}
               imgRef={imgRef}
               initialCrop={currentImage.crop}
+              cropSyncToken={cropSyncToken}
               rotation={currentImage.rotation}
               filter={composeFilterCss(currentImage.filters)}
               vignette={composeVignette(currentImage.filters)}
