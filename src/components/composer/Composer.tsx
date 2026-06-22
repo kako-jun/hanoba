@@ -101,9 +101,10 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   const [postProgress, setPostProgress] = useState<{ stage: "upload" | "publish"; done: number; total: number } | null>(null);
   // #363/#393: 投稿前の画像編集（角度/フィルタ/クロップ/撮影日）を1手アンドゥする履歴。本文（一言）・タグは
   // 対象外＝images 配列だけスナップショットする。crop はユーザーのドラッグ/リサイズ操作だけが対象で、画像ロード時の
-  // 自動センタークロップ・90度clamp 由来の commit は対象外（#393・勝手にアンドゥを有効化しない）。角度/フィルタ等の
-  // 同一画像・同一フィールドの連続変更（スライダのドラッグ等）は1手に畳む（lastEditTagRef）。crop の各ドラッグ終了は
-  // 離散イベントなので畳まず、それぞれ独立した1手にする。画像の追加/削除など構造変更が入ったら履歴はクリアする
+  // 自動センタークロップ・90度clamp 由来の commit は対象外（#393・勝手にアンドゥを有効化しない）。畳み込みは
+  // **回転微調整スライダの1ドラッグだけ**（continuousRotation フラグ）を1手に潰し、ドラッグ終端（onRotateGestureEnd）で
+  // lastEditTagRef をクリアして次のドラッグを別の1手にする（#403）。**90°/±0.5 ボタン・filter・crop・shotDate は
+  // 離散＝1アクション=1手**＝毎回積んで畳まない。画像の追加/削除など構造変更が入ったら履歴はクリアする
   //（古い blob 参照を復元してしまわないため・ephemeral＝下書き永続化はしない）。
   const [undoStack, setUndoStack] = useState<DraftImage[][]>([]);
   const lastEditTagRef = useRef<string | null>(null);
@@ -297,7 +298,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
 
   function updateCurrentImage(
     patch: Partial<Pick<DraftImage, "crop" | "filters" | "rotation" | "shotDate" | "shotDateAuto">>,
-    opts?: { userCrop?: boolean },
+    opts?: { userCrop?: boolean; continuousRotation?: boolean },
   ) {
     if (currentId === null) return;
     // #363/#393/#403: 変更前の images を履歴に積む（本文/タグは対象外）。対象は kako-jun 指定の
@@ -306,18 +307,22 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     // では積まない＝履歴が汚れる/勝手にアンドゥが有効化するのを防ぐ（#393）。ユーザーのドラッグ/リサイズ（opts.userCrop===true）
     // だけ1手として積む。
     //
-    // 畳み込みは「連続入力」だけ＝**回転（rotation 単独）の連続変更（微調整スライダの1ドラッグ run）** のみを1手に潰す
-    //（run の最初の状態だけ残す・連打する微調整を1手にまとめる）。**離散編集（フィルタ/クロップ/撮影日）は1アクション=1手**＝
-    // 毎回積んで畳まない（#403。フィルタを on A→on B→off と続けて変えたとき、従来は同一 field 連続変更として畳み、唯一の
-    // snapshot が「最初=空」になり off→undo で空のまま無変化だった。離散は畳まないことで off 直前の snapshot を積み、戻せる）。
+    // 畳み込みは「連続入力」だけ＝**回転微調整スライダの1ドラッグ**（呼び出し側が opts.continuousRotation=true を
+    // 立てた tick）だけを1手に潰す（run の最初の状態だけ残す・連打する微調整を1手にまとめる）。畳み込みの判定は
+    // **フィールド名でなく明示フラグ**で行う（#403。フィールド名（rotation 単独）で判定すると、90°ボタン・±0.5 ボタンの
+    // 離散クリックまで連続扱いになり、複数回の回転が1手にまとまってしまった＝kako-jun の不満。スライダのドラッグだけが連続）。
+    // **離散編集（90°/±0.5 ボタン・フィルタ・クロップ・撮影日）は1アクション=1手**＝毎回積んで畳まない（#403。フィルタを
+    // on A→on B→off と続けて変えたとき、従来は同一 field 連続変更として畳み、唯一の snapshot が「最初=空」になり
+    // off→undo で空のまま無変化だった。離散は畳まないことで off 直前の snapshot を積み、戻せる）。
     // imagesRef.current は直近コミット済み＝この編集の「変更前」スナップショット（離散はティック間に render が入るので freshness 問題なし）。
     const fields = Object.keys(patch);
     const userCrop = opts?.userCrop === true && fields.includes("crop");
     const undoable = fields.some((f) => f !== "crop") || userCrop; // 自動 crop（fromUser でない）は非対象を維持（#393）。
     if (undoable) {
-      // 連続入力＝rotation 単独の更新（微調整スライダのドラッグ）だけ run の最初だけ積んで畳む。それ以外（filter/crop/
-      // shotDate＝離散編集）は毎回1手として積む。
-      const isContinuous = fields.length === 1 && fields[0] === "rotation";
+      // 連続入力＝回転微調整スライダのドラッグ tick（continuousRotation=true）だけ run の最初だけ積んで畳む。それ以外
+      //（90°/±0.5 ボタン・filter/crop/shotDate＝離散編集）は毎回1手として積む。ドラッグ終端で onRotateGestureEnd が
+      // lastEditTagRef をクリアするので、2回目のドラッグは別の1手になる。
+      const isContinuous = opts?.continuousRotation === true;
       const tag = `${currentId}:${fields.slice().sort().join(",")}`;
       if (!isContinuous || tag !== lastEditTagRef.current) {
         setUndoStack((s) => [...s, imagesRef.current].slice(-UNDO_CAP));
@@ -555,7 +560,12 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
               toneCurve={composeToneCurve(currentImage.filters)}
               toneAmount={composeToneAmount(currentImage.filters)}
               onCropComplete={(crop, fromUser) => updateCurrentImage({ crop }, { userCrop: fromUser })}
-              onRotate={(next) => updateCurrentImage({ rotation: next })}
+              // 回転（#403）: continuous（スライダのドラッグ tick）だけ畳み、90°/±0.5 ボタンは離散＝各1手。
+              onRotate={(next, continuous) => updateCurrentImage({ rotation: next }, { continuousRotation: continuous })}
+              // スライダの1ドラッグ終端で畳み込みタグをリセット＝次のドラッグは別の1手（#403）。
+              onRotateGestureEnd={() => {
+                lastEditTagRef.current = null;
+              }}
             />
           )}
 

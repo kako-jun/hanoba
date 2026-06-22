@@ -44,8 +44,17 @@ interface CropFrameProps {
   onCropComplete: (crop: SquareCropRect, fromUser: boolean) => void;
   /** 現在の総回転角（度・#314）。プレビューは CSS `transform: rotate()` で即時に当てる。 */
   rotation?: number;
-  /** 回転角を更新する（絶対値・#314）。指定時だけ回転コントロールを出す。 */
-  onRotate?: (nextRotation: number) => void;
+  /**
+   * 回転角を更新する（絶対値・#314）。指定時だけ回転コントロールを出す。
+   * continuous=true は微調整スライダのドラッグ tick 由来（#403・1ドラッグを1手に畳む連続入力）。
+   * 90°ボタン・±0.5 ボタンは continuous 省略＝false＝離散（各クリック=1手）。
+   */
+  onRotate?: (nextRotation: number, continuous?: boolean) => void;
+  /**
+   * 回転ジェスチャ（微調整スライダの1ドラッグ）の終端で呼ぶ（#403）。親が畳み込みタグをリセットし、
+   * 次のドラッグを新しい1手として積めるようにする。pointerUp/touchEnd/mouseUp/keyUp で発火する。
+   */
+  onRotateGestureEnd?: () => void;
 }
 
 /** 画像中央に最大の正方形クロップを作る（% 単位）。 */
@@ -67,6 +76,7 @@ export default function CropFrame({
   onCropComplete,
   rotation = 0,
   onRotate,
+  onRotateGestureEnd,
 }: CropFrameProps) {
   const t = useT(useLocale());
   const [crop, setCrop] = useState<Crop>();
@@ -262,13 +272,17 @@ export default function CropFrame({
         </div>
       </ReactCrop>
       {/* 角度回転（#314・mypace 方式）。配置: [左90°][−0.5°][===微調整スライダ===][+0.5°][右90°]。
-          90度ボタンは向き直し、スライダ＋0.5刻みボタンは水平出し。プレビューは即時の CSS transform。 */}
+          90度ボタンは向き直し、スライダ＋0.5刻みボタンは水平出し。プレビューは即時の CSS transform。
+          アンドゥ粒度（#403）: 連続入力＝**微調整スライダの1ドラッグ**だけ（continuous=true）を1手に畳み、
+          ドラッグ終端（pointerUp/touchEnd/mouseUp/keyUp）で onRotateGestureEnd を呼んで畳み込みをリセットする。
+          90°ボタン・±0.5 ボタンは continuous 省略＝離散＝各クリック=1手。 */}
       {onRotate !== undefined &&
         (() => {
           const quarter = Math.round(rotation / 90) * 90; // 最寄りの90度成分（ボタンが担う向き）
           const fine = rotationFine(rotation); // 微調整成分（±MAX）
           const clampFine = (v: number) => Math.max(-MAX_FINE_ROTATION, Math.min(MAX_FINE_ROTATION, v));
-          const setFine = (v: number) => onRotate(quarter + clampFine(v));
+          // continuous=false（既定）＝離散（±0.5 ボタン）、true＝連続（スライダのドラッグ tick）。
+          const setFine = (v: number, continuous = false) => onRotate(quarter + clampFine(v), continuous);
           const stepBtn = "glass grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors";
           const quarterBtn = "glass inline-flex min-h-9 shrink-0 items-center rounded-full px-3 py-1.5 text-xs font-medium text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors";
           return (
@@ -290,7 +304,13 @@ export default function CropFrame({
                   max={MAX_FINE_ROTATION}
                   step={0.5}
                   value={fine}
-                  onChange={(e) => setFine(Number(e.target.value))}
+                  // ドラッグ中の tick は連続入力（continuous=true）＝1ドラッグを1手に畳む（#403）。
+                  onChange={(e) => setFine(Number(e.target.value), true)}
+                  // ドラッグ終端（マウス/タッチ/キーボード）で畳み込みをリセット＝次のドラッグは別の1手（#403）。
+                  onPointerUp={() => onRotateGestureEnd?.()}
+                  onTouchEnd={() => onRotateGestureEnd?.()}
+                  onMouseUp={() => onRotateGestureEnd?.()}
+                  onKeyUp={() => onRotateGestureEnd?.()}
                   aria-label={t("crop.rotate.slider.aria")}
                   className="h-9 min-w-0 flex-1 accent-ha-green"
                 />
