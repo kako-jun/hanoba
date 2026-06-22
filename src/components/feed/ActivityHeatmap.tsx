@@ -38,7 +38,7 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
       </p>
       {/* 週列×7曜日のヒートマップ。縦横の意味が分かるよう曜日ラベルを左に添える（kako-jun）。 */}
       <div className="flex gap-1 overflow-x-auto" aria-hidden>
-        {/* 曜日ラベル列（#345・英語フル表記7日を省略せず全行に・行位置を草マスと揃える）。 */}
+        {/* 曜日ラベル列（#345・英語3文字略7日を省略せず全行に・行位置を草マスと揃える・#389）。 */}
         <div className="flex shrink-0 flex-col gap-0.5 pr-1">
           {WEEKDAY_LABELS.map((d, r) => (
             <span key={r} className="flex h-2.5 items-center whitespace-nowrap text-[8px] leading-none text-ha-ink/40">
