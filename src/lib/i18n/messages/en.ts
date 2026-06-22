@@ -128,6 +128,11 @@ export const en: Partial<Record<MessageKey, string>> = {
   "stats.tenure.unit": "d",
   "stats.varieties.grown": "Varieties grown",
   "stats.variety.filterTitle": "Filter everyone's plants by {label}",
+  // Horizontal paging of grown varieties (#388: notebook swipe + blur page turn, 10 per page).
+  "stats.varieties.pager.aria": "Page through grown varieties",
+  "stats.varieties.pager.prev": "Previous page",
+  "stats.varieties.pager.next": "Next page",
+  "stats.varieties.pager.indicator": "{page} / {total}",
 
   "green.heading": "Green {subject} added to the city",
   "green.cumulative": "≈{equivalent} fully-green photos",

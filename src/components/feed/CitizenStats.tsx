@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { computeCitizenStats } from "../../lib/feed/stats.ts";
-import { discoverTagsHref } from "../../lib/feed/discoverFilter.ts";
 import { citizenLevelLabel } from "../../lib/lore/citizen.ts";
 import ActivityHeatmap from "./ActivityHeatmap.tsx";
 import GreenArea from "./GreenArea.tsx";
-import SciName from "../ui/SciName.tsx";
+import VarietyPager from "./VarietyPager.tsx";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 interface Props {
@@ -79,29 +78,13 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
       </dl>
 
       {/* 育てた品種の図鑑的な一覧（多い順）。catalog ロード後・1種以上あるときだけ。
-          タップでその品種の discover 絞り込みへ（みんなの植物＝全員の同じ植物を辿る・札/タグと同じ行き先・#kako-jun）。 */}
+          タップでその品種の discover 絞り込みへ（みんなの植物＝全員の同じ植物を辿る・札/タグと同じ行き先・#kako-jun）。
+          1000 種でも縦に積まないよう横ページング（10 件/ページ・手帳スワイプ＋ぼかしページ遷移・#388）に
+          切り出す（VarietyPager）。10 件以下はページャ無しで従来どおり並べる＝退行なし。 */}
       {catalog !== null && stats.varieties.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium text-ha-ink/70">{t("stats.varieties.grown")}</p>
-          <ul className="flex flex-wrap gap-1.5">
-            {stats.varieties.map((v) => (
-              <li key={v.key} className="min-w-0 max-w-full">
-                <a
-                  href={discoverTagsHref([v.name])}
-                  className="glass inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors hover:text-ha-green-deep hover:border-ha-green/50 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
-                  title={t("stats.variety.filterTitle", { label: v.sci !== null ? `${v.sci}（${v.name}）` : v.name })}
-                >
-                  {v.sci !== null && (
-                    <span className="min-w-0 truncate">
-                      <SciName sci={v.sci} className="font-display text-ha-green-deep" />
-                    </span>
-                  )}
-                  <span className="min-w-0 truncate font-medium text-ha-ink">{v.name}</span>
-                  {v.count > 1 && <span className="shrink-0 text-xs tabular-nums text-ha-ink/55">×{v.count.toLocaleString("en-US")}</span>}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <VarietyPager varieties={stats.varieties} t={t} />
         </div>
       )}
 

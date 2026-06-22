@@ -141,6 +141,11 @@ export const ja = {
   "stats.tenure.unit": "日",
   "stats.varieties.grown": "育てた品種",
   "stats.variety.filterTitle": "{label} でみんなの植物を絞る",
+  // 育てた品種の横ページング（#388・手帳スワイプ＋ぼかしページ遷移・10 件/ページ）。
+  "stats.varieties.pager.aria": "育てた品種のページめくり",
+  "stats.varieties.pager.prev": "前のページ",
+  "stats.varieties.pager.next": "次のページ",
+  "stats.varieties.pager.indicator": "{page} / {total}",
 
   // 緑の総面積（GreenArea・#310/#344/#387）。{subject}=主語・{equivalent}=緑100%換算枚数・{readable}=読めた写真数。
   "green.heading": "{subject}が街に足した緑",
