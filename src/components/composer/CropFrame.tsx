@@ -55,6 +55,12 @@ interface CropFrameProps {
    * 次のドラッグを新しい1手として積めるようにする。pointerUp/touchEnd/mouseUp/keyUp で発火する。
    */
   onRotateGestureEnd?: () => void;
+  /**
+   * 編集中写真の右下隅にオーバーレイで重ねる要素（#406・1手アンドゥボタン用）。
+   * 親 div は pointer-events-none ＝ ReactCrop のドラッグ操作と競合しない。クリック可能にしたい子（ボタン）は
+   * 自身に pointer-events-auto を付けること。
+   */
+  photoOverlayBottomRight?: React.ReactNode;
 }
 
 /** 画像中央に最大の正方形クロップを作る（% 単位）。 */
@@ -77,6 +83,7 @@ export default function CropFrame({
   rotation = 0,
   onRotate,
   onRotateGestureEnd,
+  photoOverlayBottomRight,
 }: CropFrameProps) {
   const t = useT(useLocale());
   const [crop, setCrop] = useState<Crop>();
@@ -268,6 +275,11 @@ export default function CropFrame({
               background: `radial-gradient(circle at center, rgba(0,0,0,0) 34%, rgba(0,0,0,${vignette * 0.18}) 68%, rgba(0,0,0,${vignette * 0.72}) 100%)`,
             }}
           />
+        )}
+        {/* 写真右下のオーバーレイ slot（#406・1手アンドゥ）。親は pointer-events-none で ReactCrop のドラッグと競合させず、
+            クリックは子のボタン（pointer-events-auto）だけに効かせる。 */}
+        {photoOverlayBottomRight !== undefined && (
+          <div className="pointer-events-none absolute right-2 bottom-2 z-10">{photoOverlayBottomRight}</div>
         )}
         </div>
       </ReactCrop>

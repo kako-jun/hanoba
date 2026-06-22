@@ -567,24 +567,23 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
               onRotateGestureEnd={() => {
                 lastEditTagRef.current = null;
               }}
+              // 1手アンドゥ（#363）を編集中写真の右下隅にオーバーレイで置く（#406・撮影日=左下・枚数=右上と同じ流儀）。
+              // 直前の画像編集（角度/フィルタ/クロップ/撮影日）を戻す＝角度スライダ誤操作・フィルタ誤選択・Exif撮影日の誤不採用をやり直せる。
+              // 本文（一言）・タグは対象外。履歴が空なら不活性。写真上で読めるよう撮影日バッジ同系の半透明地を付ける。
+              // 親 slot は pointer-events-none ＝ クロップ操作と競合しないよう、ボタンに pointer-events-auto を付ける。
+              photoOverlayBottomRight={
+                <button
+                  type="button"
+                  onClick={undoLastEdit}
+                  disabled={undoStack.length === 0}
+                  aria-label={t("compose.undo.aria")}
+                  className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-ha-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:pointer-events-none disabled:opacity-40"
+                >
+                  <span aria-hidden className="text-sm leading-none">↶</span>
+                  {t("compose.undo")}
+                </button>
+              }
             />
-          )}
-
-          {/* 1手アンドゥ（#363）。直前の画像編集（角度/フィルタ/クロップ/撮影日）を戻す＝角度スライダ誤操作・
-              フィルタ誤選択・Exif撮影日の誤不採用をやり直せる。本文（一言）・タグは対象外。履歴が空なら不活性。 */}
-          {currentImage !== null && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={undoLastEdit}
-                disabled={undoStack.length === 0}
-                aria-label={t("compose.undo.aria")}
-                className="glass inline-flex items-center gap-1.5 self-end rounded-full px-3 py-1.5 text-xs font-medium text-ha-ink/75 transition-colors hover:border-ha-green/50 hover:text-ha-green-deep disabled:pointer-events-none disabled:opacity-40"
-              >
-                <span aria-hidden className="text-sm leading-none">↶</span>
-                {t("compose.undo")}
-              </button>
-            </div>
           )}
 
           <section className="flex flex-col gap-2">
@@ -601,10 +600,6 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
           {currentImage !== null && (
             <section className="flex flex-col gap-1.5">
               <h2 className="text-sm font-medium text-ha-green-deep">{t("compose.shotDate.heading")}</h2>
-              {/* 自動抽出由来の時だけ出す（手入力/訂正には出さない＝嘘をつかない・#324 kako-jun）。 */}
-              {currentImage.shotDate !== null && currentImage.shotDateAuto && (
-                <p className="text-xs text-ha-ink/55">{t("compose.shotDate.auto")}</p>
-              )}
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="date"
@@ -617,6 +612,10 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
                   aria-label={t("compose.shotDate.input.aria")}
                   className="rounded-full bg-white/10 border border-white/15 px-3.5 py-2 text-sm text-ha-ink focus:outline-none focus:ring-2 focus:ring-ha-green/30"
                 />
+                {/* 自動抽出由来の時だけ日付 input の右に控えめに出す（手入力/訂正には出さない＝嘘をつかない・#324 kako-jun／配置は #406）。 */}
+                {currentImage.shotDate !== null && currentImage.shotDateAuto && (
+                  <p className="text-xs text-ha-ink/55">{t("compose.shotDate.auto")}</p>
+                )}
                 {currentImage.shotDate !== null && (
                   <button
                     type="button"
