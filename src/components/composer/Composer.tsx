@@ -577,9 +577,11 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
                   onClick={undoLastEdit}
                   disabled={undoStack.length === 0}
                   aria-label={t("compose.undo.aria")}
-                  className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-ha-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:pointer-events-none disabled:opacity-40"
+                  // 写真前面オーバーレイは維持（省スペース・スクリムで可読）。タップ標的は min-h-11=44px に拡大
+                  // （iOS 44px / Android 48dp 最小・写真上は誤タップのコストが高い・#415）。
+                  className="pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-full bg-black/55 px-4 py-2 text-sm font-medium text-ha-white backdrop-blur-sm transition-colors hover:bg-black/70 disabled:pointer-events-none disabled:opacity-40"
                 >
-                  <span aria-hidden className="text-sm leading-none">↶</span>
+                  <span aria-hidden className="text-base leading-none">↶</span>
                   {t("compose.undo")}
                 </button>
               }
