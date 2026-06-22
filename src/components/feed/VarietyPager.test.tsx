@@ -35,8 +35,8 @@ describe("VarietyPager（育てた品種の横ページング・#388）", () => 
     expect(screen.getAllByRole("link")).toHaveLength(10);
     expect(screen.getByLabelText("次のページ")).toBeInTheDocument();
     expect(screen.getByLabelText("前のページ")).toBeInTheDocument();
-    // インジケータ 1 / 2。
-    expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    // インジケータ 1 / 2（SR 告知の live region＝role="status" で位置を確認。視覚側は aria-hidden の二重表示）。
+    expect(screen.getByRole("status")).toHaveTextContent("1 / 2");
   });
 
   it("先頭では「前へ」は disabled（端クランプ・非 wrap）", () => {
@@ -50,7 +50,7 @@ describe("VarietyPager（育てた品種の横ページング・#388）", () => 
     fireEvent.click(screen.getByLabelText("次のページ"));
     // 最終ページは端数 1 件。
     expect(screen.getAllByRole("link")).toHaveLength(1);
-    expect(screen.getByText("2 / 2")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("2 / 2");
     expect(screen.getByLabelText("次のページ")).toBeDisabled();
     expect(screen.getByLabelText("前のページ")).not.toBeDisabled();
   });
@@ -58,6 +58,6 @@ describe("VarietyPager（育てた品種の横ページング・#388）", () => 
   it("1000 件でも現在ページは 10 件だけ描画（縦に積まない＝節が有界）", () => {
     render(<VarietyPager varieties={makeVarieties(1000)} t={t} />);
     expect(screen.getAllByRole("link")).toHaveLength(10);
-    expect(screen.getByText("1 / 100")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("1 / 100");
   });
 });

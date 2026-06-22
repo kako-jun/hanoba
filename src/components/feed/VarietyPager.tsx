@@ -157,7 +157,6 @@ export default function VarietyPager({ varieties, t }: Props) {
       >
         <div
           key={safePage}
-          aria-live="polite"
           style={{
             filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
             transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
@@ -167,8 +166,14 @@ export default function VarietyPager({ varieties, t }: Props) {
         </div>
       </div>
 
-      {/* めくり操作＋ページ表示。前=戻る／次=進む。端はクランプ（disabled・no-op）。 */}
-      <nav className="flex items-center justify-between gap-3" aria-label={t("stats.varieties.pager.aria")}>
+      {/* ページ位置を SR に告知する固定の live region（#388 review）。上の本文は key={page} で remount される
+          ため aria-live を載せても読まれない＝告知はここに分離する。視覚インジケータは下で aria-hidden で出す。 */}
+      <p role="status" className="sr-only">{t("stats.varieties.pager.indicator", { page: safePage + 1, total })}</p>
+
+      {/* めくり操作＋ページ表示。前=戻る／次=進む。端はクランプ（disabled・no-op）。
+          単純なページャ操作行なので nav ランドマークにはしない（ボタンは各々 aria-label 付き・スワイプ領域側に
+          説明ラベルを持つ＝同名ラベルの二重ランドマークを避ける・#388 review）。 */}
+      <div className="flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={goPrev}
@@ -192,7 +197,7 @@ export default function VarietyPager({ varieties, t }: Props) {
         >
           <Icon name="chevron" className="w-4 h-4 -rotate-90" />
         </button>
-      </nav>
+      </div>
     </div>
   );
 }
