@@ -75,8 +75,8 @@ describe("activityHeatmap", () => {
   const now = noon(today);
 
   it("週列×7曜日で、今日を含み・日曜始まりで並ぶ", () => {
-    const grid = activityHeatmap([], now, 13);
-    expect(grid.length).toBeGreaterThanOrEqual(13);
+    const grid = activityHeatmap([], now, 12);
+    expect(grid.length).toBeGreaterThanOrEqual(12);
     for (const col of grid) expect(col).toHaveLength(7);
     // 各列の先頭は日曜（weekday 0）。
     for (const col of grid) {
@@ -89,12 +89,12 @@ describe("activityHeatmap", () => {
   });
 
   it("その日の投稿数がマスに入る（範囲外はパディング day:null）", () => {
-    const grid = activityHeatmap([post(today), post(today, "p2"), post(today - 1)], now, 13);
+    const grid = activityHeatmap([post(today), post(today, "p2"), post(today - 1)], now, 12);
     const flat = grid.flat();
     expect(flat.find((c) => c.day === today)?.count).toBe(2);
     expect(flat.find((c) => c.day === today - 1)?.count).toBe(1);
     // 表示範囲より古い投稿は入らない。
-    const old = activityHeatmap([post(today - 200)], now, 13).flat();
+    const old = activityHeatmap([post(today - 200)], now, 12).flat();
     expect(old.every((c) => c.count === 0)).toBe(true);
   });
 });
@@ -150,7 +150,7 @@ describe("streaks", () => {
     expect(s.longest).toBe(7);
     expect(s.current).toBe(7); // 最終撮影日が今日＝今日まで連続
     // ヒートマップにも7日ぶん点く（各日 count 1）。
-    const flat = activityHeatmap([sundayPost], noon(lastIdx), 13).flat();
+    const flat = activityHeatmap([sundayPost], noon(lastIdx), 12).flat();
     expect(flat.filter((c) => c.count > 0)).toHaveLength(7);
   });
 });

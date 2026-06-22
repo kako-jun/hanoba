@@ -147,12 +147,9 @@ export const ja = {
   "stats.varieties.pager.next": "次のページ",
   "stats.varieties.pager.indicator": "{page} / {total}",
 
-  // 緑の総面積（GreenArea・#310/#344/#387）。{subject}=主語・{equivalent}=緑100%換算枚数・{readable}=読めた写真数。
+  // 緑の総面積（GreenArea・#310/#344/#387）。{subject}=主語・{equivalent}=緑100%換算枚数。
   "green.heading": "{subject}が街に足した緑",
   "green.cumulative": "緑100%の写真 約{equivalent}枚分",
-  "green.readable": "（{readable}枚から算出）",
-  // #387: 多枚数で代表サンプルから外挿した概算のとき（readable は外挿値＝約）。
-  "green.readableApprox": "（約{readable}枚から算出）",
   "green.measuring": "（緑を計測中…）",
 
   // 活動の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。

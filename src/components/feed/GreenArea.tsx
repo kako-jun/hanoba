@@ -12,8 +12,8 @@ import { useT, useLocale } from "../../lib/i18n/index.ts";
  *
  * backendless＝公開投稿の写真を数えるだけ・新たな身バレ無し。画素読みは `crossOrigin=anonymous` の
  * canvas（hanoba 自身は nostr.build=CORS 反射ホストにアップロード＝読める）。他クライアント由来の
- * 非CORS画像は tainted で `getImageData` が throw するので **try/catch でスキップ**し、読み取れた写真数を
- * 併記する（概算・グレースフル）。純粋な集計/抽出は `lib/feed/green.ts`（テスト済み）。
+ * 非CORS画像は tainted で `getImageData` が throw するので **try/catch でスキップ**する（概算・グレースフル）。
+ * 純粋な集計/抽出は `lib/feed/green.ts`（テスト済み）。
  */
 
 /** 縮小描画の一辺（px）。緑割合の概算には十分。 */
@@ -133,12 +133,6 @@ export default function GreenArea({ posts, subject }: { posts: FeedPost[]; subje
         <p className="text-sm text-ha-ink/80">
           <span className="font-semibold tabular-nums text-ha-green-deep">
             {t("green.cumulative", { equivalent: stats.equivalent.toFixed(1) })}
-          </span>
-          <span className="ml-2 text-xs text-ha-ink/45">
-            {/* 抽出した（概算）ときは「約N枚」と明示し、外挿値が嘘にならないようにする（#387）。 */}
-            {stats.sampled
-              ? t("green.readableApprox", { readable: stats.readable })
-              : t("green.readable", { readable: stats.readable })}
           </span>
         </p>
       )}

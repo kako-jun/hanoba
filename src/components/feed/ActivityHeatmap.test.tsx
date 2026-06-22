@@ -28,7 +28,7 @@ describe("ActivityHeatmap（#272 段階4・活動の草）", () => {
     expect(screen.getByText("活動の草")).toBeInTheDocument();
     expect(screen.getByText(/現在の連続/)).toBeInTheDocument();
     expect(screen.getByText(/最長/)).toBeInTheDocument();
-    // 週列×7曜日のマスが描画される（13週ぶん＝91マス前後）。
+    // 週列×7曜日のマスが描画される（12週ぶん＝84マス前後）。
     const cells = container.querySelectorAll("div[aria-hidden] > div > span");
     expect(cells.length).toBeGreaterThan(70);
   });

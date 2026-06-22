@@ -12,7 +12,7 @@ import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 /** 草マスの濃淡（0=投稿なし → 2=多い・#389 で 3 段階に集約＝細かい濃淡差より「あった/少し/多い」を素直に）。 */
 const LEVEL_BG = ["bg-white/5", "bg-ha-green/45", "bg-ha-green"] as const;
-const WEEKS = 13;
+const WEEKS = 12;
 
 /**
  * 活動の草の曜日軸（#345）。**全7行・英語・曖昧なし**という #345 の意図はそのままに、3文字略で短縮する
