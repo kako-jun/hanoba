@@ -265,7 +265,12 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
           {isLockedView ? (
             <LockedTeaser />
           ) : (
-            <PageContent page={current} />
+            <>
+              {/* #455: 市長は本全体の語り手なので、2ページ目以降も各ページ冒頭に市長アイコンを出す
+                  （旧 welcome のみ）。語り手マークをページ本文の上に共通で置く。 */}
+              <MayorMark />
+              <PageContent page={current} />
+            </>
           )}
         </div>
 
@@ -382,23 +387,34 @@ function HubLinkItem({ link }: { link: HubLink }) {
   );
 }
 
+/**
+ * 全ページ共通の語り手マーク（#455）。市長ボタニクス・フォン・ハノーバのアイコン＋肩書きを各ページ冒頭に出す
+ * （本全体が市長の声なので 2ページ目以降も）。顔は秘密＝ジョウロの肖像（#219①）。Avatar は装飾（alt 空）扱いで
+ * 隣に市長名テキストを置き a11y を満たす。短い呼び名「ボタニクス市長」（フルネームは本文側・#262）。
+ */
+function MayorMark() {
+  const locale = useLocale();
+  const t = useT(locale);
+  const shortName = mayorShortName(locale);
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar src={MAYOR_AVATAR_SRC} name={shortName} className="w-16 h-16 ring-1 ring-white/10" />
+      <span className="text-sm text-ha-ink/60">{t("cityHall.mayorTitle", { name: shortName })}</span>
+    </div>
+  );
+}
+
 /** 解放済みページの中身を種類ごとに描く。 */
 function PageContent({ page }: { page: BookPage }) {
   const locale = useLocale();
   const t = useT(locale);
-  const shortName = mayorShortName(locale);
   switch (page.kind) {
     case "welcome":
       return (
         <article className="flex flex-col gap-4">
+          {/* 市長アイコン＋肩書きは全ページ共通の <MayorMark>（上位）で出す（#455）。welcome では従来
+              ここに置いていたが重複するので撤去。顔は秘密＝ジョウロの肖像（#219①）の方針は MayorMark が継ぐ。 */}
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
-          {/* 移住案内の冒頭でボタニクス市長が名乗る。顔は秘密＝ジョウロの肖像（#219①）。
-              Avatar は装飾扱い（alt 空）なので隣に市長名テキストを置き a11y を満たす。
-              肖像の脇は親しみのある短い呼び名「ボタニクス市長」（フルネームは本文側・#262）。 */}
-          <div className="flex items-center gap-3">
-            <Avatar src={MAYOR_AVATAR_SRC} name={shortName} className="w-16 h-16 ring-1 ring-white/10" />
-            <span className="text-sm text-ha-ink/60">{t("cityHall.mayorTitle", { name: shortName })}</span>
-          </div>
           {page.blocks.map((b, i) =>
             b.kind === "note" ? (
               <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
