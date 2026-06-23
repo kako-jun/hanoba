@@ -328,6 +328,58 @@ describe("PostGrid × deep-link `?p=<nevent>`（#386）", () => {
     expect(replaceSpy).not.toHaveBeenCalled();
   });
 
+  // ---- 多段履歴シーケンス（pushState/back 履歴モデルの回帰固定） ----
+
+  it("(38) 着地→別投稿を開いて閉じると着地投稿に戻る（pushState/back 履歴モデル）", async () => {
+    const idA = hexId("a8"); // 着地投稿（`?p=neventA` でマウント着地）
+    const idB = hexId("b8"); // フィード内の別カード（openPost で開く）
+    const posts = [
+      makePost({ id: idA, caption: "着地投稿A" }),
+      makePost({ id: idB, caption: "別投稿B" }),
+    ];
+    const user = userEvent.setup();
+
+    // 1) `?p=neventA` で着地（マウント着地で A のモーダルが開く・fetch 不要）。
+    window.history.replaceState(null, "", `/?p=${neventOf(idA)}`);
+    render(<PostGrid posts={posts} onSelectHashtag={() => {}} />);
+    const dialogA = await screen.findByRole("dialog", { name: "投稿の詳細" });
+    expect(within(dialogA).getByText("着地投稿A")).toBeInTheDocument();
+
+    // 2) カード B をタップ（openPost）→ `?p=neventB` が pushState され B が開く。
+    //    カードの写真ボタン（aria-label=caption）はカード側にだけ存在する＝モーダル外で取れる。
+    await user.click(screen.getByRole("button", { name: "別投稿B" }));
+    await waitFor(() => {
+      const dialogB = screen.getByRole("dialog", { name: "投稿の詳細" });
+      expect(within(dialogB).getByText("別投稿B")).toBeInTheDocument();
+    });
+    expect(pushSpy).toHaveBeenCalled();
+    // openPost は encodePostNevent でリレーヒント付き nevent を書く（neventOf の素の文字列とは別だが
+    // 同じ id を指す）ので、生文字列でなく復号した id で照合する。
+    const paramB = new URLSearchParams(window.location.search).get("p")!;
+    const decodedB = nip19.decode(paramB);
+    expect(decodedB.type).toBe("nevent");
+    if (decodedB.type === "nevent") expect(decodedB.data.id).toBe(idB);
+
+    // 3) B を閉じる（closePost）→ pushedRef=true 経路で history.back が呼ばれる。
+    backSpy.mockClear();
+    await user.click(screen.getByRole("button", { name: "閉じる" }));
+    expect(backSpy).toHaveBeenCalled();
+
+    // 4) happy-dom は back で popstate を発火しないので、戻り先 URL（`?p=neventA`）を仕込んでから
+    //    popstate を撃つ（既存(32-34)と同じ駆動法）。popstate ハンドラ経由で A が再展開される。
+    act(() => {
+      window.history.replaceState(null, "", `/?p=${neventOf(idA)}`);
+      window.dispatchEvent(new Event("popstate"));
+    });
+
+    await waitFor(() => {
+      const reopened = screen.getByRole("dialog", { name: "投稿の詳細" });
+      expect(within(reopened).getByText("着地投稿A")).toBeInTheDocument();
+    });
+    // B はもう開いていない（A に戻った＝1枚だけ）。
+    expect(within(screen.getByRole("dialog", { name: "投稿の詳細" })).queryByText("別投稿B")).toBeNull();
+  });
+
   // ---- 配線 / 優先 ----
 
   it("(35) posts 内 id は externalPost より優先される（id 引きが勝つ）", async () => {
