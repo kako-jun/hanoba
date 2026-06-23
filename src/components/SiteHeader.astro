@@ -49,20 +49,27 @@ const links = [
   class="sticky top-0 z-40 border-b border-ha-green/10 bg-ha-base/70 backdrop-blur-md supports-[backdrop-filter]:bg-ha-base/55"
 >
   <div class:list={["mx-auto px-5 h-16 flex items-center justify-between gap-4", maxW]}>
-    <a href="/" class="flex items-center gap-2.5 group" aria-label={t(locale, "nav.home.aria")}>
-      <svg viewBox="0 0 64 64" class="w-9 h-9 shrink-0" role="img" aria-hidden="true">
-        <defs>
-          <clipPath id="ha-flag"><rect width="64" height="64" rx="12"></rect></clipPath>
-        </defs>
-        <g clip-path="url(#ha-flag)">
-          <rect width="64" height="64" fill="#f3e7e7"></rect>
-          <rect x="14" y="13" width="11.5" height="38" fill="#509120"></rect>
-          <rect x="38.5" y="13" width="11.5" height="38" fill="#305713"></rect>
-          <rect x="14" y="26.2" width="36" height="11.5" fill="#ff5460"></rect>
-        </g>
-      </svg>
-      <span class="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep">Hanōba</span>
-    </a>
+    {/* 左グループ: タイトル＋言語切替（#441）。言語切替をタイトルのすぐ右に置くことで、右の nav 末尾は
+        投稿ボタン＝右上に来る。言語切替はデスクトップのみ（モバイルはハンバーガーのドロップダウン上部に出す）。 */}
+    <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-2.5 group" aria-label={t(locale, "nav.home.aria")}>
+        <svg viewBox="0 0 64 64" class="w-9 h-9 shrink-0" role="img" aria-hidden="true">
+          <defs>
+            <clipPath id="ha-flag"><rect width="64" height="64" rx="12"></rect></clipPath>
+          </defs>
+          <g clip-path="url(#ha-flag)">
+            <rect width="64" height="64" fill="#f3e7e7"></rect>
+            <rect x="14" y="13" width="11.5" height="38" fill="#509120"></rect>
+            <rect x="38.5" y="13" width="11.5" height="38" fill="#305713"></rect>
+            <rect x="14" y="26.2" width="36" height="11.5" fill="#ff5460"></rect>
+          </g>
+        </svg>
+        <span class="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep">Hanōba</span>
+      </a>
+      <div class="hidden sm:block">
+        <LangSwitcher client:idle />
+      </div>
+    </div>
 
     <!-- デスクトップ: インラインナビ -->
     <nav class="hidden sm:flex items-center gap-5 text-sm">
@@ -102,7 +109,6 @@ const links = [
         <Icon name="sprout" className="w-4 h-4" />
         <span data-i18n="nav.compose">{t(locale, "nav.compose")}</span>
       </a>
-      <LangSwitcher client:idle />
     </nav>
 
     <!-- モバイル: ハンバーガー -->
@@ -129,6 +135,10 @@ const links = [
     class="sm:hidden hidden border-t border-ha-green/10 bg-ha-base/95 backdrop-blur-md"
   >
     <div class:list={["mx-auto px-5 py-3 flex flex-col gap-1 text-sm", maxW]}>
+      {/* 言語切替はメニュー最上部・右寄せ（市民手帳〔About〕より上・#441 kako-jun）。 */}
+      <div class="flex justify-end px-1 pb-1">
+        <LangSwitcher client:idle />
+      </div>
       {
         links.map((l) => (
           <a
@@ -163,10 +173,6 @@ const links = [
         <Icon name="sprout" className="w-4 h-4" />
         <span data-i18n="nav.compose">{t(locale, "nav.compose")}</span>
       </a>
-      {/* モバイルでも言語切替を辿れるようドロップダウンに同梱する（#147）。 */}
-      <div class="mt-1 px-3 py-2">
-        <LangSwitcher client:idle />
-      </div>
     </div>
   </nav>
 </header>
