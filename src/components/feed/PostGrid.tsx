@@ -8,6 +8,7 @@ import PostCard from "./PostCard.tsx";
 import PostDetail from "./PostDetail.tsx";
 import { useProfiles } from "./useProfiles.ts";
 import { useDilution } from "./useDilution.ts";
+import { usePostDeepLink } from "./usePostDeepLink.ts";
 
 interface Props {
   /** 表示する投稿（すべて画像あり想定・呼び出し側で取得・絞り込み済み）。 */
@@ -39,11 +40,10 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const { map: dilutionMap } = useDilution();
   const visible = useMemo(() => diluteFeed(posts, dilutionMap), [posts, dilutionMap]);
 
-  // 選択中の投稿は**間引き前の posts** から引く（薄めた人でもモーダルを開いて設定を変えられる）。
-  const selected = useMemo(
-    () => (selectedId === null ? null : (posts.find((p) => p.id === selectedId) ?? null)),
-    [posts, selectedId],
-  );
+  // 共有・ブックマーク・リロードで開き直せる deep-link `?p=<nevent>`（#386）。URL ↔ 選択状態の同期を
+  // フックに隔離する（PostGrid を太らせない）。selectedPost は**間引き前の posts** から id 引き
+  // （薄めた人でもモーダルを開ける）、フィード外の `?p=` 着地は内部で fetch した externalPost を返す。
+  const { selectedPost, openPost, closePost } = usePostDeepLink({ posts, selectedId, setSelectedId });
 
   // 品種カタログを1回だけ動的 import（カードの植物札＝buildFuda 用・#239）。グリッド単位で1回読み、
   // 各 PostCard に配る（カードごとに import しない）。重い chunk なので非同期＝カードは即描画し、
@@ -103,7 +103,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const profiles = useProfiles(posts.map((p) => p.pubkey));
 
   function selectHashtag(tag: string) {
-    setSelectedId(null); // モーダルが開いていたら閉じてから絞り込む/再検索する。
+    closePost(); // モーダルが開いていたら閉じてから絞り込む/再検索する（`?p=` も確実に剥がす）。
     onSelectHashtag(tag);
   }
 
@@ -116,7 +116,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             post={post}
             index={i}
             now={now}
-            onOpen={() => setSelectedId(post.id)}
+            onOpen={() => openPost(post)}
             onSelectHashtag={selectHashtag}
             profile={profiles.get(post.pubkey) ?? null}
             fudaIndex={fudaIndex}
@@ -126,11 +126,11 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
         ))}
       </ul>
 
-      {selected !== null && (
+      {selectedPost !== null && (
         <PostDetail
-          post={selected}
-          profile={profiles.get(selected.pubkey) ?? null}
-          onClose={() => setSelectedId(null)}
+          post={selectedPost}
+          profile={profiles.get(selectedPost.pubkey) ?? null}
+          onClose={closePost}
           onSelectHashtag={selectHashtag}
           // フィード/discover は他人を薄める導線を出す（#138）。/me（MyGrid）は出さない＝自分を薄めない。
           showDilution
