@@ -128,10 +128,11 @@ export default function GreenArea({ posts, subject }: { posts: FeedPost[]; subje
     <div className="flex flex-col gap-1">
       <p className="text-sm font-medium text-ha-ink/70">{t("green.heading", { subject })}</p>
       {stats === null ? (
-        <p className="text-xs text-ha-ink/40">{t("green.measuring")}</p>
+        <p className="pl-3 text-xs text-ha-ink/40">{t("green.measuring")}</p>
       ) : (
         // #439: 数値を目立たせる＝小さい換算ラベルを左、**大きな値を右寄せ**で並べる（kako-jun）。
-        <div className="flex items-baseline justify-between gap-3">
+        // #449: 中身は見出しの下で少しインデント（pl-3）してぶら下げる（kako-jun）。
+        <div className="flex items-baseline justify-between gap-3 pl-3">
           <span className="text-xs text-ha-ink/45">{t("green.cumulative.label")}</span>
           <span className="text-2xl font-semibold tabular-nums text-ha-green-deep">
             {t("green.cumulative.value", { equivalent: stats.equivalent.toFixed(1) })}

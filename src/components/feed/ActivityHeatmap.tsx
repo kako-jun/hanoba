@@ -54,7 +54,7 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
           草は常に7行固定＝縦スクロールは不要。`overflow-x-auto` だけだと overflow-y が auto に計算され、
           横スクロールバーが高さを食う/サブピクセルのはみ出しで**最初から縦スクロールバーが出る**ので
           overflow-y-hidden を明示して連鎖を断つ（kako-jun 実機指摘）。 */}
-      <div className="flex gap-1 overflow-x-auto overflow-y-hidden" aria-hidden>
+      <div className="flex gap-1 overflow-x-auto overflow-y-hidden pl-3" aria-hidden>
         {/* 曜日ラベル列（#345・英語3文字略7日を省略せず全行に・行位置を草マスと揃える・#389）。 */}
         <div className="flex shrink-0 flex-col gap-0.5 pr-1">
           {WEEKDAY_LABELS.map((d, r) => (
@@ -77,8 +77,9 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
           </div>
         ))}
       </div>
-      {/* 連続記録（現在／最長）。区切りは中黒「・」だと2値が1語に見えるため細いスラッシュに（#440・kako-jun）。 */}
-      <p className="text-xs text-ha-ink/55">
+      {/* 連続記録（現在／最長）。区切りは中黒「・」だと2値が1語に見えるため細いスラッシュに（#440・kako-jun）。
+          中身は見出しの下で少しインデント（pl-3・#449）してぶら下げる。 */}
+      <p className="pl-3 text-xs text-ha-ink/55">
         {t("activity.streak.current")} <span className="font-semibold tabular-nums text-ha-green-deep">{s.current}</span>{" "}
         {t("activity.streak.days")}
         <span className="mx-1.5 text-ha-ink/30">/</span>

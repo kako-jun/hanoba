@@ -103,7 +103,8 @@ function Stat({ label, value, unit }: { label: string; value: number | null; uni
   return (
     <div className="flex flex-col gap-0.5 rounded-xl bg-white/5 px-3 py-2.5">
       <dt className="text-xs text-ha-ink/55">{label}</dt>
-      <dd className="font-display text-2xl font-extrabold text-ha-green-deep tabular-nums">
+      {/* 数値は右寄せ（#450・kako-jun）＝桁が揃い、4枚並べたとき視線が右端でそろう。 */}
+      <dd className="text-right font-display text-2xl font-extrabold text-ha-green-deep tabular-nums">
         {/* 1000超でも読めるよう3桁区切り（#kako-jun）。 */}
         {value === null ? "…" : value.toLocaleString("en-US")}
         <span className="ml-0.5 text-sm font-semibold text-ha-ink/55">{unit}</span>
