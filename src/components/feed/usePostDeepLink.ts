@@ -17,8 +17,12 @@ interface Result {
   selectedPost: FeedPost | null;
   /** カードタップで開く（選択＋`?p=` を pushState）。 */
   openPost: (post: FeedPost) => void;
-  /** モーダルを閉じる（履歴を pop か `?p=` 剥がし）。 */
-  closePost: () => void;
+  /**
+   * モーダルを閉じる。既定（`viaHistory:true`）は積んだ `?p=` を `history.back` で pop（✕/Esc/scrim 用＝
+   * 戻るで閉じる #386 の履歴モデル）。`viaHistory:false` は back せず `?p=` を `replaceState` で剥がすだけ
+   * （モーダル内ハッシュタグ→絞り込み遷移用＝back の popstate と直後の `?tags=` pushState の競合を断つ・#433）。
+   */
+  closePost: (opts?: { viaHistory?: boolean }) => void;
 }
 
 /**
@@ -96,9 +100,15 @@ export function usePostDeepLink({ posts, selectedId, setSelectedId }: Args): Res
     }
   }
 
-  /** モーダルを閉じる。積んだ `?p=` があれば history.back（popstate で閉が確定）、無ければ replaceState で剥がす。 */
-  function closePost() {
-    if (pushedRef.current) {
+  /**
+   * モーダルを閉じる。`viaHistory:true`（既定・✕/Esc/scrim）は積んだ `?p=` があれば history.back で pop
+   * （popstate で閉が確定＝#386 の「戻るで閉じる」履歴モデル）。`viaHistory:false`（モーダル内ハッシュタグ→
+   * 絞り込み遷移）は **back せず** `?p=` を replaceState で剥がすだけにして、呼び出し側が直後に打つ
+   * `?tags=` の pushState と back の popstate が競合しないようにする（#433）。どちらも他クエリは保持する。
+   */
+  function closePost(opts?: { viaHistory?: boolean }) {
+    const viaHistory = opts?.viaHistory ?? true;
+    if (viaHistory && pushedRef.current) {
       // openPost で積んだ履歴を pop する → popstate が発火し、そこで閉が確定する。
       pushedRef.current = false;
       clearSelection();
@@ -109,7 +119,9 @@ export function usePostDeepLink({ posts, selectedId, setSelectedId }: Args): Res
       }
       return;
     }
-    // deep-link 初回着地（積んでいない）: `?p=` だけ replaceState で剥がす（他クエリは保持）。
+    // viaHistory:false、または積んでいない初回着地: `?p=` だけ replaceState で剥がす（他クエリは保持・back しない）。
+    // 積んでいたフラグも下ろす（次の close で誤って back しないため）。
+    pushedRef.current = false;
     clearSelection();
     try {
       const url = new URL(window.location.href);
