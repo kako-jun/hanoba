@@ -458,7 +458,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                           openXShare(buildXShareWhole(post.caption, [], permalink));
                           setShareOpen(false);
                         }}
-                        className="rounded-full px-3 py-1 text-left text-xs font-medium text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
+                        className="whitespace-nowrap rounded-full px-3 py-1 text-left text-xs font-medium text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
                       >
                         {t("detail.share.whole")}
                       </button>
@@ -471,7 +471,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                             openXShare(part);
                             setShareOpen(false);
                           }}
-                          className="rounded-full px-3 py-1 text-left text-xs font-medium tabular-nums text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
+                          className="whitespace-nowrap rounded-full px-3 py-1 text-left text-xs font-medium tabular-nums text-ha-ink/80 hover:bg-ha-green hover:text-ha-white transition-colors"
                         >
                           {i + 1}/{shareParts.length}
                         </button>
