@@ -433,3 +433,48 @@ describe("同義語統合（#409 P-canonical 第2弾）", () => {
     });
   }
 });
+
+// #409 P2 多言語: カテゴリ loc のデータ整合 guard（本番 VARIETY_CATALOG を flatMap で回す既存流儀）。
+describe("#409 P2 カテゴリ loc の整合性", () => {
+  it("全 23 カテゴリが loc を持ち en/zh/es 3 キーすべて埋まる", () => {
+    expect(VARIETY_CATALOG).toHaveLength(23);
+    for (const cat of VARIETY_CATALOG) {
+      expect(cat.loc, `カテゴリ「${cat.label}」に loc が無い`).toBeDefined();
+      for (const key of ["en", "zh", "es"] as const) {
+        expect(cat.loc![key], `カテゴリ「${cat.label}」の loc.${key} が無い`).toBeDefined();
+      }
+    }
+  });
+
+  // PR1（このPR）は属/品種に loc を populate しない（カテゴリ23 のみ多言語化）。
+  // PR2 で属 222 に loc を入れたら、属についてのこの guard は緩める（品種は固有名詞なので据え置き想定）。
+  it("属・品種には loc が無い（PR1 はカテゴリのみ・PR2 で属を入れたら緩める）", () => {
+    for (const cat of VARIETY_CATALOG) {
+      for (const genus of cat.genera) {
+        expect(genus.loc, `属「${genus.name}」に loc がある（PR1 では未 populate のはず）`).toBeUndefined();
+        for (const v of genus.varieties) {
+          expect(v.loc, `品種「${v.name}」に loc がある（未 populate のはず）`).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it("カテゴリ loc 値に空文字が無い", () => {
+    for (const cat of VARIETY_CATALOG) {
+      for (const value of Object.values(cat.loc ?? {})) {
+        expect(value.trim().length, `カテゴリ「${cat.label}」の loc に空文字`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("カテゴリ loc 値が他カテゴリの ja label と衝突しない（訳語→別カテゴリの誤ヒット防止）", () => {
+    const jaLabels = new Set(VARIETY_CATALOG.map((c) => c.label));
+    for (const cat of VARIETY_CATALOG) {
+      for (const value of Object.values(cat.loc ?? {})) {
+        // 自カテゴリ label と同字（zh が ja と同じ等）は許容。他カテゴリの label と衝突したら誤ヒット源。
+        if (value === cat.label) continue;
+        expect(jaLabels.has(value), `カテゴリ「${cat.label}」の loc 値「${value}」が他カテゴリ label と衝突`).toBe(false);
+      }
+    }
+  });
+});

@@ -148,6 +148,51 @@ describe("applyClientFilter", () => {
   });
 });
 
+// #409 cross-language filter の核（AND）。client.ts fetchDiscoverFiltered の resolveTagAliases は
+// `buildCatalogAliasIndex(VARIETY_CATALOG)` ∪ `tagAliasValues`（dictionary）の合成。catalog 索引が
+// カテゴリ label と loc 値（"Succulents"/"Suculentas"）を同一別名集合に束ねるので、訳語でフィルタしても
+// ja 正準 `#多肉植物` 投稿に当たる。本文タグは ja 正準のまま不変＝言語を跨いでも同じ #タグで合流する。
+describe("cross-language カテゴリフィルタ AND（#409・catalog loc 合流）", () => {
+  // client.ts と同じ合成（dictionary ∪ catalog 別名索引）を組む。
+  const index = buildCatalogAliasIndex(VARIETY_CATALOG);
+  const resolve = (t: string): string[] => {
+    const cat = index.get(t.trim().toLowerCase());
+    const dict = tagAliasValues(t);
+    return cat === undefined ? dict : [...new Set([...dict, ...cat])];
+  };
+
+  it("核: tags=[Succulents, ペティオラリス]＋投稿[多肉植物, ペティオラリス] が AND 一致で残る", () => {
+    // en 訳語「Succulents」が ja 正準「多肉植物」へ展開され、ja タグ投稿に当たる。
+    const posts = [
+      post({ id: "cross", hashtags: ["多肉植物", "ペティオラリス"] }),
+      post({ id: "no", hashtags: ["多肉植物"] }), // ペティオラリス が無いので AND に落ちる
+    ];
+    const out = applyClientFilter(posts, { tags: ["Succulents", "ペティオラリス"], resolveTagAliases: resolve });
+    expect(out.map((p) => p.id)).toEqual(["cross"]);
+  });
+
+  it("es 訳語『Suculentas』でも同じ ja タグ投稿に到達する", () => {
+    const posts = [post({ id: "es", hashtags: ["多肉植物", "ペティオラリス"] })];
+    const out = applyClientFilter(posts, { tags: ["Suculentas", "ペティオラリス"], resolveTagAliases: resolve });
+    expect(out.map((p) => p.id)).toEqual(["es"]);
+  });
+
+  it("ja『多肉植物』は従来どおり到達する（無回帰）", () => {
+    const posts = [post({ id: "ja", hashtags: ["多肉植物", "ペティオラリス"] })];
+    const out = applyClientFilter(posts, { tags: ["多肉植物", "ペティオラリス"], resolveTagAliases: resolve });
+    expect(out.map((p) => p.id)).toEqual(["ja"]);
+  });
+
+  it("訳語フィルタだけで #多肉植物 投稿が残り、無関係投稿は落ちる", () => {
+    const posts = [
+      post({ id: "hit", hashtags: ["多肉植物"] }),
+      post({ id: "miss", hashtags: ["バラ"] }),
+    ];
+    const out = applyClientFilter(posts, { tags: ["Succulents"], resolveTagAliases: resolve });
+    expect(out.map((p) => p.id)).toEqual(["hit"]);
+  });
+});
+
 describe("filterSummary", () => {
   it("空は『みんなの植物』", () => {
     expect(filterSummary(EMPTY_FILTER, "ja")).toBe("みんなの植物");

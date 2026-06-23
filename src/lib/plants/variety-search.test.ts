@@ -345,3 +345,153 @@ describe("buildCatalogAliasIndex（#303・discover の catalog 別名展開）",
     expect(index.get("存在しない")).toBeUndefined();
   });
 });
+
+// #409 P2 多言語: カテゴリだけに loc を載せた小カタログ（既存 CATALOG は触らない）。
+// - 「多肉」 loc は en/es が base と別字、zh は base「タニク」と別字（女仙相当の合成）。
+// - 「メセン」 loc は en/es が同字（Mesembs / Mesembs）＝dedup を突く。
+// - 「観葉」 は loc 無し＝訳語で増えない無回帰を突く。
+// 属/品種には loc を **意図的に** 載せない（PR1 はカテゴリだけ populate）。
+const LOC_CATALOG: VarietyCategory[] = [
+  {
+    label: "タニク",
+    loc: { en: "Succulents", zh: "ニョセン", es: "Suculentas" },
+    genera: [
+      { name: "アガベ", pickable: true, varieties: [{ name: "チタノタ", sci: "Agave titanota" }] },
+    ],
+  },
+  {
+    label: "メセン",
+    loc: { en: "Mesembs", zh: "女仙", es: "Mesembs" },
+    genera: [
+      { name: "リトープス", pickable: true, varieties: [{ name: "日輪玉" }] },
+    ],
+  },
+  {
+    // loc 無しカテゴリ＝訳語では当たらない（ja 名でだけ当たる）。
+    label: "観葉",
+    genera: [
+      { name: "モンステラ", pickable: true, varieties: [{ name: "アルボ" }] },
+    ],
+  },
+];
+
+describe("searchCatalog（#409 カテゴリ loc 多言語）", () => {
+  it("en 訳語『Succulents』で当て、hit.name/hit.category は ja 正準・kind=category（書き込み不変）", () => {
+    const hits = searchCatalog(LOC_CATALOG, "Succulents");
+    const cat = hits.find((h) => h.kind === "category")!;
+    // 訳語で当てても本文に入る name・由来 category は ja 正準のまま（訳さない）。
+    expect(cat).toMatchObject({ name: "タニク", category: "タニク", kind: "category" });
+  });
+
+  it("es 訳語『Suculentas』でも ja 正準カテゴリに当たる", () => {
+    const cat = searchCatalog(LOC_CATALOG, "Suculentas").find((h) => h.kind === "category")!;
+    expect(cat).toMatchObject({ name: "タニク", category: "タニク", kind: "category" });
+  });
+
+  it("zh 訳語（label と別字＝女仙）で ja label『メセン』に当たる", () => {
+    const cat = searchCatalog(LOC_CATALOG, "女仙").find((h) => h.kind === "category")!;
+    expect(cat).toMatchObject({ name: "メセン", category: "メセン", kind: "category" });
+  });
+
+  it("hit.categoryLoc に loc オブジェクト全体が載る（表示用に持ち回る）", () => {
+    const cat = searchCatalog(LOC_CATALOG, "Succulents").find((h) => h.kind === "category")!;
+    expect(cat.categoryLoc).toEqual({ en: "Succulents", zh: "ニョセン", es: "Suculentas" });
+  });
+
+  it("en/es が同字（Mesembs）でも hit は 1 件に dedup", () => {
+    const hits = searchCatalog(LOC_CATALOG, "Mesembs").filter((h) => h.kind === "category");
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.name).toBe("メセン");
+  });
+
+  it("部分一致・大文字小文字・全角を fold して訳語に当たる", () => {
+    // "succ"（部分・小文字）、"ＳＵＣＣ"（全角大文字）どちらも Succulents→タニク に当たる。
+    expect(searchCatalog(LOC_CATALOG, "succ").some((h) => h.kind === "category" && h.name === "タニク")).toBe(true);
+    expect(searchCatalog(LOC_CATALOG, "ＳＵＣＣ").some((h) => h.kind === "category" && h.name === "タニク")).toBe(true);
+  });
+
+  it("loc 無しカテゴリ（観葉）は ja 名でだけ当たり、訳語で増えない（無回帰）", () => {
+    expect(searchCatalog(LOC_CATALOG, "観葉").some((h) => h.kind === "category" && h.name === "観葉")).toBe(true);
+    // 訳語っぽい英語では当たらない（loc が無いので en 照合対象が無い）。
+    expect(searchCatalog(LOC_CATALOG, "Foliage").some((h) => h.kind === "category")).toBe(false);
+  });
+
+  it("属・品種ヒットには categoryLoc は載るが loc は付かない（PR1 は属/品種未 populate）", () => {
+    // VarietyHit に variety/genus 自身の loc フィールドは無い（型上 categoryLoc のみ）。
+    const genus = searchCatalog(LOC_CATALOG, "アガベ").find((h) => h.kind === "genus")!;
+    const variety = searchCatalog(LOC_CATALOG, "チタノタ").find((h) => h.kind === "variety")!;
+    expect(genus).not.toHaveProperty("loc");
+    expect(variety).not.toHaveProperty("loc");
+    // 由来カテゴリの loc は持ち回る（表示用）。
+    expect(genus.categoryLoc).toEqual({ en: "Succulents", zh: "ニョセン", es: "Suculentas" });
+  });
+});
+
+describe("buildCatalogAliasIndex（#409 カテゴリ言語横断）", () => {
+  const index = buildCatalogAliasIndex(LOC_CATALOG);
+
+  it("index.get('succulents') が ja 正準『タニク』を小文字で含む（訳語→正準）", () => {
+    expect(index.get("succulents")).toContain("タニク");
+  });
+
+  it("index.get('suculentas')（es）も同じ別名集合に ja 正準を含む", () => {
+    expect(index.get("suculentas")).toContain("タニク");
+  });
+
+  it("index.get('タニク')（ja 正準）も同じ集合を引ける（双方向）", () => {
+    expect(index.get("タニク")).toContain("succulents");
+    expect(index.get("タニク")).toContain("タニク");
+  });
+
+  it("zh『女仙』が ja 正準『メセン』を含む", () => {
+    expect(index.get("女仙")).toContain("メセン");
+  });
+
+  it("キーは小文字正規化される（大文字入力は別途・索引キーは小文字のみ）", () => {
+    expect(index.has("succulents")).toBe(true);
+    expect(index.has("Succulents")).toBe(false);
+  });
+
+  it("loc 無しカテゴリの訳語（Foliage）は索引キーに無い（undefined）", () => {
+    expect(index.get("foliage")).toBeUndefined();
+  });
+
+  it("label と loc 値は同一集合（dedup 済・小文字で重複なし）", () => {
+    const set = index.get("タニク")!;
+    expect(set).toEqual([...new Set(set)]);
+    // ja label・en・zh・es が全部入る（英字は小文字化・カナはそのまま）。
+    expect(set).toEqual(expect.arrayContaining(["タニク", "succulents", "ニョセン", "suculentas"]));
+  });
+});
+
+// #409 cross-language filter の核: 書き込み側（searchCatalog/tagsToPick/tagsToPickAt）は
+// **locale 引数を受け取らない純関数**＝閲覧言語が何であれ ja 正準文字列だけを返す。
+// 訳語 query 由来の hit を渡しても、本文に入る name は ja のまま（categoryLoc は表示専用で name を汚さない）。
+describe("書き込みタグの locale 不変（#409 cross-language filter の核）", () => {
+  it("searchCatalog は locale を引数に取らない（訳語 query でも name/category は ja 正準）", () => {
+    // en 訳語で引いた結果も、ja 入力で引いた結果も、書き込み name は同じ ja 正準。
+    const viaEn = searchCatalog(LOC_CATALOG, "Succulents").find((h) => h.kind === "category")!;
+    const viaJa = searchCatalog(LOC_CATALOG, "タニク").find((h) => h.kind === "category")!;
+    expect(viaEn.name).toBe("タニク");
+    expect(viaJa.name).toBe("タニク");
+    expect(viaEn.name).toBe(viaJa.name);
+    expect(viaEn.category).toBe("タニク");
+  });
+
+  it("categoryLoc を持ちつつ name は ja のまま（loc が書き込み値を汚染しない）", () => {
+    const cat = searchCatalog(LOC_CATALOG, "Suculentas").find((h) => h.kind === "category")!;
+    // categoryLoc が存在しても name は ja 正準（test18 と別観点で同時 assert）。
+    expect(cat.categoryLoc).toBeDefined();
+    expect(cat.name).toBe("タニク");
+  });
+
+  it("tagsToPick は locale を引数に取らない（ja 入力→ja 出力の回帰ガード）", () => {
+    // 階層タグはすべて ja 正準（属を持つカテゴリも品種も訳さない）。
+    expect(tagsToPick(LOC_CATALOG, "チタノタ")).toEqual(["タニク", "アガベ", "チタノタ"]);
+    expect(tagsToPick(LOC_CATALOG, "タニク")).toEqual(["タニク"]);
+  });
+
+  it("tagsToPickAt も locale を引数に取らず ja 正準の階層を返す", () => {
+    expect(tagsToPickAt("タニク", "アガベ", "チタノタ")).toEqual(["タニク", "アガベ", "チタノタ"]);
+  });
+});
