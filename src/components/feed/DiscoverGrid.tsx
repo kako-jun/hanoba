@@ -6,6 +6,7 @@ import {
   filterSummary,
   isDefaultFilter,
   parseFilter,
+  sameTagSet,
   type DiscoverFilter,
 } from "../../lib/feed/discoverFilter.ts";
 import { type FeedPost } from "../../lib/feed/parse.ts";
@@ -51,6 +52,10 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 直近の取得トークン。連続操作で古い応答が新しい結果を上書きしないよう、await 後に最新でなければ捨てる。
   const latestRef = useRef(0);
 
+  // 直近に適用したタグ（#427）。popstate ハンドラは1回登録なので state の tags はクロージャで stale になる。
+  // ref で最新の適用タグを保持し、popstate が「絞り込み変更」か「`?p=` モーダルの開閉だけ」かを判別する。
+  const appliedTagsRef = useRef<string[]>([]);
+
   /**
    * 絞り込みタグを適用する（URL 反映＋取得）。意図的操作は navigate:"push"（戻るで前の絞り込みへ）、
    * 復元は "replace"、popstate は "none"（URL を書かない＝ループ防止）。
@@ -68,6 +73,7 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
       }
     }
     setTags(next);
+    appliedTagsRef.current = next; // popstate ガード（#427）の参照点を最新化する。
 
     const token = ++latestRef.current;
     setStatus("loading");
@@ -88,19 +94,24 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     }
   }
 
-  // URL から復元（マウント・popstate 共用）。マウントは "replace"（旧 ?q=/?tag= の正規化）、popstate は "none"。
-  function restoreFromUrl(navigate: "replace" | "none") {
-    void applyTags(readTagsFromUrl(), navigate);
-  }
-
   // マウント: URL の ?tags= を復元して自動取得（開いた瞬間に写真が並ぶ＝explore 流）。
+  // "replace" で旧 ?q=/?tag= を正規化（URL を1回だけ書き換える）。popstate 復元は下の onPopState が
+  // タグ差分を見て直接 applyTags(..., "none") する（#427）ので、ここはマウント専用にした。
   useEffect(() => {
-    restoreFromUrl("replace");
+    void applyTags(readTagsFromUrl(), "replace");
   }, []);
 
   // 戻る/進む（popstate）で URL から読み直して再取得（URL は書かない＝二重に積まない・ループしない）。
+  // ただし**絞り込みタグが変わっていない popstate は再取得しない**（#427）。投稿モーダルの deep-link
+  // `?p=`（#386）を閉じると `history.back()` が走り popstate が出るが、`?tags=` は不変なので再検索は
+  // 不要。無条件に再取得すると `setStatus("loading")` でグリッドが一旦アンマウントされ、再取得後の
+  // 再マウントでスクロールが先頭へ戻ってしまう。タグが実際に変わった popstate のときだけ取得する。
   useEffect(() => {
-    const onPopState = () => restoreFromUrl("none");
+    const onPopState = () => {
+      const urlTags = readTagsFromUrl();
+      if (sameTagSet(urlTags, appliedTagsRef.current)) return; // `?p=` 開閉だけの popstate＝再検索しない
+      void applyTags(urlTags, "none");
+    };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);

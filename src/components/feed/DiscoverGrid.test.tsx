@@ -168,6 +168,38 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(expect.objectContaining({ tags: ["実生"] })));
   });
 
+  it("`?p=`（投稿モーダル deep-link）の開閉だけの popstate では再取得しない＝スクロールを保つ（#427）", async () => {
+    setResponse({}, [makePost({ id: "x" }), makePost({ id: "y" })]);
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
+    expect(fetchDiscoverFiltered).toHaveBeenCalledTimes(1);
+
+    // 投稿モーダルを開く＝`?p=` を pushState（#386・openPost 相当）。取得はしない。
+    window.history.pushState(null, "", "/discover?p=nevent1example");
+    // × で閉じる＝history.back → popstate（`?tags=` は不変のまま `?p=` だけ剥がれる）。
+    popTo("/discover");
+
+    // 絞り込み（?tags=）は変わっていないので再取得しない＝グリッドは作り直されずスクロール位置が保たれる。
+    // バグ時は applyTags が status を loading にしてグリッドが一旦アンマウントされ、img が消えて再取得される。
+    expect(screen.getAllByRole("img")).toHaveLength(2);
+    expect(fetchDiscoverFiltered).toHaveBeenCalledTimes(1);
+  });
+
+  it("絞り込み中でも投稿の開閉（?tags=A&p=X → ?tags=A）では再取得しない（#427）", async () => {
+    setResponse({ tags: ["トマト"] }, [makePost({ id: "a" })]);
+    window.history.replaceState(null, "", "/discover?tags=" + encodeURIComponent("トマト"));
+    render(<DiscoverGrid />);
+    await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(expect.objectContaining({ tags: ["トマト"] })));
+    expect(fetchDiscoverFiltered).toHaveBeenCalledTimes(1);
+
+    // 絞り込み中に投稿を開く（?p= を足す）→ 閉じる（?p= が剥がれて ?tags=トマト に戻る）。
+    window.history.pushState(null, "", "/discover?tags=" + encodeURIComponent("トマト") + "&p=nevent1example");
+    popTo("/discover?tags=" + encodeURIComponent("トマト"));
+
+    // タグ（トマト）は不変なので再取得しない。
+    expect(fetchDiscoverFiltered).toHaveBeenCalledTimes(1);
+  });
+
   it("error 再試行は履歴を積まない（navigate:none）", async () => {
     const user = userEvent.setup();
     fetchDiscoverFiltered.mockReset();
