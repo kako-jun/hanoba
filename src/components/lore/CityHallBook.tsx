@@ -265,12 +265,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
           {isLockedView ? (
             <LockedTeaser />
           ) : (
-            <>
-              {/* #455: 市長は本全体の語り手なので、2ページ目以降も各ページ冒頭に市長アイコンを出す
-                  （旧 welcome のみ）。語り手マークをページ本文の上に共通で置く。 */}
-              <MayorMark />
-              <PageContent page={current} />
-            </>
+            <PageContent page={current} />
           )}
         </div>
 
@@ -412,9 +407,9 @@ function PageContent({ page }: { page: BookPage }) {
     case "welcome":
       return (
         <article className="flex flex-col gap-4">
-          {/* 市長アイコン＋肩書きは全ページ共通の <MayorMark>（上位）で出す（#455）。welcome では従来
-              ここに置いていたが重複するので撤去。顔は秘密＝ジョウロの肖像（#219①）の方針は MayorMark が継ぐ。 */}
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          {/* 見出しの下に市長アイコン＋肩書き（語り手・#455 で全ページ共通化）。顔は秘密＝ジョウロ（#219①）。 */}
+          <MayorMark />
           {page.blocks.map((b, i) =>
             b.kind === "note" ? (
               <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
@@ -436,6 +431,7 @@ function PageContent({ page }: { page: BookPage }) {
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <MayorMark />
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
             {page.lead}
           </p>
@@ -463,6 +459,7 @@ function PageContent({ page }: { page: BookPage }) {
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <MayorMark />
           <ol className="flex flex-col gap-3">
             {page.entries.map((e) => (
               <li key={e.era} className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4">
@@ -481,6 +478,7 @@ function PageContent({ page }: { page: BookPage }) {
       return (
         <article className="flex flex-col gap-5">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <MayorMark />
           <dl className="flex flex-col gap-5">
             {page.ordinances.map((o) => (
               <div key={o.article} className="flex flex-col gap-1.5">
