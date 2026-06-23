@@ -43,6 +43,10 @@ export interface Fuda {
 interface VarietyIndexEntry {
   /** 所属する属の表示名（学名フォールバック用）。 */
   genus: string;
+  /** 所属カテゴリの表示名（非 pickable 属配下の品種の filterTags グルーピング用・#448）。 */
+  category: string;
+  /** 親属が pickable か（false＝見出し属〔原種/交配等〕配下＝属タグが書かれずカテゴリタグが共起する・#448）。 */
+  genusPickable: boolean;
   /** catalog 上の canonical 品種名（alias でヒットしてもこちらを name に使う）。 */
   varietyName: string;
   /** catalog が品種に直接持つ学名（最優先・無ければ undefined）。 */
@@ -97,6 +101,8 @@ export interface FudaIndex {
   varietyIndex: Map<string, VarietyIndexEntry[]>;
   /** pickable 属の正規化キー → 属表示名。 */
   pickableGenus: Map<string, string>;
+  /** カテゴリ label の正規化キー → カテゴリ表示名（#448・非 pickable 属配下の品種の親グルーピング判定用）。 */
+  categoryLabels: Map<string, string>;
 }
 
 /**
@@ -109,8 +115,11 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
   // #223: varietyIndex は同名の全候補を配列で保持する（先勝ちで捨てない＝属共起で解決するため）。
   const varietyIndex = new Map<string, VarietyIndexEntry[]>();
   const pickableGenus = new Map<string, string>(); // 照合キー(正規化) → 属表示名
+  const categoryLabels = new Map<string, string>(); // 照合キー(正規化) → カテゴリ表示名（#448）
 
   for (const category of catalog) {
+    const ck = normFudaKey(category.label);
+    if (ck !== "" && !categoryLabels.has(ck)) categoryLabels.set(ck, category.label);
     for (const genus of category.genera) {
       if (genus.pickable) {
         for (const key of [genus.name, ...(genus.aliases ?? [])]) {
@@ -122,7 +131,13 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
         for (const key of [v.name, ...(v.aliases ?? [])]) {
           const k = normFudaKey(key);
           if (k === "") continue;
-          const entry: VarietyIndexEntry = { genus: genus.name, varietyName: v.name, sci: v.sci };
+          const entry: VarietyIndexEntry = {
+            genus: genus.name,
+            category: category.label,
+            genusPickable: genus.pickable,
+            varietyName: v.name,
+            sci: v.sci,
+          };
           const list = varietyIndex.get(k);
           if (list === undefined) varietyIndex.set(k, [entry]);
           else list.push(entry);
@@ -131,7 +146,7 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
     }
   }
 
-  return { catalog, varietyIndex, pickableGenus };
+  return { catalog, varietyIndex, pickableGenus, categoryLabels };
 }
 
 /**
@@ -140,7 +155,7 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
  * 出現順）は従来の `buildFuda` と同一の挙動。
  */
 export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda[] {
-  const { catalog, varietyIndex, pickableGenus } = index;
+  const { catalog, varietyIndex, pickableGenus, categoryLabels } = index;
   const norm = normFudaKey;
 
   // 属ごとに品種を畳む。品種が来たら属単独札は捨てる。品種ごとに「札を生んだタグ集合（filterTags）」を持つ
@@ -164,11 +179,16 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
   // 1パス目: 投稿に存在する属の集合を求める（#223）。品種タグの親属は来た時点では未確定なので、
   // genusPresent は「pickableGenus で引けたタグ＝明示された属名/alias」だけで作る（これが正解）。
   const genusPresent = new Set<string>();
+  // 投稿に共起するカテゴリ label の集合（#448）。非 pickable 見出し属配下の品種は属タグを持たず
+  // カテゴリタグ（#カテゴリ #品種）が共起するので、filterTags の親グルーピングにカテゴリを使えるか判定する。
+  const categoryPresent = new Set<string>();
   for (const tag of hashtags) {
     const k = norm(tag);
     if (k === "") continue;
     const genusName = pickableGenus.get(k);
     if (genusName !== undefined) genusPresent.add(genusName);
+    const categoryName = categoryLabels.get(k);
+    if (categoryName !== undefined) categoryPresent.add(categoryName);
   }
 
   // 2パス目: 各タグを属コンテキストで解決する（#223）。
@@ -191,12 +211,17 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
       // 品種解決できず、タグ自体が属名/alias なら属単独札にする（蓮・イネ alias 等）。filterTags=[属]。
       stateFor(gmatch).genusOnly = true;
     } else if (cands.length > 0) {
-      // 親属タグ無しの素の品種タグ＝既定（catalog 先頭候補）に倒す（#223）。**filterTags=[品種]**
-      // ＝元投稿は #品種 しか持たないので、札クリックの逆算は品種単独で当たる（属共起の時だけ [属, 品種]）。
-      // それ以上は同定しない（諦める・#223 kako-jun 決定）。
+      // 親属タグ無しの素の品種タグ＝既定（catalog 先頭候補）に倒す（#223）。
       const def = cands[0]!;
       if (!stateFor(def.genus).varieties.has(def.varietyName)) {
-        stateFor(def.genus).varieties.set(def.varietyName, [def.varietyName]);
+        // #448: 親属が**非 pickable 見出し属**（原種/交配 等）の品種は属タグを持たない代わりに
+        // カテゴリタグ（#カテゴリ #品種）が共起する。カテゴリが共起していれば filterTags=[カテゴリ, 品種]
+        // にして pickable 属の [属, 品種] と同じ「親グルーピング＋品種」の AND にする（例 ビカクシダ ジェイドガール）。
+        // pickable 属配下なのに属が共起しなかった素の品種タグは従来どおり [品種]（元投稿が #品種 しか
+        // 持たないので逆算が当たる・カテゴリ非共起も同様＝必ず元投稿に当たる不変条件を維持）。
+        const useCategory = !def.genusPickable && categoryPresent.has(def.category);
+        const tags = useCategory ? [def.category, def.varietyName] : [def.varietyName];
+        stateFor(def.genus).varieties.set(def.varietyName, tags);
       }
     }
     // else（カテゴリ label・非 pickable 見出し属・辞書外タグ）は札にしない。
@@ -206,7 +231,7 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
   const result: Fuda[] = [];
   const emitted = new Set<string>();
   // 品種札: name=品種名 / sci=catalog.sci → dict(品種) → dict(属) → null / filterTags=札を生んだタグ集合。
-  const emitVariety = (entry: VarietyIndexEntry, filterTags: string[]) => {
+  const emitVariety = (entry: { genus: string; varietyName: string; sci?: string }, filterTags: string[]) => {
     if (emitted.has(entry.varietyName)) return;
     emitted.add(entry.varietyName);
     const sci = entry.sci ?? lookupSci(entry.varietyName) ?? lookupSci(entry.genus);

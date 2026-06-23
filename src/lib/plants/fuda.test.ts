@@ -108,18 +108,33 @@ describe("buildFuda", () => {
     expect(fuda).toHaveLength(1);
     expect(fuda[0]!.name).toBe("リドレイ");
     expect(fuda[0]!.name).not.toContain("原種");
+    // #448: カテゴリタグが共起しない素の品種タグは従来どおり filterTags=[品種]（必ず元投稿に当たる fallback）。
+    expect(fuda[0]!.filterTags).toEqual(["リドレイ"]);
   });
 
-  it("ビカクシダのカテゴリタグをビフルカツムの別名札にせず、品種名をビフルカツムに保つ（#341）", () => {
+  it("ビカクシダのカテゴリタグはビフルカツムの別名札にせず品種名を保つ＋filterTags=[カテゴリ,品種]（#341/#448）", () => {
+    // #341: カテゴリ #ビカクシダ を別札/別名にせず品種名は「ビフルカツム」のまま（札にカテゴリ名を出さない）。
+    // #448: ビフルカツムは非 pickable 見出し属「原種」配下＝属タグが書かれずカテゴリが共起する。札クリックの
+    // 逆算は [カテゴリ, 品種]＝pickable 属の [属, 品種] と同じ親グルーピング＋品種の AND（kako-jun）。
     const fuda = buildFuda(["ビカクシダ", "ビフルカツム"], VARIETY_CATALOG);
     expect(fuda).toEqual([
       {
         key: "ビフルカツム",
         name: "ビフルカツム",
         sci: "Platycerium bifurcatum",
-        filterTags: ["ビフルカツム"],
+        filterTags: ["ビカクシダ", "ビフルカツム"],
       },
     ]);
+  });
+
+  it("#448 非 pickable 属（交配・著名個体）配下の品種もカテゴリ共起で filterTags=[カテゴリ,品種]（ジェイドガール）", () => {
+    // ビカクシダ › 交配・著名個体(pickable:false) › ジェイドガール。TagPicker は #ビカクシダ #ジェイドガール と書く。
+    const fuda = buildFuda(["ビカクシダ", "ジェイドガール"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ name: "ジェイドガール", filterTags: ["ビカクシダ", "ジェイドガール"] });
+    // カテゴリ非共起（品種タグだけ）なら従来どおり [品種]＝元投稿に必ず当たる。
+    const bare = buildFuda(["ジェイドガール"], VARIETY_CATALOG);
+    expect(bare[0]).toMatchObject({ name: "ジェイドガール", filterTags: ["ジェイドガール"] });
   });
 
   it("非 pickable 見出し属はタグしても札にしない（見出し語は表に出ない）", () => {

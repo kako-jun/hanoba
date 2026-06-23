@@ -24,6 +24,8 @@ export interface RankedVariety {
   sci: string | null;
   /** その週（または集計対象）の投稿数（票）。 */
   count: number;
+  /** 札クリックの逆算タグ集合（#448・[属 or カテゴリ, 品種] / [品種] / [属]）。育てた品種チップの discover 絞り込みに使う。 */
+  filterTags: string[];
 }
 
 /**
@@ -67,6 +69,7 @@ export function tallyVarieties(posts: FeedPost[], catalog: VarietyCategory[]): R
           name: fuda.name,
           sci: fuda.sci,
           count: 1,
+          filterTags: fuda.filterTags, // #448: 育てた品種チップが [親グルーピング, 品種] で絞れるよう持ち越す。
           firstSeen: order++,
         });
       } else {
