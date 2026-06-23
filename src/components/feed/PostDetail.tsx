@@ -231,7 +231,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
       aria-modal="true"
       aria-label={t("detail.dialog.aria")}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={() => onClose()}
     >
       <div
         ref={panelRef}
@@ -242,7 +242,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
         <button
           ref={closeButtonRef}
           type="button"
-          onClick={onClose}
+          onClick={() => onClose()}
           aria-label={t("common.close")}
           className="absolute top-3 right-3 z-10 grid place-items-center rounded-full bg-black/40 backdrop-blur-md text-ha-white w-8 h-8 hover:bg-ha-green transition-colors"
         >

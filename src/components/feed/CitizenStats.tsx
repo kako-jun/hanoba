@@ -92,7 +92,7 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
           画素サンプリングは GreenArea が担う（非CORS画像はスキップ＝概算・グレースフル）。 */}
       <GreenArea posts={posts} subject={subject} />
 
-      {/* 活動の草（#272 段階4）。投稿の頻度/継続を日別ヒートマップ＋連続記録で静かに（緑の総面積と別軸）。 */}
+      {/* 撮影の草（#272 段階4）。投稿の頻度/継続を日別ヒートマップ＋連続記録で静かに（緑の総面積と別軸）。 */}
       <ActivityHeatmap posts={posts} />
     </section>
   );

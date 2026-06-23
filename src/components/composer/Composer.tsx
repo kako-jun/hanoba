@@ -596,7 +596,7 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
             />
           </section>
 
-          {/* 撮影日（#324）。投稿日とずれるとき用＝EXIF/ファイル名から自動検出し、活動の草に反映する。
+          {/* 撮影日（#324）。投稿日とずれるとき用＝EXIF/ファイル名から自動検出し、撮影の草に反映する。
               不正確なこともあるので編集・除外できる（kako-jun「訂正したり含めないようにも」）。
               説明はくどくしない（kako-jun session692）＝取れた時だけ「自動抽出しました。」、未設定は空欄で自明。 */}
           {currentImage !== null && (
