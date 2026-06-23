@@ -10,8 +10,7 @@
 //
 // relay には触れない（純粋）。permalink 生成は nip19（純粋）のみ使う。
 
-import { nip19 } from "nostr-tools";
-import { GENERAL_RELAYS } from "../nostr/constants.ts";
+import { encodePostNevent } from "./deep-link.ts";
 import type { FeedPost } from "../feed/parse.ts";
 
 /** X の文字数制限（weighted length）。日本語など重み2だけなら最大140字相当。 */
@@ -312,33 +311,12 @@ export function getXIntentUrl(text: string): string {
  * 持たない（モーダル島）ので、nip19 nevent（リレーヒント込み）で `https://njump.me/<nevent>` を作る。
  * njump が画像を OGP に出すので X 上でも写真プレビューが出る＝写真 SNS として正しいリンクバック。
  *
- * nevent 生成が失敗した場合は note（id だけ）にフォールバックする。
- *
- * id が 64桁の小文字 hex でないなら何もエンコードせず "" を返す。nip19.neventEncode は
- * 空文字 id を渡しても throw せず、見た目だけ正しい意味のない nevent（nevent1qqqq...）を
- * 作ってしまう＝njump で何も指さない壊れたリンクになるため、エンコード前に弾く。
+ * nevent 生成のロジックは `encodePostNevent`（deep-link.ts）に集約した正本を使う（重複排除・#386）。
+ * 64桁小文字 hex でない id・encode 不能（壊れた id）は null になるので、その場合はリンク無し（""）を返す。
  */
-const EVENT_ID_HEX = /^[0-9a-f]{64}$/;
-
 export function buildNjumpPermalink(post: Pick<FeedPost, "id" | "pubkey">): string {
-  // 64hex でない id は encode できても無意味な nevent になるのでリンクを省く。
-  if (!EVENT_ID_HEX.test(post.id)) return "";
-  try {
-    const nevent = nip19.neventEncode({
-      id: post.id,
-      author: post.pubkey,
-      // アプリの一般リレーを2本ヒントに添える（njump/他クライアントが投稿を引けるように）。
-      relays: GENERAL_RELAYS.slice(0, 2),
-    });
-    return `https://njump.me/${nevent}`;
-  } catch {
-    try {
-      return `https://njump.me/${nip19.noteEncode(post.id)}`;
-    } catch {
-      // id すら encode 不能（壊れた id）はリンク無しで返す。呼び出し側は空をそのまま扱える。
-      return "";
-    }
-  }
+  const nevent = encodePostNevent(post);
+  return nevent ? `https://njump.me/${nevent}` : "";
 }
 
 /** X intent を新規タブで開く（副作用）。noopener,noreferrer で開く。 */

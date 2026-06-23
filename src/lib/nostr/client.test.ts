@@ -7,7 +7,7 @@ vi.mock("nostr-tools/pool", () => ({
   SimplePool: vi.fn(() => ({ querySync: querySyncMock })),
 }));
 
-import { deletePostImages, fetchDiscoverFiltered, fetchMyProfileResilient } from "./client.ts";
+import { deletePostImages, fetchDiscoverFiltered, fetchMyProfileResilient, fetchPostById } from "./client.ts";
 import type { Profile } from "../feed/parse.ts";
 
 // #93: nsec 取り込み・編集欄初期化での websites 取りこぼし（単発取得）を bounded retry で塞ぐ。
@@ -146,5 +146,41 @@ describe("fetchDiscoverFiltered (#258 母集団の単一化)", () => {
     const got = await fetchDiscoverFiltered({ tags: ["イネ"] });
     expect(got).toHaveLength(1);
     expect(got[0]!.hashtags).toContain("イネ");
+  });
+});
+
+describe("fetchPostById (#386 deep-link `?p=` 着地)", () => {
+  const POST_ID = "a".repeat(64);
+
+  it("画像を持たない投稿（imageUrl === null）は null を返す（写真 SNS の規律）", async () => {
+    querySyncMock.mockReset();
+    // 画像 URL を含まない content ＝parsePost で imageUrl が null になる。
+    querySyncMock.mockResolvedValue([
+      {
+        id: POST_ID,
+        pubkey: "b".repeat(64),
+        created_at: 1700000000,
+        kind: 1,
+        tags: [],
+        content: "画像のないただのテキスト投稿",
+        sig: "",
+      },
+    ]);
+
+    await expect(fetchPostById(POST_ID)).resolves.toBeNull();
+  });
+
+  it("該当 id が無ければ null（モーダルを開かず通常フィードへ）", async () => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([]);
+
+    await expect(fetchPostById(POST_ID)).resolves.toBeNull();
+  });
+
+  it("querySync が throw しても null に畳む（graceful＝クラッシュしない）", async () => {
+    querySyncMock.mockReset();
+    querySyncMock.mockRejectedValue(new Error("relay offline"));
+
+    await expect(fetchPostById(POST_ID)).resolves.toBeNull();
   });
 });

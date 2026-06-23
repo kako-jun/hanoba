@@ -83,6 +83,38 @@ export async function confirmEventStored(id: string, maxWait = QUERY_MAXWAIT): P
 }
 
 /**
+ * 単一投稿を id で取得する（#386・deep-link `?p=<nevent>` で開いたフィード外の投稿用）。
+ *
+ * confirmEventStored と同じ作法（querySync ids）。nevent のリレーヒントを GENERAL_RELAYS に重ねて
+ * 引く（外部クライアント由来の投稿を当てやすくする）。
+ *
+ * - `{ ids: [id] }` で id 一致の最初の1件を parsePost。
+ * - hanoba は写真 SNS のため、画像を持たない投稿（imageUrl === null）は null を返す（フィードと同じ規律）。
+ * - 該当なし・取得失敗（オフライン等）は throw せず null（graceful＝モーダルを開かず通常フィード）。
+ *
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない・guidelines §3）。
+ */
+export async function fetchPostById(
+  id: string,
+  relayHints: string[] = [],
+  maxWait = QUERY_MAXWAIT,
+): Promise<FeedPost | null> {
+  try {
+    const events = await getPool().querySync(
+      [...new Set([...relayHints, ...GENERAL_RELAYS])],
+      { ids: [id] },
+      { maxWait },
+    );
+    const event = events.find((e) => e.id === id);
+    if (event === undefined) return null;
+    const post = parsePost(event);
+    return post.imageUrl === null ? null : post;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 投稿テンプレートを構築・署名・publish し、署名済みイベントを返す。
  * 返り値は呼び出し側（フィード即時反映など）の利便のため。
  */
