@@ -31,15 +31,21 @@ describe("FudaList", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  // #429 退行ロック: 緑楕円（`::before`）は1行目に上下中央で固定する。学名が2行に折り返したとき
-  // `before:self-center` だと札全体（2行分）の中央へズレるため、`before:self-start`＋`before:mt-1` に
-  // する。jsdom/happy-dom はレイアウトを計算しないのでピクセル整列は検証できない（最終確認は実機 blink）。
-  // ここでは「楕円を1行目揃えにするクラス」が付き、誤って中央揃えへ戻っていないことだけを固定する。
-  it("緑楕円は1行目揃え（before:self-start + before:mt-1・self-center へ戻さない・#429）", () => {
+  // #429 退行ロック: 緑楕円（`::before`）は1行目に上下中央で固定する。flex-wrap は max-content 基準で
+  // 折り返すため、長い学名が単独で次の flex 行へ落ちて点だけ1行目より上に残るのが真因（self-start/mt-1 では
+  // 解けなかった）。点を flex フローから外し**絶対配置**（before:absolute + left-2 + top-2）にして1行目中央へ
+  // 固定する。jsdom/happy-dom はレイアウトを計算しないのでピクセル整列は検証できない（実機 blink で確認済・
+  // 学名1行目中央=15px に対し点中央=14px）。ここでは絶対配置クラスが付き、旧 flex 揃え（self-center/self-start/
+  // mt-1）へ戻っていないことを固定する。
+  it("緑楕円は絶対配置で1行目固定（before:absolute + top-2・flex 揃えへ戻さない・#429）", () => {
     render(<FudaList fuda={[fuda()]} />);
     const link = screen.getByRole("link");
-    expect(link).toHaveClass("before:self-start");
-    expect(link).toHaveClass("before:mt-1");
+    expect(link).toHaveClass("relative");
+    expect(link).toHaveClass("before:absolute");
+    expect(link).toHaveClass("before:top-2");
+    expect(link).toHaveClass("before:left-2");
     expect(link).not.toHaveClass("before:self-center");
+    expect(link).not.toHaveClass("before:self-start");
+    expect(link).not.toHaveClass("before:mt-1");
   });
 });

@@ -33,12 +33,14 @@ export default function FudaList({ fuda }: Props) {
             // #362: 学名を truncate しない。狭い札では `truncate` が末尾を削り、園芸品種名の閉じ引用符
             // （例 `Vitis 'Delaware'` の末尾 `'`）が最初に消えていた。kako-jun「長くなったら改行すればいい」＝
             // flex-wrap で和名を次行へ送り、学名は欠けさせない（学名＝札の identity なので削らない）。
-            // #429: 緑楕円（`::before`）は **1行目** に上下中央で固定する。学名が2行以上に折り返すと
-            // SciName は単一 flex item が2行分の高さになり、`before:self-center` だと楕円が札全体（2行分）の
-            // 中央に寄ってズレる。`before:self-start`（flex 行の先頭＝1行目上端へ）＋ `before:mt-1`
-            // （0.25rem）で、`text-sm` の行高 1.25rem（20px）に対し h-3（12px）の楕円を1行目内に中央化する
-            // （(20−12)/2＝4px＝mt-1）。1行のときも 4+12+4＝20px で従来と同じ中央。
-            className="glass inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:-ml-0.5 before:mr-0.5 before:mt-1 before:h-3 before:w-1.5 before:shrink-0 before:self-start before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            // #429: 緑楕円（`::before`）は **1行目** に上下中央で固定する。flex-wrap は各 flex item の
+            // max-content 基準で折り返すため、学名（長い二名法）は自分だけ次の flex 行へ落ち、`::before` の点が
+            // 単独で1行目（上）に残って学名1行目より上にズレていた（`self-start`/`mt-1` では解けない＝flex 行構造の問題）。
+            // 解決: 点を flex フローから外して**絶対配置**にする。点を外すと学名が content 先頭（1行目＝上端）に来るので、
+            // 点を1行目の行ボックス内中央（`top-2`=0.5rem）に固定すれば常に一致する。`text-sm` 行高 1.25rem(20px)・
+            // py-1(4px)・点 h-3(12px) → 点中央 = 8+6 = 14px、1行目中央 = 4+10 = 14px で一致。`pl-4` で点の溝を空け、
+            // 折返し行も同じ左端に揃う（hanging-bullet）。
+            className="glass relative inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0 rounded-[2px] bg-ha-base/60 py-1 pl-4 pr-2.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:absolute before:left-2 before:top-2 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
             {f.sci !== null && <SciName sci={f.sci} className="font-display text-ha-green-deep" />}
             <span className="font-medium text-ha-ink">{f.name}</span>
