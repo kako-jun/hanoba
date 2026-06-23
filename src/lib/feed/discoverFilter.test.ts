@@ -11,6 +11,7 @@ import {
   parseFilter,
   parseTagList,
   removeTag,
+  sameTagSet,
   tagAliasValues,
 } from "./discoverFilter.ts";
 import { buildCatalogAliasIndex } from "../plants/variety-search.ts";
@@ -233,5 +234,29 @@ describe("discoverTagsHref（複数タグ AND・#272 札の逆算）", () => {
     expect(discoverTagsHref(["フィカス", "フィカス ペティオラリス"])).toBe(
       `/discover?tags=${encodeURIComponent("フィカス")},${encodeURIComponent("フィカス_ペティオラリス")}`,
     );
+  });
+});
+
+describe("sameTagSet（#427・popstate が絞り込み変更か `?p=` 開閉だけかの判定）", () => {
+  it("同じタグ集合は true（空×空も true＝既定表示のまま）", () => {
+    expect(sameTagSet([], [])).toBe(true);
+    expect(sameTagSet(["アガベ"], ["アガベ"])).toBe(true);
+  });
+
+  it("順序が違っても同じ集合なら true（タグは AND・順不同）", () => {
+    expect(sameTagSet(["アガベ", "チタノタ"], ["チタノタ", "アガベ"])).toBe(true);
+  });
+
+  it("大小無視で比較する（正規化のゆらぎを吸収）", () => {
+    expect(sameTagSet(["Agave"], ["agave"])).toBe(true);
+  });
+
+  it("要素数が違えば false", () => {
+    expect(sameTagSet(["アガベ"], ["アガベ", "チタノタ"])).toBe(false);
+    expect(sameTagSet([], ["アガベ"])).toBe(false);
+  });
+
+  it("中身が違えば false（別の絞り込みへ遷移＝再取得すべき）", () => {
+    expect(sameTagSet(["アガベ"], ["パキポディウム"])).toBe(false);
   });
 });

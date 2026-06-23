@@ -104,6 +104,18 @@ export function isDefaultFilter(f: DiscoverFilter): boolean {
   return f.tags.length === 0;
 }
 
+/**
+ * 2つのタグ集合が（順序・大小無視で）同じ絞り込みを表すか。tags は正規化済み（重複排除済み）前提。
+ * `?p=`（投稿モーダル deep-link・#386）の開閉で popstate が来たとき、絞り込み（`?tags=`）が
+ * 変わっていない＝再取得不要かを DiscoverGrid が判定するのに使う（#427：モーダルを閉じるたびに
+ * 再検索してスクロールが先頭へ戻るバグの抑止）。
+ */
+export function sameTagSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a.map((t) => t.toLowerCase()));
+  return b.every((t) => setA.has(t.toLowerCase()));
+}
+
 /** tags 配列に正規化タグを足した新配列を返す（既存・空は無変化）。 */
 export function addTag(tags: string[], raw: string): string[] {
   const tag = normalizeTag(raw);
