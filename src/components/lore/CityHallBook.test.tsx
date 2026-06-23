@@ -98,7 +98,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByText("ボタニクス市長")).toBeInTheDocument();
   });
 
-  it("市役所（2p・hub）では市長アイコンを出さない（語り手肖像は移住案内専用）", async () => {
+  it("市役所（2p・hub）でも冒頭に市長アイコンを出す（本全体が市長の語り＝全ページ共通・#455）", async () => {
     getDisplayName.mockReturnValue("みどり"); // L1: 既定 2p（市役所ハブ）。
     fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
     const { container } = render(<CityHallBook />);
@@ -107,7 +107,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     const mayor = imgs.find((el) =>
       (el.getAttribute("src") ?? "").includes("mayor-botanics-watering-can.webp"),
     );
-    expect(mayor).toBeUndefined();
+    expect(mayor).toBeDefined();
   });
 
   it("名乗り済み（L1/L2）は最初から2ページ目を出す（1ページ目フラッシュ・???ちらつきなし）", async () => {
