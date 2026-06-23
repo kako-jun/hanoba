@@ -434,7 +434,7 @@ describe("同義語統合（#409 P-canonical 第2弾）", () => {
   }
 });
 
-// #409 P2 多言語: カテゴリ loc のデータ整合 guard（本番 VARIETY_CATALOG を flatMap で回す既存流儀）。
+// #409 P2 多言語: カテゴリ・属 loc のデータ整合 guard（本番 VARIETY_CATALOG を flatMap で回す既存流儀）。
 describe("#409 P2 カテゴリ loc の整合性", () => {
   it("全 23 カテゴリが loc を持ち en/zh/es 3 キーすべて埋まる", () => {
     expect(VARIETY_CATALOG).toHaveLength(23);
@@ -446,14 +446,17 @@ describe("#409 P2 カテゴリ loc の整合性", () => {
     }
   });
 
-  // PR1（このPR）は属/品種に loc を populate しない（カテゴリ23 のみ多言語化）。
-  // PR2 で属 222 に loc を入れたら、属についてのこの guard は緩める（品種は固有名詞なので据え置き想定）。
-  it("属・品種には loc が無い（PR1 はカテゴリのみ・PR2 で属を入れたら緩める）", () => {
+  // PR2（このPR）で属 222 に loc を populate した（en/zh/es）。品種は大半が固有名詞カルティバなので据え置き（ja のみ）。
+  // 本文に書き込むタグ・内部キーは常に ja 正準のまま＝loc は表示専用（cross-language filter 要件）。
+  it("全属が loc を持ち en/zh/es 3 キーすべて埋まる（PR2 で populate・品種は loc 無しのまま）", () => {
     for (const cat of VARIETY_CATALOG) {
       for (const genus of cat.genera) {
-        expect(genus.loc, `属「${genus.name}」に loc がある（PR1 では未 populate のはず）`).toBeUndefined();
+        expect(genus.loc, `属「${genus.name}」に loc が無い（PR2 では populate 済みのはず）`).toBeDefined();
+        for (const key of ["en", "zh", "es"] as const) {
+          expect(genus.loc![key], `属「${genus.name}」の loc.${key} が無い`).toBeDefined();
+        }
         for (const v of genus.varieties) {
-          expect(v.loc, `品種「${v.name}」に loc がある（未 populate のはず）`).toBeUndefined();
+          expect(v.loc, `品種「${v.name}」に loc がある（品種は ja 固有名詞のまま・未 populate のはず）`).toBeUndefined();
         }
       }
     }
@@ -463,6 +466,16 @@ describe("#409 P2 カテゴリ loc の整合性", () => {
     for (const cat of VARIETY_CATALOG) {
       for (const value of Object.values(cat.loc ?? {})) {
         expect(value.trim().length, `カテゴリ「${cat.label}」の loc に空文字`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("属 loc 値に空文字が無い", () => {
+    for (const cat of VARIETY_CATALOG) {
+      for (const genus of cat.genera) {
+        for (const value of Object.values(genus.loc ?? {})) {
+          expect(value.trim().length, `属「${genus.name}」の loc に空文字`).toBeGreaterThan(0);
+        }
       }
     }
   });
