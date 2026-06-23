@@ -94,6 +94,20 @@ describe("tallyVarieties", () => {
     expect(got[0]?.sci).toBe("Agave titanota");
   });
 
+  it("#448 filterTags を持ち越す（育てた品種チップが [親グルーピング, 品種] で絞れる）", () => {
+    // pickable 属共起＝[属, 品種]、非 pickable 属はカテゴリ共起で [カテゴリ, 品種]。
+    const got = tallyVarieties(
+      [
+        makePost({ id: "1", hashtags: ["パキポディウム", "グラキリス"] }),
+        makePost({ id: "2", hashtags: ["ビカクシダ", "ジェイドガール"] }),
+      ],
+      catalog,
+    );
+    const byName = Object.fromEntries(got.map((r) => [r.name, r.filterTags]));
+    expect(byName["グラキリス"]).toEqual(["パキポディウム", "グラキリス"]);
+    expect(byName["ジェイドガール"]).toEqual(["ビカクシダ", "ジェイドガール"]);
+  });
+
   it("1投稿が複数品種を持てば各品種に1票", () => {
     const posts = [makePost({ id: "1", hashtags: ["チタノタ", "オベサ", "グラキリス"] })];
     const got = tallyVarieties(posts, catalog);

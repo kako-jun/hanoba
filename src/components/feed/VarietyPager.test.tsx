@@ -15,6 +15,7 @@ function makeVarieties(n: number): RankedVariety[] {
     name: `品種${i}`,
     sci: null,
     count: 1,
+    filterTags: [`品種${i}`],
   }));
 }
 

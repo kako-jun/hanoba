@@ -120,7 +120,7 @@ export default function VarietyPager({ varieties, t }: Props) {
       {current.map((v) => (
         <li key={v.key} className="min-w-0 max-w-full">
           <a
-            href={discoverTagsHref([v.name])}
+            href={discoverTagsHref(v.filterTags)}
             className="glass inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-[2px] bg-ha-base/60 px-2.5 py-1 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors hover:text-ha-green-deep hover:border-ha-green/50 before:-ml-0.5 before:mr-0.5 before:h-3 before:w-1.5 before:shrink-0 before:rounded-full before:bg-ha-green/80"
             title={t("stats.variety.filterTitle", { label: v.sci !== null ? `${v.sci}（${v.name}）` : v.name })}
           >
