@@ -6,6 +6,7 @@ import PostDetail from "./PostDetail.tsx";
 import EditPost from "./EditPost.tsx";
 import CitizenStats from "./CitizenStats.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
+import { useBackToClose } from "./useBackToClose.ts";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
@@ -38,6 +39,9 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   const [notice, setNotice] = useState<string | null>(null);
   // サムネをクリックで拡大モーダル（#101・フィードと同じ PostDetail）。
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // スマホ/ブラウザの「戻る」で（ページを離れず）モーダルだけ閉じる（#454）。/me は deep-link（?p=）を
+  // 持たないので URL を変えない履歴マーカーで実現する（feed/discover の usePostDeepLink とは別経路）。
+  useBackToClose(selectedId !== null, () => setSelectedId(null));
   // 自分の投稿なので著者は全部自分。モーダルの著者ヘッダ用に自分の kind:0 を1回引く。
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
 
