@@ -10,8 +10,9 @@ import { useT, useLocale } from "../../lib/i18n/index.ts";
  * backendless＝t:hanoba 投稿のクライアント集計。集計は純関数 `lib/feed/activity.ts`（鼓門 JST・テスト済み）。
  */
 
-/** 草マスの濃淡（0=投稿なし → 2=多い・#389 で 3 段階に集約＝細かい濃淡差より「あった/少し/多い」を素直に）。 */
-const LEVEL_BG = ["bg-white/5", "bg-ha-green/45", "bg-ha-green"] as const;
+/** 草マスの濃淡（#440・撮影枚数 0〜3）。0=なし(faint) / 1=少 / 2=中 / 3〜=多。kako-jun「少が薄すぎ 0 と
+ *  区別できない・全体的に上げて」→ なし(white/8)と緑3段(55→78→100)を明確に分ける。index は activityLevel と一致。 */
+const LEVEL_BG = ["bg-white/8", "bg-ha-green/55", "bg-ha-green/78", "bg-ha-green"] as const;
 const WEEKS = 12;
 
 /**
@@ -32,10 +33,23 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium text-ha-ink/70">
-        {t("activity.heading")}{" "}
-        <span className="text-xs font-normal text-ha-ink/45">{t("activity.heading.note", { weeks: WEEKS })}</span>
-      </p>
+      {/* 見出し行: 左に「活動の草（直近N週）」、右に3段階の色凡例（#440・kako-jun。凡例は末尾でなく行右に置く／
+          見出しと注記は items-center で上下中央に揃える＝旧 inline baseline のズレを解消）。 */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-ha-ink/70">
+          {t("activity.heading")}
+          <span className="text-xs font-normal text-ha-ink/45">{t("activity.heading.note", { weeks: WEEKS })}</span>
+        </p>
+        {/* 濃淡の凡例（少 → 多）。何が濃さを表すか一目で分かるように（kako-jun「さっぱりわからない」）。 */}
+        <span className="flex items-center gap-1 text-[10px] text-ha-ink/45" aria-hidden>
+          {/* 凡例は緑3段（少→中→多）だけ＝先頭の「なし」(LEVEL_BG[0]) は出さない（0 を「少」と誤読させない・#440）。 */}
+          {t("activity.legend.low")}
+          {LEVEL_BG.slice(1).map((bg, i) => (
+            <span key={i} className={`h-2.5 w-2.5 rounded-[1px] ${bg}`} />
+          ))}
+          {t("activity.legend.high")}
+        </span>
+      </div>
       {/* 週列×7曜日のヒートマップ。縦横の意味が分かるよう曜日ラベルを左に添える（kako-jun）。
           草は常に7行固定＝縦スクロールは不要。`overflow-x-auto` だけだと overflow-y が auto に計算され、
           横スクロールバーが高さを食う/サブピクセルのはみ出しで**最初から縦スクロールバーが出る**ので
@@ -63,21 +77,14 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="text-xs text-ha-ink/55">
-          {t("activity.streak.current")} <span className="font-semibold tabular-nums text-ha-green-deep">{s.current}</span>{" "}
-          {t("activity.streak.days")} ・ {t("activity.streak.longest")}{" "}
-          <span className="font-semibold tabular-nums text-ha-green-deep">{s.longest}</span> {t("activity.streak.days")}
-        </p>
-        {/* 濃淡の凡例（少 → 多）。何が濃さを表すか一目で分かるように（kako-jun「さっぱりわからない」）。 */}
-        <span className="flex items-center gap-1 text-[10px] text-ha-ink/45" aria-hidden>
-          {t("activity.legend.low")}
-          {LEVEL_BG.map((bg, i) => (
-            <span key={i} className={`h-2.5 w-2.5 rounded-[1px] ${bg}`} />
-          ))}
-          {t("activity.legend.high")}
-        </span>
-      </div>
+      {/* 連続記録（現在／最長）。区切りは中黒「・」だと2値が1語に見えるため細いスラッシュに（#440・kako-jun）。 */}
+      <p className="text-xs text-ha-ink/55">
+        {t("activity.streak.current")} <span className="font-semibold tabular-nums text-ha-green-deep">{s.current}</span>{" "}
+        {t("activity.streak.days")}
+        <span className="mx-1.5 text-ha-ink/30">/</span>
+        {t("activity.streak.longest")} <span className="font-semibold tabular-nums text-ha-green-deep">{s.longest}</span>{" "}
+        {t("activity.streak.days")}
+      </p>
     </div>
   );
 }

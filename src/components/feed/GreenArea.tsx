@@ -130,11 +130,13 @@ export default function GreenArea({ posts, subject }: { posts: FeedPost[]; subje
       {stats === null ? (
         <p className="text-xs text-ha-ink/40">{t("green.measuring")}</p>
       ) : (
-        <p className="text-sm text-ha-ink/80">
-          <span className="font-semibold tabular-nums text-ha-green-deep">
-            {t("green.cumulative", { equivalent: stats.equivalent.toFixed(1) })}
+        // #439: 数値を目立たせる＝小さい換算ラベルを左、**大きな値を右寄せ**で並べる（kako-jun）。
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-xs text-ha-ink/45">{t("green.cumulative.label")}</span>
+          <span className="text-2xl font-semibold tabular-nums text-ha-green-deep">
+            {t("green.cumulative.value", { equivalent: stats.equivalent.toFixed(1) })}
           </span>
-        </p>
+        </div>
       )}
     </div>
   );

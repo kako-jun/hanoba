@@ -134,10 +134,11 @@ export const es: Partial<Record<MessageKey, string>> = {
   "stats.varieties.pager.indicator": "{page} / {total}",
 
   "green.heading": "Verde que {subject} añadió a la ciudad",
-  "green.cumulative": "≈{equivalent} fotos completamente verdes",
+  "green.cumulative.label": "fotos 100% verdes",
+  "green.cumulative.value": "≈{equivalent}",
   "green.measuring": "(midiendo el verde…)",
 
-  "activity.heading": "Hierba de actividad",
+  "activity.heading": "Hierba de fotos",
   "activity.heading.note": "(últimas {weeks} semanas)",
   "activity.streak.current": "Racha actual",
   "activity.streak.longest": "Más larga",
