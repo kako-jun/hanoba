@@ -127,8 +127,8 @@ describe("buildFuda", () => {
     ]);
   });
 
-  it("#448 非 pickable 属（交配・著名個体）配下の品種もカテゴリ共起で filterTags=[カテゴリ,品種]（ジェイドガール）", () => {
-    // ビカクシダ › 交配・著名個体(pickable:false) › ジェイドガール。TagPicker は #ビカクシダ #ジェイドガール と書く。
+  it("#448 非 pickable 属（交配・園芸品種）配下の品種もカテゴリ共起で filterTags=[カテゴリ,品種]（ジェイドガール）", () => {
+    // ビカクシダ › 交配・園芸品種(pickable:false) › ジェイドガール。TagPicker は #ビカクシダ #ジェイドガール と書く。
     const fuda = buildFuda(["ビカクシダ", "ジェイドガール"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ name: "ジェイドガール", filterTags: ["ビカクシダ", "ジェイドガール"] });
