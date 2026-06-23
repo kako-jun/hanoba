@@ -177,7 +177,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
     loc: { en: "Caudex Plants", zh: "块根植物", es: "Plantas Caudiciformes" },
     genera: [
       { name: "パキポディウム", pickable: true, varieties: [
-        { name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius", aliases: ["象牙宮"] }, { name: "恵比寿笑い", sci: "Pachypodium brevicaule", aliases: ["ブレビカウレ"] },
+        { name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius", aliases: ["象牙宮"] }, { name: "ブレビカウレ", sci: "Pachypodium brevicaule", aliases: ["恵比寿笑い"] },
         { name: "恵比寿大黒", sci: "Pachypodium 'Densicaule'" }, { name: "デンシフローラム", sci: "Pachypodium densiflorum" }, { name: "ウィンゾリー", sci: "Pachypodium windsorii" }, { name: "ラメリー", sci: "Pachypodium lamerei" },
         { name: "ゲアイー", sci: "Pachypodium geayi" }, { name: "ロスラーツム", sci: "Pachypodium rosulatum" }, { name: "カクチペス", sci: "Pachypodium rosulatum subsp. cactipes" }, { name: "レウコキサンツム", sci: "Pachypodium rosulatum subsp. leucoxanthum" },
         { name: "エブルネウム", sci: "Pachypodium eburneum" }, { name: "ホロンベンセ", sci: "Pachypodium horombense" }, { name: "イノピナツム", sci: "Pachypodium rosulatum subsp. inopinatum" }, { name: "マカイエンセ", sci: "Pachypodium makayense" },

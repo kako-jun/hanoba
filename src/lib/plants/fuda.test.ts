@@ -63,11 +63,12 @@ describe("buildFuda", () => {
   });
 
   it("学名は catalog の variety.sci を最優先する（塊根植物の実データ）", () => {
-    // ブレビカウレ → #409 で正準「恵比寿笑い」へ統合（alias）。catalog.sci = Pachypodium brevicaule。
-    // 旧投稿のタグ「ブレビカウレ」も alias 経由で正準 name に解決し、品種札は属＋品種で立てる（#272）。
-    const fuda = buildFuda(["パキポディウム", "ブレビカウレ"], VARIETY_CATALOG);
+    // 正準＝「ブレビカウレ」（学名カナ）、別名＝「恵比寿笑い」（kako-jun の好みで縁起名は alias へ）。
+    // catalog.sci = Pachypodium brevicaule。旧投稿のタグ「恵比寿笑い」も alias 経由で正準 name
+    // 「ブレビカウレ」に解決し、品種札は属＋品種で立てる（#272）。
+    const fuda = buildFuda(["パキポディウム", "恵比寿笑い"], VARIETY_CATALOG);
     expect(fuda).toHaveLength(1);
-    expect(fuda[0]).toMatchObject({ name: "恵比寿笑い", sci: "Pachypodium brevicaule" });
+    expect(fuda[0]).toMatchObject({ name: "ブレビカウレ", sci: "Pachypodium brevicaule" });
   });
 
   it("catalog.sci が無くても dictionary に品種があれば品種 sci を併記する", () => {
