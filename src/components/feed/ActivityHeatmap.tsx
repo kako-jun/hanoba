@@ -3,7 +3,7 @@ import { activityHeatmap, activityLevel, streaks } from "../../lib/feed/activity
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 
 /**
- * 活動の草（#272 段階4・脱ゲーム化）。**いつ・どれだけ投稿したか**を GitHub 風の日別ヒートマップ
+ * 撮影の草（#272 段階4・脱ゲーム化）。**いつ・どれだけ投稿したか**を GitHub 風の日別ヒートマップ
  * （週列×7曜日・濃淡=その日の投稿数）と連続記録で静かに見せる。#310 の緑グリッド（緑の貢献量・
  * per-post）とは別軸で補完的（こちらは投稿の頻度/継続）。バッジ/演出は付けない＝事実の可視化だけ。
  *
@@ -16,7 +16,7 @@ const LEVEL_BG = ["bg-white/8", "bg-ha-green/55", "bg-ha-green/78", "bg-ha-green
 const WEEKS = 12;
 
 /**
- * 活動の草の曜日軸（#345）。**全7行・英語・曖昧なし**という #345 の意図はそのままに、3文字略で短縮する
+ * 撮影の草の曜日軸（#345）。**全7行・英語・曖昧なし**という #345 の意図はそのままに、3文字略で短縮する
  * （行を間引かない／ロケール依存にしない＝narrow を 月/水/金 だけ間引いて軸が欠けた過去の失敗は再発しない）。
  * 行 0=日 … 6=土＝集計 `activityHeatmap` のグリッド行順（grid 行 0 が日曜）と一致させる（行順は不変）。
  */
@@ -33,7 +33,7 @@ export default function ActivityHeatmap({ posts }: { posts: FeedPost[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* 見出し行: 左に「活動の草（直近N週）」、右に3段階の色凡例（#440・kako-jun。凡例は末尾でなく行右に置く／
+      {/* 見出し行: 左に「撮影の草（直近N週）」、右に3段階の色凡例（#440・kako-jun。凡例は末尾でなく行右に置く／
           見出しと注記は items-center で上下中央に揃える＝旧 inline baseline のズレを解消）。 */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="flex items-center gap-1.5 text-sm font-medium text-ha-ink/70">

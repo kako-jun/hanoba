@@ -172,7 +172,7 @@ describe("parsePost", () => {
       }),
     );
     expect(post.photoShotDates).toEqual(["2024-06-01", null, "2024-06-22"]);
-    // 活動の草用 distinct は per-photo の非 null。
+    // 撮影の草用 distinct は per-photo の非 null。
     expect(post.shotDates).toEqual(["2024-06-01", "2024-06-22"]);
   });
 

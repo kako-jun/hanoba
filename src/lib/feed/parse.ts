@@ -27,7 +27,7 @@ export interface FeedPost {
   imageUrl: string | null;
   hashtags: string[];
   /**
-   * 撮影日の distinct 集合（#324・`YYYY-MM-DD`）。**活動の草の集計に使う**（どの日をカバーするか）。
+   * 撮影日の distinct 集合（#324・`YYYY-MM-DD`）。**撮影の草の集計に使う**（どの日をカバーするか）。
    * 新 `shot_dates` 位置配列の非 null ∪ 旧 `shot_date` タグ。写真対応は持たない（それは photoShotDates）。
    */
   shotDates: string[];
@@ -79,7 +79,7 @@ export function parsePost(event: NostrEvent): FeedPost {
   const legacyDates = event.tags
     .filter((t) => t[0] === "shot_date" && typeof t[1] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t[1]))
     .map((t) => t[1]!);
-  // 活動の草用の distinct 集合 = per-photo の非 null ∪ 旧 shot_date。
+  // 撮影の草用の distinct 集合 = per-photo の非 null ∪ 旧 shot_date。
   const shotDates = [
     ...new Set([...photoShotDates.filter((d): d is string => d !== null), ...legacyDates]),
   ];

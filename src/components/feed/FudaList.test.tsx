@@ -44,6 +44,8 @@ describe("FudaList", () => {
     expect(link).toHaveClass("before:absolute");
     expect(link).toHaveClass("before:top-2");
     expect(link).toHaveClass("before:left-2");
+    // 点(left-2=8px〜14px)〜文字の溝（#437 kako-jun「近すぎる」→ pl-4 から広げた）。詰め直しの退行を固定。
+    expect(link).toHaveClass("pl-[1.375rem]");
     expect(link).not.toHaveClass("before:self-center");
     expect(link).not.toHaveClass("before:self-start");
     expect(link).not.toHaveClass("before:mt-1");

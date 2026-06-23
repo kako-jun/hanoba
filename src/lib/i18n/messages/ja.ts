@@ -153,7 +153,7 @@ export const ja = {
   "green.cumulative.value": "約{equivalent}枚分",
   "green.measuring": "（緑を計測中…）",
 
-  // 活動の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。
+  // 撮影の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。
   "activity.heading": "撮影の草",
   "activity.heading.note": "（直近{weeks}週）",
   "activity.streak.current": "現在の連続",
