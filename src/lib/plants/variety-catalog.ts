@@ -11,35 +11,49 @@
 // 値は「本文 # に入るタグ文字列」（空白は insertTag 側で _ に正規化）。表記揺れ（赤猫 ↔
 // レッドキャットウィーズル 等）は調査が両形を別品種として持つため、そのまま両方を pickable に残す。
 
+/**
+ * 閲覧言語ごとの表示名（#409 P2 多言語）。ja は base（`label`/`name`）が原典なのでここには入れない。
+ * 非対応言語名が無ければ base に graceful フォールバックする（`pickLoc`・plant-i18n.ts）。
+ * **表示専用**＝本文に書き込むタグ・内部キーは常に ja 正準のまま（cross-language filter 要件・独自化禁止）。
+ * 本PR（PR1）はカテゴリ23だけ populate する。属222は PR2、品種は大半が固有名詞カルティバなので入れない。
+ */
+export type Loc = Partial<Record<"en" | "zh" | "es", string>>;
+
 export interface Variety {
-  /** 通称（本文 # に入るタグ文字列）。 */
+  /** 通称（本文 # に入るタグ文字列・ja 正準）。 */
   name: string;
   /** 学名（任意・#147 i18n）。 */
   sci?: string;
-  /** 英名（任意・#147 i18n）。 */
-  en?: string;
+  /** 閲覧言語ごとの表示名（任意・#409・本PRは未 populate）。英名は `loc.en` に畳む。 */
+  loc?: Loc;
   /** 表記揺れ・別名（検索の横断ヒット用）。 */
   aliases?: string[];
 }
 
 export interface Genus {
-  /** 属／グループ名。 */
+  /** 属／グループ名（ja 正準）。 */
   name: string;
   /** 属名自体がタグになるか（その他/原種 等のグルーピング見出しは false）。 */
   pickable: boolean;
+  /** 閲覧言語ごとの表示名（任意・#409・属222は PR2 で populate・本PRは未 populate）。 */
+  loc?: Loc;
   /** 属名の別名（スラッシュ表記・括弧注記の吸収。検索用）。 */
   aliases?: string[];
   varieties: Variety[];
 }
 
 export interface VarietyCategory {
+  /** カテゴリ名（ja 正準・本文タグ/内部キー）。 */
   label: string;
+  /** 閲覧言語ごとの表示名（#409 P2・カテゴリ23は本PRで populate 済み）。 */
+  loc?: Loc;
   genera: Genus[];
 }
 
 export const VARIETY_CATALOG: VarietyCategory[] = [
   {
     label: "多肉植物",
+    loc: { en: "Succulents", zh: "多肉植物", es: "Suculentas" },
     genera: [
       { name: "アガベ", pickable: true, varieties: [
         { name: "チタノタ", sci: "Agave titanota" }, { name: "オテロイ", sci: "Agave oteroi" }, { name: "白鯨", sci: "Agave titanota 'Hakugei'" }, { name: "黒鯨", sci: "Agave titanota 'Black Whale'" },
@@ -160,6 +174,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "塊根植物",
+    loc: { en: "Caudex Plants", zh: "块根植物", es: "Plantas Caudiciformes" },
     genera: [
       { name: "パキポディウム", pickable: true, varieties: [
         { name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius", aliases: ["象牙宮"] }, { name: "恵比寿笑い", sci: "Pachypodium brevicaule", aliases: ["ブレビカウレ"] },
@@ -212,6 +227,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "メセン",
+    loc: { en: "Mesembs", zh: "女仙", es: "Mesembs" },
     genera: [
       { name: "コノフィツム", pickable: true, varieties: [
         { name: "ウィッテベルゲンセ", sci: "Conophytum wittebergense" }, { name: "ブルゲリ", sci: "Conophytum burgeri" }, { name: "オペラローズ", sci: "Conophytum 'Opera Rose'" }, { name: "花園", sci: "Conophytum 'Hanazono'" },
@@ -251,6 +267,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "サボテン",
+    loc: { en: "Cacti", zh: "仙人掌", es: "Cactus" },
     genera: [
       { name: "マミラリア", pickable: true, varieties: [
         { name: "玉翁", sci: "Mammillaria hahniana" }, { name: "白星", sci: "Mammillaria plumosa" }, { name: "金洋丸", sci: "Mammillaria marksiana" }, { name: "高砂", sci: "Mammillaria bocasana" },
@@ -305,6 +322,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "ビカクシダ",
+    loc: { en: "Staghorn Ferns", zh: "鹿角蕨", es: "Helechos Cuerno de Alce" },
     genera: [
       { name: "原種", pickable: false, varieties: [
         { name: "リドレイ", sci: "Platycerium ridleyi" }, { name: "ウィリンキー", sci: "Platycerium willinckii" },
@@ -323,6 +341,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "エアプランツ",
+    loc: { en: "Air Plants", zh: "空气凤梨", es: "Plantas de Aire" },
     genera: [
       { name: "チランジア", pickable: true, varieties: [
         { name: "エアプランツ", sci: "Tillandsia" }, { name: "イオナンタ", sci: "Tillandsia ionantha" }, { name: "ウスネオイデス", sci: "Tillandsia usneoides" }, { name: "キセログラフィカ", sci: "Tillandsia xerographica" },
@@ -336,6 +355,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "観葉植物",
+    loc: { en: "Foliage Plants", zh: "观叶植物", es: "Plantas de Follaje" },
     genera: [
       { name: "モンステラ", pickable: true, varieties: [
         { name: "デリシオーサ", sci: "Monstera deliciosa", aliases: ["デリシオサ"] }, { name: "アダンソニー", sci: "Monstera adansonii" }, { name: "ヒメモンステラ", sci: "Rhaphidophora tetrasperma" },
@@ -417,6 +437,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "食虫植物",
+    loc: { en: "Carnivorous Plants", zh: "食虫植物", es: "Plantas Carnívoras" },
     genera: [
       { name: "ハエトリソウ", pickable: true, varieties: [
         { name: "ハエトリグサ", sci: "Dionaea muscipula", aliases: ["ディオネア", "マスシプラ"] }, { name: "B52", sci: "Dionaea muscipula 'B52'" },
@@ -458,6 +479,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "蘭",
+    loc: { en: "Orchids", zh: "兰花", es: "Orquídeas" },
     genera: [
       { name: "胡蝶蘭", pickable: true, varieties: [
         { name: "コチョウラン", sci: "Phalaenopsis", aliases: ["ファレノプシス"] }, { name: "ミディ胡蝶蘭", sci: "Phalaenopsis" }, { name: "アマビリス", sci: "Phalaenopsis amabilis" },
@@ -502,6 +524,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "山野草",
+    loc: { en: "Native Wildflowers", zh: "山野草", es: "Plantas Silvestres Ornamentales" },
     genera: [
       { name: "山野草", pickable: true, varieties: [
         { name: "雪割草", sci: "Hepatica nobilis var. japonica" }, { name: "福寿草", sci: "Adonis ramosa" }, { name: "イワヒバ", sci: "Selaginella tamariscina" }, { name: "春蘭", sci: "Cymbidium goeringii" },
@@ -512,6 +535,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "シダ",
+    loc: { en: "Ferns", zh: "蕨类", es: "Helechos" },
     genera: [
       { name: "アジアンタム", pickable: true, varieties: [
         { name: "ラディアナム", sci: "Adiantum raddianum" }, { name: "フリッツルーシー", sci: "Adiantum raddianum 'Fritz Luthii'" }, { name: "ペルビアナム", sci: "Adiantum peruvianum" }, { name: "ホウライシダ", sci: "Adiantum capillus-veneris" },
@@ -537,6 +561,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "コケ",
+    loc: { en: "Mosses", zh: "苔藓", es: "Musgos" },
     genera: [
       { name: "コケ各種", pickable: false, aliases: ["苔", "コケ", "モス"], varieties: [
         { name: "苔" }, { name: "コケ" }, { name: "ホソバオキナゴケ", sci: "Leucobryum juniperoideum", aliases: ["山苔"] }, { name: "ハイゴケ", sci: "Hypnum plumaeforme" },
@@ -548,6 +573,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "水草",
+    loc: { en: "Aquatic Plants", zh: "水草", es: "Plantas Acuáticas" },
     genera: [
       { name: "アヌビアス", pickable: true, varieties: [
         { name: "ナナ", sci: "Anubias barteri var. nana" }, { name: "ナナプチ", sci: "Anubias barteri var. nana 'Petite'" }, { name: "コーヒーフォリア", sci: "Anubias barteri var. coffeefolia" }, { name: "バルテリー", sci: "Anubias barteri" },
@@ -589,6 +615,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "水生・ビオトープ",
+    loc: { en: "Aquatic & Biotope", zh: "水生植物", es: "Plantas Acuáticas y Biotopo" },
     genera: [
       { name: "スイレン", pickable: true, aliases: ["睡蓮"], varieties: [
         { name: "温帯性スイレン", sci: "Nymphaea" }, { name: "熱帯性スイレン", sci: "Nymphaea" }, { name: "姫スイレン", sci: "Nymphaea tetragona" }, { name: "ヒツジグサ", sci: "Nymphaea tetragona" },
@@ -606,6 +633,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "バラ",
+    loc: { en: "Roses", zh: "月季", es: "Rosas" },
     genera: [
       { name: "バラ", pickable: true, varieties: [
         { name: "ピエールドゥロンサール", sci: "Rosa 'Pierre de Ronsard'" }, { name: "ブランピエールドゥロンサール", sci: "Rosa 'Blanc Pierre de Ronsard'" }, { name: "ルージュピエールドゥロンサール", sci: "Rosa 'Rouge Pierre de Ronsard'" }, { name: "アイスバーグ", sci: "Rosa 'Iceberg'" },
@@ -622,6 +650,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "草花",
+    loc: { en: "Flowering Plants", zh: "草花", es: "Plantas Florales" },
     genera: [
       { name: "クレマチス", pickable: true, varieties: [
         { name: "モンタナ", sci: "Clematis montana" }, { name: "モンタナルーベンス", sci: "Clematis montana var. rubens" }, { name: "ジャックマニー", sci: "Clematis 'Jackmanii'" }, { name: "テキセンシス", sci: "Clematis texensis" },
@@ -710,6 +739,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "球根",
+    loc: { en: "Bulbs", zh: "球根植物", es: "Bulbos" },
     genera: [
       { name: "チューリップ", pickable: true, varieties: [
         { name: "アンジェリケ", sci: "Tulipa 'Angelique'" }, { name: "ブルーダイヤモンド", sci: "Tulipa 'Blue Diamond'" }, { name: "クイーンオブナイト", sci: "Tulipa 'Queen of Night'" }, { name: "アプリコットビューティー", sci: "Tulipa 'Apricot Beauty'" },
@@ -758,6 +788,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "花木・庭木",
+    loc: { en: "Flowering Trees & Shrubs", zh: "花木", es: "Árboles y Arbustos Ornamentales" },
     genera: [
       { name: "ツツジ", pickable: true, aliases: ["躑躅"], varieties: [
         { name: "クルメツツジ", sci: "Rhododendron × obtusum" }, { name: "ヒラドツツジ", sci: "Rhododendron × pulchrum" }, { name: "オオムラサキ", sci: "Rhododendron × pulchrum 'Oomurasaki'" }, { name: "ミツバツツジ", sci: "Rhododendron dilatatum" },
@@ -820,6 +851,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "野菜",
+    loc: { en: "Vegetables", zh: "蔬菜", es: "Hortalizas" },
     genera: [
       { name: "トマト", pickable: true, varieties: [
         { name: "桃太郎", sci: "Solanum lycopersicum 'Momotaro'" }, { name: "ホーム桃太郎", sci: "Solanum lycopersicum 'Home Momotaro'" }, { name: "麗夏", sci: "Solanum lycopersicum 'Reika'" }, { name: "りんか409", sci: "Solanum lycopersicum 'Rinka 409'" },
@@ -955,6 +987,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "ハーブ",
+    loc: { en: "Herbs", zh: "香草", es: "Hierbas Aromáticas" },
     genera: [
       { name: "バジル", pickable: true, varieties: [
         { name: "スイートバジル", sci: "Ocimum basilicum" }, { name: "ホーリーバジル", sci: "Ocimum tenuiflorum" }, { name: "レモンバジル", sci: "Ocimum × africanum" }, { name: "ジェノベーゼ", sci: "Ocimum basilicum 'Genovese'" },
@@ -1004,6 +1037,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "果樹",
+    loc: { en: "Fruit Trees", zh: "果树", es: "Árboles Frutales" },
     genera: [
       { name: "ブルーベリー", pickable: true, varieties: [
         { name: "ティフブルー", sci: "Vaccinium virgatum 'Tifblue'" }, { name: "ホームベル", sci: "Vaccinium virgatum 'Homebell'" }, { name: "ブライトウェル", sci: "Vaccinium virgatum 'Brightwell'" }, { name: "パウダーブルー", sci: "Vaccinium virgatum 'Powderblue'" },
@@ -1098,6 +1132,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "穀物",
+    loc: { en: "Grains", zh: "谷物", es: "Cereales" },
     genera: [
       { name: "イネ", pickable: true, aliases: ["稲", "コメ", "米", "水稲", "陸稲"], varieties: [
         { name: "コシヒカリ", sci: "Oryza sativa 'Koshihikari'" }, { name: "あきたこまち", sci: "Oryza sativa 'Akitakomachi'" }, { name: "ひとめぼれ", sci: "Oryza sativa 'Hitomebore'" }, { name: "ヒノヒカリ", sci: "Oryza sativa 'Hinohikari'" },
@@ -1137,6 +1172,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
   },
   {
     label: "山菜・野草",
+    loc: { en: "Wild Edible Plants", zh: "山菜野草", es: "Plantas Silvestres Comestibles" },
     genera: [
       { name: "フキ", pickable: true, aliases: ["ふき", "蕗", "ふきのとう"], varieties: [
         { name: "愛知早生フキ", sci: "Petasites japonicus 'Aichi Wase'" }, { name: "水ふき", sci: "Petasites japonicus" }, { name: "山ふき", sci: "Petasites japonicus" }, { name: "秋田ふき", sci: "Petasites japonicus subsp. giganteus" },
