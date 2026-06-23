@@ -56,7 +56,7 @@ export function extractHashtags(content: string): string[] {
  *
  * - extractHashtags と同じ規則で `#タグ` を除去（先頭の区切り文字 `\s`/`>` は残す）。
  * - 除去で生じた行内の連続スペースは 1 つに、行頭行末スペースは除去。
- * - 連続改行は 1 つに畳み、前後を trim（parsePost の caption 整形に合わせる）。
+ * - 空行（段落区切り）は**空行2つ**まで残し、前後を trim（parsePost の caption 整形に合わせる・#428）。
  */
 export function stripHashtags(content: string): string {
   const re = /(^|[\s>])#([a-zA-Z0-9_À-ſ぀-ゟ゠-ヿ一-龯]+)/g;
@@ -65,7 +65,8 @@ export function stripHashtags(content: string): string {
     // 除去で生じた連続スペース（全角 U+3000 含む）を 1 つに、行頭行末の空白も除く。
     .replace(/[ \t　]{2,}/g, " ")
     .replace(/[ \t　]*\n[ \t　]*/g, "\n")
-    // 空行（段落区切り）は残す。過剰な連続改行（3つ以上）だけ空行1つに抑える。
-    .replace(/\n{3,}/g, "\n\n")
+    // 空行（段落区切り）は**空行2つ**まで残す（parsePost と同じ上限・#428）。過剰な連続改行
+    // （4つ以上）だけ空行2つに抑える。kako-jun「空行2つ以上入れたら実際に空行2つぶん空ける」。
+    .replace(/\n{4,}/g, "\n\n\n")
     .trim();
 }

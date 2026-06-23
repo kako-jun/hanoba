@@ -89,4 +89,13 @@ describe("stripHashtags", () => {
   it("空行（段落区切り）は残す（#65）", () => {
     expect(stripHashtags("一段目\n\n二段目 #タグ")).toBe("一段目\n\n二段目");
   });
+
+  it("空行2つ（改行3つ）も残す（#428・parsePost と同じ上限）", () => {
+    expect(stripHashtags("一段目\n\n\n二段目 #タグ")).toBe("一段目\n\n\n二段目");
+  });
+
+  it("空行3つ以上（改行4つ以上）は空行2つに抑える（#428）", () => {
+    expect(stripHashtags("一段目\n\n\n\n二段目")).toBe("一段目\n\n\n二段目");
+    expect(stripHashtags("一段目\n\n\n\n\n\n二段目")).toBe("一段目\n\n\n二段目");
+  });
 });
