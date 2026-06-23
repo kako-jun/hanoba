@@ -308,7 +308,7 @@ describe("同義語統合（#409 P-canonical）", () => {
     ["朧月", "パラグアイエンセ", "Graptopetalum paraguayense"],
     ["フーケリー", "群雀", "Pachyphytum hookeri"],
     ["グラキリス", "象牙宮", "Pachypodium rosulatum var. gracilius"],
-    ["恵比寿笑い", "ブレビカウレ", "Pachypodium brevicaule"],
+    ["ブレビカウレ", "恵比寿笑い", "Pachypodium brevicaule"],
     ["サンデルシー", "白馬城", "Pachypodium saundersii"],
     ["光堂", "ナマクアナム", "Pachypodium namaquanum"],
     ["オベスム", "砂漠のバラ", "Adenium obesum"],
