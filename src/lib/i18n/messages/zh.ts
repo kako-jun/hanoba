@@ -134,10 +134,11 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "stats.varieties.pager.indicator": "{page} / {total}",
 
   "green.heading": "{subject}为城市增添的绿意",
-  "green.cumulative": "≈{equivalent} 张全绿的照片",
+  "green.cumulative.label": "全绿照片",
+  "green.cumulative.value": "≈{equivalent} 张",
   "green.measuring": "（正在测量绿意…）",
 
-  "activity.heading": "活动草地",
+  "activity.heading": "拍摄草地",
   "activity.heading.note": "（最近 {weeks} 周）",
   "activity.streak.current": "当前连续",
   "activity.streak.longest": "最长",

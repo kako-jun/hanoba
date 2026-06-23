@@ -55,11 +55,14 @@ export interface HeatCell {
   count: number;
 }
 
-/** ヒートマップの濃淡段階（0〜2・0=投稿なし / 1=少し〔1〜2件〕 / 2=多い〔3件〜〕）。 */
+/**
+ * ヒートマップの濃淡段階（0〜3・撮影枚数ベース）。#440 kako-jun の理解「少=1・中=2・多=3以上」に揃える
+ * （#389 の 0/1-2/3+ の2緑段から、1枚刻みの3緑段＋なしへ）。0=撮影なし / 1=少（1枚）/ 2=中（2枚）/ 3=多（3枚〜）。
+ */
 export function activityLevel(count: number): number {
   if (count <= 0) return 0;
-  if (count <= 2) return 1;
-  return 2;
+  if (count >= 3) return 3;
+  return count; // 1 or 2
 }
 
 /**

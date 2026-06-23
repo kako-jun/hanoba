@@ -149,11 +149,12 @@ export const ja = {
 
   // 緑の総面積（GreenArea・#310/#344/#387）。{subject}=主語・{equivalent}=緑100%換算枚数。
   "green.heading": "{subject}が街に足した緑",
-  "green.cumulative": "緑100%の写真 約{equivalent}枚分",
+  "green.cumulative.label": "緑100%の写真換算",
+  "green.cumulative.value": "約{equivalent}枚分",
   "green.measuring": "（緑を計測中…）",
 
   // 活動の草（ActivityHeatmap・#272）。連続記録は {n} を別途数値 span で出すので語のみ。
-  "activity.heading": "活動の草",
+  "activity.heading": "撮影の草",
   "activity.heading.note": "（直近{weeks}週）",
   "activity.streak.current": "現在の連続",
   "activity.streak.longest": "最長",

@@ -17,15 +17,15 @@ function post(daysAgo: number, id = `p${daysAgo}`): FeedPost {
   };
 }
 
-describe("ActivityHeatmap（#272 段階4・活動の草）", () => {
+describe("ActivityHeatmap（#272 段階4・撮影の草）", () => {
   it("投稿ゼロは節ごと出さない", () => {
     render(<ActivityHeatmap posts={[]} />);
-    expect(screen.queryByText("活動の草")).not.toBeInTheDocument();
+    expect(screen.queryByText("撮影の草")).not.toBeInTheDocument();
   });
 
   it("投稿があれば見出し・ヒートマップ・連続記録を出す", () => {
     const { container } = render(<ActivityHeatmap posts={[post(0), post(1), post(2)]} />);
-    expect(screen.getByText("活動の草")).toBeInTheDocument();
+    expect(screen.getByText("撮影の草")).toBeInTheDocument();
     expect(screen.getByText(/現在の連続/)).toBeInTheDocument();
     expect(screen.getByText(/最長/)).toBeInTheDocument();
     // 週列×7曜日のマスが描画される（12週ぶん＝84マス前後）。
