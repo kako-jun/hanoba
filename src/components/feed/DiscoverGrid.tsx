@@ -94,14 +94,11 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     }
   }
 
-  // URL から復元（マウント・popstate 共用）。マウントは "replace"（旧 ?q=/?tag= の正規化）、popstate は "none"。
-  function restoreFromUrl(navigate: "replace" | "none") {
-    void applyTags(readTagsFromUrl(), navigate);
-  }
-
   // マウント: URL の ?tags= を復元して自動取得（開いた瞬間に写真が並ぶ＝explore 流）。
+  // "replace" で旧 ?q=/?tag= を正規化（URL を1回だけ書き換える）。popstate 復元は下の onPopState が
+  // タグ差分を見て直接 applyTags(..., "none") する（#427）ので、ここはマウント専用にした。
   useEffect(() => {
-    restoreFromUrl("replace");
+    void applyTags(readTagsFromUrl(), "replace");
   }, []);
 
   // 戻る/進む（popstate）で URL から読み直して再取得（URL は書かない＝二重に積まない・ループしない）。
