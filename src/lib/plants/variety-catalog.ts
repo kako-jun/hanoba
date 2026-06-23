@@ -332,7 +332,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ホルタミー", sci: "Platycerium holttumii" }, { name: "ワリチー", sci: "Platycerium wallichii" }, { name: "エリシー", sci: "Platycerium ellisii" }, { name: "クアドリディコトマム", sci: "Platycerium quadridichotomum" },
         { name: "アンゴレンセ", sci: "Platycerium angolense" }, { name: "アンディナム", sci: "Platycerium andinum" }, { name: "ヴァッセイ", sci: "Platycerium vassei" },
       ] },
-      { name: "交配・著名個体", pickable: false, loc: { en: "Hybrids & notable plants", zh: "杂交与著名个体", es: "Híbridos y ejemplares destacados" }, varieties: [
+      { name: "交配・園芸品種", pickable: false, loc: { en: "Hybrids & cultivars", zh: "杂交与园艺品种", es: "Híbridos y cultivares" }, varieties: [
         { name: "ネザーランド", sci: "Platycerium bifurcatum 'Netherlands'" }, { name: "ネザーランズ", sci: "Platycerium bifurcatum 'Netherlands'" }, { name: "グリフィン", sci: "Platycerium 'Griffin'" }, { name: "キッチャクード", sci: "Platycerium 'Kitshakood'" },
         { name: "ホワイトホーク", sci: "Platycerium 'White Hawk'" }, { name: "ペドロ", sci: "Platycerium 'Pedro'" }, { name: "ドラゴン", sci: "Platycerium 'Dragon'" }, { name: "キリン", sci: "Platycerium 'Kirin'" },
         { name: "ギンガ", sci: "Platycerium 'Ginga'" }, { name: "スザク", sci: "Platycerium 'Suzaku'" }, { name: "ジェイドガール", sci: "Platycerium 'Jade Girl'" }, { name: "ペガサス", sci: "Platycerium 'Pegasus'" },
