@@ -5,7 +5,7 @@
 // （呼び出し側が `await import("./variety-catalog.ts")` してから渡す）。
 
 import { captionHasTag } from "../image/hashtag-complete.ts";
-import type { Genus, Variety, VarietyCategory } from "./variety-catalog.ts";
+import type { Genus, Loc, Variety, VarietyCategory } from "./variety-catalog.ts";
 
 /** 属 or 品種の所在（カテゴリ＋属）。階層への誘導・上位属の補完に使う。 */
 export interface CatalogLocation {
@@ -119,10 +119,12 @@ export function tagsToPick(catalog: VarietyCategory[], name: string): string[] {
 }
 
 /**
- * discover の別名展開用に、variety-catalog の **pickable 属＋品種の name/aliases** を
- * 「小文字キー → 同一エンティティの別名集合（小文字）」へ展開した索引を作る純関数（#303）。
+ * discover の別名展開用に、variety-catalog の **カテゴリ label/loc ＋ pickable 属＋品種の name/aliases**
+ * を「小文字キー → 同一エンティティの別名集合（小文字）」へ展開した索引を作る純関数（#303 / #409）。
  * 札を組むのと同じ source of truth で discover の AND 照合も別名展開し、辞書外の属/品種別名で
  * タグした cross-client 投稿（例 `#ゴムの木`＝フィカスの別名）にも当てる。
+ * #409: カテゴリの閲覧言語名（"Succulents"/"Suculentas"）でフィルタしても、その別名集合に ja 正準
+ * `多肉植物` が含まれる＝`#多肉植物` 投稿に当たる（language-cross alias・本文タグは ja 正準のまま不変）。
  * 同名衝突（別エンティティが同じ語を使う稀ケース）は先勝ち（最初に登録した集合を保つ）。
  */
 export function buildCatalogAliasIndex(catalog: VarietyCategory[]): Map<string, string[]> {
@@ -134,6 +136,7 @@ export function buildCatalogAliasIndex(catalog: VarietyCategory[]): Map<string, 
     }
   };
   for (const category of catalog) {
+    add([category.label, ...Object.values(category.loc ?? {})]);
     for (const genus of category.genera) {
       if (genus.pickable) add([genus.name, ...(genus.aliases ?? [])]);
       for (const v of genus.varieties) add([v.name, ...(v.aliases ?? [])]);
@@ -147,10 +150,12 @@ export const SEARCH_LIMIT = 40;
 
 /** 検索ヒット1件（属 or 品種）。name がそのまま本文 # に入るタグ。 */
 export interface VarietyHit {
-  /** 挿入するタグ文字列（属名 or 品種名）。 */
+  /** 挿入するタグ文字列（属名 or 品種名・ja 正準＝内部キー）。**訳さない**（cross-language filter 要件）。 */
   name: string;
-  /** 由来カテゴリ名（文脈表示用）。 */
+  /** 由来カテゴリ名（ja 正準＝内部キー）。`tagsToPickAt` の categoryLabel・階層化に渡す＝**訳さない**。 */
   category: string;
+  /** 由来カテゴリの閲覧言語名（#409・表示専用）。`pickLoc(category, categoryLoc, locale)` で出す。 */
+  categoryLoc?: Loc;
   /** 由来属名（品種ヒットのとき）。属ヒットでは undefined。 */
   genus?: string;
   /** 由来属が pickable か（品種ヒットで上位属タグを前置できるか）。 */
@@ -208,19 +213,26 @@ export function searchCatalog(catalog: VarietyCategory[], query: string, limit =
   };
 
   for (const cat of catalog) {
+    // カテゴリの閲覧言語名（#409）。検索の照合対象に loc 値も足す＝en の "Succulents"・es の
+    // "Suculentas" で `多肉植物` に当たる。挿入する name・由来 category は **ja 正準のまま**
+    // （訳さない＝cross-language filter 要件・独自化禁止）。categoryLoc は表示用に持ち回るだけ。
+    const catLocValues = Object.values(cat.loc ?? {});
     // カテゴリ自身もヒット対象にする（#312・「ハーブ」と打って `#ハーブ` を直接付けられる＝
     // ドリルダウンで止めるのと同じ・品種名が分からない人のため）。タグ文字列＝カテゴリ label。
-    consider({ name: cat.label, category: cat.label, kind: "category" }, [cat.label]);
+    consider(
+      { name: cat.label, category: cat.label, categoryLoc: cat.loc, kind: "category" },
+      [cat.label, ...catLocValues],
+    );
     for (const g of cat.genera) {
       if (g.pickable) {
         consider(
-          { name: g.name, category: cat.label, kind: "genus" },
+          { name: g.name, category: cat.label, categoryLoc: cat.loc, kind: "genus" },
           [g.name, ...(g.aliases ?? [])],
         );
       }
       for (const v of g.varieties) {
         consider(
-          { name: v.name, category: cat.label, genus: g.name, genusPickable: g.pickable, sci: v.sci, kind: "variety" },
+          { name: v.name, category: cat.label, categoryLoc: cat.loc, genus: g.name, genusPickable: g.pickable, sci: v.sci, kind: "variety" },
           [v.name, ...(v.aliases ?? [])],
         );
       }

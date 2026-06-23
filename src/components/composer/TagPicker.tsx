@@ -5,6 +5,7 @@ import type { RankedTag } from "../../lib/feed/popular.ts";
 import { getRecentTags } from "../../lib/plants/recent-tags.ts";
 import { TAG_CATEGORIES } from "../../lib/plants/tag-catalog.ts";
 import type { Genus, VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import { categoryLabel, genusLabel, pickLoc } from "../../lib/plants/plant-i18n.ts";
 import {
   findPickableGenus,
   searchCatalog,
@@ -130,7 +131,11 @@ function ChipGroup({ label, children }: { label: string; children: ReactNode }) 
  * - 値は本文に `#タグ` テキストとして末尾挿入されるだけ（DESIGN §6・t 化しない）。
  */
 export default function TagPicker({ popular, caption, onPick, onRemove, mode = "compose" }: Props) {
-  const t = useT(useLocale());
+  // locale は文言フックとは別に保持する。**表示専用**＝カテゴリ名を pickLoc で訳すのに使い、
+  // pick()/drillTo()/engage() に渡す内部キー（cat.label・h.name・h.category）は ja 正準のまま
+  // （cross-language filter 要件・独自化禁止）。
+  const locale = useLocale();
+  const t = useT(locale);
   const isFilter = mode === "filter";
   const panelRef = useRef<HTMLDivElement>(null);
   // 「その他」ポップアップ（世話/記録の行ごと）。ドリルダウンの open とは独立に管理する（#169）。
@@ -465,7 +470,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
               {t("tag.back")}
             </button>
             <span className="min-w-0 flex-1 truncate text-center text-xs text-ha-ink/55">
-              {t("tag.breadcrumb.root")}{cat ? ` › ${cat.label}` : ""}{genus ? ` › ${genus.name}` : ""}
+              {t("tag.breadcrumb.root")}{cat ? ` › ${categoryLabel(cat, locale)}` : ""}{genus ? ` › ${genusLabel(genus, locale)}` : ""}
             </span>
             <button
               type="button"
@@ -509,10 +514,11 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                     <button
                       key={`c-${h.name}`}
                       type="button"
+                      // engage には ja 正準 h.name を渡す（drillIn のキー）。表示だけ閲覧言語化（#409）。
                       onClick={() => engage(h.name)}
                       className="rounded-full px-3 py-1 text-sm glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
                     >
-                      {h.name}
+                      {pickLoc(h.name, h.categoryLoc, locale)}
                       <span className="ml-1 text-[10px] text-ha-ink/40">{t("tag.category.label")}</span>
                       <span aria-hidden className="ml-1 text-ha-ink/40">›</span>
                     </button>
@@ -530,7 +536,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                     >
                       #{h.name}
                       <span className={`ml-1 text-[10px] ${has(h.name) ? "text-ha-white/70" : "text-ha-ink/40"}`}>
-                        {h.category}
+                        {pickLoc(h.category, h.categoryLoc, locale)}
                       </span>
                       {!has(h.name) && <span aria-hidden className="ml-1 text-ha-ink/40">›</span>}
                     </button>
@@ -538,7 +544,9 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                     <Chip
                       key={`v-${h.name}`}
                       label={h.name}
-                      context={h.genus ?? h.category}
+                      // 品種名(label)・属(genus)は ja 正準のまま（本PRは未訳）。属が無いときの
+                      // カテゴリ fallback だけ閲覧言語化（#409・表示専用）。
+                      context={h.genus ?? pickLoc(h.category, h.categoryLoc, locale)}
                       sci={h.sci}
                       active={has(h.name)}
                       onClick={() =>
@@ -578,7 +586,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                   onClick={() => setCat(c)}
                   className="glass rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
                 >
-                  {c.label} <span aria-hidden className="text-ha-ink/40">›</span>
+                  {categoryLabel(c, locale)} <span aria-hidden className="text-ha-ink/40">›</span>
                 </button>
               ))}
             </div>
@@ -593,7 +601,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                   onClick={() => setGenus(g)}
                   className="glass rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
                 >
-                  {g.name}
+                  {genusLabel(g, locale)}
                   <span className="ml-1 text-[10px] text-ha-ink/40">{g.varieties.length}</span>
                   <span aria-hidden className="ml-1 text-ha-ink/40">›</span>
                 </button>

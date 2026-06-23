@@ -501,8 +501,10 @@ export async function fetchDiscoverFiltered(
   const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
   const merged = mergePostsById(events.map(parsePost)); // id dedup・新着降順
 
-  // 別名展開＝dictionary（#23・学名/英名）∪ variety-catalog の属/品種別名（#303・札と同じ source）。
+  // 別名展開＝dictionary（#23・学名/英名）∪ variety-catalog のカテゴリ/属/品種別名（#303 / #409・札と同じ source）。
   // catalog 索引は辞書外の属別名でタグした cross-client 投稿（例 #ゴムの木＝フィカス）にも当てる。
+  // #409: 閲覧言語のカテゴリ名（"Succulents"/"Suculentas"）でフィルタしても ja 正準 `#多肉植物` 投稿に当たる
+  // （buildCatalogAliasIndex がカテゴリ label と loc 値を同一別名集合に束ねる）。
   const aliasIndex = aliasIndexPromise === null ? null : await aliasIndexPromise;
   const resolveTagAliases =
     aliasIndex === null
