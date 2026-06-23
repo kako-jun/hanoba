@@ -38,9 +38,10 @@ export default function FudaList({ fuda }: Props) {
             // 単独で1行目（上）に残って学名1行目より上にズレていた（`self-start`/`mt-1` では解けない＝flex 行構造の問題）。
             // 解決: 点を flex フローから外して**絶対配置**にする。点を外すと学名が content 先頭（1行目＝上端）に来るので、
             // 点を1行目の行ボックス内中央（`top-2`=0.5rem）に固定すれば常に一致する。`text-sm` 行高 1.25rem(20px)・
-            // py-1(4px)・点 h-3(12px) → 点中央 = 8+6 = 14px、1行目中央 = 4+10 = 14px で一致。`pl-4` で点の溝を空け、
-            // 折返し行も同じ左端に揃う（hanging-bullet）。
-            className="glass relative inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0 rounded-[2px] bg-ha-base/60 py-1 pl-4 pr-2.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:absolute before:left-2 before:top-2 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            // py-1(4px)・点 h-3(12px) → 点中央 = 8+6 = 14px、1行目中央 = 4+10 = 14px で一致。`pl-[1.375rem]`(22px)
+            // で点の溝を空ける（点は left-2=8px〜14px → 文字まで約8px 空く＝旧 inline 時と同じ間隔・#429 kako-jun
+            // 「近すぎる」）。折返し行も同じ左端（22px）に揃う（hanging-bullet）。
+            className="glass relative inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0 rounded-[2px] bg-ha-base/60 py-1 pl-[1.375rem] pr-2.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:absolute before:left-2 before:top-2 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
             {f.sci !== null && <SciName sci={f.sci} className="font-display text-ha-green-deep" />}
             <span className="font-medium text-ha-ink">{f.name}</span>
