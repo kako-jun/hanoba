@@ -103,7 +103,10 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const profiles = useProfiles(posts.map((p) => p.pubkey));
 
   function selectHashtag(tag: string) {
-    closePost(); // モーダルが開いていたら閉じてから絞り込む/再検索する（`?p=` も確実に剥がす）。
+    // モーダルが開いていたら閉じてから絞り込む/再検索する。**back せず replaceState で `?p=` を剥がす**
+    // （viaHistory:false・#433）＝直後の `onSelectHashtag` が打つ `?tags=` の pushState と、back の
+    // 遅延 popstate が競合して「前の絞り込み＋モーダルが復活」するのを防ぐ。✕ で閉じる方は従来どおり back。
+    closePost({ viaHistory: false });
     onSelectHashtag(tag);
   }
 

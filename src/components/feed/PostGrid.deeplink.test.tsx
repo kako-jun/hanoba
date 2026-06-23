@@ -425,6 +425,31 @@ describe("PostGrid × deep-link `?p=<nevent>`（#386）", () => {
     expect(new URLSearchParams(window.location.search).has("p")).toBe(false);
   });
 
+  it("(40) カードから開いた（pushState 済）モーダルでタグ→back せず replaceState で `?p=` を剥がす（#433）", async () => {
+    // #433 の核。(36) は deep-link 着地（pushedRef=false）で元々 replaceState 分岐だったため bug を踏まない。
+    // ここは**カードタップで開く**＝openPost が pushState（pushedRef=true）。旧実装は closePost が back() を
+    // 打ち、その遅延 popstate が直後の `?tags=` push と競合して「前の絞り込み＋モーダル」が復活していた。
+    const id = hexId("ab");
+    const onSelectHashtag = vi.fn();
+    window.history.replaceState(null, "", `/discover?tags=${encodeURIComponent("トマト")}`);
+    const user = userEvent.setup();
+    render(<PostGrid posts={[makePost({ id, caption: "ひらく", hashtags: ["アガベ"] })]} onSelectHashtag={onSelectHashtag} />);
+
+    await user.click(await screen.findByRole("button", { name: "ひらく" }));
+    const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
+    expect(new URLSearchParams(window.location.search).has("p")).toBe(true); // openPost で push 済
+    backSpy.mockClear();
+
+    await user.click(within(dialog).getByRole("button", { name: /アガベ/ }));
+
+    // 肝: pushedRef=true でも **back しない**。replaceState で `?p=` を剥がし `?tags=` は保持。
+    expect(backSpy).not.toHaveBeenCalled();
+    expect(new URLSearchParams(window.location.search).has("p")).toBe(false);
+    expect(new URLSearchParams(window.location.search).get("tags")).toBe("トマト");
+    await waitFor(() => expect(onSelectHashtag).toHaveBeenCalledWith("アガベ"));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "投稿の詳細" })).not.toBeInTheDocument());
+  });
+
   // ---- console 汚染 ----
 
   it("(37) fetch 失敗系経路で console.error / unhandled rejection が出ない", async () => {
