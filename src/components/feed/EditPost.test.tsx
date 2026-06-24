@@ -5,13 +5,11 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 
 // ネットワーク境界（編集＝publish新規+kind:5削除／いいね・コメント数）をモックする。parsePost は実物を使う。
 const editPost = vi.fn();
-const fetchReactionCountsBatch = vi.fn();
-const fetchCommentCountsBatch = vi.fn();
+const fetchEngagementCountsBatch = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   editPost: (...a: unknown[]) => editPost(...a),
-  fetchReactionCountsBatch: (...a: unknown[]) => fetchReactionCountsBatch(...a),
-  fetchCommentCountsBatch: (...a: unknown[]) => fetchCommentCountsBatch(...a),
+  fetchEngagementCountsBatch: (...a: unknown[]) => fetchEngagementCountsBatch(...a),
 }));
 
 import EditPost from "./EditPost.tsx";
@@ -30,8 +28,10 @@ const post: FeedPost = {
 describe("EditPost（投稿の編集＝確認つき再投稿・#300）", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchReactionCountsBatch.mockResolvedValue(new Map([["old-id", 3]]));
-    fetchCommentCountsBatch.mockResolvedValue(new Map([["old-id", 2]]));
+    fetchEngagementCountsBatch.mockResolvedValue({
+      reactions: new Map([["old-id", 3]]),
+      comments: new Map([["old-id", 2]]),
+    });
   });
   afterEach(() => cleanup());
 
@@ -58,7 +58,7 @@ describe("EditPost（投稿の編集＝確認つき再投稿・#300）", () => {
 
     render(<EditPost post={post} onClose={() => {}} onEdited={onEdited} />);
     // 数の取得を待つ（確認文に出る）。
-    await waitFor(() => expect(fetchReactionCountsBatch).toHaveBeenCalled());
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalled());
 
     const textarea = screen.getByRole("textbox");
     await user.clear(textarea);
