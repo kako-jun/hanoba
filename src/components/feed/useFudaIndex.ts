@@ -11,6 +11,9 @@ import { buildVarietyIndex, type FudaIndex } from "../../lib/plants/fuda.ts";
  * catalog は安定なので索引は `useMemo` でメモする（catalog 全走査を毎レンダーで繰り返さない）。
  *
  * VarietyFilter（discover の絞り込みチップ）も `hashtagLoc` 経由で #タグ表示の翻訳に使う（#460/#464）。
+ * discover では PostGrid と VarietyFilter が各々このフックを呼ぶ＝同一ページに2インスタンス並走し
+ * `buildVarietyIndex`（~2,000品種走査）が2回走るが、catalog chunk は bundler キャッシュで安く、
+ * 索引は読み取り専用の純データ。共有 store 化はしない（最小変更・consumer 間の結合を増やさない）。
  */
 export function useFudaIndex(): FudaIndex | null {
   const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
