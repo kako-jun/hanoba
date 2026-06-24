@@ -1,22 +1,21 @@
-// 投稿の「札」を組む純粋関数（#182・#23 学名統一）。
+// 投稿の「札」を組む純粋関数（#182・#23・#459 学名統一）。
 //
-// 札（ふだ）＝植物屋の鉢に刺さる名前。#23 の決定仕様で、札は「学名（フォーマル）＋
-// 最も有名な和名表記」を並べた1枚にする。最も具体的な和名（品種名 or 属名）を name に、
-// 学名を sci に持つ。タグ（#143/#144/#181）が概要→詳細の全階層を付けてよいのとは別概念で、
-// 札は具体1つに畳む:
+// 札（ふだ）＝植物屋の鉢に刺さる名前。#459 の決定仕様で、札は **学名そのもの**（和名は札に出さない・
+// 隣の #タグが担う）。最も具体的な学名を sci に、札クリックの逆算タグを filterTags に持つ。
+// タグ（#143/#144/#181）が概要→詳細の全階層を付けてよいのとは別概念で、札は具体1つに畳む（最大マッチ）:
 // - カテゴリ（塊根植物/花木 等）は札にしない。
 // - 属に品種があれば「属単独」の札は捨てる（品種に畳む）。
 // - 同属の複数品種はそれぞれ品種の札として残す。
-// - 非 pickable な見出し属（原種/その他塊根/コケ各種 等）配下の品種は「品種」の札として出す
-//   ＝見出し語（原種 等）も属名も name に出さない（#23・学名＋品種和名だけ）。
+// - 非 pickable な見出し属（原種/その他塊根/コケ各種 等）配下の品種は #カテゴリ共起で品種札にする（#448）。
+// - **学名がどこからも引けない植物は札にしない**（和名へフォールバックしない＝ルールは1つ・#459）。
 //
 // 入力は post.hashtags のみ（#181 で属＋品種がタグに入るため。free-text 検出はしない）。
 // catalog は **引数で受ける**＝variety-catalog を静的 import せず code-split を壊さない
 // （呼び出し側が `await import("./variety-catalog.ts")` してから渡す）。学名は catalog の
-// variety.sci を最優先し、無ければ dictionary（属/著名種レベル）を lookup する（純データ）。
+// variety.sci を最優先し、無ければ dictionary、無ければ属の学名（genusSci）を使う（純データ）。
 
 import { findPlantByTerm } from "./search.ts";
-import type { VarietyCategory } from "./variety-catalog.ts";
+import type { Loc, VarietyCategory } from "./variety-catalog.ts";
 
 /**
  * 投稿カードに刺す札1枚（#23/#459＝**学名そのもの**）。和名は札に出さない（隣の #タグが担う）。
@@ -62,30 +61,28 @@ function lookupSci(name: string): string | null {
 }
 
 /**
- * `hashtags` から札（学名＋和名）を組む。catalog に無いタグ（カテゴリ label・
- * 非 pickable 見出し属・辞書外の任意タグ）は札にしない。属に品種があれば属単独は畳む。
+ * `hashtags` から札（学名のみ・#459）を組む規約。catalog に無いタグ（カテゴリ label・
+ * 非 pickable 見出し属・辞書外の任意タグ）は札にしない。属に品種があれば属単独は畳む（最大マッチ）。
  *
  * #223 属コンテキスト解決: 別属に同名の品種があり得る（アボカドの「ハス」⇔蓮属、ボタンの
  * 「太陽」⇔サボテン/スモモ）ので、品種名は **先勝ちで捨てず全候補を持つ**。投稿のタグ集合から
  * 先に「存在する属の集合 genusPresent」（＝pickableGenus で引けた属名）を求め、品種タグは親属が
  * 同一投稿にある時だけ品種解決する。これで「ハスアボカド」改名・「太陽」ドロップの妥協を外す。
- * 親属が無い素の品種タグは catalog 先頭候補（既定）に倒す（本質的に決められず、それ以上は諦める）。
+ * **親属（or #448 のカテゴリ）が無い素の品種タグは札にしない**（旧 catalog 先頭候補フォールバックは撤去・#459）。
  *
- * 学名 sci の解決順:
- * - 品種札: `catalog の variety.sci` ?? `lookupSci(品種名)` ?? `lookupSci(属名)` ?? null
- * - 属単独札: `lookupSci(属名)` ?? null
+ * 学名 sci の解決順（引けなければ札にしない・和名へ倒さない・#459）:
+ * - 品種札: `catalog の variety.sci` ?? `lookupSci(品種名)` ?? `属の学名(genusSci)`
+ * - 属単独札: `属の学名(genusSci)`（dict ?? 品種の学名の先頭語）
  *
- * name（和名）:
- * - 品種札: catalog の canonical 品種名（alias でヒットしても canonical 優先・引けなければ来たタグ）
- * - 属単独札: 属名
- *
- * 戻り値は安定順（catalog の出現順）。同一 name は1件に dedupe する。
+ * 戻り値は安定順（catalog の出現順）。同一 key（canonical 品種名/属名）は1件に dedupe する。
  */
 // 照合キーの正規化（小文字・前後 trim・**内部の空白と `_` を同一視**）。catalog の品種名は空白入り
 // （例「フィカス ペティオラリス」）だが、投稿本文のタグは insertTag(normalizeTagForBody) で空白→`_`
 // に畳まれて `#フィカス_ペティオラリス` で保存される。同じキーに正規化しないと複数語の品種で札が
 // 出ない（#239 レビュー S1）。`_`/空白を `_` に寄せて両者を一致させる。
-function normFudaKey(s: string): string {
+// 表示ローカライズ（#460）でも同じキーで引けるよう **export** する（plant-i18n の localizeHashtag が
+// import して使う＝正規化ロジックを二重持ちしない＝drift 防止）。
+export function normFudaKey(s: string): string {
   return s.trim().toLowerCase().replace(/[_\s]+/g, "_");
 }
 
@@ -104,6 +101,12 @@ export interface FudaIndex {
   categoryLabels: Map<string, string>;
   /** pickable 属の表示名 → 属の学名（dict ?? 品種の学名の先頭語で導出・#459）。引けない寄せ集め属は持たない。 */
   genusSci: Map<string, string>;
+  /**
+   * ハッシュタグ表示ローカライズ用（#460）。正規化キー（normFudaKey）→ その語の `Loc`（en/zh/es）。
+   * **カテゴリ label** と **pickable 属名（+alias）** だけを入れる＝表示を閲覧言語に訳すのはこの2種だけ。
+   * 品種/様式/世話タグ（loc 無し）は入れない＝ja のまま。**表示専用**＝書き込むタグ・内部キーは ja 正準で不変。
+   */
+  hashtagLoc: Map<string, Loc>;
 }
 
 /**
@@ -117,15 +120,21 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
   const varietyIndex = new Map<string, VarietyIndexEntry[]>();
   const pickableGenus = new Map<string, string>(); // 照合キー(正規化) → 属表示名
   const categoryLabels = new Map<string, string>(); // 照合キー(正規化) → カテゴリ表示名（#448）
+  // 表示ローカライズ（#460）: 正規化キー → Loc。カテゴリ label と pickable 属名(+alias) だけを入れる
+  // （品種/様式/世話タグは loc が無いので入れない＝ja のまま表示する）。loc 未設定はスキップ（defensive）。
+  const hashtagLoc = new Map<string, Loc>();
 
   for (const category of catalog) {
     const ck = normFudaKey(category.label);
     if (ck !== "" && !categoryLabels.has(ck)) categoryLabels.set(ck, category.label);
+    if (ck !== "" && category.loc !== undefined && !hashtagLoc.has(ck)) hashtagLoc.set(ck, category.loc);
     for (const genus of category.genera) {
       if (genus.pickable) {
         for (const key of [genus.name, ...(genus.aliases ?? [])]) {
           const k = normFudaKey(key);
           if (k !== "" && !pickableGenus.has(k)) pickableGenus.set(k, genus.name);
+          // 属名・alias を同じ Loc に紐づける（閲覧言語で訳す＝Latin/英属名へ・#460）。loc 無しは入れない。
+          if (k !== "" && genus.loc !== undefined && !hashtagLoc.has(k)) hashtagLoc.set(k, genus.loc);
         }
       }
       for (const v of genus.varieties) {
@@ -159,7 +168,7 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
     }
   }
 
-  return { catalog, varietyIndex, pickableGenus, categoryLabels, genusSci };
+  return { catalog, varietyIndex, pickableGenus, categoryLabels, genusSci, hashtagLoc };
 }
 
 /**

@@ -14,6 +14,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
 }));
 
 import PostDetail from "./PostDetail.tsx";
+import { LocaleProvider } from "../../lib/i18n/index.ts";
 
 // matchMedia を差し替えて reduced-motion の on/off を制御する（#275・DandelionBurst と同型）。
 // グローバル汚染しないよう afterEach の vi.unstubAllGlobals() で戻す。
@@ -488,5 +489,48 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.queryByText("この投稿の植物")).toBeNull();
     // ハッシュタグチップは従来どおり出る。
     expect(screen.getByRole("button", { name: "#塊根植物" })).toBeInTheDocument();
+  });
+
+  // #460: ハッシュタグの**表示**だけ閲覧言語に訳す。実カタログを動的 import するので実 loc 値で検証する。
+  describe("ハッシュタグ表示ローカライズ（#460・en・実タグは ja 正準）", () => {
+    it("en ではカテゴリ/属タグの表示を loc.en に訳し、品種/世話タグは ja のまま", async () => {
+      fetchReactionCount.mockResolvedValue(0);
+      render(
+        <LocaleProvider value="en">
+          <PostDetail
+            // 塊根植物=カテゴリ・パキポディウム=属（loc あり）／グラキリス=品種・板付け=世話タグ（loc 無し）。
+            post={makePost({ id: "loc1", caption: "観察", hashtags: ["塊根植物", "パキポディウム", "グラキリス", "板付け"] })}
+            onClose={() => {}}
+            onSelectHashtag={() => {}}
+          />
+        </LocaleProvider>,
+      );
+      // catalog 動的 import 後に英表示のチップが出る。
+      expect(await screen.findByRole("button", { name: "#Caudex Plants" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "#Pachypodium" })).toBeInTheDocument();
+      // 品種・世話タグは ja のまま。
+      expect(screen.getByRole("button", { name: "#グラキリス" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "#板付け" })).toBeInTheDocument();
+      // ja 原典の表示は en では出ない（カテゴリ/属）。
+      expect(screen.queryByRole("button", { name: "#塊根植物" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "#パキポディウム" })).toBeNull();
+    });
+
+    it("en でも onSelectHashtag は JA 正準タグで呼ぶ（表示=Pachypodium・値=パキポディウム）", async () => {
+      fetchReactionCount.mockResolvedValue(0);
+      const picked: string[] = [];
+      render(
+        <LocaleProvider value="en">
+          <PostDetail
+            post={makePost({ id: "loc2", caption: "観察", hashtags: ["パキポディウム"] })}
+            onClose={() => {}}
+            onSelectHashtag={(tg) => picked.push(tg)}
+          />
+        </LocaleProvider>,
+      );
+      const chip = await screen.findByRole("button", { name: "#Pachypodium" });
+      fireEvent.click(chip);
+      expect(picked).toEqual(["パキポディウム"]);
+    });
   });
 });

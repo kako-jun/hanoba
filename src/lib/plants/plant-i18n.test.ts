@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Genus, Loc, Variety, VarietyCategory } from "./variety-catalog.ts";
-import { categoryLabel, genusLabel, pickLoc, varietyLabel } from "./plant-i18n.ts";
+import { categoryLabel, genusLabel, localizeHashtag, pickLoc, varietyLabel } from "./plant-i18n.ts";
+import { buildVarietyIndex } from "./fuda.ts";
 
 // #409 P2: 閲覧言語の表示名を引く純関数の「適用」観点だけを直に突く。
 // ここで検証するのは **表示専用の文字列**（書き込むタグ・内部キーは ja 正準のまま不変＝別ファイルの核テスト）。
@@ -93,5 +94,70 @@ describe("varietyLabel（#409 品種表示名）", () => {
     const v: Variety = { name: "チタノタ", sci: "Agave titanota" };
     expect(varietyLabel(v, "en")).toBe("チタノタ");
     expect(varietyLabel(v, "ja")).toBe("チタノタ");
+  });
+});
+
+describe("localizeHashtag（#460 ハッシュタグ表示の言語解決）", () => {
+  // カテゴリ（塊根植物）と pickable 属（パキポディウム＋alias）だけ Loc を持つ最小カタログ。
+  // 品種（グラキリス）は loc 無し＝マップに入らない＝ja のまま。
+  const CAT: VarietyCategory[] = [
+    {
+      label: "塊根植物",
+      loc: { en: "Caudex Plants", zh: "块根植物", es: "Plantas Caudiciformes" },
+      genera: [
+        {
+          name: "パキポディウム",
+          pickable: true,
+          loc: { en: "Pachypodium", zh: "棒锤树属", es: "Pachypodium" },
+          aliases: ["パキポ"],
+          varieties: [{ name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius" }],
+        },
+      ],
+    },
+  ];
+  const hashtagLoc = buildVarietyIndex(CAT).hashtagLoc;
+
+  it("ja は loc が有っても常に原典 tag を返す（cross-language filter＝ja 正準）", () => {
+    expect(localizeHashtag("塊根植物", "ja", hashtagLoc)).toBe("塊根植物");
+    expect(localizeHashtag("パキポディウム", "ja", hashtagLoc)).toBe("パキポディウム");
+  });
+
+  it("en はカテゴリを loc.en に訳す", () => {
+    expect(localizeHashtag("塊根植物", "en", hashtagLoc)).toBe("Caudex Plants");
+  });
+
+  it("en は pickable 属を loc.en（Latin 属名）に訳す", () => {
+    expect(localizeHashtag("パキポディウム", "en", hashtagLoc)).toBe("Pachypodium");
+  });
+
+  it("属 alias も同じ Loc で訳す（#460）", () => {
+    expect(localizeHashtag("パキポ", "en", hashtagLoc)).toBe("Pachypodium");
+  });
+
+  it("品種タグ（loc 無し＝マップ外）は非 ja でも原典のまま", () => {
+    expect(localizeHashtag("グラキリス", "en", hashtagLoc)).toBe("グラキリス");
+  });
+
+  it("辞書外（カテゴリでも属でもない世話タグ等）は原典のまま", () => {
+    expect(localizeHashtag("板付け", "en", hashtagLoc)).toBe("板付け");
+  });
+
+  it("zh/es も loc 経路で訳す", () => {
+    expect(localizeHashtag("塊根植物", "zh", hashtagLoc)).toBe("块根植物");
+    expect(localizeHashtag("塊根植物", "es", hashtagLoc)).toBe("Plantas Caudiciformes");
+  });
+
+  it("その言語の loc が無い（空文字/欠落）なら原典へグレースフル", () => {
+    const partial = new Map([["x", { en: "" } as Loc]]);
+    // 空文字 loc は原典へ倒す（typeof string && !== "" の境界）。
+    expect(localizeHashtag("x", "en", partial)).toBe("x");
+    // そもそも en キーが無ければ原典へ。
+    const noEn = new Map([["y", { zh: "中" } as Loc]]);
+    expect(localizeHashtag("y", "en", noEn)).toBe("y");
+  });
+
+  it("内部空白/`_` を同一視して引く（投稿タグは _ 区切りで保存される・#239 と同じ正規化）", () => {
+    // パキポ alias は1語だが、正規化は normFudaKey 経由なので大小・空白も吸収する。
+    expect(localizeHashtag(" パキポディウム ", "en", hashtagLoc)).toBe("Pachypodium");
   });
 });

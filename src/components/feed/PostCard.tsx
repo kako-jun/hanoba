@@ -2,6 +2,7 @@ import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
+import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
 import { shotDateRange, SHOT_DATE_RANGE_SEP } from "../../lib/feed/shotDate.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 import Icon from "../ui/Icon.tsx";
@@ -236,7 +237,8 @@ export default function PostCard({
                       }}
                       className="block max-w-full truncate rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
                     >
-                      #{tag}
+                      {/* 表示だけ閲覧言語に訳す（カテゴリ/属＝#460）。実タグ（key・onSelectHashtag）は ja 正準で不変。 */}
+                      #{fudaIndex ? localizeHashtag(tag, locale, fudaIndex.hashtagLoc) : tag}
                     </button>
                   </li>
                 ))}

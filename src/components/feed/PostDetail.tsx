@@ -1,7 +1,8 @@
-import { type TouchEvent as ReactTouchEvent, useEffect, useRef, useState } from "react";
+import { type TouchEvent as ReactTouchEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
-import { buildFuda, type Fuda } from "../../lib/plants/fuda.ts";
+import { buildVarietyIndex, resolveFuda, type Fuda } from "../../lib/plants/fuda.ts";
+import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
@@ -173,7 +174,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
   // 投稿の札（鉢の名前＝学名＋最も有名な和名を1枚・#182/#23）。caption は使わず hashtags のみ
   // （#181 で属＋品種が tag に入る）。catalog 未ロード時は空＝札セクション非表示。
-  const fuda: Fuda[] = catalog === null ? [] : buildFuda(post.hashtags, catalog);
+  // 索引（buildVarietyIndex）を catalog 単位で1回だけ作り、札解決（resolveFuda）と
+  // ハッシュタグ表示ローカライズ（index.hashtagLoc・#460）の両方で使い回す。
+  const index = useMemo(() => (catalog ? buildVarietyIndex(catalog) : null), [catalog]);
+  const fuda: Fuda[] = index ? resolveFuda(post.hashtags, index) : [];
 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
   const captionText = stripHashtags(post.caption);
@@ -382,7 +386,8 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                     onClick={() => onSelectHashtag(tag)}
                     className="rounded-full bg-ha-green-soft text-ha-green-deep px-3 py-1 text-sm font-medium hover:bg-ha-green hover:text-ha-white transition-colors"
                   >
-                    #{tag}
+                    {/* 表示だけ閲覧言語に訳す（カテゴリ/属＝#460）。実タグ（key・onSelectHashtag）は ja 正準で不変。 */}
+                    #{index ? localizeHashtag(tag, locale, index.hashtagLoc) : tag}
                   </button>
                 </li>
               ))}

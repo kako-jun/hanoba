@@ -5,20 +5,25 @@ import PostCard from "./PostCard.tsx";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { buildVarietyIndex } from "../../lib/plants/fuda.ts";
+import { LocaleProvider } from "../../lib/i18n/index.ts";
 
 // 植物札テスト用の最小カタログ（パキポディウム属＋品種グラキリス／フィカス属＋複数語品種）。
+// #460: カテゴリ・pickable 属に loc を付け、ハッシュタグ表示ローカライズ（カテゴリ/属→閲覧言語）を検証する。
 const TEST_CATALOG: VarietyCategory[] = [
   {
     label: "多肉植物",
+    loc: { en: "Succulents", zh: "多肉植物", es: "Suculentas" },
     genera: [
       {
         name: "パキポディウム",
         pickable: true,
+        loc: { en: "Pachypodium", zh: "棒锤树属", es: "Pachypodium" },
         varieties: [{ name: "グラキリス", sci: "Pachypodium rosulatum var. gracilius" }],
       },
       {
         name: "フィカス",
         pickable: true,
+        loc: { en: "Ficus", zh: "榕属", es: "Ficus" },
         // 複数語の品種名（カタログは空白・投稿のタグは _）。両者を札で一致させる（#239 S1）。
         varieties: [{ name: "フィカス ペティオラリス", sci: "Ficus petiolaris" }],
       },
@@ -247,6 +252,86 @@ describe("PostCard", () => {
     } finally {
       restore();
     }
+  });
+
+  // #460: ハッシュタグの**表示**だけ閲覧言語に訳す（カテゴリ/属）。実タグ（key・onSelectHashtag・filter）は
+  // ja 正準で不変＝言語を跨いでも同じ #タグで繋がる（#409 cross-language filter）。
+  describe("ハッシュタグ表示ローカライズ（#460・表示だけ訳す・実タグは ja 正準）", () => {
+    it("en ではカテゴリ/属タグの表示を loc.en に訳し、品種/世話タグは ja のまま", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        render(
+          <LocaleProvider value="en">
+            <PostCard
+              // 多肉植物=カテゴリ・パキポディウム=属（loc あり）／グラキリス=品種・板付け=世話タグ（loc 無し）。
+              post={makePost({ hashtags: ["多肉植物", "パキポディウム", "グラキリス", "板付け"] })}
+              index={0}
+              now={2000}
+              onOpen={noop}
+              onSelectHashtag={noop}
+              fudaIndex={buildVarietyIndex(TEST_CATALOG)}
+            />
+          </LocaleProvider>,
+        );
+        // カテゴリ・属は英表示（#塊根→Caudex 系。ここは Succulents / Pachypodium）。
+        expect(screen.getByRole("button", { name: "#Succulents" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "#Pachypodium" })).toBeInTheDocument();
+        // 品種（loc 無し）・世話タグ（辞書外）は ja のまま。
+        expect(screen.getByRole("button", { name: "#グラキリス" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "#板付け" })).toBeInTheDocument();
+        // ja 原典の表示は en では出ない（カテゴリ/属）。
+        expect(screen.queryByRole("button", { name: "#多肉植物" })).toBeNull();
+        expect(screen.queryByRole("button", { name: "#パキポディウム" })).toBeNull();
+      } finally {
+        restore();
+      }
+    });
+
+    it("en でも onSelectHashtag は JA 正準タグで呼ぶ（表示=Pachypodium・値=パキポディウム）", async () => {
+      const restore = mockSizes(0, 0);
+      try {
+        const user = userEvent.setup();
+        const picked: string[] = [];
+        render(
+          <LocaleProvider value="en">
+            <PostCard
+              post={makePost({ hashtags: ["パキポディウム"] })}
+              index={0}
+              now={2000}
+              onOpen={noop}
+              onSelectHashtag={(tg) => picked.push(tg)}
+              fudaIndex={buildVarietyIndex(TEST_CATALOG)}
+            />
+          </LocaleProvider>,
+        );
+        // 表示は英語、クリックすると渡るのは ja 正準タグ。
+        await user.click(screen.getByRole("button", { name: "#Pachypodium" }));
+        expect(picked).toEqual(["パキポディウム"]);
+      } finally {
+        restore();
+      }
+    });
+
+    it("fudaIndex が null なら表示は素通り（ja のまま・グレースフル）", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        render(
+          <LocaleProvider value="en">
+            <PostCard
+              post={makePost({ hashtags: ["多肉植物"] })}
+              index={0}
+              now={2000}
+              onOpen={noop}
+              onSelectHashtag={noop}
+              fudaIndex={null}
+            />
+          </LocaleProvider>,
+        );
+        expect(screen.getByRole("button", { name: "#多肉植物" })).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
   });
 
   it("profile があれば著者名を出す（#35）", () => {

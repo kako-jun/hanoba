@@ -8,6 +8,7 @@
 // 誰がどの言語で見ても同じ canonical タグ（日本語）を書き込む＝言語を跨いでも同じ #タグで繋がる。
 
 import type { Locale } from "../i18n/locale.ts";
+import { normFudaKey } from "./fuda.ts";
 import type { Genus, Loc, Variety, VarietyCategory } from "./variety-catalog.ts";
 
 /**
@@ -34,4 +35,23 @@ export function genusLabel(genus: Genus, locale: Locale): string {
 /** 品種の表示名（閲覧言語）。品種 loc は基本未 populate（大半が固有名詞）＝base へ素通り。 */
 export function varietyLabel(variety: Variety, locale: Locale): string {
   return pickLoc(variety.name, variety.loc, locale);
+}
+
+/**
+ * ハッシュタグ（投稿の #タグ）の**表示**を閲覧言語に訳す（#460）。`hashtagLoc` は `buildVarietyIndex` が
+ * 作る「正規化キー → Loc」マップ（カテゴリ label・pickable 属名+alias だけが入る）。
+ *
+ * - `ja` は常に原典 `tag` を返す（#409 cross-language filter＝ja 正準）。
+ * - 非 ja は `hashtagLoc.get(normFudaKey(tag))` を引き、`loc[locale]` が非空文字列ならそれを返す
+ *   （カテゴリ → loc.en・属 → 学名/英属名）。
+ * - マップに無い（品種・様式・世話・辞書外）タグや、その言語の loc が無い/空文字のタグは `tag` のまま。
+ *
+ * **表示専用**＝戻り値は画面に出す文字列だけに使う。`onSelectHashtag`・href・React key・filter には
+ * 常に元の ja 正準 `tag` を使うこと（言語を跨いでも同じ #タグで繋がる＝独自化禁止）。
+ */
+export function localizeHashtag(tag: string, locale: Locale, hashtagLoc: Map<string, Loc>): string {
+  if (locale === "ja") return tag;
+  const loc = hashtagLoc.get(normFudaKey(tag));
+  const localized = loc?.[locale];
+  return typeof localized === "string" && localized !== "" ? localized : tag;
 }
