@@ -1,9 +1,9 @@
-import { type TouchEvent as ReactTouchEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type TouchEvent as ReactTouchEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "../ui/Icon.tsx";
-import { buildVarietyIndex, resolveFuda, type Fuda } from "../../lib/plants/fuda.ts";
+import { resolveFuda, type Fuda } from "../../lib/plants/fuda.ts";
 import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
-import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
+import { useFudaIndex } from "./useFudaIndex.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
@@ -80,10 +80,6 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   const photoWrapRef = useRef<HTMLDivElement>(null);
   const [reservedH, setReservedH] = useState<number | undefined>(undefined);
 
-  // 品種カタログは初期フィードバンドルに載せず、モーダル展開時に一度だけ動的 import する
-  // （TagPicker の ensureCatalog と同型・SSR では走らない）。失敗時は null のまま＝札セクション非表示。
-  const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
-
   // X シェアのメニュー開閉（複数パートのときだけ「全文／1/n…」を出す・#37）。
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -156,27 +152,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     };
   }, [post.id]);
 
-  // 札（属＋品種）を組むために品種カタログを動的 import（モーダル展開時に一度・クライアントのみ）。
-  // 失敗時は null のまま＝札セクションは出さない（下のハッシュタグチップは従来どおり出る）。
-  useEffect(() => {
-    let alive = true;
-    import("../../lib/plants/variety-catalog.ts")
-      .then((mod) => {
-        if (alive) setCatalog(mod.VARIETY_CATALOG);
-      })
-      .catch(() => {
-        /* 札セクションを出さないだけ（catalog は null のまま）。 */
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   // 投稿の札（鉢の名前＝学名＋最も有名な和名を1枚・#182/#23）。caption は使わず hashtags のみ
-  // （#181 で属＋品種が tag に入る）。catalog 未ロード時は空＝札セクション非表示。
-  // 索引（buildVarietyIndex）を catalog 単位で1回だけ作り、札解決（resolveFuda）と
-  // ハッシュタグ表示ローカライズ（index.hashtagLoc・#460）の両方で使い回す。
-  const index = useMemo(() => (catalog ? buildVarietyIndex(catalog) : null), [catalog]);
+  // （#181 で属＋品種が tag に入る）。索引は useFudaIndex（catalog を動的 import し buildVarietyIndex を
+  // memo・PostGrid と共有）で得て、札解決（resolveFuda）とハッシュタグ表示ローカライズ
+  // （index.hashtagLoc・#460）の両方で使い回す。catalog 未ロード時は index=null＝札セクション非表示。
+  const index = useFudaIndex();
   const fuda: Fuda[] = index ? resolveFuda(post.hashtags, index) : [];
 
   // 表示用の本文は #タグ を除く（タグは下のチップに出すため・フィードカードと挙動を揃える・#43）。
