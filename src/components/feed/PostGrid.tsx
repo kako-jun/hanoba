@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
-import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
-import { buildVarietyIndex } from "../../lib/plants/fuda.ts";
 import { diluteFeed } from "../../lib/feed/dilution.ts";
 import { fetchEngagementCountsBatch } from "../../lib/nostr/client.ts";
 import PostCard from "./PostCard.tsx";
 import PostDetail from "./PostDetail.tsx";
 import { useProfiles } from "./useProfiles.ts";
 import { useDilution } from "./useDilution.ts";
+import { useFudaIndex } from "./useFudaIndex.ts";
 import { usePostDeepLink } from "./usePostDeepLink.ts";
 
 interface Props {
@@ -45,27 +44,10 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   // （薄めた人でもモーダルを開ける）、フィード外の `?p=` 着地は内部で fetch した externalPost を返す。
   const { selectedPost, openPost, closePost } = usePostDeepLink({ posts, selectedId, setSelectedId });
 
-  // 品種カタログを1回だけ動的 import（カードの植物札＝buildFuda 用・#239）。グリッド単位で1回読み、
-  // 各 PostCard に配る（カードごとに import しない）。重い chunk なので非同期＝カードは即描画し、
-  // 札はロード後にふっと出る（グレースフル）。失敗時は null＝札を出さないだけ。
-  const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
-  useEffect(() => {
-    let alive = true;
-    import("../../lib/plants/variety-catalog.ts")
-      .then((mod) => {
-        if (alive) setCatalog(mod.VARIETY_CATALOG);
-      })
-      .catch(() => {
-        /* 札を出さないだけ（catalog は null のまま）。 */
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // 札解決の索引（#257）。catalog 全走査（~2,000品種＋別名）はグリッドで**1回だけ**行い、各 PostCard へ
-  // 配る（カードごとに作り直さない＝旧 buildFuda はカード数ぶん索引を再構築していた）。catalog は安定。
-  const fudaIndex = useMemo(() => (catalog ? buildVarietyIndex(catalog) : null), [catalog]);
+  // 札解決の索引（#239/#257）。品種カタログを1回だけ動的 import し、catalog 全走査（~2,000品種＋別名）を
+  // グリッド単位で**1回だけ**行って各 PostCard へ配る（カードごとに作り直さない）。フックに隔離（VarietyFilter
+  // の絞り込みチップ翻訳でも同じ索引を使う・#464）。読み込み中/失敗時は null＝札を出さないだけ。
+  const fudaIndex = useFudaIndex();
 
   // カードのいいね数・コメント数（#276）。グリッド単位で**1回ずつ**バッチ取得し各 PostCard へ配る
   // （catalog/useProfiles と同じ「1回取得し配る」パターン・カードごとに query しない＝N+1 回避）。

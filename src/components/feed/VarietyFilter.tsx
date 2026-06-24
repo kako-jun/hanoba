@@ -1,7 +1,9 @@
 import Icon from "../ui/Icon.tsx";
 import TagPicker from "../composer/TagPicker.tsx";
 import { normalizeTagForBody } from "../../lib/image/hashtag-complete.ts";
+import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
+import { useFudaIndex } from "./useFudaIndex.ts";
 
 interface Props {
   /** 現在の絞り込みタグ（品種＋自由タグ・AND）。 */
@@ -24,7 +26,10 @@ interface Props {
  * 同形にしないと relay/AND/選択色のどれも一致しない（#239 レビュー指摘）。
  */
 export default function VarietyFilter({ tags, onChange }: Props) {
-  const t = useT(useLocale());
+  const locale = useLocale();
+  const t = useT(locale);
+  // チップの #タグ表示を閲覧言語に訳す（カテゴリ/属＝#460）ための索引（PostGrid と同じ #257 索引・#464）。
+  const index = useFudaIndex();
   const caption = tags.map((tg) => `#${tg}`).join(" ");
 
   function add(raw: string) {
@@ -39,22 +44,26 @@ export default function VarietyFilter({ tags, onChange }: Props) {
     <div className="flex flex-col gap-3">
       {tags.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex h-9 items-center gap-1 rounded-full bg-ha-green px-3 text-sm font-medium text-ha-white"
-            >
-              #{tag}
-              <button
-                type="button"
-                aria-label={t("filter.remove.aria", { tag })}
-                onClick={() => remove(tag)}
-                className="-mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ha-white/80 hover:text-ha-white"
+          {tags.map((tag) => {
+            // 表示だけ閲覧言語に訳す（カテゴリ/属＝#460）。実タグ（key・remove）は ja 正準で不変。
+            const shown = index ? localizeHashtag(tag, locale, index.hashtagLoc) : tag;
+            return (
+              <span
+                key={tag}
+                className="inline-flex h-9 items-center gap-1 rounded-full bg-ha-green px-3 text-sm font-medium text-ha-white"
               >
-                <Icon name="close" className="h-3.5 w-3.5" />
-              </button>
-            </span>
-          ))}
+                #{shown}
+                <button
+                  type="button"
+                  aria-label={t("filter.remove.aria", { tag: shown })}
+                  onClick={() => remove(tag)}
+                  className="-mr-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-ha-white/80 hover:text-ha-white"
+                >
+                  <Icon name="close" className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            );
+          })}
         </div>
       )}
 
