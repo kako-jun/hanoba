@@ -16,7 +16,10 @@ interface Props {
  * `/discover?tags=パキポディウム,ブレビカウレ`）、属単独札は属のみ（`?tags=パキポディウム`）で絞る
  * （#272 follow-up・kako-jun「ブレビカウレ札は パキポディウム ブレビカウレ で絞るはず」＝札は属＋品種の
  * 対。本文 #タグ ボタン〔単一タグ〕クリックとは区別）。本文と同じ正規化（`discoverTagsHref`＝内部空白→`_`）。
- * 学名（catalog.sci → dictionary）が引ければイタリックで併記、無ければ和名のみ（グレースフル）。
+ * 表示は **学名のみ**（#459＝札は学名そのもの）。`buildFuda`/`fudaForName` が学名を解決できた札だけが
+ * ここに来る（学名が引けない植物は札にならない＝和名へ fallback しない・ルールは1つ）。和名を札に出さないのは
+ * ①投稿では和名が隣の #タグ（`#白鯨` 等）に出ていて二重 ②「聞いたことない学名→クリックで正体（写真）が
+ * 判明」という学名を覚える/発見の導線を設計の核に置くため（kako-jun）。
  */
 export default function FudaList({ fuda }: Props) {
   const t = useT(useLocale());
@@ -28,7 +31,7 @@ export default function FudaList({ fuda }: Props) {
           <a
             // 札を生んだタグ集合（filterTags）で AND 絞り込み（品種札=[属,品種] / 属札=[属]・#272 逆算）。
             href={discoverTagsHref(f.filterTags)}
-            title={t("fuda.search.title", { label: f.sci !== null ? `${f.sci}（${f.name}）` : f.name })}
+            title={t("fuda.search.title", { label: f.sci })}
             onClick={(e) => e.stopPropagation()}
             // #362: 学名を truncate しない。狭い札では `truncate` が末尾を削り、園芸品種名の閉じ引用符
             // （例 `Vitis 'Delaware'` の末尾 `'`）が最初に消えていた。kako-jun「長くなったら改行すればいい」＝
@@ -43,8 +46,8 @@ export default function FudaList({ fuda }: Props) {
             // 「近すぎる」）。折返し行も同じ左端（22px）に揃う（hanging-bullet）。
             className="glass relative inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0 rounded-[2px] bg-ha-base/60 py-1 pl-[1.375rem] pr-2.5 text-sm text-ha-ink shadow-sm shadow-black/25 transition-colors before:absolute before:left-2 before:top-2 before:h-3 before:w-1.5 before:rounded-full before:bg-ha-green/80 hover:border-ha-green/70 hover:bg-ha-green-soft/80 hover:text-ha-white focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
           >
-            {f.sci !== null && <SciName sci={f.sci} className="font-display text-ha-green-deep" />}
-            <span className="font-medium text-ha-ink">{f.name}</span>
+            {/* 学名のみ（#459＝札は学名そのもの。学名が引けない植物は札にならない＝ここに来る札は必ず sci を持つ）。 */}
+            <SciName sci={f.sci} className="font-display text-ha-green-deep" />
           </a>
         </li>
       ))}

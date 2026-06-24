@@ -12,8 +12,8 @@ const t = (key: Parameters<typeof translate>[1], params?: Parameters<typeof tran
 function makeVarieties(n: number): RankedVariety[] {
   return Array.from({ length: n }, (_, i) => ({
     key: `k${i}`,
-    name: `品種${i}`,
-    sci: null,
+    // 札は学名のみ（#459）。sci は非 null＝学名のある品種だけがランキング/所有札に乗る。
+    sci: `Genus species${i}`,
     count: 1,
     filterTags: [`品種${i}`],
   }));

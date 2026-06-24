@@ -375,7 +375,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "ranking.board.delta.same": "无变化",
   "ranking.board.delta.up": "上升 {by}",
   "ranking.board.delta.down": "下降 {by}",
-  "ranking.board.rowSummary": "第 {rank} 名 {name}{sci} {count} 篇帖子 {delta}",
+  "ranking.board.rowSummary": "第 {rank} 名 {sci} {count} 篇帖子 {delta}",
 
   "ranking.chart.sparse": "积累两周以上后，趋势图就会出现。",
   "ranking.chart.caption": "进展（变动）——每周帖子数。准确排名请见上方表格。",

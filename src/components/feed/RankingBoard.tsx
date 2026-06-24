@@ -3,6 +3,7 @@ import SciName from "../ui/SciName.tsx";
 import { fetchRankingPosts } from "../../lib/nostr/client.ts";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { bucketByWeek, rankRunData, rankWithDeltas, type Delta, type RankRow } from "../../lib/feed/ranking.ts";
+import { discoverTagsHref } from "../../lib/feed/discoverFilter.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale, type MessageKey, type TParams } from "../../lib/i18n/index.ts";
 
@@ -176,36 +177,37 @@ export default function RankingBoard({ lang = DEFAULT_LOCALE }: { lang?: Locale 
         style={{ "--rank-rows": Math.ceil(rows.length / 2) } as React.CSSProperties}
       >
         {rows.map((row, i) => (
-          <li
-            key={row.key}
-            className="ha-rise glass rounded-xl px-4 py-3 flex items-center gap-3"
-            style={{ "--i": Math.min(i, 12) } as React.CSSProperties}
-            aria-label={rowSummary(row, t)}
-          >
-            {/* 順位 */}
-            <span
-              className="shrink-0 w-8 text-center font-display text-xl font-extrabold tabular-nums text-ha-green-deep"
-              aria-hidden="true"
+          <li key={row.key} className="ha-rise" style={{ "--i": Math.min(i, 12) } as React.CSSProperties}>
+            {/* 行クリックで discover（その品種の写真）へ＝「聞いたことない学名→クリックで正体が判明」の
+                発見導線（#459）。filterTags は札と同じ [属,品種]／[属]（ja 正準・cross-language フィルタ不変）。 */}
+            <a
+              href={discoverTagsHref(row.filterTags)}
+              aria-label={rowSummary(row, t)}
+              className="glass rounded-xl px-4 py-3 flex items-center gap-3 transition-colors hover:bg-ha-green-soft/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
             >
-              {row.rank}
-            </span>
+              {/* 順位 */}
+              <span
+                className="shrink-0 w-8 text-center font-display text-xl font-extrabold tabular-nums text-ha-green-deep"
+                aria-hidden="true"
+              >
+                {row.rank}
+              </span>
 
-            {/* 品種名（和名）＋学名 */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="font-medium text-ha-ink truncate">{row.name}</span>
-                <DeltaBadge delta={row.delta} />
+              {/* 学名のみ（#459＝学名を覚える/発見の導線・和名は出さない）。学名が無い少数だけ和名に fallback。 */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  {/* 学名のみ（#459＝ランキングは学名そのもの。学名のある品種だけが行になる）。 */}
+                  <SciName sci={row.sci} className="font-display font-medium text-ha-green-deep" />
+                  <DeltaBadge delta={row.delta} />
+                </div>
               </div>
-              {row.sci !== null && (
-                <SciName sci={row.sci} className="block text-sm text-ha-ink/55 truncate" />
-              )}
-            </div>
 
-            {/* 投稿数（票）。1000超でも読めるよう3桁区切り（#kako-jun）。 */}
-            <span className="shrink-0 text-right tabular-nums text-ha-ink/80">
-              <span className="font-semibold text-ha-ink">{row.count.toLocaleString("en-US")}</span>
-              <span className="text-xs text-ha-ink/55">{t("ranking.board.count.unit")}</span>
-            </span>
+              {/* 投稿数（票）。1000超でも読めるよう3桁区切り（#kako-jun）。 */}
+              <span className="shrink-0 text-right tabular-nums text-ha-ink/80">
+                <span className="font-semibold text-ha-ink">{row.count.toLocaleString("en-US")}</span>
+                <span className="text-xs text-ha-ink/55">{t("ranking.board.count.unit")}</span>
+              </span>
+            </a>
           </li>
         ))}
       </ol>
@@ -240,11 +242,9 @@ function deltaText(delta: Delta, t: (key: MessageKey, params?: TParams) => strin
   }
 }
 
-/** 行全体の読み上げ要約（順位・品種・学名・件数・先週比）。sparkline は aria-hidden なのでここに含める。 */
+/** 行全体の読み上げ要約（順位・学名・件数・先週比・#459＝ランキングは学名のみ）。 */
 function rowSummary(row: RankRow, t: (key: MessageKey, params?: TParams) => string): string {
-  // 学名があれば和名のあとに添える（SR 利用者にも学名を伝える・#162 N3）。
-  const sci = row.sci !== null ? ` ${row.sci}` : "";
-  return t("ranking.board.rowSummary", { rank: row.rank, name: row.name, sci, count: row.count, delta: deltaText(row.delta, t) });
+  return t("ranking.board.rowSummary", { rank: row.rank, sci: row.sci, count: row.count, delta: deltaText(row.delta, t) });
 }
 
 /** 先週比バッジ（テキストで意味を持たせる＝色だけに頼らない・a11y）。 */

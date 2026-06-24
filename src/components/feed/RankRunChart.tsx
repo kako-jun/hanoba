@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { RankRunData } from "../../lib/feed/ranking.ts";
+import SciName from "../ui/SciName.tsx";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 // uPlot のスタイルシート。CSS は副作用 import（window に触れない＝SSG ハザード無し）。本コンポーネント自体が
 // RankingBoard から遅延ロードされるので、この CSS もチャートを出すときに初めて読まれる（CropFrame の
@@ -142,7 +143,7 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
           series: [
             {}, // x 系列（プレースホルダ）
             ...data.series.map((s, i) => ({
-              label: s.name, // 凡例＝和名
+              label: s.sci, // 凡例ラベル＝学名（#459＝ランキング・凡例は学名のみ）
               stroke: SERIES_COLORS[i % SERIES_COLORS.length],
               width: 2,
               // 重い塗りはしない（fill 無し）。点は小さく。
@@ -189,20 +190,21 @@ export default function RankRunChart({ data }: { data: RankRunData }) {
   }
 
   return (
-    <figure className="flex flex-col gap-2" aria-label={t("ranking.chart.summary", { names: data.series.map((s) => s.name).join("・") })}>
+    <figure className="flex flex-col gap-2" aria-label={t("ranking.chart.summary", { names: data.series.map((s) => s.sci).join("・") })}>
       {/* canvas は装飾（意味は上の表が持つ）＝aria-hidden。 */}
       <div ref={hostRef} aria-hidden="true" className="w-full" />
       {/* 自前の凡例。マーカーは「線＋丸点」でグラフ本体（線＋点）と実体を一致させる（□は使わない）。
-          左揃え＋「マーカー＋和名」を whitespace-nowrap の塊にして、スマホで折り返してもユニットが割れない。
-          名前は表と figure の aria-label が持つので、この凡例は装飾＝aria-hidden。 */}
+          左揃え＋「マーカー＋学名」を whitespace-nowrap の塊にして、スマホで折り返してもユニットが割れない。
+          表示は学名（表と揃える・#459）。名前は表と figure の aria-label が持つので、この凡例は装飾＝aria-hidden。 */}
       <ul aria-hidden="true" className="flex flex-wrap justify-start gap-x-4 gap-y-1">
         {data.series.map((s, i) => (
           <li
-            key={`${i}-${s.name}`}
+            key={`${i}-${s.key}`}
             className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm text-ha-ink/80"
           >
             <LegendMark color={SERIES_COLORS[i % SERIES_COLORS.length] ?? AXIS_INK} />
-            <span>{s.name}</span>
+            {/* 凡例も学名（#459＝ランキング・凡例は学名のみ）。 */}
+            <SciName sci={s.sci} />
           </li>
         ))}
       </ul>

@@ -413,8 +413,8 @@ export const ja = {
   "ranking.board.delta.same": "順位変わらず",
   "ranking.board.delta.up": "{by}ランクアップ",
   "ranking.board.delta.down": "{by}ランクダウン",
-  // 行全体の読み上げ要約（順位・品種・学名・件数・先週比）。{sci} は学名（無ければ空）。
-  "ranking.board.rowSummary": "{rank}位 {name}{sci} {count}件 {delta}",
+  // 行全体の読み上げ要約（順位・学名・件数・先週比・#459＝学名のみ）。
+  "ranking.board.rowSummary": "{rank}位 {sci} {count}件 {delta}",
 
   // 途中経過チャート（RankRunChart・#162/#261/#147 段階2）。canvas/凡例は装飾、説明は aria/figcaption。
   "ranking.chart.sparse": "推移グラフは週が2つ以上たまると表示されます。",

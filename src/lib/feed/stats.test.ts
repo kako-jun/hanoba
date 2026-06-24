@@ -44,7 +44,8 @@ describe("computeCitizenStats（活動スタッツ・#272）", () => {
     ];
     const s = computeCitizenStats({ posts, catalog: VARIETY_CATALOG, hasName: true, now: NOW });
     expect(s.varietyCount).toBe(2);
-    expect(s.varieties.map((v) => [v.name, v.count])).toEqual([
+    // tally の identity は Fuda.key（canonical 品種名）。表示は学名のみ（#459）だが key は不変。
+    expect(s.varieties.map((v) => [v.key, v.count])).toEqual([
       ["グラキリス", 2],
       ["チタノタ", 1],
     ]);

@@ -18,13 +18,11 @@ import type { FeedPost } from "./parse.ts";
 export interface RankedVariety {
   /** dedupe・React key 用（buildFuda の Fuda.key＝canonical 品種名 or 属名）。 */
   key: string;
-  /** 和名（最も具体的な著名表記＝品種名 or 属名）。 */
-  name: string;
-  /** 学名（catalog 優先 → dictionary lookup → 引けなければ null）。 */
-  sci: string | null;
+  /** 学名（#459＝札・ランキングは学名のみ。buildFuda が学名を解決できた品種だけが乗る＝和名は持たない）。 */
+  sci: string;
   /** その週（または集計対象）の投稿数（票）。 */
   count: number;
-  /** 札クリックの逆算タグ集合（#448・[属 or カテゴリ, 品種] / [品種] / [属]）。育てた品種チップの discover 絞り込みに使う。 */
+  /** 札クリックの逆算タグ集合（#448・[属 or カテゴリ, 品種] / [属]）。育てた品種チップの discover 絞り込みに使う。 */
   filterTags: string[];
 }
 
@@ -66,7 +64,6 @@ export function tallyVarieties(posts: FeedPost[], catalog: VarietyCategory[]): R
       if (cur === undefined) {
         acc.set(fuda.key, {
           key: fuda.key,
-          name: fuda.name,
           sci: fuda.sci,
           count: 1,
           filterTags: fuda.filterTags, // #448: 育てた品種チップが [親グルーピング, 品種] で絞れるよう持ち越す。
@@ -218,8 +215,8 @@ export function rankWithDeltas(
 export interface RankRunSeries {
   /** dedupe・凡例の安定キー（buildFuda の Fuda.key＝canonical 品種名 or 属名）。 */
   key: string;
-  /** 凡例に出す和名（最も具体的な著名表記）。 */
-  name: string;
+  /** 凡例に出す学名（#459＝ランキング・凡例は学名のみ）。 */
+  sci: string;
   /** 週ごとの票数（`weeks[i]` の週の票数。その週に居なければ 0）。 */
   counts: number[];
 }
@@ -276,22 +273,25 @@ export function rankRunData(
     countByWeek.set(week, m);
   }
 
-  const series: RankRunSeries[] = keys.map((key) => ({
-    key,
-    // 和名はその key が出た最初の週の tally から拾う（出なければ key を名前に使う＝フォールバック）。
-    name: nameForKey(byWeek, catalog, key),
-    // 連続週列に整列。投稿の無い週（countByWeek に無い）も 0 で埋める。
-    counts: weeks.map((week) => countByWeek.get(week)?.get(key) ?? 0),
-  }));
+  // 各 key の学名を tally から引いて系列にする。学名が引けない key は系列にしない（#459＝学名のみ）。
+  // keys はランキング行（学名のある品種）由来なので通常すべて引ける。
+  const series: RankRunSeries[] = keys
+    .map((key): RankRunSeries | null => {
+      const sci = sciForKey(byWeek, catalog, key);
+      if (sci === null) return null;
+      // 連続週列に整列。投稿の無い週（countByWeek に無い）も 0 で埋める。
+      return { key, sci, counts: weeks.map((week) => countByWeek.get(week)?.get(key) ?? 0) };
+    })
+    .filter((s): s is RankRunSeries => s !== null);
 
   return { weeks, series };
 }
 
-/** key に対応する和名を、投稿のある週の tally から探す（見つからなければ key 自体を返す）。 */
-function nameForKey(byWeek: Map<string, FeedPost[]>, catalog: VarietyCategory[], key: string): string {
+/** key に対応する学名を、投稿のある週の tally から探す（見つからなければ null＝系列にしない・#459）。 */
+function sciForKey(byWeek: Map<string, FeedPost[]>, catalog: VarietyCategory[], key: string): string | null {
   for (const weekPosts of byWeek.values()) {
     const found = tallyVarieties(weekPosts, catalog).find((r) => r.key === key);
-    if (found !== undefined) return found.name;
+    if (found !== undefined) return found.sci;
   }
-  return key;
+  return null;
 }

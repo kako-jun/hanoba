@@ -372,7 +372,7 @@ describe("PostDetail いいね数表示", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("属タグから札を組み 学名＋和名を並べ discover 検索へリンクする（属単独・#182/#23）", async () => {
+  it("属タグから札を組み 学名のみを出し discover 検索へリンクする（属単独・#182/#23/#459）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(
       <PostDetail
@@ -382,11 +382,14 @@ describe("PostDetail いいね数表示", () => {
       />,
     );
     // 札は hashtags から動的 import した catalog で組む（caption の free-text は使わない・#182）。
-    // #23: 学名（dictionary 由来）＋和名を並列表示。属単独なので和名は属名。
-    expect(await screen.findByText("Pachypodium")).toBeInTheDocument();
-    expect(screen.getByText("パキポディウム")).toBeInTheDocument();
-    // クリックでその札の discover 絞り込みへ（最具体の和名＝属名・#239 で ?tags= に統一）。
-    const link = screen.getByRole("link", { name: /Pachypodium/ });
+    // 札は学名のみ表示（#459）。属単独札なので学名＝属名「Pachypodium」。和名「パキポディウム」は札にも title にも出さない。
+    const link = await screen.findByRole("link", { name: /Pachypodium/ });
+    expect(link).toHaveTextContent("Pachypodium");
+    expect(link).not.toHaveTextContent("パキポディウム");
+    // title は学名（「{学名}で探す」）＝和名は含まない（#459）。
+    expect(link.getAttribute("title")).toContain("Pachypodium");
+    expect(link.getAttribute("title")).not.toContain("パキポディウム");
+    // クリックでその札の discover 絞り込みへ（?tags=パキポディウム・ja 正準で不変・#239）。
     expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("パキポディウム")}`);
   });
 
@@ -404,16 +407,18 @@ describe("PostDetail いいね数表示", () => {
         onSelectHashtag={() => {}}
       />,
     );
-    // 札の和名は「グラキリス」1枚（属名「パキポディウム」は和名に出さない・属単独札も出ない）。
-    const label = await screen.findByText("グラキリス");
-    expect(label).toBeInTheDocument();
-    expect(screen.queryByText("パキポディウム")).toBeNull();
-    // 学名は catalog.sci / dictionary の品種（グラキリス）から引ける。SciName が空白で
-    // トークン分割するので、各トークン（直立の var. 含む）が出ていること＝学名併記を確認する。
-    const link = screen.getByRole("link", { name: /Pachypodium rosulatum var\. gracilius/ });
+    // 札は学名のみ（#459）。属＋品種は品種1枚に畳み、学名＝品種の学名。SciName が空白で
+    // トークン分割するので、各トークン（直立の var. 含む）が出ていること＝学名表示を確認する。
+    const link = await screen.findByRole("link", { name: /Pachypodium rosulatum var\. gracilius/ });
     expect(link).toHaveTextContent("Pachypodium");
     expect(link).toHaveTextContent("rosulatum");
     expect(link).toHaveTextContent("gracilius");
+    // 和名「グラキリス」は札にも title にも出さない（#459＝札は学名そのもの）。title は学名（「{学名}で探す」）。
+    expect(link).not.toHaveTextContent("グラキリス");
+    expect(link.getAttribute("title")).toContain("Pachypodium rosulatum var. gracilius");
+    expect(link.getAttribute("title")).not.toContain("グラキリス");
+    // 属名「パキポディウム」も和名に出さない（属単独札も出ない）。
+    expect(screen.queryByText("パキポディウム")).toBeNull();
     // discover リンクは **属＋品種の AND**（?tags=パキポディウム,グラキリス）で絞る（#272 逆算）。
     expect(link).toHaveAttribute(
       "href",
@@ -421,43 +426,51 @@ describe("PostDetail いいね数表示", () => {
     );
   });
 
-  it("非 pickable 見出し属配下の品種は学名＋品種和名だけ・見出し語を出さない（should #1 回帰ガード・#182/#23）", async () => {
+  it("非 pickable 見出し属配下の品種は学名のみ・見出し語を出さない（should #1 回帰ガード・#182/#23/#459）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(
       <PostDetail
-        post={makePost({ id: "p7", caption: "胞子葉が展開", hashtags: ["リドレイ"] })}
+        // リドレイは ビカクシダ › 原種(pickable:false) 配下＝属タグを持てずカテゴリ（ビカクシダ）が共起する（#448）。
+        // #459: 親（カテゴリ）の無い素の品種タグは札にならないので、TagPicker と同じく #ビカクシダ を共起させる。
+        post={makePost({ id: "p7", caption: "胞子葉が展開", hashtags: ["ビカクシダ", "リドレイ"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,
     );
-    // リドレイは ビカクシダ › 原種(pickable:false) 配下。札の name は「リドレイ」だけ＝見出し語
-    // 「原種」を前置しない（should#1）。学名 sci の有無は学名付与の進捗で変わるので、ここでは
-    // 見出し語が出ないこと（name＝リドレイ・「原種」非表示）だけを固定する。
-    const label = await screen.findByText("リドレイ");
-    expect(label).toBeInTheDocument();
+    // 札は学名のみ（#459）＝「Platycerium ridleyi」。見出し語「原種」を前置しない（should#1）。
+    // 和名「リドレイ」は札にも title にも出さない。title は学名（「{学名}で探す」）。
+    const link = await screen.findByRole("link", { name: /Platycerium ridleyi/ });
+    expect(link).not.toHaveTextContent("リドレイ");
+    expect(link.getAttribute("title")).toContain("Platycerium ridleyi");
+    expect(link.getAttribute("title")).not.toContain("リドレイ");
+    // 見出し語「原種」を出さない（should#1 回帰ガード）。
     expect(screen.queryByText("原種")).toBeNull();
     expect(screen.queryByText(/原種\s*リドレイ/)).toBeNull();
-    const link = screen.getByRole("link", { name: /リドレイ/ });
-    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("リドレイ")}`);
+    // discover は [カテゴリ, 品種] の AND（#448 逆算）。
+    expect(link).toHaveAttribute(
+      "href",
+      `/discover?tags=${encodeURIComponent("ビカクシダ")},${encodeURIComponent("リドレイ")}`,
+    );
   });
 
-  it("学名が引けない札は和名のみ描画する（グレースフル・#23）", async () => {
+  it("学名がどこからも引けない品種は札にしない（#459＝和名へ倒さない・苔玉）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(
       <PostDetail
-        post={makePost({ id: "p8", caption: "玄関に飾った", hashtags: ["苔玉"] })}
+        // 「苔玉」は様式（グループ概念）の variety＝species でないので catalog.sci も dictionary も
+        // 恒久的に無い。カテゴリ（コケ）を共起させても学名が引けないので札にしない（#459＝和名へ倒さない）。
+        post={makePost({ id: "p8", caption: "玄関に飾った", hashtags: ["コケ", "苔玉"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
       />,
     );
-    // 「苔玉」は様式（グループ概念）の variety＝species でないので catalog.sci も dictionary も
-    // 恒久的に無い＝学名トークンを出さず和名「苔玉」のみ（グレースフル）。学名付与が進んでも
-    // 個別 species でない group 概念は sci が付かないため、このテストは実データ変化に強い。
-    const link = await screen.findByRole("link", { name: "苔玉" });
-    expect(link).toHaveTextContent("苔玉");
-    // 学名（ラテン文字トークン）が出ていないこと＝SciName を描画していない。
-    expect(link.textContent).not.toMatch(/[A-Za-z]/);
-    expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("苔玉")}`);
+    // catalog ロードを待ってから（札セクションは出ないことを確認）。
+    await screen.findByLabelText("いいね 0");
+    // 学名の無い植物は札にならない＝「この投稿の植物」見出しも札リンクも出ない。
+    expect(screen.queryByText("この投稿の植物")).toBeNull();
+    expect(screen.queryByRole("link", { name: "苔玉" })).toBeNull();
+    // ハッシュタグチップは従来どおり出る。
+    expect(screen.getByRole("button", { name: "#苔玉" })).toBeInTheDocument();
   });
 
   it("カテゴリタグ（塊根植物）は札にしない（#182）", async () => {

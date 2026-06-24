@@ -76,9 +76,13 @@ describe("CitizenStats（活動スタッツ表示・#272）", () => {
       makePost({ id: "2", hashtags: ["アガベ", "チタノタ"] }),
     ];
     render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
-    // catalog は動的 import なので、ロード後に品種チップが現れる。
-    await waitFor(() => expect(screen.getByText("グラキリス")).toBeInTheDocument());
-    expect(screen.getByText("チタノタ")).toBeInTheDocument();
+    // catalog は動的 import なので、ロード後に品種チップが現れる。チップは学名のみ（#459）。
+    // SciName は学名を空白でトークン分割して描画するので、各品種の固有トークンで確認する
+    //（グラキリス→Pachypodium rosulatum var. gracilius / チタノタ→Agave titanota）。和名は出さない。
+    await waitFor(() => expect(screen.getByText("rosulatum")).toBeInTheDocument());
+    expect(screen.getByText("titanota")).toBeInTheDocument();
+    expect(screen.queryByText("グラキリス")).toBeNull();
+    expect(screen.queryByText("チタノタ")).toBeNull();
     const section = screen.getByRole("region", { name: "あなたの活動" });
     expect(within(section).getByText("品種").parentElement).toHaveTextContent("2種");
   });
@@ -86,9 +90,11 @@ describe("CitizenStats（活動スタッツ表示・#272）", () => {
   it("育てた品種のチップはその品種の discover 絞り込みリンク（#kako-jun）", async () => {
     const posts = [makePost({ id: "1", hashtags: ["パキポディウム", "グラキリス"] })];
     render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
-    const chip = await screen.findByText("グラキリス");
+    // チップは学名のみ表示（#459）＝学名トークンで引いて親リンクを取る。
+    const chip = await screen.findByText("rosulatum");
     const link = chip.closest("a");
     expect(link).not.toBeNull();
+    // href の filterTags（[属, 品種]＝ja 正準）は不変なので、品種名 グラキリス で絞る AND リンクのまま。
     expect(link!.getAttribute("href")).toContain("/discover?tags=");
     expect(link!.getAttribute("href")).toContain(encodeURIComponent("グラキリス"));
   });

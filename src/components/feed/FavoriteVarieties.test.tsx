@@ -14,20 +14,26 @@ function renderFav(varieties: string[]) {
 }
 
 describe("FavoriteVarieties（#343・好きな品種を投稿の札と同じ FudaList で）", () => {
-  it("カタログ品種はロード後に学名＋和名の植物札で出る", async () => {
+  it("カタログ品種はロード後に学名のみの植物札で出る（#459＝和名は出さない）", async () => {
     const { container } = renderFav(["デラウェア"]);
-    // 和名は即出る（catalog 未ロード中も和名のみのフォールバック札を出す＝flash 防止）。
-    expect(screen.getByText("デラウェア")).toBeInTheDocument();
-    // catalog 動的 import 後に学名（Vitis 'Delaware'）が補われる。
+    // catalog 未ロード中は何も出さない（和名フォールバックは出さない＝二重表示しない）。
+    expect(screen.queryByText("デラウェア")).toBeNull();
+    // catalog 動的 import 後に学名（Vitis 'Delaware'）の札が出る。
     await waitFor(() => expect(container.textContent).toContain("Vitis"));
     expect(container.textContent).toContain("'Delaware'");
+    // 和名「デラウェア」は札に出さない（#459＝札は学名そのもの）。
+    expect(container.textContent).not.toContain("デラウェア");
   });
 
-  it("カタログ外の自由入力品種も消さず和名のみの札で出す", async () => {
+  it("カタログ外の自由入力（学名が引けない）品種は札にしない（#459＝和名へ倒さない）", async () => {
     const { container } = renderFav(["我が家の謎の木"]);
-    await waitFor(() => expect(container.textContent).toContain("我が家の謎の木"));
-    // 札（リンク）として出る。学名は付かない。
-    expect(container.querySelector("a")).toBeTruthy();
+    // catalog ロード後も、学名が引けない名前は札にならない＝何も描画しない（null）。
+    // ロードを待つため、ロード後でも何も出ないことを少し待ってから確かめる。
+    await waitFor(() => {
+      // 何も描画しないので container は空（リンクも和名も出ない）。
+      expect(container.querySelector("a")).toBeNull();
+    });
+    expect(container.textContent).not.toContain("我が家の謎の木");
   });
 
   it("空配列は何も描画しない", () => {

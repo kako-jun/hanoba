@@ -72,8 +72,9 @@ describe("PostCard", () => {
           fudaIndex={buildVarietyIndex(TEST_CATALOG)}
         />,
       );
-      // 属＋品種は品種1枚に畳む。札クリックは **属＋品種の AND**（?tags=属,品種）で絞る（#272 逆算）。
-      const link = screen.getByRole("link", { name: /グラキリス/ });
+      // 属＋品種は品種1枚に畳む。札は学名のみ表示（#459）＝リンク名は学名。札クリックは
+      // **属＋品種の AND**（?tags=属,品種）で絞る（#272 逆算・実タグは ja 正準で不変）。
+      const link = screen.getByRole("link", { name: /Pachypodium rosulatum var\. gracilius/ });
       expect(link).toHaveAttribute(
         "href",
         `/discover?tags=${encodeURIComponent("パキポディウム")},${encodeURIComponent("グラキリス")}`,
@@ -87,9 +88,10 @@ describe("PostCard", () => {
     const restore = mockSizes(0, 0);
     try {
       // 投稿本文のタグは insertTag で空白→_ に畳まれて保存される（#フィカス_ペティオラリス）。
+      // #459: 親属の無い素の品種タグは札にしないので、TagPicker と同じく属タグ（#フィカス）も共起させる。
       render(
         <PostCard
-          post={makePost({ hashtags: ["フィカス_ペティオラリス"] })}
+          post={makePost({ hashtags: ["フィカス", "フィカス_ペティオラリス"] })}
           index={0}
           now={2000}
           onOpen={noop}
@@ -98,8 +100,12 @@ describe("PostCard", () => {
         />,
       );
       // カタログ名（空白）の札が出て、リンクは正規化（_）された discover 絞り込みへ。
-      const link = screen.getByRole("link", { name: /フィカス ペティオラリス/ });
-      expect(link).toHaveAttribute("href", `/discover?tags=${encodeURIComponent("フィカス_ペティオラリス")}`);
+      // 札は学名のみ表示（#459）＝リンク名は学名「Ficus petiolaris」。属＋品種の AND で絞る（#272 逆算）。
+      const link = screen.getByRole("link", { name: /Ficus petiolaris/ });
+      expect(link).toHaveAttribute(
+        "href",
+        `/discover?tags=${encodeURIComponent("フィカス")},${encodeURIComponent("フィカス_ペティオラリス")}`,
+      );
     } finally {
       restore();
     }

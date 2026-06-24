@@ -375,7 +375,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "ranking.board.delta.same": "sin cambios",
   "ranking.board.delta.up": "sube {by}",
   "ranking.board.delta.down": "baja {by}",
-  "ranking.board.rowSummary": "n.º {rank} {name}{sci} {count} publicaciones {delta}",
+  "ranking.board.rowSummary": "n.º {rank} {sci} {count} publicaciones {delta}",
 
   "ranking.chart.sparse": "El gráfico de tendencia aparece cuando se acumulan dos o más semanas.",
   "ranking.chart.caption": "Progreso (movimiento): conteo semanal de publicaciones. Consulta la tabla de arriba para ver los rangos exactos.",

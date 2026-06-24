@@ -8,22 +8,36 @@ afterEach(cleanup);
 function fuda(over: Partial<Fuda> = {}): Fuda {
   return {
     key: over.key ?? "ブレビカウレ",
-    name: over.name ?? "ブレビカウレ",
-    sci: over.sci !== undefined ? over.sci : "Pachypodium brevicaule",
+    sci: over.sci ?? "Pachypodium brevicaule",
     filterTags: over.filterTags ?? ["パキポディウム", "ブレビカウレ"],
   };
 }
 
 describe("FudaList", () => {
-  it("学名（イタリック併記）＋和名を出し、札の discover 絞り込みリンクになる", () => {
+  it("学名のみを出す（和名は札に併記しない・#459）。札は discover 絞り込みリンクで、title も学名", () => {
     render(<FudaList fuda={[fuda()]} />);
     const link = screen.getByRole("link");
+    // 学名は表示する。
     expect(link).toHaveTextContent("Pachypodium brevicaule");
-    expect(link).toHaveTextContent("ブレビカウレ");
-    // 札クリックは属＋品種の AND 絞り込み（discoverTagsHref・空白→_ 正規化）。
+    // 和名は札の見た目にも title にも出さない（#459＝札は学名そのもの・和名は隣の #タグが担う）。
+    expect(link).not.toHaveTextContent("ブレビカウレ");
+    // title は学名（「{学名}で探す」）＝和名は含まない。
+    expect(link.getAttribute("title")).toContain("Pachypodium brevicaule");
+    expect(link.getAttribute("title")).not.toContain("ブレビカウレ");
+    // 札クリックは属＋品種の AND 絞り込み（discoverTagsHref・空白→_ 正規化）。実タグは ja 正準で不変。
     expect(link.getAttribute("href")).toBe(
       `/discover?tags=${encodeURIComponent("パキポディウム")},${encodeURIComponent("ブレビカウレ")}`,
     );
+  });
+
+  it("学名の二名法トークン（属＋種小名）を分割描画する（#459＝札は学名のみ）", () => {
+    render(<FudaList fuda={[fuda({ key: "グラキリス", sci: "Pachypodium rosulatum var. gracilius", filterTags: ["パキポディウム", "グラキリス"] })]} />);
+    const link = screen.getByRole("link");
+    expect(link).toHaveTextContent("Pachypodium");
+    expect(link).toHaveTextContent("rosulatum");
+    expect(link).toHaveTextContent("gracilius");
+    // 和名「グラキリス」は札にもリンク名にも出ない。
+    expect(link).not.toHaveTextContent("グラキリス");
   });
 
   it("空なら何も描画しない", () => {
