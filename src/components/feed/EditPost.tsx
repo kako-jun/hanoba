@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Icon from "../ui/Icon.tsx";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
-import { editPost, fetchCommentCountsBatch, fetchReactionCountsBatch } from "../../lib/nostr/client.ts";
+import { editPost, fetchEngagementCountsBatch } from "../../lib/nostr/client.ts";
 import { parsePost, type FeedPost } from "../../lib/feed/parse.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 
@@ -44,9 +44,9 @@ export default function EditPost({ post, onClose, onEdited }: Props) {
   // 引き継がれない数を1回取得（失敗は伏せるだけ＝確認は出す）。
   useEffect(() => {
     let alive = true;
-    Promise.all([fetchReactionCountsBatch([post.id]), fetchCommentCountsBatch([post.id])])
-      .then(([r, c]) => {
-        if (alive) setCounts({ likes: r.get(post.id) ?? 0, comments: c.get(post.id) ?? 0 });
+    fetchEngagementCountsBatch([post.id])
+      .then(({ reactions, comments }) => {
+        if (alive) setCounts({ likes: reactions.get(post.id) ?? 0, comments: comments.get(post.id) ?? 0 });
       })
       .catch(() => {
         /* 数が出ないだけ（確認文は数なし版を出す）。 */

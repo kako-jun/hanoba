@@ -310,73 +310,43 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
 const PER_EVENT_COUNT_BUDGET = 60;
 const BATCH_COUNT_MAX = 5000;
 
-/** バッチ取得 limit を投稿数（n）連動で算出する（両バッチ関数で共有・式の重複を避ける）。 */
-function batchCountLimit(n: number): number {
-  return Math.min(n * PER_EVENT_COUNT_BUDGET, BATCH_COUNT_MAX);
+// 統合クエリ（kinds:[7,1]）は2種が相乗りするため予算を2倍にする（片方の取りこぼし防止）。上限は据え置き。
+function engagementBatchLimit(n: number): number {
+  return Math.min(n * PER_EVENT_COUNT_BUDGET * 2, BATCH_COUNT_MAX);
 }
 
 /**
- * 複数投稿のいいね数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
+ * 複数投稿のいいね数・コメント数を**1クエリで一括取得**する（#276 / #462・タイムライン/discover のカード用）。
  *
- * `{kinds:[7], "#e":[...eventIds]}` で全投稿宛のリアクションをまとめて取り、
- * `countLikesByEvent` で id ごとに集計する＝カードごとに query しない（N+1 回避・guidelines §3）。
+ * いいね（kind:7）とコメント（kind:1）は同じ `#e:eventIds` 対象で kind だけ違うので、
+ * `{kinds:[7,1], "#e":[...eventIds]}` の**1フィルタに統合**して購読本数を減らす（#462・4→3）。
+ * 取得後に kind で2群へ振り分け、`countLikesByEvent` / `countCommentsByEvent` の純粋集計に渡す
+ * （混在のまま渡すと誤カウントするため kind 分離は必須）。集計ロジックは feed/ の責務で、ここは取得と振り分けだけ。
  *
- * - eventIds が空なら即空 Map（query しない）。
- * - 失敗（オフライン等）は throw せず空 Map にフォールバックする（カードは count を出さないだけ）。
+ * - eventIds が空なら即空 Map ペア（query しない）。
+ * - 失敗（オフライン等）は throw せず空 Map ペアにフォールバックする（カードは count を出さないだけ）。
  *
- * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
+ * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない・guidelines §3）。
  */
-export async function fetchReactionCountsBatch(
+export async function fetchEngagementCountsBatch(
   eventIds: string[],
-  limit = batchCountLimit(eventIds.length),
-): Promise<Map<string, number>> {
-  if (eventIds.length === 0) return new Map();
-  try {
-    const reactions = await getPool().querySync(
-      [...GENERAL_RELAYS],
-      {
-        kinds: [7],
-        "#e": eventIds,
-        limit,
-      },
-      { maxWait: QUERY_MAXWAIT },
-    );
-    return countLikesByEvent(reactions, eventIds);
-  } catch {
-    return new Map();
-  }
-}
-
-/**
- * 複数投稿のコメント数を**1クエリで一括取得**する（#276・タイムライン/discover のカード用）。
- *
- * `{kinds:[1], "#e":[...eventIds]}` で全投稿宛のリプライをまとめて取り、
- * `countCommentsByEvent` で id ごとに集計する（本物のリプライ抽出＝引用リポスト除外・id 重複除去を
- * 単一取得経路と共有）＝カードごとに query しない（N+1 回避・guidelines §3）。
- *
- * - eventIds が空なら即空 Map（query しない）。
- * - 失敗（オフライン等）は throw せず空 Map にフォールバックする（カードは count を出さないだけ）。
- *
- * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
- */
-export async function fetchCommentCountsBatch(
-  eventIds: string[],
-  limit = batchCountLimit(eventIds.length),
-): Promise<Map<string, number>> {
-  if (eventIds.length === 0) return new Map();
+): Promise<{ reactions: Map<string, number>; comments: Map<string, number> }> {
+  if (eventIds.length === 0) return { reactions: new Map(), comments: new Map() };
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
-      {
-        kinds: [1],
-        "#e": eventIds,
-        limit,
-      },
+      { kinds: [7, 1], "#e": eventIds, limit: engagementBatchLimit(eventIds.length) },
       { maxWait: QUERY_MAXWAIT },
     );
-    return countCommentsByEvent(events, eventIds);
+    // kind で分離してから各集計へ渡す（混在のまま渡すと誤カウントするため必須）。
+    const likeEvents = events.filter((e) => e.kind === 7);
+    const commentEvents = events.filter((e) => e.kind === 1);
+    return {
+      reactions: countLikesByEvent(likeEvents, eventIds),
+      comments: countCommentsByEvent(commentEvents, eventIds),
+    };
   } catch {
-    return new Map();
+    return { reactions: new Map(), comments: new Map() };
   }
 }
 

@@ -2,19 +2,18 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
-// カードのいいね/コメント数（#276）はグリッド単位で **1回ずつ** バッチ取得する（N+1 回避）。
-// ここでは呼び出し回数と引数を観測したいので spy にする。返り値 Map は各テストで差し替える。
-const fetchReactionCountsBatch = vi.fn();
-const fetchCommentCountsBatch = vi.fn();
+// カードのいいね/コメント数（#276 / #462）はグリッド単位で **1回** 統合バッチ取得する（N+1 回避・購読 4→3）。
+// いいね（kind:7）とコメント（kind:1）は1クエリで取り、返り値 { reactions, comments } の2 Map に分かれる。
+// ここでは呼び出し回数と引数を観測したいので spy にする。返り値は各テストで差し替える。
+const fetchEngagementCountsBatch = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   // PostGrid → PostDetail（選択時）が呼ぶいいね/コメント取得・プロフィールはこの検証では使わない。
   fetchReactionCount: () => Promise.resolve(0),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
-  // 観測対象：グリッドのバッチ取得。
-  fetchReactionCountsBatch: (...a: unknown[]) => fetchReactionCountsBatch(...a),
-  fetchCommentCountsBatch: (...a: unknown[]) => fetchCommentCountsBatch(...a),
+  // 観測対象：グリッドの統合バッチ取得。
+  fetchEngagementCountsBatch: (...a: unknown[]) => fetchEngagementCountsBatch(...a),
 }));
 
 import PostGrid from "./PostGrid.tsx";
@@ -34,15 +33,14 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 describe("PostGrid × カードのいいね/コメント数バッチ取得（#276）", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    fetchReactionCountsBatch.mockReset().mockResolvedValue(new Map());
-    fetchCommentCountsBatch.mockReset().mockResolvedValue(new Map());
+    fetchEngagementCountsBatch.mockReset().mockResolvedValue({ reactions: new Map(), comments: new Map() });
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it("グリッド描画でバッチ取得を id 列1セットでそれぞれ1回ずつ呼ぶ（カードごとの N+1 にしない）", async () => {
+  it("グリッド描画で統合バッチ取得を id 列1セットで1回だけ呼ぶ（カードごとの N+1 にしない・購読 4→3）", async () => {
     const posts = [
       makePost({ id: "p1", caption: "p1" }),
       makePost({ id: "p2", caption: "p2" }),
@@ -52,17 +50,18 @@ describe("PostGrid × カードのいいね/コメント数バッチ取得（#27
 
     // 取得は非同期。完了を待ってから回数を確認する。
     await waitFor(() => {
-      expect(fetchReactionCountsBatch).toHaveBeenCalledTimes(1);
+      expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(1);
     });
-    expect(fetchCommentCountsBatch).toHaveBeenCalledTimes(1);
-    // 3件でも N+1（3回や6回）にならず、id 列をまとめて1回で渡す。
-    expect(fetchReactionCountsBatch).toHaveBeenCalledWith(["p1", "p2", "p3"]);
-    expect(fetchCommentCountsBatch).toHaveBeenCalledWith(["p1", "p2", "p3"]);
+    // 3件でも N+1（3回や6回）にならず、いいね・コメントを 1 クエリで id 列をまとめて1回で渡す。
+    expect(fetchEngagementCountsBatch).toHaveBeenCalledWith(["p1", "p2", "p3"]);
   });
 
   it("返った Map のいいね>0 のカードに数が出て、Map に無い（=0扱い）カードには出ない", async () => {
-    fetchReactionCountsBatch.mockResolvedValue(new Map([["p1", 4]])); // p2 は未掲載＝0扱い
-    fetchCommentCountsBatch.mockResolvedValue(new Map([["p2", 7]])); // p1 は未掲載＝0扱い
+    // 統合バッチは { reactions, comments } を返す。likes は p1 のみ・comments は p2 のみ（他は 0 扱い）。
+    fetchEngagementCountsBatch.mockResolvedValue({
+      reactions: new Map([["p1", 4]]), // p2 は未掲載＝0扱い
+      comments: new Map([["p2", 7]]), // p1 は未掲載＝0扱い
+    });
     const posts = [
       makePost({ id: "p1", caption: "p1" }),
       makePost({ id: "p2", caption: "p2" }),

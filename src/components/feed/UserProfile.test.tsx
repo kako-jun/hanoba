@@ -12,9 +12,8 @@ const fetchMyProfileResilient = vi.fn();
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchMyPosts: (...args: unknown[]) => fetchMyPosts(...args),
   fetchMyProfileResilient: (...args: unknown[]) => fetchMyProfileResilient(...args),
-  // PostGrid のカード集計（#276）と著者プロフィール（#35）はこの検証では空 Map。
-  fetchReactionCountsBatch: () => Promise.resolve(new Map()),
-  fetchCommentCountsBatch: () => Promise.resolve(new Map()),
+  // PostGrid のカード集計（#276 / #462・統合バッチ）と著者プロフィール（#35）はこの検証では空 Map。
+  fetchEngagementCountsBatch: () => Promise.resolve({ reactions: new Map(), comments: new Map() }),
   fetchProfiles: () => Promise.resolve(new Map()),
   fetchReactionCount: () => Promise.resolve(0),
   fetchReplies: () => Promise.resolve([]),

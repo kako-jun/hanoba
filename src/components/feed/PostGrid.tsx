@@ -3,7 +3,7 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { buildVarietyIndex } from "../../lib/plants/fuda.ts";
 import { diluteFeed } from "../../lib/feed/dilution.ts";
-import { fetchCommentCountsBatch, fetchReactionCountsBatch } from "../../lib/nostr/client.ts";
+import { fetchEngagementCountsBatch } from "../../lib/nostr/client.ts";
 import PostCard from "./PostCard.tsx";
 import PostDetail from "./PostDetail.tsx";
 import { useProfiles } from "./useProfiles.ts";
@@ -81,8 +81,8 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   useEffect(() => {
     if (idsKey === "") return; // 投稿0件なら取得しない。
     let alive = true;
-    Promise.all([fetchReactionCountsBatch(ids), fetchCommentCountsBatch(ids)])
-      .then(([reactions, comments]) => {
+    fetchEngagementCountsBatch(ids)
+      .then(({ reactions, comments }) => {
         if (!alive) return;
         setReactionCounts(reactions);
         setCommentCounts(comments);

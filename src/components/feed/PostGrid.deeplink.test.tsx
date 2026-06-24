@@ -15,8 +15,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchReactionCount: () => Promise.resolve(0),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
-  fetchReactionCountsBatch: () => Promise.resolve(new Map()),
-  fetchCommentCountsBatch: () => Promise.resolve(new Map()),
+  fetchEngagementCountsBatch: () => Promise.resolve({ reactions: new Map(), comments: new Map() }),
 }));
 
 import PostGrid from "./PostGrid.tsx";
