@@ -88,7 +88,8 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
         setCommentCounts(comments);
       })
       .catch(() => {
-        /* count を出さないだけ（Map は空のまま）。 */
+        /* 二重防御：fetchEngagementCountsBatch は失敗時も空ペアを返す契約なので通常ここは通らない。
+           .then 側（setState）が万一投げた時の最後の砦＝count を出さないだけ（Map は空のまま）。 */
       });
     return () => {
       alive = false;

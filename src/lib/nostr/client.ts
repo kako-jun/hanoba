@@ -310,7 +310,9 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
 const PER_EVENT_COUNT_BUDGET = 60;
 const BATCH_COUNT_MAX = 5000;
 
-// 統合クエリ（kinds:[7,1]）は2種が相乗りするため予算を2倍にする（片方の取りこぼし防止）。上限は据え置き。
+// 統合クエリ（kinds:[7,1]）は2種（いいね/コメント）が1クエリに相乗りするため予算を2倍にする。
+// relay は新着降順で limit 件に達すると kind 構成を問わず打ち切るので、これは「片方が他方を押し出す」
+// 取りこぼしの“緩和”であって完全な防止ではない（超人気グリッドでは概数＝上の PER_EVENT_COUNT_BUDGET の制約の延長）。上限は据え置き。
 function engagementBatchLimit(n: number): number {
   return Math.min(n * PER_EVENT_COUNT_BUDGET * 2, BATCH_COUNT_MAX);
 }
