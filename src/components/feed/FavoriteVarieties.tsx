@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
-import { buildVarietyIndex, fudaForName, type Fuda } from "../../lib/plants/fuda.ts";
+import { useMemo } from "react";
+import { fudaForName, type Fuda } from "../../lib/plants/fuda.ts";
 import FudaList from "./FudaList.tsx";
+import { useFudaIndex } from "./useFudaIndex.ts";
 
 /**
  * プロフィールの「好きな品種」（#343）を**投稿の札と同じ `FudaList`** で出す。各名称を品種カタログから
@@ -12,22 +12,7 @@ import FudaList from "./FudaList.tsx";
  * （和名を先に出して学名に差し替える二重表示はしない）＝ロード後に学名札が出る。
  */
 export default function FavoriteVarieties({ varieties }: { varieties: string[] }) {
-  const [catalog, setCatalog] = useState<VarietyCategory[] | null>(null);
-  useEffect(() => {
-    let alive = true;
-    import("../../lib/plants/variety-catalog.ts")
-      .then((mod) => {
-        if (alive) setCatalog(mod.VARIETY_CATALOG);
-      })
-      .catch(() => {
-        /* 解決できない＝何も出さない（catalog は null のまま・グレースフル）。 */
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const index = useMemo(() => (catalog ? buildVarietyIndex(catalog) : null), [catalog]);
+  const index = useFudaIndex();
   // 学名が引ける名前だけ札にする（#459）。catalog 未ロード中は空（和名フォールバックを出さない）。
   const fuda: Fuda[] = useMemo(
     () =>
