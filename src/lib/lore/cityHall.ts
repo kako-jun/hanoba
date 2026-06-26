@@ -16,7 +16,7 @@ export type Block =
   | { kind: "para"; text: string }
   | { kind: "note"; text: string }; // 小さく添える実務注・注記
 
-/** ハブのリンク 1 件。route が null なら「近日開庁」（未開設・非リンク表示）。 */
+/** 市政の窓口リンク 1 件。route が null なら「近日開庁」（未開設・非リンク表示）。 */
 export interface HubLink {
   label: string;
   /** 実在ルート（既存ページ）。未開設は null。 */
@@ -25,14 +25,10 @@ export interface HubLink {
   comingSoon?: string;
 }
 
-/**
- * ハブのリンク群（#263）。フラットに並ぶと辿りにくいので、用途で 1 まとめにする。
- * 群と群の間は区切り線でなく「にじみ」の柔らかい境界で空間を分ける（描画側 .ha-bleed）。
- */
-export interface HubGroup {
-  /** 群の見出し（見る・育てる・街のこと）。 */
-  heading: string;
-  links: HubLink[];
+/** 街の地図の名所（ランドマーク）1 件。名＋短い説明（#469）。 */
+export interface Landmark {
+  name: string;
+  text: string;
 }
 
 /** 沿革（年表）の 1 行。 */
@@ -51,7 +47,15 @@ export interface Ordinance {
 /** 本の 1 ページ。種類ごとに描画するデータ形を持つ。 */
 export type BookPage =
   | { page: 1; kind: "welcome"; title: string; blocks: Block[] }
-  | { page: 2; kind: "hub"; title: string; lead: string; groups: HubGroup[] }
+  | {
+      page: 2;
+      kind: "map";
+      title: string;
+      lead: string;
+      landmarks: Landmark[];
+      civic: HubLink[];
+      note: string;
+    }
   | { page: 3; kind: "chronicle"; title: string; entries: ChronicleEntry[]; note: string }
   | { page: 4; kind: "ordinances"; title: string; ordinances: Ordinance[] };
 
@@ -85,40 +89,31 @@ function page1(locale: Locale): BookPage {
   };
 }
 
-/** P2 市役所ハブ（導線集約）。実在ルートのみ機能させ、未開設は「近日開庁」。 */
+/**
+ * P2 街の地図（図鑑の早期ご褒美ページ・#469）。ロア（名所＝ランドマーク）を読み物として見せ、
+ * 末尾に「市政の窓口」strip（civic）を添える。機能導線の本体（discover/ranking/me/compose）は
+ * ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここには手帳が唯一の入口だった
+ * 住民投票（/vote）と、近日開庁の品評会・市長ブログだけを残す。実在ルートのみ機能、未開設は「近日開庁」。
+ */
 function page2(locale: Locale): BookPage {
-  const comingSoon = t(locale, "cityHall.hub.comingSoon");
+  const comingSoon = t(locale, "cityHall.map.comingSoon");
   return {
     page: 2,
-    kind: "hub",
-    title: t(locale, "cityHall.hub.title"),
-    lead: t(locale, "cityHall.hub.lead"),
-    // 用途で 3 群に分ける（#263）。見る（眺める）→ 育てる（自分の営み）→ 街のこと（市政・コミュニティ）。
-    groups: [
-      {
-        heading: t(locale, "cityHall.hub.group.0.heading"),
-        links: [
-          { label: t(locale, "cityHall.hub.group.0.link.0.label"), route: "/discover" },
-          { label: t(locale, "cityHall.hub.group.0.link.1.label"), route: "/ranking" },
-        ],
-      },
-      {
-        heading: t(locale, "cityHall.hub.group.1.heading"),
-        links: [
-          { label: t(locale, "cityHall.hub.group.1.link.0.label"), route: "/compose" },
-          { label: t(locale, "cityHall.hub.group.1.link.1.label"), route: "/me" },
-        ],
-      },
-      {
-        heading: t(locale, "cityHall.hub.group.2.heading"),
-        links: [
-          { label: t(locale, "cityHall.hub.group.2.link.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
-          { label: t(locale, "cityHall.hub.group.2.link.1.label"), route: null, comingSoon },
-          { label: t(locale, "cityHall.hub.group.2.link.2.label"), route: null, comingSoon },
-          { label: t(locale, "cityHall.hub.group.2.link.3.label"), route: null, comingSoon },
-        ],
-      },
+    kind: "map",
+    title: t(locale, "cityHall.map.title"),
+    lead: t(locale, "cityHall.map.lead"),
+    landmarks: [
+      { name: t(locale, "cityHall.map.landmark.0.name"), text: t(locale, "cityHall.map.landmark.0.text") },
+      { name: t(locale, "cityHall.map.landmark.1.name"), text: t(locale, "cityHall.map.landmark.1.text") },
+      { name: t(locale, "cityHall.map.landmark.2.name"), text: t(locale, "cityHall.map.landmark.2.text") },
     ],
+    // 市政の窓口（civic strip）。住民投票はヘッダ/フッタに無く手帳が唯一の入口なので退避必須（#469）。
+    civic: [
+      { label: t(locale, "cityHall.map.civic.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
+      { label: t(locale, "cityHall.map.civic.1.label"), route: null, comingSoon }, // 品評会（#161 未実装）。
+      { label: t(locale, "cityHall.map.civic.2.label"), route: null, comingSoon }, // 市長ブログ（#164 未実装）。
+    ],
+    note: t(locale, "cityHall.map.note"),
   };
 }
 
@@ -190,9 +185,9 @@ export function lockedTeaser(locale: Locale = DEFAULT_LOCALE): { title: string; 
 /** レベル昇格時に小さく添える市長のひとこと（味付け）を locale で引く。 */
 export function levelFlavor(locale: Locale = DEFAULT_LOCALE): { citizen: string; tenured: string } {
   return {
-    /** L1 で 2p 目（市役所）を開いたとき。L2 以上では出さない（古参に移住受理を再掲しない）。 */
+    /** L1 で 2p 目（街の地図）を開いたとき。L2 以上では出さない（古参に移住受理を再掲しない）。 */
     citizen: t(locale, "cityHall.flavor.citizen"),
-    /** L2 が初めて奥のページ（3p 沿革）に達したとき。 */
+    /** L2 以上が初めて奥のページ（3p 沿革）に達したとき（#469 で L3 まで解放が伸びても古参歓迎は維持）。 */
     tenured: t(locale, "cityHall.flavor.tenured"),
   };
 }

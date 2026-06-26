@@ -28,12 +28,14 @@ import { useT, useLocale, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, t
 const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
-// = 市役所ハブ。すべての機能への単一の入口。
+// = 図鑑（集めて埋める読み物・1 レベル=1 ページ解放・#469）。機能導線（discover/ranking/me/compose）は
+//   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアと早期ご褒美（街の地図）に割り切る。
 //
-// 市民レベル（Nostr 由来＝backendless）でページが解放される。
-// - L0 訪問者: 名前未登録 → 1p のみ。
-// - L1 市民:   名前登録済み → 2p まで（既定で 2p を開く）。
-// - L2 古参:   名前＋投稿数 >= 5 ＋ 在籍 >= 14 日 → 4p まで。
+// 市民レベル（Nostr 由来＝backendless）でページが 1 枚ずつ解放される（#469）。
+// - L0 旅人: 名前未登録 → 1p 移住案内のみ。
+// - L1 市民: 名前登録済み → 2p 街の地図まで（既定で 2p を開く＝ご褒美ページを先に見せる）。
+// - L2:      名前＋投稿数 >= 5 ＋ 在籍 >= 14 日 → 3p 沿革まで。
+// - L3:      名前＋投稿数 >= 15 ＋ 在籍 >= 30 日 → 4p 市の条文まで。
 //
 // 前方ロック／後方オープン: 解放済みページ（<= maxUnlocked）には自由に行き来でき、
 // その先は「？？？」ティザー（枠は見えるが開けない・図鑑式）で進む動機にする。
@@ -128,6 +130,9 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }, []);
 
   const maxUnlocked = maxUnlockedPage(level);
+  // 肩書（subtitle）は 3 段の taxonomy（新参=0 / 市民=1 / 古参=2）。ページ解放レベル（#469 で L3 まで）より
+  // 粗く、L2 以上はすべて「古参の手引き」で頭打ち＝図鑑のレベル数が増えても肩書は 3 種のまま。
+  const subtitleLevel = Math.min(level, 2) as 0 | 1 | 2;
   const current = bookPages.find((p) => p.page === page) ?? bookPages[0]!;
   const isLockedView = page > maxUnlocked;
 
@@ -207,13 +212,14 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }, [canPrev, canNext]);
 
   // レベル昇格の味付け（小さく）。判定確定後、その本の入口で一度だけ添える。
-  // - 市民歓迎: L1 が 2p（市役所）を開いたときだけ。古参（L2）には再掲しない
+  // - 市民歓迎: L1 が 2p（街の地図）を開いたときだけ。古参（L2 以上）には再掲しない
   //   （長く居る市民に毎回「移住を受理した」と告げない）。
-  // - 古参歓迎: L2 が初めて奥（3p 沿革・古参専用ページの先頭）に達したときだけ。2p では出さない。
+  // - 古参歓迎: L2 以上が初めて奥（3p 沿革・古参の最初のページ）に達したときだけ。2p では出さない。
+  //   #469 で L3 まで解放が伸びても、奥に達した古参へ古参歓迎を出す挙動は保つ（level >= 2）。
   const flavor =
     resolved && level === 1 && page === 2
       ? flavorMap.citizen
-      : resolved && level === 2 && page === 3
+      : resolved && level >= 2 && page === 3
         ? flavorMap.tenured
         : null;
 
@@ -225,7 +231,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
           {bookTitleText}
         </h1>
-        <p className="text-sm text-ha-ink/55">{levelSubtitleMap[level]}</p>
+        <p className="text-sm text-ha-ink/55">{levelSubtitleMap[subtitleLevel]}</p>
       </header>
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。
@@ -427,7 +433,7 @@ function PageContent({ page }: { page: BookPage }) {
         </article>
       );
 
-    case "hub":
+    case "map":
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
@@ -435,23 +441,32 @@ function PageContent({ page }: { page: BookPage }) {
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
             {page.lead}
           </p>
-          {/* 用途で分けた群を、群間は「にじみ」（.ha-bleed）の柔らかい境界で区切る（#263）。
-              区切り線でなく和水彩のしみ出しで空間を分ける＝世界観に馴染む。見出しは群の道しるべ。 */}
-          <div className="flex flex-col gap-3">
-            {page.groups.map((group, gi) => (
-              <section key={group.heading} className="flex flex-col gap-2">
-                {gi > 0 && <div className="ha-bleed" aria-hidden="true" />}
-                <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
-                  {group.heading}
-                </h3>
-                <ul className="flex flex-col gap-2">
-                  {group.links.map((link) => (
-                    <HubLinkItem key={link.label} link={link} />
-                  ))}
-                </ul>
-              </section>
+          {/* 名所（ランドマーク）＝沿革（chronicle）風の体裁に寄せる。名を太字、説明を小さく添える。 */}
+          <ul className="flex flex-col gap-3">
+            {page.landmarks.map((lm) => (
+              <li key={lm.name} className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4">
+                <span className="text-sm font-semibold text-ha-green-deep">{lm.name}</span>
+                <span className="text-sm text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
+                  {lm.text}
+                </span>
+              </li>
             ))}
-          </div>
+          </ul>
+          {/* 地図はまだ描きかけ、の注記（小さく添える）。 */}
+          <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>
+          {/* 市政の窓口（civic strip）。地図本体との間は「にじみ」（.ha-bleed）の柔らかい境界で区切る（#263 踏襲）。
+              開庁＝リンク／近日開庁＝非リンク（HubLinkItem が出し分ける）。 */}
+          <section className="flex flex-col gap-2">
+            <div className="ha-bleed" aria-hidden="true" />
+            <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
+              {t("cityHall.map.civic.heading")}
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {page.civic.map((link) => (
+                <HubLinkItem key={link.label} link={link} />
+              ))}
+            </ul>
+          </section>
         </article>
       );
 

@@ -1,41 +1,58 @@
 import { describe, expect, it } from "vitest";
 import { buildCityHallBook, type HubLink } from "./cityHall.ts";
 
-// 市役所ハブ（P2・#163）のリンクデータの正本テスト。
-// 役所が「開庁」したか（実在ルート）／「近日開庁」（route:null）かを、
-// 表示テキストでなくデータ側で固定する（cityHall.ts が単一ソース・#160）。
+// 街の地図（P2・図鑑の早期ご褒美ページ・#469）の正本テスト。
+// 機能導線（discover/ranking/me/compose）はヘッダ/フッタが持つので手帳からは外し、
+// 地図には名所（ランドマーク）と「市政の窓口」strip（住民投票＋近日開庁）だけを残す。
+// 役所が「開庁」したか（実在ルート）／「近日開庁」（route:null）かを、表示テキストでなく
+// データ側で固定する（cityHall.ts が単一ソース・#160）。
 
-function hubLinks(): HubLink[] {
+function mapPage() {
   const page2 = buildCityHallBook("ja").find((p) => p.page === 2);
-  expect(page2?.kind).toBe("hub");
-  // 型ナローイング（hub ページのみ groups を持つ）。群をまたいで全リンクを平らに見る（#263）。
-  return page2 && page2.kind === "hub" ? page2.groups.flatMap((g) => g.links) : [];
+  expect(page2?.kind).toBe("map");
+  return page2 && page2.kind === "map" ? page2 : null;
 }
 
-function findLink(label: string): HubLink {
-  const link = hubLinks().find((l) => l.label === label);
-  expect(link, `ハブに「${label}」が無い`).toBeDefined();
+function civicLinks(): HubLink[] {
+  return mapPage()?.civic ?? [];
+}
+
+function findCivic(label: string): HubLink {
+  const link = civicLinks().find((l) => l.label === label);
+  expect(link, `市政の窓口に「${label}」が無い`).toBeDefined();
   return link!;
 }
 
-describe("市役所ハブのリンク（cityHall.ts P2）", () => {
-  it("住民投票（#160）は /vote へ開庁している（route が /vote の実リンク）", () => {
-    const vote = findLink("住民投票");
-    expect(vote.route).toBe("/vote");
+describe("街の地図ページ（cityHall.ts P2・#469）", () => {
+  it("page2 は kind:\"map\" で、地図の名所（ランドマーク）を持つ", () => {
+    const page = mapPage();
+    expect(page).not.toBeNull();
+    expect(page!.landmarks.length).toBe(3);
+    // 葉脈川がランドマークとして並ぶ（読み物の中身が在ることを固定）。
+    expect(page!.landmarks.map((l) => l.name)).toContain("葉脈川");
+    // 各ランドマークは名と説明を持つ。
+    for (const lm of page!.landmarks) {
+      expect(lm.name.length).toBeGreaterThan(0);
+      expect(lm.text.length).toBeGreaterThan(0);
+    }
+    // 末尾に注記（地図はまだ描きかけ）。
+    expect(page!.note.length).toBeGreaterThan(0);
   });
 
-  it("住民投票以外の市民系役所（品評会/市長ブログ/街の地図）は近日開庁のまま（route:null）", () => {
-    for (const label of ["品評会（コンテスト）", "市長ブログ", "街の地図"]) {
-      const link = findLink(label);
+  it("市政の窓口は住民投票・品評会・市長ブログの3件だけ（discover 等の機能導線は手帳から外す）", () => {
+    const labels = civicLinks().map((l) => l.label);
+    expect(labels).toEqual(["住民投票", "品評会（コンテスト）", "市長ブログ"]);
+  });
+
+  it("住民投票（#160）は /vote へ開庁している（route が /vote の実リンク・退避先として健在）", () => {
+    expect(findCivic("住民投票").route).toBe("/vote");
+  });
+
+  it("品評会/市長ブログは近日開庁のまま（route:null）", () => {
+    for (const label of ["品評会（コンテスト）", "市長ブログ"]) {
+      const link = findCivic(label);
       expect(link.route, `${label} はまだ近日開庁のはず`).toBeNull();
       expect(link.comingSoon).toBe("近日開庁");
     }
-  });
-
-  it("既存の実在役所のルートは変わっていない（回帰防止）", () => {
-    expect(findLink("みんなの植物（フィード）").route).toBe("/discover");
-    expect(findLink("あなたの植物").route).toBe("/me");
-    expect(findLink("投稿する").route).toBe("/compose");
-    expect(findLink("人気ランキング").route).toBe("/ranking");
   });
 });

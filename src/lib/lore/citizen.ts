@@ -8,8 +8,12 @@
 import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 
-/** 市民レベル。L0 旅人 / L1 市民 / L2 市民L2（… 以降は市民Ln・#272）。 */
-export type CitizenLevel = 0 | 1 | 2;
+/**
+ * 市民レベル。L0 旅人 / L1 市民 / L2 市民L2 / L3 市民L3（… 以降は市民Ln・#272）。
+ * 本（図鑑）のページ解放は **1 レベル=1 ページ**で L3（条文）まで＝capped（#469）。
+ * 表示ラベルの Ln（citizenLevelLabel）は capped 対象外で L4 以降も伸びる。
+ */
+export type CitizenLevel = 0 | 1 | 2 | 3;
 
 /** 市民L2 に必要な最小投稿数。 */
 export const TENURE_POSTS = 5;
@@ -70,7 +74,7 @@ function tenureDaysOf(earliestCreatedAt: number | null, now: number): number {
  * - L1 市民: 表示名が登録済み（= 名乗り完了・どの tier も未達）。
  * - L2..Ln: CITIZEN_TIERS のうち「投稿数 >= minPosts かつ 居住日数 >= minDays」を満たす最上位 tier の level。
  *
- * 活動スタッツ（CitizenStats）が市民Ln を出すために使う。CityHallBook のページ解放は citizenLevel（0|1|2 capped）。
+ * 活動スタッツ（CitizenStats）が市民Ln を出すために使う。CityHallBook のページ解放は citizenLevel（0|1|2|3 capped）。
  *
  * @param input.hasName       登録済みの表示名が存在するか
  * @param input.postCount     t:hanoba の投稿数
@@ -98,8 +102,9 @@ export function citizenLevelFull(input: {
 }
 
 /**
- * 市民レベルを決める純関数（CityHallBook のページ解放用・0|1|2 capped）。
- * citizenLevelFull を 2 で頭打ちにする＝沿革/条文ページの解放境界は従来どおり L2 まで（挙動不変）。
+ * 市民レベルを決める純関数（CityHallBook のページ解放用・0|1|2|3 capped・#469）。
+ * citizenLevelFull を 3 で頭打ちにする＝図鑑の解放は **1 レベル=1 ページ**で L3（条文）まで。
+ * ページ対応: 地図=L1 / 沿革=L2 / 条文=L3。L4 以降の tier は手帳の解放には効かず（表示ラベルだけ進む）。
  *
  * @param input.hasName       登録済みの表示名が存在するか
  * @param input.postCount     t:hanoba の投稿数
@@ -112,12 +117,12 @@ export function citizenLevel(input: {
   earliestCreatedAt: number | null;
   now: number;
 }): CitizenLevel {
-  return Math.min(2, citizenLevelFull(input)) as CitizenLevel;
+  return Math.min(3, citizenLevelFull(input)) as CitizenLevel;
 }
 
 /**
- * そのレベルで開ける最大ページ番号（前方ロックの上限）。
- * L0 → 1（移住案内のみ） / L1 → 2（市役所ハブまで） / L2 → 4（沿革・条文まで）。
+ * そのレベルで開ける最大ページ番号（前方ロックの上限）。図鑑式＝**1 レベル=1 ページ**解放（#469）。
+ * L0 → 1（移住案内のみ） / L1 → 2（街の地図） / L2 → 3（沿革） / L3 → 4（市の条文）。
  */
 export function maxUnlockedPage(level: CitizenLevel): number {
   switch (level) {
@@ -126,13 +131,16 @@ export function maxUnlockedPage(level: CitizenLevel): number {
     case 1:
       return 2;
     case 2:
+      return 3;
+    case 3:
       return 4;
   }
 }
 
 /**
  * 本を開いたときの既定ページ（解放済みのうち導入的なページ）。
- * L0 → 1 / L1 → 2 / L2 → 2（奥のページは前送りで辿る・自動では開かない）。
+ * L0 → 1（移住案内） / それ以外 → 2（街の地図＝早期のご褒美ページを最初に見せる・#469）。
+ * 奥のページ（沿革・条文）は前送りで辿る＝自動では開かない。
  */
 export function defaultPage(level: CitizenLevel): number {
   return level === 0 ? 1 : 2;
