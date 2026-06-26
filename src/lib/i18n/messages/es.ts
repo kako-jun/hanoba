@@ -422,8 +422,9 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.1.label": "Exposición floral (Concurso)",
   "cityHall.map.civic.2.label": "Blog del Alcalde",
   "cityHall.map.comingSoon": "Próxima apertura",
-  // P3 Crónica.
+  // P3 Crónica. Abre con el preámbulo del Alcalde (toda página encabeza con la voz del Alcalde · #469 cambio B).
   "cityHall.chronicle.title": "Crónica",
+  "cityHall.chronicle.lead": "Ejem. Permitidme contaros un poco de cómo llegó a ser nuestra ciudad.",
   "cityHall.chronicle.entry.0.era": "Año Uno, Primavera",
   "cityHall.chronicle.entry.0.text": "El primer alcalde, Botanics von Hanōba, planta la primera maceta sobre el páramo. El día en que aparece el brote se decreta como el nacimiento de la ciudad.",
   "cityHall.chronicle.entry.1.era": "Año Uno, Verano",
@@ -433,8 +434,9 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.3.era": "Año Dos",
   "cityHall.chronicle.entry.3.text": "Se decreta que todas las parcelas sean cuadradas. El motivo queda registrado únicamente como «porque es hermoso».",
   "cityHall.chronicle.note": "Cada vez que llega un ciudadano, esta crónica se sigue escribiendo.",
-  // P4 Ordenanzas de la ciudad (la Carta de Hanōba, cada artículo con el comentario del Alcalde).
+  // P4 Ordenanzas de la ciudad (la Carta de Hanōba, cada artículo con el comentario del Alcalde). Abre con el preámbulo del Alcalde (#469 cambio B).
   "cityHall.ordinance.title": "Ordenanzas de la ciudad",
+  "cityHall.ordinance.lead": "Ejem. He aquí la carta de nuestra ciudad. Solemne, sí, pero cada artículo es una norma hecha para las plantas.",
   "cityHall.ordinance.0.article": "Artículo I (Tierra)",
   "cityHall.ordinance.0.text": "El alquiler de la tierra en la Ciudad de Hanōba será gratuito, mientras se cultive una planta.",
   "cityHall.ordinance.0.commentary": "Ejem. La voluntad de cultivar es en sí misma tu alquiler. Regar, contemplar una hoja: con eso ya has pagado por completo.",
@@ -456,10 +458,6 @@ export const es: Partial<Record<MessageKey, string>> = {
   // La breve palabra del Alcalde que se añade al subir de nivel.
   "cityHall.flavor.citizen": "Tu residencia queda debidamente recibida. Bienvenidos, ciudadanos.",
   "cityHall.flavor.tenured": "Ejem. Ahora eres un viejo amigo de la ciudad. He dejado abiertas las salas interiores para ti.",
-  // Subtítulo junto al título del manual (cambia con el nivel del ciudadano).
-  "cityHall.subtitle.0": "Bienvenido a la ciudad verde",
-  "cityHall.subtitle.1": "Guía del ciudadano",
-  "cityHall.subtitle.2": "Guía del veterano",
   // Elementos de la interfaz de CityHallBook.
   "cityHall.mayorTitle": "Alcalde {name}",
   "cityHall.nav.aria": "Pasar la página",

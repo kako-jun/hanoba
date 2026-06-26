@@ -59,7 +59,13 @@
 ## 本（市民手帳）のページモデル
 
 在世タイトル＝「ハノーバ市民手帳」。手帳は **図鑑（集めて埋める読み物・1 レベル=1 ページ解放）** に割り切る（#469）。
-本の見出し脇の肩書はレベルで変わる（肩書は 3 段の taxonomy＝新参/市民/古参で、L2 以上は「古参の手引き」で頭打ち）。
+**タイトルはレベル番号表記で進捗を一目で示す**（#469 変更A・kako-jun 確定）: L1+ は「ハノーバ市民手帳 L{n}」、
+L0（旅人・未名乗り）はレベル番号を出さず素のタイトル＋副題「旅人」（`citizen.level.traveler`）。曖昧な副題
+（旧 `levelSubtitle`＝ようこそ/市民の手引き/古参の手引き）は廃止。**n は真レベル＝`citizenLevelFull`（非キャップ・L1〜L6）**＝
+CitizenStats と同じ表記で、ページ解放用の `citizenLevel`（capped 3）とは別軸（ヘッダの about ラベルにはレベル番号を出さない・#262）。
+
+**市長の言葉は全ページの冒頭に必須**（#469 変更B・kako-jun）: 各ページは「`MayorMark`（語り手アイコン）→ 市長の前口上（lead）→ 本体」で
+揃える。welcome は歓迎の辞、map は lead、chronicle/ordinances も冒頭に lead（`cityHall.chronicle.lead` / `cityHall.ordinance.lead`）を持つ。
 
 **機能導線（メニュー）は手帳が持たない**: discover/ranking/me/compose はヘッダ/フッタ（`SiteHeader.astro`/`SiteFooter.astro`）が
 既に提供する。手帳が「メニュー（機能導線）」と「読み物（ロア）」を兼ねていたのが密度・発見性問題の正体だったので、

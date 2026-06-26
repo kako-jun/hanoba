@@ -37,6 +37,8 @@ describe("街の地図ページ（cityHall.ts P2・#469）", () => {
     }
     // 末尾に注記（地図はまだ描きかけ）。
     expect(page!.note.length).toBeGreaterThan(0);
+    // 地図イラストは未生成＝image は null（#137 で webp パスを入れるまでの前方互換スロット・#469）。
+    expect(page!.image).toBeNull();
   });
 
   it("市政の窓口は住民投票・品評会・市長ブログの3件だけ（discover 等の機能導線は手帳から外す）", () => {
@@ -53,6 +55,26 @@ describe("街の地図ページ（cityHall.ts P2・#469）", () => {
       const link = findCivic(label);
       expect(link.route, `${label} はまだ近日開庁のはず`).toBeNull();
       expect(link.comingSoon).toBe("近日開庁");
+    }
+  });
+});
+
+// 全ページ冒頭に市長の言葉を必須化（#469 変更B）。welcome(lead相当の歓迎辞)・map(lead)に加え、
+// chronicle(P3)・ordinances(P4) も冒頭に市長の前口上 lead を持つ。
+describe("全ページ冒頭の市長 lead（#469 変更B）", () => {
+  it("沿革（P3）・条文（P4）に市長の前口上 lead がある（おっほん。で始まる）", () => {
+    const book = buildCityHallBook("ja");
+    const p3 = book.find((p) => p.page === 3);
+    const p4 = book.find((p) => p.page === 4);
+    expect(p3?.kind).toBe("chronicle");
+    expect(p4?.kind).toBe("ordinances");
+    if (p3?.kind === "chronicle") {
+      expect(p3.lead.length).toBeGreaterThan(0);
+      expect(p3.lead.startsWith("おっほん")).toBe(true);
+    }
+    if (p4?.kind === "ordinances") {
+      expect(p4.lead.length).toBeGreaterThan(0);
+      expect(p4.lead.startsWith("おっほん")).toBe(true);
     }
   });
 });

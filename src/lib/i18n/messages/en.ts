@@ -423,8 +423,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.1.label": "Exhibition (Contest)",
   "cityHall.map.civic.2.label": "Mayor's Blog",
   "cityHall.map.comingSoon": "Opening soon",
-  // P3 Chronicle.
+  // P3 Chronicle. Opens with the Mayor's preamble (every page leads with the Mayor's voice · #469 change B).
   "cityHall.chronicle.title": "Chronicle",
+  "cityHall.chronicle.lead": "Ahem. Let me tell you a little of how our city came to be.",
   "cityHall.chronicle.entry.0.era": "Year One, Spring",
   "cityHall.chronicle.entry.0.text": "The first mayor, Botanics von Hanōba, plants the first pot upon the wasteland. The day the sprout appears is decreed the city's birth.",
   "cityHall.chronicle.entry.1.era": "Year One, Summer",
@@ -434,8 +435,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.3.era": "Year Two",
   "cityHall.chronicle.entry.3.text": "All plots are decreed to be square. The reason is recorded only as \"because it is beautiful.\"",
   "cityHall.chronicle.note": "Each time a citizen arrives, this chronicle is written further.",
-  // P4 City ordinances (the Hanōba Charter, each article with the Mayor's commentary).
+  // P4 City ordinances (the Hanōba Charter, each article with the Mayor's commentary). Opens with the Mayor's preamble (#469 change B).
   "cityHall.ordinance.title": "City Ordinances",
+  "cityHall.ordinance.lead": "Ahem. Here is our city's charter. Formal, yes — but every article is a rule made for the plants.",
   "cityHall.ordinance.0.article": "Article I (Land)",
   "cityHall.ordinance.0.text": "The rent for land in the City of Hanōba shall be free, so long as a plant is grown.",
   "cityHall.ordinance.0.commentary": "Ahem. The will to grow is itself your rent. To water, to gaze upon a leaf—with that, you have paid in full.",
@@ -457,10 +459,6 @@ export const en: Partial<Record<MessageKey, string>> = {
   // The Mayor's brief word added upon a level promotion.
   "cityHall.flavor.citizen": "Your settlement is duly received. Welcome, citizens.",
   "cityHall.flavor.tenured": "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",
-  // Subtitle beside the handbook title (changes with the citizen level).
-  "cityHall.subtitle.0": "Welcome, to the green city",
-  "cityHall.subtitle.1": "A Citizen's Primer",
-  "cityHall.subtitle.2": "A Veteran's Primer",
   // CityHallBook UI chrome.
   "cityHall.mayorTitle": "Mayor {name}",
   "cityHall.nav.aria": "Turn the page",

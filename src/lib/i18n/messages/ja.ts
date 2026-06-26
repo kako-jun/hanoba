@@ -465,8 +465,9 @@ export const ja = {
   "cityHall.map.civic.1.label": "品評会（コンテスト）",
   "cityHall.map.civic.2.label": "市長ブログ",
   "cityHall.map.comingSoon": "近日開庁",
-  // P3 沿革（年表・遊び）。
+  // P3 沿革（年表・遊び）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
   "cityHall.chronicle.title": "沿革",
+  "cityHall.chronicle.lead": "おっほん。我が市の来し方を、少し語らせてもらおう。",
   "cityHall.chronicle.entry.0.era": "第一年 春",
   "cityHall.chronicle.entry.0.text": "初代市長ボタニクス・フォン・ハノーバ、荒れ地に最初の一鉢を植える。芽が出た日を、市の誕生とする。",
   "cityHall.chronicle.entry.1.era": "第一年 夏",
@@ -476,8 +477,9 @@ export const ja = {
   "cityHall.chronicle.entry.3.era": "第二年",
   "cityHall.chronicle.entry.3.text": "区画はすべて正方形と定められる。理由は「美しいから」とのみ記録される。",
   "cityHall.chronicle.note": "市民が増えるたび、この年表は書き足される。",
-  // P4 市の条文（ハノーバ市憲章・各条に市長解説）。
+  // P4 市の条文（ハノーバ市憲章・各条に市長解説）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
   "cityHall.ordinance.title": "市の条文",
+  "cityHall.ordinance.lead": "おっほん。これが我が市の憲章だ。堅苦しいが、どれも植物のための決まりである。",
   "cityHall.ordinance.0.article": "第一条（土地）",
   "cityHall.ordinance.0.text": "ハノーバ市の土地代は、植物を育てている限り、無料とする。",
   "cityHall.ordinance.0.commentary": "おっほん。育てる意志こそが地代だ。水をやり、葉を見つめる——それで諸君は十分に納めている。",
@@ -499,10 +501,6 @@ export const ja = {
   // レベル昇格時に小さく添える市長のひとこと（味付け）。
   "cityHall.flavor.citizen": "移住、確かに受理した。ようこそ、市民諸君。",
   "cityHall.flavor.tenured": "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
-  // レベル別の手帳タイトル脇に添える肩書（本の見出しがレベルで変わる）。
-  "cityHall.subtitle.0": "ようこそ、緑の市へ",
-  "cityHall.subtitle.1": "市民の手引き",
-  "cityHall.subtitle.2": "古参の手引き",
   // CityHallBook の UI クローム（肖像脇の呼び名・めくり操作・ページ表示）。
   "cityHall.mayorTitle": "{name}市長",
   "cityHall.nav.aria": "ページめくり",

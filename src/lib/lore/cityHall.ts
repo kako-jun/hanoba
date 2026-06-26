@@ -58,8 +58,8 @@ export type BookPage =
       civic: HubLink[];
       note: string;
     }
-  | { page: 3; kind: "chronicle"; title: string; entries: ChronicleEntry[]; note: string }
-  | { page: 4; kind: "ordinances"; title: string; ordinances: Ordinance[] };
+  | { page: 3; kind: "chronicle"; title: string; lead: string; entries: ChronicleEntry[]; note: string }
+  | { page: 4; kind: "ordinances"; title: string; lead: string; ordinances: Ordinance[] };
 
 /** 本の在世タイトル（手帳の表題）を locale で引く。 */
 export function bookTitle(locale: Locale = DEFAULT_LOCALE): string {
@@ -121,12 +121,13 @@ function page2(locale: Locale): BookPage {
   };
 }
 
-/** P3 沿革（年表・遊び）。 */
+/** P3 沿革（年表・遊び）。冒頭に市長の前口上（lead）を置く（全ページ共通＝市長の語り）。 */
 function page3(locale: Locale): BookPage {
   return {
     page: 3,
     kind: "chronicle",
     title: t(locale, "cityHall.chronicle.title"),
+    lead: t(locale, "cityHall.chronicle.lead"),
     entries: [
       { era: t(locale, "cityHall.chronicle.entry.0.era"), text: t(locale, "cityHall.chronicle.entry.0.text") },
       { era: t(locale, "cityHall.chronicle.entry.1.era"), text: t(locale, "cityHall.chronicle.entry.1.text") },
@@ -137,12 +138,13 @@ function page3(locale: Locale): BookPage {
   };
 }
 
-/** P4 市の条文（ハノーバ市憲章・各条に市長解説）。 */
+/** P4 市の条文（ハノーバ市憲章・各条に市長解説）。冒頭に市長の前口上（lead）を置く（全ページ共通）。 */
 function page4(locale: Locale): BookPage {
   return {
     page: 4,
     kind: "ordinances",
     title: t(locale, "cityHall.ordinance.title"),
+    lead: t(locale, "cityHall.ordinance.lead"),
     ordinances: [
       {
         article: t(locale, "cityHall.ordinance.0.article"),
@@ -196,15 +198,6 @@ export function levelFlavor(locale: Locale = DEFAULT_LOCALE): { citizen: string;
   };
 }
 
-/** レベル別の手帳タイトル脇に添える肩書（本の見出しがレベルで変わる）を locale で引く。 */
-export function levelSubtitle(locale: Locale = DEFAULT_LOCALE): Record<0 | 1 | 2, string> {
-  return {
-    0: t(locale, "cityHall.subtitle.0"),
-    1: t(locale, "cityHall.subtitle.1"),
-    2: t(locale, "cityHall.subtitle.2"),
-  };
-}
-
 // --- 後方互換 export（DEFAULT_LOCALE で解決した定数）。既存の const 消費側・テストはこのまま動く。 ---
 
 /** 本の在世タイトル（手帳の表題・ja 既定）。 */
@@ -224,9 +217,6 @@ export const LOCKED_TEASER = lockedTeaser(DEFAULT_LOCALE);
 
 /** レベル昇格時の市長のひとこと（ja 既定）。 */
 export const LEVEL_FLAVOR = levelFlavor(DEFAULT_LOCALE);
-
-/** レベル別の手帳タイトル脇に添える肩書（ja 既定）。 */
-export const LEVEL_SUBTITLE: Record<0 | 1 | 2, string> = levelSubtitle(DEFAULT_LOCALE);
 
 /**
  * ロック頁の背後に敷く「読めない頁」のフェイク本文（#219 ③）。
