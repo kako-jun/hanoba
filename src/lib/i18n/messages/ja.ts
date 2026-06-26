@@ -451,7 +451,7 @@ export const ja = {
   "cityHall.welcome.3": "※ ハノーバは植物専用の写真SNSです。正方形の写真1枚＋ひとこと、植物だけ。名前を登録すると投稿できます。",
   // P2 街の地図（図鑑の早期ご褒美ページ・#469）。名所（ランドマーク）を読み物に、末尾に「市政の窓口」strip。
   "cityHall.map.title": "街の地図",
-  "cityHall.map.lead": "おっほん。我が市の地図である。ハノーバは一枚の葉のごとく、葉脈川（ようみゃくがわ）に沿って広がっておる。",
+  "cityHall.map.lead": "おっほん。我が市の地図である。ハノーバは一枚の葉のごとく、葉脈川（はみゃくがわ）に沿って広がっておる。",
   "cityHall.map.landmark.0.name": "葉脈川",
   "cityHall.map.landmark.0.text": "市の背骨。すべての区画は、この川の葉脈から水を分け合う。",
   "cityHall.map.landmark.1.name": "正方形の区画",
