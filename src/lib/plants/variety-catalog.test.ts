@@ -310,7 +310,7 @@ describe("同義語統合（#409 P-canonical）", () => {
     ["グラキリス", "象牙宮", "Pachypodium rosulatum var. gracilius"],
     ["ブレビカウレ", "恵比寿笑い", "Pachypodium brevicaule"],
     ["サンデルシー", "白馬城", "Pachypodium saundersii"],
-    ["光堂", "ナマクアナム", "Pachypodium namaquanum"],
+    ["ナマクアナム", "光堂", "Pachypodium namaquanum"],
     ["オベスム", "砂漠のバラ", "Adenium obesum"],
     ["亀甲竜", "エレファンティペス", "Dioscorea elephantipes"],
     ["火星人", "フォッケア", "Fockea edulis"],
