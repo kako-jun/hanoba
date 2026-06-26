@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
-import { TENURE_DAYS, TENURE_POSTS } from "../../lib/lore/citizen.ts";
+import { CITIZEN_TIERS, TENURE_DAYS, TENURE_POSTS } from "../../lib/lore/citizen.ts";
 import { LOCKED_PAGE_VEIL } from "../../lib/lore/cityHall.ts";
 
 // ネットワーク・鍵はモック境界で止める（実 relay・localStorage を呼ばない）。
@@ -62,6 +62,20 @@ function tenuredPosts(): FeedPost[] {
 function level3Posts(): FeedPost[] {
   const now = Math.floor(NOW_MS / 1000);
   return Array.from({ length: 15 }, (_, i) => makePost(now - 35 * DAY + i * DAY, `p${i}`));
+}
+
+/** L4 tier（CITIZEN_TIERS の level===4）。tier 定義が動いても追従するよう table から引く。 */
+const L4_TIER = CITIZEN_TIERS.find((tier) => tier.level === 4)!;
+
+/**
+ * L4 相当の投稿（#469・真レベル配線の固定用）。L4 tier（既定 40 投稿 かつ 居住 90 日〜）を満たすが
+ * L5（80 投稿/180 日）には満たない量＝citizenLevelFull が 4 を返す。最古を now-minDays に置く。
+ */
+function level4Posts(): FeedPost[] {
+  const now = Math.floor(NOW_MS / 1000);
+  return Array.from({ length: L4_TIER.minPosts }, (_, i) =>
+    makePost(now - L4_TIER.minDays * DAY + i * DAY, `p${i}`),
+  );
 }
 
 describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
@@ -254,6 +268,31 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByText(/育てる意志こそが地代だ/)).toBeInTheDocument();
     // 4p が最後（次は無い）。
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
+  });
+
+  it("L4（L4 tier 達成）: タイトルは真レベル L4（capped 3 で頭打ちにしない）・解放は条文 P4 止まり（#469）", async () => {
+    const user = userEvent.setup();
+    getDisplayName.mockReturnValue("おおふるつわもの");
+    fetchMyPosts.mockResolvedValue(level4Posts());
+    render(<CityHallBook />);
+
+    // ① 本命: タイトル（h1）は真レベル levelFull=4＝「ハノーバ市民手帳 L4」。
+    //    タイトルが capped level（=3）に配線されていれば「L3」になり、この findByRole が失敗する。
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L4" }),
+    ).toBeInTheDocument();
+    // capped 表記「L3」はタイトルに出ない（誤配線の検出を兼ねる）。
+    expect(screen.queryByRole("heading", { level: 1, name: "ハノーバ市民手帳 L3" })).toBeNull();
+
+    // ② 解放はページ解放用 capped level(=3)＝条文 P4 が最終実ページ。L4 でも P5 以降は無い。
+    await screen.findByText(/我が市の地図である/); // 2p 街の地図
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 3p 沿革
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 4p 条文
+    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
+    // 4p が最終＝次は無い（条文は解放済みの最終ページ＝ティザーすら先に出ない）。
+    expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
+    expect(screen.queryByText("？？？")).toBeNull();
   });
 
   it("relay ダウン（投稿が空）でも名前があれば L1 に落ちてロックアウトしない", async () => {
