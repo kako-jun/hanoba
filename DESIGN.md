@@ -136,7 +136,7 @@ Hanoba は明るい量販 SNS ではない。**焦げ茶の木目棚に植物が
 ### 5.4 画像アセット（AI 生成・`/image`）
 
 - `public/og/bg-blur.webp` … ぼかして暗くした全面背景（`body` の `background-image`）。
-- ~~`public/og/room-dark.webp` / `public/about/{flower,field,fruit}.webp`~~ … 旧 About（三人称 SaaS 説明の 4 カード）の彩り画像。About を市民手帳（市役所ハブ・#163）へ作り替えた際にカードごと撤去し、画像も削除済み（孤児アセット整理）。
+- ~~`public/og/room-dark.webp` / `public/about/{flower,field,fruit}.webp`~~ … 旧 About（三人称 SaaS 説明の 4 カード）の彩り画像。About を市民手帳（#163・#469 で図鑑化）へ作り替えた際にカードごと撤去し、画像も削除済み（孤児アセット整理）。
 - `public/og/og-image.jpg`（1200×630）… OGP/Twitter カード。
 - `public/weather/season-{risshun,shunbun,rikka,geshi,risshu,shubun,ritto,toji}.webp` … 季節の背景（#231 後段①・§5.2）の八節8枚。codex/gpt-image-2 に**暗い夜のビザール植物部屋（黒格子・板付ビカク・アガベ・ユッカ据え置き＋塊根の状態＋季節の一鉢、節ごとに別アングル）**を生成させ、`scripts/season-bg-blur.py` で**ガウスぼかし＋わずかに暗く＋downscale（1200px・q82・各約16KB）**にした地。どうせ暗くぼかすので軽量で十分。precache 除外（`public/weather/**`）＝現在の節だけ on-demand。
 - `public/weather/rain-glass.webp` / `public/weather/rain-glass-heavy.webp` … 天気の前面環境演出（#231・§5.2）の雨の水滴（普通／大雨）。codex/gpt-image-2 に**純黒地に水滴のフチ＋glint だけ**を描かせ、`scripts/weather-droplet-alpha.py` で **alpha＝輝度（黒→透明・中央は透けて奥の部屋が見える＝透明感）＋`--gamma 0.5` で楕円フチを持ち上げ＋`--dilate 1` でフチが小スケールで消えないように**変換した透過素材（gpt-image-1.5 不要）。
@@ -192,7 +192,7 @@ mypace と同じ Nostr 空間・同じタグ規約に準拠する（独自化し
   - **`t:hanoba` は付けない**: hanoba フィード/人気タグ集計は `#t:hanoba` で絞って**画像投稿だけ**を集める（`fetchHanobaFeed` / `fetchPopularHashtags`）。文章だけのコメントに `t:hanoba` を付けるとフィードのノイズ・タグ集計の汚染になる。コメントは親の `e` タグ経由（`{kinds:[1], "#e":[postId]}`＝`fetchReplies`）で読むので不要。
   - **読み取り**: `{kinds:[1], "#e":[postId]}`（`fetchReplies`）。このフィルタは親を `e` タグで参照する kind:1 を**全部**返すので、引用リポスト（NIP-18・`["e", postId, "", "mention"]`）が混ざる。`toComments(events, postId)` は**本物のリプライだけを残す**＝「値が `postId` に一致し marker（`tag[3]`）が `"mention"` でない `e` タグ」を1つでも持つもの（`"root"`/`"reply"`/マーカー無し＝残す、`"mention"`＝引用リポストは落とす）。あわせてリレー間の重複は id で除去。表示は古い順/新しい順を切り替え（`sortComments`）。**削除**は投稿と同じく NIP-09 `kind:5`（`deleteComment`。コメントは画像を持たないので実体削除は無い）。
   - ビルダーは `buildReplyTemplate`（純関数・空 content / 空 parentId は throw）、relay 呼び出しは `client.ts`（`fetchReplies` / `publishReply` / `deleteComment`）に集約（§3）。本文 `#` を `t` 化しない §6 契約は不変。
-- **住民投票＝Nostalgic BBS 埋め込み（#160・`/vote`）**: 市役所ハブ（#163）の最初に開庁する役所。投票（意見集約）は **kako-jun 自作のバックエンドレス掲示板 Nostalgic BBS**（外部ホスト・`https://nostalgic.llll-ll.com`）を web component で埋める＝hanoba 側にサーバ/DB を足さない（§7 non-goal 維持）。
+- **住民投票＝Nostalgic BBS 埋め込み（#160・`/vote`）**: 市民手帳の街の地図ページ（#163・#469）末尾の「市政の窓口」strip に置く、最初に開庁した役所（ヘッダ/フッタに無く手帳が唯一の入口なので、図鑑化で手帳のメニューを外した際もここへ退避＝孤立させない）。投票（意見集約）は **kako-jun 自作のバックエンドレス掲示板 Nostalgic BBS**（外部ホスト・`https://nostalgic.llll-ll.com`）を web component で埋める＝hanoba 側にサーバ/DB を足さない（§7 non-goal 維持）。
   - **埋め込み規約**: web component `<nostalgic-bbs id="..." theme="dark" width="100%">` ＋ ローダー `https://nostalgic.llll-ll.com/components/bbs.js`。`theme="dark"` が暗色シック（§5）に馴染む。`/vote` は専用 1 ページなのでローダーは `<script is:inline src=... defer>` で **1 度だけ**読む（多ページ footer の冪等注入は不要）。Astro は外部 src をバンドルせず、component はクライアントで upgrade（板＋投稿フォームを描画）＝SSG を壊さない。板の実描画・dark テーマ・投稿動線は**実ブラウザでのみ確認できる**（jsdom/build では見えない）。
   - **3 板（公開 embed id）**: 品種への要望 `hanoba-16b82341`（**品種に関する要望は全部ここ**＝並び順・名簿に無い品種の追加・その他。TagPicker #169/#232 の「追加をリクエスト」もこの板へ集約＝GitHub 廃止。先頭＝一番上に置く）／欲しい機能 `hanoba-76cf0aed`（機能リクエスト）／バグ報告 `hanoba-12e8672f`（不具合報告）。各板は glass 列で囲み（§5.0 原則2）、見出し＝h2・節は `aria-label` 付き。
   - **開放範囲**: `/vote` は**全員に開放**（市民レベルのゲートなし）。ハブからは L1+ が辿るが、直接アクセス・投稿は無制限（名前は任意）。
