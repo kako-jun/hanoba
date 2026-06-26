@@ -406,23 +406,25 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.welcome.1": "En mi ciudad no se paga alquiler por la tierra. Mientras cultives una planta, tu parcela es tuya, gratis y para siempre. Solo hay una cosa que hacer: planta una sola maceta tuya en una parcela cuadrada y añade una palabra. Con eso, tú también eres un ciudadano de pleno derecho. Solo fotografías de plantas (a las personas y mascotas, llévalas a otra ciudad).",
   "cityHall.welcome.2": "La crónica de la ciudad, sus ordenanzas, sus exposiciones florales: todo puede consultarse desde este ayuntamiento. Vamos, ocúpate de los trámites para establecerte. Decide un nombre que te guste y el asunto queda zanjado. No se exige un nombre verdadero: basta con que seas tú mismo.",
   "cityHall.welcome.3": "* Hanōba es una red social de fotos solo de plantas. Una foto cuadrada + una palabra, solo plantas. Registra un nombre para publicar.",
-  // P2 Centro del ayuntamiento.
-  "cityHall.hub.title": "Ayuntamiento",
-  "cityHall.hub.lead": "Ejem. Este es el ayuntamiento. Todos los asuntos cívicos pueden rastrearse desde esta puerta.",
-  "cityHall.hub.group.0.heading": "Contempla",
-  "cityHall.hub.group.0.link.0.label": "Plantas de todos (Feed)",
-  "cityHall.hub.group.0.link.1.label": "Rankings",
-  "cityHall.hub.group.1.heading": "Cultiva",
-  "cityHall.hub.group.1.link.0.label": "Publicar",
-  "cityHall.hub.group.1.link.1.label": "Tus plantas",
-  "cityHall.hub.group.2.heading": "Asuntos cívicos",
-  "cityHall.hub.group.2.link.0.label": "Urna ciudadana",
-  "cityHall.hub.group.2.link.1.label": "Exposición floral (Concurso)",
-  "cityHall.hub.group.2.link.2.label": "Blog del Alcalde",
-  "cityHall.hub.group.2.link.3.label": "Mapa de la ciudad",
-  "cityHall.hub.comingSoon": "Próxima apertura",
-  // P3 Crónica.
+  // P2 Mapa de la ciudad (la página-recompensa temprana del libro-catálogo; al pie, las ventanillas cívicas).
+  "cityHall.map.title": "Mapa de la ciudad",
+  "cityHall.map.lead": "Ejem. He aquí el mapa de nuestra ciudad. Hanōba se extiende como una sola hoja, a lo largo del Río de las Venas.",
+  "cityHall.map.landmark.0.name": "El Río de las Venas",
+  "cityHall.map.landmark.0.text": "La columna vertebral de la ciudad. Cada parcela comparte el agua que mana de sus venas.",
+  "cityHall.map.landmark.1.name": "Las parcelas cuadradas",
+  "cityHall.map.landmark.1.text": "Una regla del primer alcalde. Todo jardín es igualmente cuadrado. Grande o pequeño, para esta ciudad todos son tesoros.",
+  "cityHall.map.landmark.2.name": "El Ayuntamiento",
+  "cityHall.map.landmark.2.text": "Donde os halláis ahora. Las ventanillas cívicas están justo debajo.",
+  "cityHall.map.note": "El escudo, los productos de la tierra... todo ello lo consignaré a su debido tiempo. El mapa aún está a medio trazar.",
+  "cityHall.map.placeholder": "Mapa en preparación",
+  "cityHall.map.civic.heading": "Ventanillas cívicas",
+  "cityHall.map.civic.0.label": "Urna ciudadana",
+  "cityHall.map.civic.1.label": "Exposición floral (Concurso)",
+  "cityHall.map.civic.2.label": "Blog del Alcalde",
+  "cityHall.map.comingSoon": "Próxima apertura",
+  // P3 Crónica. Abre con el preámbulo del Alcalde (toda página encabeza con la voz del Alcalde · #469 cambio B).
   "cityHall.chronicle.title": "Crónica",
+  "cityHall.chronicle.lead": "Ejem. Permitidme contaros un poco de cómo llegó a ser nuestra ciudad.",
   "cityHall.chronicle.entry.0.era": "Año Uno, Primavera",
   "cityHall.chronicle.entry.0.text": "El primer alcalde, Botanics von Hanōba, planta la primera maceta sobre el páramo. El día en que aparece el brote se decreta como el nacimiento de la ciudad.",
   "cityHall.chronicle.entry.1.era": "Año Uno, Verano",
@@ -432,8 +434,9 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.3.era": "Año Dos",
   "cityHall.chronicle.entry.3.text": "Se decreta que todas las parcelas sean cuadradas. El motivo queda registrado únicamente como «porque es hermoso».",
   "cityHall.chronicle.note": "Cada vez que llega un ciudadano, esta crónica se sigue escribiendo.",
-  // P4 Ordenanzas de la ciudad (la Carta de Hanōba, cada artículo con el comentario del Alcalde).
+  // P4 Ordenanzas de la ciudad (la Carta de Hanōba, cada artículo con el comentario del Alcalde). Abre con el preámbulo del Alcalde (#469 cambio B).
   "cityHall.ordinance.title": "Ordenanzas de la ciudad",
+  "cityHall.ordinance.lead": "Ejem. He aquí la carta de nuestra ciudad. Solemne, sí, pero cada artículo es una norma hecha para las plantas.",
   "cityHall.ordinance.0.article": "Artículo I (Tierra)",
   "cityHall.ordinance.0.text": "El alquiler de la tierra en la Ciudad de Hanōba será gratuito, mientras se cultive una planta.",
   "cityHall.ordinance.0.commentary": "Ejem. La voluntad de cultivar es en sí misma tu alquiler. Regar, contemplar una hoja: con eso ya has pagado por completo.",
@@ -455,10 +458,6 @@ export const es: Partial<Record<MessageKey, string>> = {
   // La breve palabra del Alcalde que se añade al subir de nivel.
   "cityHall.flavor.citizen": "Tu residencia queda debidamente recibida. Bienvenidos, ciudadanos.",
   "cityHall.flavor.tenured": "Ejem. Ahora eres un viejo amigo de la ciudad. He dejado abiertas las salas interiores para ti.",
-  // Subtítulo junto al título del manual (cambia con el nivel del ciudadano).
-  "cityHall.subtitle.0": "Bienvenido a la ciudad verde",
-  "cityHall.subtitle.1": "Guía del ciudadano",
-  "cityHall.subtitle.2": "Guía del veterano",
   // Elementos de la interfaz de CityHallBook.
   "cityHall.mayorTitle": "Alcalde {name}",
   "cityHall.nav.aria": "Pasar la página",

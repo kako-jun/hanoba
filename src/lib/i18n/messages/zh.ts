@@ -406,23 +406,25 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.welcome.1": "在我的城里，土地不收租。只要你种着一株植物，那块地就永远免费地属于你。要做的只有一件事——在一块方形的地里种下你自己的一盆，再添上一个词。如此，你也就是一位堂堂正正的市民了。只发植物的照片（人和宠物，请带到别的城去）。",
   "cityHall.welcome.2": "城市的编年史、它的法令、它的花展——都能从这座市政厅查看。来吧，去办理定居的手续。决定一个你喜欢的名字，事情就办妥了。无需真名——只要你是你自己，就足够了。",
   "cityHall.welcome.3": "* Hanōba 是一个只发植物的照片 SNS。一张方形照片 + 一个词，只发植物。注册一个名字即可发布。",
-  // P2 市政厅中枢。
-  "cityHall.hub.title": "市政厅",
-  "cityHall.hub.lead": "咳咳。这里是市政厅。一切市政事务都能从这扇门追溯。",
-  "cityHall.hub.group.0.heading": "观赏",
-  "cityHall.hub.group.0.link.0.label": "大家的植物（动态）",
-  "cityHall.hub.group.0.link.1.label": "排行榜",
-  "cityHall.hub.group.1.heading": "栽培",
-  "cityHall.hub.group.1.link.0.label": "发布",
-  "cityHall.hub.group.1.link.1.label": "你的植物",
-  "cityHall.hub.group.2.heading": "市政事务",
-  "cityHall.hub.group.2.link.0.label": "市民投票",
-  "cityHall.hub.group.2.link.1.label": "花展（比赛）",
-  "cityHall.hub.group.2.link.2.label": "市长博客",
-  "cityHall.hub.group.2.link.3.label": "城市地图",
-  "cityHall.hub.comingSoon": "即将开放",
-  // P3 编年史。
+  // P2 城市地图（图鉴的早期奖励页；末尾附「市政窗口」一栏）。
+  "cityHall.map.title": "城市地图",
+  "cityHall.map.lead": "咳咳。这便是我市的地图。Hanōba 宛如一片叶子，沿着叶脉河铺展开来。",
+  "cityHall.map.landmark.0.name": "叶脉河",
+  "cityHall.map.landmark.0.text": "城市的脊梁。每一方地块，都从这条河的叶脉中分得水源。",
+  "cityHall.map.landmark.1.name": "方形地块",
+  "cityHall.map.landmark.1.text": "首任市长定下的规矩。每一座庭院都同样方正。无论大小，对本市而言皆是珍宝。",
+  "cityHall.map.landmark.2.name": "市政厅",
+  "cityHall.map.landmark.2.text": "诸位此刻所在之处。市政窗口，就在其下。",
+  "cityHall.map.note": "市徽，特产，皆容后再录。这地图，还只是半成的草图。",
+  "cityHall.map.placeholder": "地图绘制中",
+  "cityHall.map.civic.heading": "市政窗口",
+  "cityHall.map.civic.0.label": "市民投票",
+  "cityHall.map.civic.1.label": "花展（比赛）",
+  "cityHall.map.civic.2.label": "市长博客",
+  "cityHall.map.comingSoon": "即将开放",
+  // P3 编年史。以市长的前言开篇（每页皆以市长之声起首·#469 变更B）。
   "cityHall.chronicle.title": "编年史",
+  "cityHall.chronicle.lead": "咳咳。容我略述我市的来历。",
   "cityHall.chronicle.entry.0.era": "元年·春",
   "cityHall.chronicle.entry.0.text": "首任市长 Botanics von Hanōba 在荒原上种下第一盆。新芽冒出的那天被定为城市的诞生之日。",
   "cityHall.chronicle.entry.1.era": "元年·夏",
@@ -432,8 +434,9 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.3.era": "二年",
   "cityHall.chronicle.entry.3.text": "法令定下所有地块皆为方形。理由仅记作「因为它很美」。",
   "cityHall.chronicle.note": "每当一位市民到来，这部编年史便继续书写下去。",
-  // P4 城市法令（Hanōba 宪章，每一条都附市长的注解）。
+  // P4 城市法令（Hanōba 宪章，每一条都附市长的注解）。以市长的前言开篇（#469 变更B）。
   "cityHall.ordinance.title": "城市法令",
+  "cityHall.ordinance.lead": "咳咳。这便是我市的宪章。虽显刻板，但每一条都是为植物而立的规矩。",
   "cityHall.ordinance.0.article": "第一条（土地）",
   "cityHall.ordinance.0.text": "Hanōba 市的土地租金应当免费，只要其上种着一株植物。",
   "cityHall.ordinance.0.commentary": "咳咳。栽培的意愿本身就是你的租金。浇水、凝视一片叶子——如此，你便已付清了全款。",
@@ -455,10 +458,6 @@ export const zh: Partial<Record<MessageKey, string>> = {
   // 升级时附上的市长简短寄语。
   "cityHall.flavor.citizen": "你的定居业已如实受理。欢迎诸位市民。",
   "cityHall.flavor.tenured": "咳咳。如今你已是城市的老朋友了。我已为你敞开了内厅。",
-  // 手册标题旁的副标题（随市民等级变化）。
-  "cityHall.subtitle.0": "欢迎来到绿色之城",
-  "cityHall.subtitle.1": "市民入门",
-  "cityHall.subtitle.2": "老市民入门",
   // CityHallBook 界面元素。
   "cityHall.mayorTitle": "{name} 市长",
   "cityHall.nav.aria": "翻页",

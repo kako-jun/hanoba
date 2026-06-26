@@ -407,23 +407,25 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.welcome.1": "In my city there is no rent for land. So long as you grow a plant, your plot is yours, free and forever. There is but one thing to do—plant a single pot of yours in a square plot, and add a word. With that, you too are a citizen of standing. Photographs of plants only (people and pets, take them to some other town).",
   "cityHall.welcome.2": "The city's chronicle, its ordinances, its flower shows—all may be viewed from this city hall. Come now, see to the formalities of settling. Decide upon a name you like, and the matter is done. No true name is required—it suffices that you are yourself.",
   "cityHall.welcome.3": "* Hanōba is a photo SNS for plants only. One square photo + a word, plants only. Register a name to post.",
-  // P2 City Hall hub.
-  "cityHall.hub.title": "City Hall",
-  "cityHall.hub.lead": "Ahem. This is the city hall. All of civic affairs may be traced from this door.",
-  "cityHall.hub.group.0.heading": "Behold",
-  "cityHall.hub.group.0.link.0.label": "Everyone's Plants (Feed)",
-  "cityHall.hub.group.0.link.1.label": "Rankings",
-  "cityHall.hub.group.1.heading": "Cultivate",
-  "cityHall.hub.group.1.link.0.label": "Post",
-  "cityHall.hub.group.1.link.1.label": "Your Plants",
-  "cityHall.hub.group.2.heading": "Civic Matters",
-  "cityHall.hub.group.2.link.0.label": "Citizen Ballot",
-  "cityHall.hub.group.2.link.1.label": "Flower Show (Contest)",
-  "cityHall.hub.group.2.link.2.label": "Mayor's Blog",
-  "cityHall.hub.group.2.link.3.label": "City Map",
-  "cityHall.hub.comingSoon": "Opening soon",
-  // P3 Chronicle.
+  // P2 Town Map (the figure-book's early reward page; civic windows strip at the foot).
+  "cityHall.map.title": "Town Map",
+  "cityHall.map.lead": "Ahem. Behold the map of our city. Hanōba spreads like a single leaf, along the Vein River.",
+  "cityHall.map.landmark.0.name": "The Vein River",
+  "cityHall.map.landmark.0.text": "The city's spine. Every plot shares the water drawn from its veins.",
+  "cityHall.map.landmark.1.name": "The Square Plots",
+  "cityHall.map.landmark.1.text": "A rule set by the first mayor. Every garden is equally square. Large garden or small, to this city all are treasures.",
+  "cityHall.map.landmark.2.name": "City Hall",
+  "cityHall.map.landmark.2.text": "Where you stand now. The civic windows are just below.",
+  "cityHall.map.note": "The crest, the local produce — these I shall set down in time. The map is yet half-drawn.",
+  "cityHall.map.placeholder": "Map in the making",
+  "cityHall.map.civic.heading": "Civic Windows",
+  "cityHall.map.civic.0.label": "Town Vote",
+  "cityHall.map.civic.1.label": "Exhibition (Contest)",
+  "cityHall.map.civic.2.label": "Mayor's Blog",
+  "cityHall.map.comingSoon": "Opening soon",
+  // P3 Chronicle. Opens with the Mayor's preamble (every page leads with the Mayor's voice · #469 change B).
   "cityHall.chronicle.title": "Chronicle",
+  "cityHall.chronicle.lead": "Ahem. Let me tell you a little of how our city came to be.",
   "cityHall.chronicle.entry.0.era": "Year One, Spring",
   "cityHall.chronicle.entry.0.text": "The first mayor, Botanics von Hanōba, plants the first pot upon the wasteland. The day the sprout appears is decreed the city's birth.",
   "cityHall.chronicle.entry.1.era": "Year One, Summer",
@@ -433,8 +435,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.3.era": "Year Two",
   "cityHall.chronicle.entry.3.text": "All plots are decreed to be square. The reason is recorded only as \"because it is beautiful.\"",
   "cityHall.chronicle.note": "Each time a citizen arrives, this chronicle is written further.",
-  // P4 City ordinances (the Hanōba Charter, each article with the Mayor's commentary).
+  // P4 City ordinances (the Hanōba Charter, each article with the Mayor's commentary). Opens with the Mayor's preamble (#469 change B).
   "cityHall.ordinance.title": "City Ordinances",
+  "cityHall.ordinance.lead": "Ahem. Here is our city's charter. Formal, yes — but every article is a rule made for the plants.",
   "cityHall.ordinance.0.article": "Article I (Land)",
   "cityHall.ordinance.0.text": "The rent for land in the City of Hanōba shall be free, so long as a plant is grown.",
   "cityHall.ordinance.0.commentary": "Ahem. The will to grow is itself your rent. To water, to gaze upon a leaf—with that, you have paid in full.",
@@ -456,10 +459,6 @@ export const en: Partial<Record<MessageKey, string>> = {
   // The Mayor's brief word added upon a level promotion.
   "cityHall.flavor.citizen": "Your settlement is duly received. Welcome, citizens.",
   "cityHall.flavor.tenured": "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",
-  // Subtitle beside the handbook title (changes with the citizen level).
-  "cityHall.subtitle.0": "Welcome, to the green city",
-  "cityHall.subtitle.1": "A Citizen's Primer",
-  "cityHall.subtitle.2": "A Veteran's Primer",
   // CityHallBook UI chrome.
   "cityHall.mayorTitle": "Mayor {name}",
   "cityHall.nav.aria": "Turn the page",

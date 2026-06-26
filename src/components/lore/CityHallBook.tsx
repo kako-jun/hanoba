@@ -8,6 +8,7 @@ import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import {
   type CitizenLevel,
   citizenLevel,
+  citizenLevelFull,
   defaultPage,
   maxUnlockedPage,
 } from "../../lib/lore/citizen.ts";
@@ -16,7 +17,6 @@ import {
   buildCityHallBook,
   type HubLink,
   levelFlavor,
-  levelSubtitle,
   LOCKED_PAGE_VEIL,
   lockedTeaser,
   mayorShortName,
@@ -28,12 +28,14 @@ import { useT, useLocale, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, t
 const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
-// = 市役所ハブ。すべての機能への単一の入口。
+// = 図鑑（集めて埋める読み物・1 レベル=1 ページ解放・#469）。機能導線（discover/ranking/me/compose）は
+//   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアと早期ご褒美（街の地図）に割り切る。
 //
-// 市民レベル（Nostr 由来＝backendless）でページが解放される。
-// - L0 訪問者: 名前未登録 → 1p のみ。
-// - L1 市民:   名前登録済み → 2p まで（既定で 2p を開く）。
-// - L2 古参:   名前＋投稿数 >= 5 ＋ 在籍 >= 14 日 → 4p まで。
+// 市民レベル（Nostr 由来＝backendless）でページが 1 枚ずつ解放される（#469）。
+// - L0 旅人: 名前未登録 → 1p 移住案内のみ。
+// - L1 市民: 名前登録済み → 2p 街の地図まで（既定で 2p を開く＝ご褒美ページを先に見せる）。
+// - L2:      名前＋投稿数 >= 5 ＋ 在籍 >= 14 日 → 3p 沿革まで。
+// - L3:      名前＋投稿数 >= 15 ＋ 在籍 >= 30 日 → 4p 市の条文まで。
 //
 // 前方ロック／後方オープン: 解放済みページ（<= maxUnlocked）には自由に行き来でき、
 // その先は「？？？」ティザー（枠は見えるが開けない・図鑑式）で進む動機にする。
@@ -50,24 +52,30 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 
 /**
  * 名前・投稿から市民レベルを判定する（クライアント専用）。
- * 名前が無ければ即 L0。名前があれば投稿を引いて L1/L2 を分ける。
+ * - `level`     ページ解放用のキャップ済みレベル（0|1|2|3・maxUnlocked 等に使う）。
+ * - `levelFull` タイトル表記用の真レベル（非キャップ・L1〜L6＝CitizenStats と同じ・#469 変更A）。
+ * 名前が無ければ即 L0。名前があれば投稿を引いて判定。
  * 投稿取得が失敗しても名前があれば L1（名乗った市民を締め出さない・resilient）。
  */
-async function deriveLevel(): Promise<CitizenLevel> {
+async function deriveLevel(): Promise<{ level: CitizenLevel; levelFull: number }> {
   const name = getDisplayName();
   const hasName = name !== null;
-  if (!hasName) return 0;
+  if (!hasName) return { level: 0, levelFull: 0 };
 
   const now = Math.floor(Date.now() / 1000);
+  const resolve = (postCount: number, earliestCreatedAt: number | null) => {
+    const input = { hasName, postCount, earliestCreatedAt, now };
+    return { level: citizenLevel(input), levelFull: citizenLevelFull(input) };
+  };
   try {
     const pubkey = await getPublicKeyHex();
     const posts = await fetchMyPosts(pubkey);
     const earliestCreatedAt =
       posts.length > 0 ? posts.reduce((min, p) => Math.min(min, p.createdAt), Infinity) : null;
-    return citizenLevel({ hasName, postCount: posts.length, earliestCreatedAt, now });
+    return resolve(posts.length, earliestCreatedAt);
   } catch {
     // 取得失敗時は名乗りを尊重して市民扱い（締め出さない）。
-    return citizenLevel({ hasName, postCount: 0, earliestCreatedAt: null, now });
+    return resolve(0, null);
   }
 }
 
@@ -85,12 +93,13 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 本文（構造化データ）と味付け文言は locale で組み直す。
   const bookPages = buildCityHallBook(loc);
   const bookTitleText = t("cityHall.book.title");
-  const levelSubtitleMap = levelSubtitle(loc);
   const flavorMap = levelFlavor(loc);
 
   // 判定中は安全側＝L0（1p のみ）で始め、ロック状態を実市民に見せない。
   // 名乗り済みなら下の useIsoLayoutEffect がペイント前に L1/2p へ寄せる（フラッシュ防止）。
+  // level=ページ解放用（capped）／levelFull=タイトル表記用の真レベル（非キャップ・#469 変更A）。
   const [level, setLevel] = useState<CitizenLevel>(0);
+  const [levelFull, setLevelFull] = useState(0);
   const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
   const aliveRef = useRef(true);
@@ -108,6 +117,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   useIsoLayoutEffect(() => {
     if (getDisplayName() !== null) {
       setLevel(1);
+      setLevelFull(1); // 名乗り済みは最低 L1＝タイトルは即「… L1」。真レベルは下の deriveLevel が確定。
       setPage(defaultPage(1)); // = 2p
     }
   }, []);
@@ -115,11 +125,13 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   useEffect(() => {
     aliveRef.current = true;
     void (async () => {
-      const lv = await deriveLevel();
+      const { level: lv, levelFull: lvFull } = await deriveLevel();
       if (!aliveRef.current) return;
-      // 初期 page・最低レベルは useIsoLayoutEffect が同期確定済み。ここでは正確な L1/L2 を
-      // 確定して maxUnlocked（解放範囲）を更新するだけ＝page は触らない（ユーザー操作を奪わない）。
+      // 初期 page・最低レベルは useIsoLayoutEffect が同期確定済み。ここでは正確なレベルを
+      // 確定して maxUnlocked（解放範囲・capped）とタイトル表記（levelFull・真レベル）を更新するだけ＝
+      // page は触らない（ユーザー操作を奪わない）。
       setLevel(lv);
+      setLevelFull(lvFull);
       setResolved(true);
     })();
     return () => {
@@ -128,6 +140,11 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }, []);
 
   const maxUnlocked = maxUnlockedPage(level);
+  // 手帳タイトルは進捗を一目で示すレベル番号表記（#469 変更A・kako-jun 確定）。
+  // L0（旅人・未名乗り）はレベル番号を出さず素のタイトル＋副題「旅人」、L1+ は「… L{n}」で副題なし。
+  // n は真レベル（levelFull・非キャップ）＝CitizenStats と同じ表記（ページ解放は capped の level）。
+  const titleText = levelFull === 0 ? bookTitleText : `${bookTitleText} L${levelFull}`;
+  const subtitleText = levelFull === 0 ? t("citizen.level.traveler") : null;
   const current = bookPages.find((p) => p.page === page) ?? bookPages[0]!;
   const isLockedView = page > maxUnlocked;
 
@@ -207,25 +224,27 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }, [canPrev, canNext]);
 
   // レベル昇格の味付け（小さく）。判定確定後、その本の入口で一度だけ添える。
-  // - 市民歓迎: L1 が 2p（市役所）を開いたときだけ。古参（L2）には再掲しない
+  // - 市民歓迎: L1 が 2p（街の地図）を開いたときだけ。古参（L2 以上）には再掲しない
   //   （長く居る市民に毎回「移住を受理した」と告げない）。
-  // - 古参歓迎: L2 が初めて奥（3p 沿革・古参専用ページの先頭）に達したときだけ。2p では出さない。
+  // - 古参歓迎: L2 以上が初めて奥（3p 沿革・古参の最初のページ）に達したときだけ。2p では出さない。
+  //   #469 で L3 まで解放が伸びても、奥に達した古参へ古参歓迎を出す挙動は保つ（level >= 2）。
   const flavor =
     resolved && level === 1 && page === 2
       ? flavorMap.citizen
-      : resolved && level === 2 && page === 3
+      : resolved && level >= 2 && page === 3
         ? flavorMap.tenured
         : null;
 
   return (
     <LocaleProvider value={loc}>
     <section className="ha-rise flex flex-col gap-5" aria-label={bookTitleText}>
-      {/* 手帳の表題（在世タイトル）。肩書はレベルで変わる（menu 語の差し替えは defer・本側で適応）。 */}
+      {/* 手帳の表題。L1+ は「ハノーバ市民手帳 L{n}」で進捗を一目で示す（#469 変更A）。
+          L0（旅人）はレベル番号を出さず素のタイトル＋副題「旅人」。L1+ は副題なし（下に MayorMark）。 */}
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-          {bookTitleText}
+          {titleText}
         </h1>
-        <p className="text-sm text-ha-ink/55">{levelSubtitleMap[level]}</p>
+        {subtitleText !== null && <p className="text-sm text-ha-ink/55">{subtitleText}</p>}
       </header>
 
       {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。
@@ -427,7 +446,7 @@ function PageContent({ page }: { page: BookPage }) {
         </article>
       );
 
-    case "hub":
+    case "map":
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
@@ -435,23 +454,49 @@ function PageContent({ page }: { page: BookPage }) {
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
             {page.lead}
           </p>
-          {/* 用途で分けた群を、群間は「にじみ」（.ha-bleed）の柔らかい境界で区切る（#263）。
-              区切り線でなく和水彩のしみ出しで空間を分ける＝世界観に馴染む。見出しは群の道しるべ。 */}
-          <div className="flex flex-col gap-3">
-            {page.groups.map((group, gi) => (
-              <section key={group.heading} className="flex flex-col gap-2">
-                {gi > 0 && <div className="ha-bleed" aria-hidden="true" />}
-                <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
-                  {group.heading}
-                </h3>
-                <ul className="flex flex-col gap-2">
-                  {group.links.map((link) => (
-                    <HubLinkItem key={link.label} link={link} />
-                  ))}
-                </ul>
-              </section>
+          {/* 地図ビジュアルの枠（#469・#137 で実画像を差し込むまでの前方互換スロット）。
+              lead（市長の前口上）の直後・名所（注釈）の前に置く＝絵が上、注釈が下。 */}
+          {page.image ? (
+            <img
+              src={page.image}
+              alt={page.title}
+              className="w-full rounded-xl border border-white/10 object-cover ring-1 ring-white/10"
+            />
+          ) : (
+            // 仮置きフレーム＝「絵は近日」の軽い未完感（ロック頁の veil ほど沈めない）。
+            // 薄いインクの破線枠＋ごく薄い地、中央に読めるキャプション。
+            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-ha-green/30 bg-white/[0.03] px-6 text-center">
+              <span className="font-display text-sm tracking-wide text-ha-ink/45">
+                {t("cityHall.map.placeholder")}
+              </span>
+            </div>
+          )}
+          {/* 名所（ランドマーク）＝沿革（chronicle）風の体裁に寄せる。名を太字、説明を小さく添える。 */}
+          <ul className="flex flex-col gap-3">
+            {page.landmarks.map((lm) => (
+              <li key={lm.name} className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4">
+                <span className="text-sm font-semibold text-ha-green-deep">{lm.name}</span>
+                <span className="text-sm text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
+                  {lm.text}
+                </span>
+              </li>
             ))}
-          </div>
+          </ul>
+          {/* 地図はまだ描きかけ、の注記（小さく添える）。 */}
+          <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>
+          {/* 市政の窓口（civic strip）。地図本体との間は「にじみ」（.ha-bleed）の柔らかい境界で区切る（#263 踏襲）。
+              開庁＝リンク／近日開庁＝非リンク（HubLinkItem が出し分ける）。 */}
+          <section className="flex flex-col gap-2">
+            <div className="ha-bleed" aria-hidden="true" />
+            <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
+              {t("cityHall.map.civic.heading")}
+            </h3>
+            <ul className="flex flex-col gap-2">
+              {page.civic.map((link) => (
+                <HubLinkItem key={link.label} link={link} />
+              ))}
+            </ul>
+          </section>
         </article>
       );
 
@@ -460,6 +505,10 @@ function PageContent({ page }: { page: BookPage }) {
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
           <MayorMark />
+          {/* 市長の前口上（全ページ冒頭に市長の言葉を必須化・#469 変更B）。 */}
+          <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
+            {page.lead}
+          </p>
           <ol className="flex flex-col gap-3">
             {page.entries.map((e) => (
               <li key={e.era} className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4">
@@ -479,6 +528,10 @@ function PageContent({ page }: { page: BookPage }) {
         <article className="flex flex-col gap-5">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
           <MayorMark />
+          {/* 市長の前口上（全ページ冒頭に市長の言葉を必須化・#469 変更B）。 */}
+          <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
+            {page.lead}
+          </p>
           <dl className="flex flex-col gap-5">
             {page.ordinances.map((o) => (
               <div key={o.article} className="flex flex-col gap-1.5">

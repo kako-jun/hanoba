@@ -449,23 +449,25 @@ export const ja = {
   "cityHall.welcome.1": "わが市に土地代はない。植物を育てている限り、区画は永久に無料で諸君のものだ。やることはただ一つ——正方形の区画にあなたの一鉢を植え、ひとこと添える。それだけで、あなたも立派な市民だ。写真は植物に限る（人もペットも、よその街でやりたまえ）。",
   "cityHall.welcome.2": "市の沿革も、条文も、品評会も、すべてこの市役所からご覧になれる。さあ、移住の手続きを。好きな呼び名をひとつ決めれば、それで完了だ。本名は要らぬ——諸君が諸君であればよい。",
   "cityHall.welcome.3": "※ ハノーバは植物専用の写真SNSです。正方形の写真1枚＋ひとこと、植物だけ。名前を登録すると投稿できます。",
-  // P2 市役所ハブ（導線集約）。
-  "cityHall.hub.title": "市役所",
-  "cityHall.hub.lead": "おっほん。ここは市役所だ。市政のすべては、この扉から辿れる。",
-  "cityHall.hub.group.0.heading": "見る",
-  "cityHall.hub.group.0.link.0.label": "みんなの植物（フィード）",
-  "cityHall.hub.group.0.link.1.label": "人気ランキング",
-  "cityHall.hub.group.1.heading": "育てる",
-  "cityHall.hub.group.1.link.0.label": "投稿する",
-  "cityHall.hub.group.1.link.1.label": "あなたの植物",
-  "cityHall.hub.group.2.heading": "街のこと",
-  "cityHall.hub.group.2.link.0.label": "住民投票",
-  "cityHall.hub.group.2.link.1.label": "品評会（コンテスト）",
-  "cityHall.hub.group.2.link.2.label": "市長ブログ",
-  "cityHall.hub.group.2.link.3.label": "街の地図",
-  "cityHall.hub.comingSoon": "近日開庁",
-  // P3 沿革（年表・遊び）。
+  // P2 街の地図（図鑑の早期ご褒美ページ・#469）。名所（ランドマーク）を読み物に、末尾に「市政の窓口」strip。
+  "cityHall.map.title": "街の地図",
+  "cityHall.map.lead": "おっほん。我が市の地図である。ハノーバは一枚の葉のごとく、葉脈川（はみゃくがわ）に沿って広がっておる。",
+  "cityHall.map.landmark.0.name": "葉脈川",
+  "cityHall.map.landmark.0.text": "市の背骨。すべての区画は、この川の葉脈から水を分け合う。",
+  "cityHall.map.landmark.1.name": "正方形の区画",
+  "cityHall.map.landmark.1.text": "初代市長が定めた決まり。どの庭も等しく四角い。大きな庭も小さな庭も、市にとっては等しく宝だ。",
+  "cityHall.map.landmark.2.name": "市役所",
+  "cityHall.map.landmark.2.text": "諸君が今いる場所。市政の窓口は、この下に。",
+  "cityHall.map.note": "市章も、特産の品も、追って記す。地図はまだ、描きかけだ。",
+  "cityHall.map.placeholder": "地図 製作中",
+  "cityHall.map.civic.heading": "市政の窓口",
+  "cityHall.map.civic.0.label": "住民投票",
+  "cityHall.map.civic.1.label": "品評会（コンテスト）",
+  "cityHall.map.civic.2.label": "市長ブログ",
+  "cityHall.map.comingSoon": "近日開庁",
+  // P3 沿革（年表・遊び）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
   "cityHall.chronicle.title": "沿革",
+  "cityHall.chronicle.lead": "おっほん。我が市の来し方を、少し語らせてもらおう。",
   "cityHall.chronicle.entry.0.era": "第一年 春",
   "cityHall.chronicle.entry.0.text": "初代市長ボタニクス・フォン・ハノーバ、荒れ地に最初の一鉢を植える。芽が出た日を、市の誕生とする。",
   "cityHall.chronicle.entry.1.era": "第一年 夏",
@@ -475,8 +477,9 @@ export const ja = {
   "cityHall.chronicle.entry.3.era": "第二年",
   "cityHall.chronicle.entry.3.text": "区画はすべて正方形と定められる。理由は「美しいから」とのみ記録される。",
   "cityHall.chronicle.note": "市民が増えるたび、この年表は書き足される。",
-  // P4 市の条文（ハノーバ市憲章・各条に市長解説）。
+  // P4 市の条文（ハノーバ市憲章・各条に市長解説）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
   "cityHall.ordinance.title": "市の条文",
+  "cityHall.ordinance.lead": "おっほん。これが我が市の憲章だ。堅苦しいが、どれも植物のための決まりである。",
   "cityHall.ordinance.0.article": "第一条（土地）",
   "cityHall.ordinance.0.text": "ハノーバ市の土地代は、植物を育てている限り、無料とする。",
   "cityHall.ordinance.0.commentary": "おっほん。育てる意志こそが地代だ。水をやり、葉を見つめる——それで諸君は十分に納めている。",
@@ -498,10 +501,6 @@ export const ja = {
   // レベル昇格時に小さく添える市長のひとこと（味付け）。
   "cityHall.flavor.citizen": "移住、確かに受理した。ようこそ、市民諸君。",
   "cityHall.flavor.tenured": "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
-  // レベル別の手帳タイトル脇に添える肩書（本の見出しがレベルで変わる）。
-  "cityHall.subtitle.0": "ようこそ、緑の市へ",
-  "cityHall.subtitle.1": "市民の手引き",
-  "cityHall.subtitle.2": "古参の手引き",
   // CityHallBook の UI クローム（肖像脇の呼び名・めくり操作・ページ表示）。
   "cityHall.mayorTitle": "{name}市長",
   "cityHall.nav.aria": "ページめくり",
