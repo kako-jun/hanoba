@@ -183,7 +183,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "エブルネウム", sci: "Pachypodium eburneum" }, { name: "ホロンベンセ", sci: "Pachypodium horombense" }, { name: "イノピナツム", sci: "Pachypodium rosulatum subsp. inopinatum" }, { name: "マカイエンセ", sci: "Pachypodium makayense" },
         { name: "ラモスム", sci: "Pachypodium ramosum" }, { name: "フィヘレネンセ", sci: "Pachypodium lamerei var. fiherenense" }, { name: "デカリー", sci: "Pachypodium decaryi" }, { name: "ルーテンベルギアヌム", sci: "Pachypodium rutenbergianum" },
         { name: "アンボンゲンセ", sci: "Pachypodium ambongense" }, { name: "バロニー", sci: "Pachypodium baronii" }, { name: "サンデルシー", sci: "Pachypodium saundersii", aliases: ["白馬城"] },
-        { name: "ビスピノーサム", sci: "Pachypodium bispinosum" }, { name: "サキュレンタム", sci: "Pachypodium succulentum" }, { name: "光堂", sci: "Pachypodium namaquanum", aliases: ["ナマクアナム"] },
+        { name: "ビスピノーサム", sci: "Pachypodium bispinosum" }, { name: "サキュレンタム", sci: "Pachypodium succulentum" }, { name: "ナマクアナム", sci: "Pachypodium namaquanum", aliases: ["光堂"] },
         { name: "リーアリー", sci: "Pachypodium lealii" },
       ] },
       { name: "アデニウム", pickable: true, loc: { en: "Adenium", zh: "天宝花属", es: "Adenium" }, varieties: [
