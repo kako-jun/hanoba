@@ -170,6 +170,8 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
     // 名所（ランドマーク）が読み物として並ぶ。
     expect(screen.getByText("葉脈川")).toBeInTheDocument();
+    // 地図ビジュアルは未生成（image=null）＝仮置きフレームのキャプションが出る（#469・#137 で実画像差し込み）。
+    expect(screen.getByText("地図 製作中")).toBeInTheDocument();
     // 機能導線（discover/ranking/me/compose）は手帳から外しヘッダ/フッタへ＝地図には出さない。
     expect(screen.queryByRole("link", { name: /人気ランキング/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /あなたの植物/ })).toBeNull();

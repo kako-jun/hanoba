@@ -416,6 +416,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.map.landmark.2.name": "El Ayuntamiento",
   "cityHall.map.landmark.2.text": "Donde os halláis ahora. Las ventanillas cívicas están justo debajo.",
   "cityHall.map.note": "El escudo, los productos de la tierra... todo ello lo consignaré a su debido tiempo. El mapa aún está a medio trazar.",
+  "cityHall.map.placeholder": "Mapa en preparación",
   "cityHall.map.civic.heading": "Ventanillas cívicas",
   "cityHall.map.civic.0.label": "Urna ciudadana",
   "cityHall.map.civic.1.label": "Exposición floral (Concurso)",

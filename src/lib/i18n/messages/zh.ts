@@ -416,6 +416,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.map.landmark.2.name": "市政厅",
   "cityHall.map.landmark.2.text": "诸位此刻所在之处。市政窗口，就在其下。",
   "cityHall.map.note": "市徽，特产，皆容后再录。这地图，还只是半成的草图。",
+  "cityHall.map.placeholder": "地图绘制中",
   "cityHall.map.civic.heading": "市政窗口",
   "cityHall.map.civic.0.label": "市民投票",
   "cityHall.map.civic.1.label": "花展（比赛）",

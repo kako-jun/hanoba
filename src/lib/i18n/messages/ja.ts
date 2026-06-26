@@ -459,6 +459,7 @@ export const ja = {
   "cityHall.map.landmark.2.name": "市役所",
   "cityHall.map.landmark.2.text": "諸君が今いる場所。市政の窓口は、この下に。",
   "cityHall.map.note": "市章も、特産の品も、追って記す。地図はまだ、描きかけだ。",
+  "cityHall.map.placeholder": "地図 製作中",
   "cityHall.map.civic.heading": "市政の窓口",
   "cityHall.map.civic.0.label": "住民投票",
   "cityHall.map.civic.1.label": "品評会（コンテスト）",

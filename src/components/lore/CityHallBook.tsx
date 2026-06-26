@@ -441,6 +441,23 @@ function PageContent({ page }: { page: BookPage }) {
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
             {page.lead}
           </p>
+          {/* 地図ビジュアルの枠（#469・#137 で実画像を差し込むまでの前方互換スロット）。
+              lead（市長の前口上）の直後・名所（注釈）の前に置く＝絵が上、注釈が下。 */}
+          {page.image ? (
+            <img
+              src={page.image}
+              alt={page.title}
+              className="w-full rounded-xl border border-white/10 object-cover ring-1 ring-white/10"
+            />
+          ) : (
+            // 仮置きフレーム＝「絵は近日」の軽い未完感（ロック頁の veil ほど沈めない）。
+            // 薄いインクの破線枠＋ごく薄い地、中央に読めるキャプション。
+            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl border border-dashed border-ha-green/30 bg-white/[0.03] px-6 text-center">
+              <span className="font-display text-sm tracking-wide text-ha-ink/45">
+                {t("cityHall.map.placeholder")}
+              </span>
+            </div>
+          )}
           {/* 名所（ランドマーク）＝沿革（chronicle）風の体裁に寄せる。名を太字、説明を小さく添える。 */}
           <ul className="flex flex-col gap-3">
             {page.landmarks.map((lm) => (

@@ -52,6 +52,8 @@ export type BookPage =
       kind: "map";
       title: string;
       lead: string;
+      /** 地図イラストの画像パス（#137 で gpt-image-2 生成 webp を入れる）。未生成は null＝仮置きフレーム。 */
+      image: string | null;
       landmarks: Landmark[];
       civic: HubLink[];
       note: string;
@@ -102,6 +104,8 @@ function page2(locale: Locale): BookPage {
     kind: "map",
     title: t(locale, "cityHall.map.title"),
     lead: t(locale, "cityHall.map.lead"),
+    // 実画像は #137 で webp を生成して差し込む。今は null＝仮置きフレーム（前方互換・パスを入れるだけで切替）。
+    image: null,
     landmarks: [
       { name: t(locale, "cityHall.map.landmark.0.name"), text: t(locale, "cityHall.map.landmark.0.text") },
       { name: t(locale, "cityHall.map.landmark.1.name"), text: t(locale, "cityHall.map.landmark.1.text") },
