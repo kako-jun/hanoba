@@ -6,10 +6,12 @@
 // 実行: node scripts/generate-icons.mjs
 //   要 sharp（npm i -D sharp）。アイコンを変えたら public の SVG を編集してから再実行する。
 //
-// 生成物（public/ 直下）:
-//   icon-192.png / icon-512.png            … purpose=any（全面塗りの icon.svg 由来。角丸は OS に任せる #472）
-//   icon-maskable-192.png / -512.png       … purpose=maskable（全面塗りの icon-maskable.svg 由来）
-//   apple-touch-icon.png（180）            … iOS A2HS 用（OS がマスクするので全面塗り由来）
+// 生成物（public/ 直下）: ファイル名に -v2 サフィックス。アイコンの中身を変えても URL が同じだと
+//   Android の WebAPK が焼き直されず古いスプラッシュが残るため、中身を更新したら必ず URL も上げる
+//   （-v2 → -v3 …）。manifest（astro.config.mjs）と <head>（MainLayout.astro）の参照も同時に上げる（#478）。
+//   icon-192-v2.png / icon-512-v2.png      … purpose=any（全面塗りの icon.svg 由来。角丸は OS に任せる #472）
+//   icon-maskable-192-v2.png / -512-v2.png … purpose=maskable（全面塗りの icon-maskable.svg 由来）
+//   apple-touch-icon-v2.png（180）         … iOS A2HS 用（OS がマスクするので全面塗り由来）
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -23,11 +25,11 @@ const anySvg = readFileSync(join(pub, "icon.svg"));
 const maskableSvg = readFileSync(join(pub, "icon-maskable.svg"));
 
 const jobs = [
-  [anySvg, "icon-192.png", 192],
-  [anySvg, "icon-512.png", 512],
-  [maskableSvg, "icon-maskable-192.png", 192],
-  [maskableSvg, "icon-maskable-512.png", 512],
-  [maskableSvg, "apple-touch-icon.png", 180],
+  [anySvg, "icon-192-v2.png", 192],
+  [anySvg, "icon-512-v2.png", 512],
+  [maskableSvg, "icon-maskable-192-v2.png", 192],
+  [maskableSvg, "icon-maskable-512-v2.png", 512],
+  [maskableSvg, "apple-touch-icon-v2.png", 180],
 ];
 
 for (const [svg, name, size] of jobs) {

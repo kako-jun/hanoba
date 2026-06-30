@@ -44,12 +44,15 @@ export default defineConfig({
         categories: ["lifestyle", "photo"],
         // SVG（vector）＋ PNG（iOS A2HS / 旧 Android が要求するラスタ）の両方を持つ。
         // PNG は scripts/generate-icons.mjs が public の SVG から生成する。
+        // PNG は -v2 サフィックス付き＝アイコンの中身を差し替えただけでは Android の WebAPK が
+        // 焼き直されず古いスプラッシュが残るため、URL を変えて manifest 内容を変化させ OS に
+        // WebAPK を強制再生成させる（#478。中身を変えたら必ず URL も上げる）。
         icons: [
           { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "/icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
-          { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "/icon-192-v2.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icon-512-v2.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icon-maskable-192-v2.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "/icon-maskable-512-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
     }),
