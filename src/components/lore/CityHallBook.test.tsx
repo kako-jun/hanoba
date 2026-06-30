@@ -186,7 +186,8 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 既定ページ＝街の地図（早期のご褒美ページ）。
     expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
     // L1+ はタイトルにレベル番号を出し（「ハノーバ市民手帳 L1」）、副題「旅人」は出さない（#469 変更A）。
-    expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳 L1" })).toBeInTheDocument();
+    // レベル番号は真レベル確定後（resolved）だけ付く＝findByRole で待つ（#479-B フラッシュ防止）。
+    expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L1" })).toBeInTheDocument();
     expect(screen.queryByText("旅人")).toBeNull();
     // 名所（ランドマーク）が読み物として並ぶ。
     expect(screen.getByText("葉脈川")).toBeInTheDocument();
@@ -228,7 +229,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 既定は 2p 街の地図（奥は自動で開かない）。
     await screen.findByText(/我が市の地図である/);
     // タイトルは真レベル表記「ハノーバ市民手帳 L2」（#469 変更A）。
-    expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳 L2" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L2" })).toBeInTheDocument();
     // 古参は 2p で移住受理の文言を出さない（長く居る市民に再掲しない）。
     expect(screen.queryByText(/移住、確かに受理した/)).toBeNull();
     // 古参歓迎の味付けも、まだ奥に達していない 2p では出さない。
@@ -255,7 +256,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 既定は 2p（奥は自動で開かない）。
     await screen.findByText(/我が市の地図である/);
     // タイトルは真レベル表記「ハノーバ市民手帳 L3」（#469 変更A）。
-    expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳 L3" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L3" })).toBeInTheDocument();
     // 3p 沿革へ（古参歓迎は L3 でも維持）。
     await user.click(screen.getByRole("button", { name: "次のページ" }));
     expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();

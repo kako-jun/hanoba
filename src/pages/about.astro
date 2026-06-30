@@ -4,7 +4,14 @@ import MainLayout from "../layouts/MainLayout.astro";
 // #163: 「Hanōba とは」を市長ボタニクス・フォン・ハノーバの声の「市民手帳」（本）に作り替える。
 // = 市役所ハブ。すべての機能への単一の入口。市民レベル（Nostr 由来＝backendless）でページ解放。
 // 旧来の三人称 SaaS 説明（「Hanōba は…」「この街のかたち」）はこの本に置き換えた。
-// 本体は CityHallBook（client:load）。鍵・relay 取得はクライアントのみ（SSG セーフ）。
+// 本体は CityHallBook（client:only）。鍵・relay 取得はクライアントのみ（SSG セーフ）。
+// client:only にするのは en→ja 言語フラッシュを根絶するため（#479-A）。client:load だと殻が
+// 既定言語 en で SSR され、その英語 HTML が hydrate 前に"先に描画"される＝useLayoutEffect では
+// 消せない（hydrate は英語の初回ペイントの後）。client:only なら島をサーバで焼かない＝英語を
+// 一度も描かず、最初のペイントが useLayoutEffect 解決後＝閲覧言語になる。マウント時に島ルートの
+// .ha-rise が走り、ページ送りと同じじわーっとした出方になる（kako-jun 案・追加コード不要）。
+// トレードオフ: ロアが SSR HTML に載らない（SEO/JS 無効では空→表示）。市民手帳は名乗り由来の
+// パーソナル読み物でクライアントでしか確定しないため実害ほぼなし。
 // #27: 道具棚（アフィリエイト）は本の下に 1 スロットだけ残す。
 import AffiliateGrid from "../components/AffiliateGrid.astro";
 import CityHallBook from "../components/lore/CityHallBook.tsx";
@@ -18,7 +25,7 @@ const locale: Locale = DEFAULT_LOCALE;
   <SiteHeader current="about" wide />
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
-    <CityHallBook client:load lang={locale} />
+    <CityHallBook client:only="react" lang={locale} />
 
     <AffiliateGrid />
   </main>

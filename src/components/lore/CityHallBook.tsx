@@ -145,7 +145,11 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 手帳タイトルは進捗を一目で示すレベル番号表記（#469 変更A・kako-jun 確定）。
   // L0（旅人・未名乗り）はレベル番号を出さず素のタイトル＋副題「旅人」、L1+ は「… L{n}」で副題なし。
   // n は真レベル（levelFull・非キャップ）＝CitizenStats と同じ表記（ページ解放は capped の level）。
-  const titleText = levelFull === 0 ? bookTitleText : `${bookTitleText} L${levelFull}`;
+  // レベル番号は deriveLevel が真レベルを確定してから（resolved）だけ出す。名乗り済みは
+  // useIsoLayoutEffect が暫定 levelFull=1 を置くが、それを番号として見せると実 L2 の人が
+  // 「一瞬 L1 → L2」のフラッシュを踏む（#479-B）。番号は resolved まで伏せ、確定後に付くだけにする。
+  // 暫定 levelFull=1 は副題「旅人」の抑止だけに使う（名乗り済みに旅人を出さない）。
+  const showLevel = resolved && levelFull > 0;
   const subtitleText = levelFull === 0 ? t("citizen.level.traveler") : null;
   const current = bookPages.find((p) => p.page === page) ?? bookPages[0]!;
   const isLockedView = page > maxUnlocked;
@@ -244,7 +248,15 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
           L0（旅人）はレベル番号を出さず素のタイトル＋副題「旅人」。L1+ は副題なし（下に MayorMark）。 */}
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-          {titleText}
+          {bookTitleText}
+          {/* レベル番号は真レベル確定後だけ付ける（#479-B）。{" "}＋ml で「L」の左に明確な間隔を空ける
+              （#479-C・h1 の tracking-tight に潰されない margin で稼ぐ。読み上げ名は半角スペース込みで維持）。 */}
+          {showLevel && (
+            <>
+              {" "}
+              <span className="ml-1.5">L{levelFull}</span>
+            </>
+          )}
         </h1>
         {subtitleText !== null && <p className="text-sm text-ha-ink/55">{subtitleText}</p>}
       </header>
