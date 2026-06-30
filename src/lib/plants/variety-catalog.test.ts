@@ -128,6 +128,50 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("スーパー定番の野菜・中国野菜・しいたけ・果樹あんず等 の検索到達性（#476）", () => {
+  // kako-jun「普通に売ってる野菜・果物は全部あるか」。代表属/品種が searchCatalog で拾えること。
+  const terms = [
+    "長ねぎ", "九条ねぎ", "かぶ", "ごぼう", "れんこん", "しょうが", "アスパラガス", "セロリ",
+    "ニラ", "長芋", "自然薯", "チンゲン菜", "たけのこ", "菜の花", "モロヘイヤ", "冬瓜",
+    "クレソン", "ビーツ", "らっきょう", "空心菜", "つるむらさき", "しいたけ", "原木しいたけ",
+    "カイラン", "ターサイ", "ザーサイ", "豆苗", "あんず", "プルーン", "ネクタリン",
+  ];
+  for (const term of terms) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // alias 経由でも正準へ到達すること（read=別名→正準）。
+  const aliasPairs: Array<[string, string]> = [
+    ["葱", "ねぎ"], // 属 alias（漢字）→ 属にヒット（品種名はひらがな「ねぎ」で漢字を含まないため）
+    ["蕪", "かぶ"],
+    ["牛蒡", "ごぼう"],
+    ["椎茸", "しいたけ"],
+    ["生姜", "大生姜"], // 品種名が「生姜」を含む＝品種にも到達
+    ["ナガイモ", "長芋"], // 品種 alias → 品種に到達
+    ["杏", "あんず"],
+    ["西洋すもも", "プルーン"],
+    ["搾菜", "ザーサイ"],
+  ];
+  for (const [term, canonical] of aliasPairs) {
+    it(`alias「${term}」が正準「${canonical}」へ到達する`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).map((h) => h.name)).toContain(canonical);
+    });
+  }
+
+  it("しいたけ（菌類）は唯一の例外として野菜カテゴリに入る（kako-jun「しいたけ以外は一般人が作れない」）", () => {
+    const yasai = VARIETY_CATALOG.find((c) => c.label === "野菜")!;
+    const shiitake = yasai.genera.find((g) => g.name === "しいたけ");
+    expect(shiitake).toBeTruthy();
+    // 他のきのこ（しめじ/えのき/まいたけ/エリンギ/なめこ/マッシュルーム）は入れない。
+    const allNames = VARIETY_CATALOG.flatMap((c) => c.genera).flatMap((g) => g.varieties).map((v) => v.name);
+    for (const k of ["しめじ", "えのき", "まいたけ", "エリンギ", "なめこ", "マッシュルーム"]) {
+      expect(allNames).not.toContain(k);
+    }
+  });
+});
+
 describe("ヤシ・ソテツ・メロン・スイカ・コールラビ・梨 の検索到達性（#474）", () => {
   // kako-jun が実機投稿で詰まった漏れ。代表品種・属が searchCatalog で拾えること。
   const terms = [
