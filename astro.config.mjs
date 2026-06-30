@@ -36,7 +36,12 @@ export default defineConfig({
         id: "/",
         start_url: "/",
         scope: "/",
-        theme_color: "#509120",
+        // theme_color はスプラッシュのステータスバー色＝background_color と同色にする（cream）。
+        // 違う色だと Android スプラッシュで「緑のステータスバー × cream 本体」の境目が上端に
+        // 細い線として出る（#478 の「枠」の真因。3min/agasteer/machigai-salad/mypace は両色一致で線なし）。
+        // アプリ内（起動後）のステータスバー色は <meta name="theme-color">（MainLayout）が別途持つので、
+        // ここを cream にしてもアプリ内の見た目は変わらない。
+        theme_color: "#F3E7E7",
         background_color: "#F3E7E7",
         display: "standalone",
         orientation: "portrait",
