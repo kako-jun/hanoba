@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,909件 / 222属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409・ユッカ有名種追補）。
+// 品種タグ辞書（カテゴリ→属→品種・1,960件 / 228属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409 / #474・ヤシ/ソテツ/メロン/スイカ/コールラビ/梨を追補、苔玉/苔テラリウムは仕立てへ移設）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -15,7 +15,7 @@
  * 閲覧言語ごとの表示名（#409 P2 多言語）。ja は base（`label`/`name`）が原典なのでここには入れない。
  * 非対応言語名が無ければ base に graceful フォールバックする（`pickLoc`・plant-i18n.ts）。
  * **表示専用**＝本文に書き込むタグ・内部キーは常に ja 正準のまま（cross-language filter 要件・独自化禁止）。
- * カテゴリ23（PR1）・属222（PR2）を populate 済み。品種は大半が固有名詞カルティバなので入れない（ja のみ）。
+ * カテゴリ23（PR1）・属228（PR2＋#474 追補分も含む）を populate 済み。品種は大半が固有名詞カルティバなので入れない（ja のみ）。
  */
 export type Loc = Partial<Record<"en" | "zh" | "es", string>>;
 
@@ -35,7 +35,7 @@ export interface Genus {
   name: string;
   /** 属名自体がタグになるか（その他/原種 等のグルーピング見出しは false）。 */
   pickable: boolean;
-  /** 閲覧言語ごとの表示名（任意・#409・属222は PR2 で populate 済み・en/zh/es）。 */
+  /** 閲覧言語ごとの表示名（任意・#409・属228は PR2＋#474 で populate 済み・en/zh/es）。 */
   loc?: Loc;
   /** 属名の別名（スラッシュ表記・括弧注記の吸収。検索用）。 */
   aliases?: string[];
@@ -428,6 +428,16 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "エレファンティペス", sci: "Yucca gigantea", aliases: ["青年の木"] }, { name: "ロストラータ", sci: "Yucca rostrata" }, { name: "リギダ", sci: "Yucca rigida", aliases: ["ユッカリギダ"] }, { name: "トンプソニアナ", sci: "Yucca thompsoniana" }, { name: "リネアリフォリア", sci: "Yucca linearifolia" }, { name: "ケレタロエンシス", sci: "Yucca queretaroensis" },
         { name: "デスメティアナ", sci: "Yucca desmetiana" }, { name: "アロイフォリア", sci: "Yucca aloifolia" }, { name: "グロリオサ", sci: "Yucca gloriosa" }, { name: "フィラメントーサ", sci: "Yucca filamentosa", aliases: ["イトラン", "糸蘭"] }, { name: "バッカタ", sci: "Yucca baccata" }, { name: "フィリフェラ", sci: "Yucca filifera" }, { name: "ブレビフォリア", sci: "Yucca brevifolia", aliases: ["ジョシュアツリー"] },
       ] },
+      { name: "ヤシ", pickable: true, loc: { en: "Palms", zh: "棕榈", es: "Palmeras" }, varieties: [
+        { name: "テーブルヤシ", sci: "Chamaedorea elegans" }, { name: "アレカヤシ", sci: "Dypsis lutescens", aliases: ["コガネタケヤシ"] }, { name: "ケンチャヤシ", sci: "Howea forsteriana" }, { name: "ココヤシ", sci: "Cocos nucifera" },
+        { name: "ナツメヤシ", sci: "Phoenix dactylifera", aliases: ["デーツ"] }, { name: "シンノウヤシ", sci: "Phoenix roebelenii", aliases: ["フェニックス", "フェニックスロベレニー"] }, { name: "カナリーヤシ", sci: "Phoenix canariensis", aliases: ["フェニックスカナリエンシス"] }, { name: "シュロ", sci: "Trachycarpus fortunei", aliases: ["ワジュロ", "棕櫚"] },
+        { name: "トウジュロ", sci: "Trachycarpus wagnerianus" }, { name: "ワシントンヤシ", sci: "Washingtonia filifera" }, { name: "ワシントンヤシモドキ", sci: "Washingtonia robusta" }, { name: "ブラヘア・アルマータ", sci: "Brahea armata", aliases: ["ブルーヤシ", "メキシカンブルーパーム"] },
+        { name: "ブラヘア・エドゥリス", sci: "Brahea edulis" }, { name: "サバルヤシ", sci: "Sabal palmetto", aliases: ["サバル", "パルメット"] }, { name: "ビスマルキア", sci: "Bismarckia nobilis", aliases: ["ビスマルクヤシ"] }, { name: "チャメロプス", sci: "Chamaerops humilis", aliases: ["ヨーロッパチャボトウジュロ"] },
+        { name: "ブティア", sci: "Butia odorata", aliases: ["ヤタイヤシ"] }, { name: "リビストナ", sci: "Livistona" }, { name: "カンノンチク", sci: "Rhapis excelsa", aliases: ["観音竹"] }, { name: "シュロチク", sci: "Rhapis humilis", aliases: ["棕櫚竹"] },
+      ] },
+      { name: "ソテツ", pickable: true, loc: { en: "Cycad", zh: "苏铁", es: "Cícada" }, varieties: [
+        { name: "ソテツ", sci: "Cycas revoluta", aliases: ["蘇鉄"] }, { name: "ナンヨウソテツ", sci: "Cycas rumphii" },
+      ] },
       { name: "その他観葉", pickable: false, loc: { en: "Other foliage plants", zh: "其他观叶植物", es: "Otras plantas de follaje" }, varieties: [
         { name: "ディフェンバキア", sci: "Dieffenbachia seguine" }, { name: "クワズイモ", sci: "Alocasia odora" }, { name: "アグラオネマ", sci: "Aglaonema" }, { name: "ザミオクルカス", sci: "Zamioculcas zamiifolia" },
         { name: "ペペロミア", sci: "Peperomia" }, { name: "ストレリチア", sci: "Strelitzia reginae" }, { name: "エバーフレッシュ", sci: "Cojoba arborea var. angustifolia" }, { name: "ストロマンテ", sci: "Stromanthe sanguinea" },
@@ -567,7 +577,6 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "苔" }, { name: "コケ" }, { name: "ホソバオキナゴケ", sci: "Leucobryum juniperoideum", aliases: ["山苔"] }, { name: "ハイゴケ", sci: "Hypnum plumaeforme" },
         { name: "スナゴケ", sci: "Racomitrium japonicum" }, { name: "タマゴケ", sci: "Bartramia pomiformis" }, { name: "ヒノキゴケ", sci: "Pyrrhobryum dozyanum" }, { name: "シノブゴケ", sci: "Thuidium" },
         { name: "ホウオウゴケ", sci: "Fissidens nobilis" }, { name: "コツボゴケ", sci: "Plagiomnium acutum" }, { name: "スギゴケ", sci: "Polytrichum" }, { name: "ゼニゴケ", sci: "Marchantia polymorpha" },
-        { name: "苔テラリウム" }, { name: "苔玉" },
       ] },
     ],
   },
@@ -963,8 +972,20 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "うずまき", sci: "Brassica oleracea var. botrytis 'Uzumaki'" }, { name: "ダ・ヴィンチ", sci: "Brassica oleracea var. botrytis 'Da Vinci'" }, { name: "ミナレット", sci: "Brassica oleracea var. botrytis 'Minaret'" }, { name: "カリッコリー", sci: "Brassica oleracea var. botrytis 'Caliccori'" },
         { name: "サンゴショウ", sci: "Brassica oleracea var. botrytis 'Sangosho'" },
       ] },
+      { name: "コールラビ", pickable: true, loc: { en: "Kohlrabi", zh: "球茎甘蓝", es: "Colinabo" }, varieties: [
+        { name: "コールラビ", sci: "Brassica oleracea var. gongylodes" }, { name: "グランドデューク", sci: "Brassica oleracea var. gongylodes 'Grand Duke'" }, { name: "パープルバード", sci: "Brassica oleracea var. gongylodes 'Purple Vienna'", aliases: ["紫コールラビ"] },
+      ] },
       { name: "アーティチョーク", pickable: true, loc: { en: "Artichoke", zh: "朝鲜蓟", es: "Alcachofa" }, varieties: [
         { name: "アーティチョーク", sci: "Cynara cardunculus var. scolymus" },
+      ] },
+      { name: "メロン", pickable: true, loc: { en: "Melon", zh: "甜瓜", es: "Melón" }, varieties: [
+        { name: "プリンスメロン", sci: "Cucumis melo 'Prince'" }, { name: "アンデスメロン", sci: "Cucumis melo 'Andes'" }, { name: "マスクメロン", sci: "Cucumis melo var. reticulatus" }, { name: "夕張メロン", sci: "Cucumis melo 'Yubari King'" },
+        { name: "クインシーメロン", sci: "Cucumis melo 'Quincy'" }, { name: "タカミメロン", sci: "Cucumis melo 'Takami'" }, { name: "アールスメロン", sci: "Cucumis melo 'Earl's Favourite'" }, { name: "マクワウリ", sci: "Cucumis melo var. makuwa", aliases: ["まくわうり", "真桑瓜"] },
+        { name: "ホームランメロン", sci: "Cucumis melo 'Home Run'" }, { name: "肥後グリーン", sci: "Cucumis melo 'Higo Green'" },
+      ] },
+      { name: "スイカ", pickable: true, loc: { en: "Watermelon", zh: "西瓜", es: "Sandía" }, aliases: ["西瓜"], varieties: [
+        { name: "大玉スイカ", sci: "Citrullus lanatus" }, { name: "小玉スイカ", sci: "Citrullus lanatus 'Kodama'" }, { name: "黒皮スイカ", sci: "Citrullus lanatus 'Densuke'", aliases: ["でんすけスイカ"] }, { name: "縞王", sci: "Citrullus lanatus 'Shimaou'" },
+        { name: "甘泉", sci: "Citrullus lanatus 'Kansen'" }, { name: "ひとりじめ", sci: "Citrullus lanatus 'Hitorijime'" }, { name: "黄玉スイカ", sci: "Citrullus lanatus 'Kidama'", aliases: ["クリームスイカ"] }, { name: "マダーボール", sci: "Citrullus lanatus 'Madder Ball'" },
       ] },
       { name: "葉物・その他", pickable: false, loc: { en: "Leafy greens & others", zh: "叶菜·其他", es: "Verduras de hoja y otros" }, varieties: [
         { name: "ほうれん草", sci: "Spinacia oleracea" }, { name: "サラダほうれん草", sci: "Spinacia oleracea 'Salad'" }, { name: "ちぢみほうれん草", sci: "Spinacia oleracea 'Chijimi'" }, { name: "次郎丸ほうれん草", sci: "Spinacia oleracea 'Jiromaru'" },
@@ -1078,12 +1099,17 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ふじ", sci: "Malus domestica 'Fuji'" }, { name: "姫りんご", sci: "Malus prunifolia" }, { name: "アルプス乙女", sci: "Malus domestica 'Alps Otome'" }, { name: "つがる", sci: "Malus domestica 'Tsugaru'" },
         { name: "王林", sci: "Malus domestica 'Orin'" }, { name: "シナノゴールド", sci: "Malus domestica 'Shinano Gold'" }, { name: "ジョナゴールド", sci: "Malus domestica 'Jonagold'" },
       ] },
+      { name: "梨", pickable: true, loc: { en: "Pear", zh: "梨", es: "Pera" }, aliases: ["なし", "ナシ"], varieties: [
+        { name: "幸水", sci: "Pyrus pyrifolia 'Kosui'" }, { name: "豊水", sci: "Pyrus pyrifolia 'Hosui'" }, { name: "あきづき", sci: "Pyrus pyrifolia 'Akizuki'" }, { name: "二十世紀", sci: "Pyrus pyrifolia 'Nijisseiki'" },
+        { name: "新高", sci: "Pyrus pyrifolia 'Niitaka'" }, { name: "南水", sci: "Pyrus pyrifolia 'Nansui'" }, { name: "新興", sci: "Pyrus pyrifolia 'Shinko'" }, { name: "ラ・フランス", sci: "Pyrus communis 'La France'" },
+        { name: "ル レクチエ", sci: "Pyrus communis 'Le Lectier'", aliases: ["ルレクチェ"] }, { name: "バートレット", sci: "Pyrus communis 'Bartlett'" },
+      ] },
       { name: "桃・さくらんぼ・梅・すもも", pickable: false, loc: { en: "Peach / Cherry / Plum", zh: "桃·樱桃·梅·李", es: "Melocotón / Cereza / Ciruela" }, varieties: [
         { name: "桃", sci: "Prunus persica" }, { name: "佐藤錦", sci: "Prunus avium 'Sato Nishiki'" }, { name: "紅秀峰", sci: "Prunus avium 'Beni Shuho'" }, { name: "高砂", sci: "Prunus avium 'Takasago'" },
         { name: "ナポレオン", sci: "Prunus avium 'Napoleon'" }, { name: "紅さやか", sci: "Prunus avium 'Beni Sayaka'" }, { name: "南高梅", sci: "Prunus mume 'Nanko'" }, { name: "白加賀", sci: "Prunus mume 'Shirakaga'" },
         { name: "豊後", sci: "Prunus mume 'Bungo'" }, { name: "小梅", sci: "Prunus mume 'Koume'" }, { name: "古城", sci: "Prunus mume 'Gojiro'" }, { name: "鶯宿", sci: "Prunus mume 'Osuku'" },
         { name: "ソルダム", sci: "Prunus salicina 'Soldam'" }, { name: "大石早生", sci: "Prunus salicina 'Oishi Wase'" }, { name: "太陽", sci: "Prunus salicina 'Taiyo'" }, { name: "サンタローザ", sci: "Prunus salicina 'Santa Rosa'" },
-        { name: "プラム", sci: "Prunus salicina" },
+        { name: "プラム", sci: "Prunus salicina", aliases: ["すもも", "スモモ"] },
       ] },
       { name: "キウイ", pickable: true, loc: { en: "Kiwi", zh: "猕猴桃", es: "Kiwi" }, varieties: [
         { name: "ヘイワード", sci: "Actinidia deliciosa 'Hayward'" }, { name: "紅妃", sci: "Actinidia chinensis 'Hongfei'" }, { name: "香緑", sci: "Actinidia deliciosa 'Koryoku'" }, { name: "アップルキウイ", sci: "Actinidia deliciosa 'Apple'" },

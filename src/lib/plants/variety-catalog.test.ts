@@ -128,6 +128,53 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("ヤシ・ソテツ・メロン・スイカ・コールラビ・梨 の検索到達性（#474）", () => {
+  // kako-jun が実機投稿で詰まった漏れ。代表品種・属が searchCatalog で拾えること。
+  const terms = [
+    "ナツメヤシ", "プリンスメロン", "コールラビ", "マクワウリ", "スイカ", "幸水",
+    "ブラヘア・アルマータ", "サバルヤシ", "ソテツ", "テーブルヤシ", "二十世紀",
+  ];
+  for (const term of terms) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // alias 経由（表記揺れ・別名）でも正準へ到達すること（read=別名→正準）。
+  const aliasPairs: Array<[string, string]> = [
+    ["すもも", "プラム"], // 親属が非 pickable でも品種 alias で到達
+    ["スモモ", "プラム"],
+    ["ブルーヤシ", "ブラヘア・アルマータ"],
+    ["フェニックス", "シンノウヤシ"], // ナツメヤシ ≠ フェニックス（種が別・kako-jun）
+    ["まくわうり", "マクワウリ"],
+    ["なし", "梨"], // 属 alias
+    ["デーツ", "ナツメヤシ"],
+  ];
+  for (const [term, canonical] of aliasPairs) {
+    it(`alias「${term}」が正準「${canonical}」へ到達する`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).map((h) => h.name)).toContain(canonical);
+    });
+  }
+
+  it("苔玉・苔テラリウムは品種でなく仕立て＝コケ品種から撤去（盆栽#414 と同じ筋・#474 kako-jun）", () => {
+    const names = VARIETY_CATALOG.flatMap((c) => c.genera).flatMap((g) => g.varieties).map((v) => v.name);
+    // テラリウムは tag-catalog の仕立てへ汎用名で移設、苔玉も同様。札化＝ranking 汚染を解消。
+    expect(names).not.toContain("苔玉");
+    expect(names).not.toContain("苔テラリウム");
+  });
+
+  it("ナツメヤシ(Phoenix dactylifera)とシンノウヤシ(Phoenix roebelenii)は別品種（属は同じでも種が違う・kako-jun）", () => {
+    const yashi = VARIETY_CATALOG.find((c) => c.label === "観葉植物")!.genera.find((g) => g.name === "ヤシ")!;
+    const natsume = yashi.varieties.find((v) => v.name === "ナツメヤシ")!;
+    const shinnou = yashi.varieties.find((v) => v.name === "シンノウヤシ")!;
+    expect(natsume.sci).toBe("Phoenix dactylifera");
+    expect(shinnou.sci).toBe("Phoenix roebelenii");
+    // 「フェニックス」alias はシンノウヤシ側に付き、ナツメヤシには付けない。
+    expect(shinnou.aliases ?? []).toContain("フェニックス");
+    expect(natsume.aliases ?? []).not.toContain("フェニックス");
+  });
+});
+
 describe("カタログの健全性", () => {
   it("Platycerium bifurcatum は総称でなく「ビフルカツム」1件として登録する（#341）", () => {
     const bifurcatum = VARIETY_CATALOG

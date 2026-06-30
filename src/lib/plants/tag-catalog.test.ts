@@ -67,9 +67,30 @@ describe("tag-catalog", () => {
     expect(form.tags[0]).toBe("鉢植え");
   });
 
-  it("仕立ては基本の植え付け形態 鉢植え→地植え→盆栽→板付け→着生 を先頭に隣接させる（#409・kako-jun）", () => {
-    // 盆栽は variety でなく仕立て＝この別軸に置く（variety-catalog の盆栽カテゴリは別途解体）。
-    expect(form.tags.slice(0, 5)).toEqual(["鉢植え", "地植え", "盆栽", "板付け", "着生"]);
+  it("仕立ては基本の植え付け形態 鉢植え→プランター→ハンギング→地植え→盆栽→苔玉→板付け→着生 を先頭に隣接させる（#409/#474・kako-jun）", () => {
+    // 盆栽・苔玉は variety でなく仕立て＝この別軸に置く（variety-catalog の盆栽カテゴリ#414/コケ品種 苔玉 は解体）。
+    // プランター・ハンギングは鉢植え系の容器バリエーション、苔玉は盆栽と同じ和の仕立て craft（#474）。
+    expect(form.tags.slice(0, 8)).toEqual([
+      "鉢植え", "プランター", "ハンギング", "地植え", "盆栽", "苔玉", "板付け", "着生",
+    ]);
+  });
+
+  it("プランターは鉢植えの直後に置く（#474・kako-jun「鉢植えがあるのだからプランターも」）", () => {
+    expect(form.tags.indexOf("プランター")).toBe(form.tags.indexOf("鉢植え") + 1);
+  });
+
+  it("苔玉・ハンギングは仕立てに入る（苔玉は品種でなく仕立て・盆栽#414 と同筋・#474 kako-jun）", () => {
+    expect(form.tags).toContain("苔玉");
+    expect(form.tags).toContain("ハンギング");
+  });
+
+  it("容器内エコシステム（テラリウム→パルダリウム→アクアリウム）を陸→水陸→水の順で隣接させる（#474・kako-jun）", () => {
+    const iT = form.tags.indexOf("テラリウム");
+    const iP = form.tags.indexOf("パルダリウム");
+    const iA = form.tags.indexOf("アクアリウム");
+    expect(iT).toBeGreaterThanOrEqual(0);
+    expect(iP).toBe(iT + 1);
+    expect(iA).toBe(iP + 1);
   });
 
   it("仕立ては水耕系（水耕→ハイドロカルチャー）を隣接させる（#311・水挿しを間に挟まない）", () => {
@@ -129,5 +150,13 @@ describe("tag-catalog", () => {
     expect(careRecord.tags).toContain("収穫");
     expect(careRecord.tags).toContain("開花");
     expect(careRecord.tags).not.toContain("開花待ち");
+  });
+
+  it("受粉は開花と結実の間（時系列＝開花→受粉→結実・#474 kako-jun）", () => {
+    const i開花 = careRecord.tags.indexOf("開花");
+    const i受粉 = careRecord.tags.indexOf("受粉");
+    const i結実 = careRecord.tags.indexOf("結実");
+    expect(i受粉).toBe(i開花 + 1);
+    expect(i結実).toBe(i受粉 + 1);
   });
 });
