@@ -130,7 +130,8 @@ export default function InstallPrompt({ lang = DEFAULT_LOCALE }: { lang?: Locale
     >
       <div className="flex items-start gap-3">
         {/* ホーム画面に追加される実アプリアイコン（ハノーバ市旗の H）を見せる＝何を追加するのか分かる。
-            汎用の芽アイコンの仮置きを廃止（#230・kako-jun 実機指摘）。icon.svg は角丸・地色を内包。 */}
+            汎用の芽アイコンの仮置きを廃止（#230・kako-jun 実機指摘）。icon.svg は全面塗りの正方形
+            （角丸は持たない・#472）なので、バナー表示の角丸は CSS の rounded-xl で付ける。 */}
         <img src="/icon.svg" alt="" aria-hidden width={36} height={36} className="w-9 h-9 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-ha-green-deep">{t("install.title")}</p>

@@ -7,7 +7,7 @@
 //   要 sharp（npm i -D sharp）。アイコンを変えたら public の SVG を編集してから再実行する。
 //
 // 生成物（public/ 直下）:
-//   icon-192.png / icon-512.png            … purpose=any（角丸の icon.svg 由来）
+//   icon-192.png / icon-512.png            … purpose=any（全面塗りの icon.svg 由来。角丸は OS に任せる #472）
 //   icon-maskable-192.png / -512.png       … purpose=maskable（全面塗りの icon-maskable.svg 由来）
 //   apple-touch-icon.png（180）            … iOS A2HS 用（OS がマスクするので全面塗り由来）
 

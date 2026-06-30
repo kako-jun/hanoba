@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="ハノーバ市旗（H）">
   <!-- 架空都市ハノーバの市旗。4色に塗り分けて H（Hanoba）に見せる。
-       生成り＝地／緑＝左柱／深緑＝右柱／ピンク＝横棒（差し色）。丸は使わない。 -->
-  <defs>
-    <clipPath id="r"><rect width="512" height="512" rx="104" /></clipPath>
-  </defs>
-  <g clip-path="url(#r)">
-    <rect width="512" height="512" fill="#f3e7e7" />
-    <rect x="110" y="104" width="92" height="304" fill="#509120" />
-    <rect x="310" y="104" width="92" height="304" fill="#305713" />
-    <rect x="110" y="210" width="292" height="92" fill="#ff5460" />
-  </g>
+       生成り＝地／緑＝左柱／深緑＝右柱／ピンク＝横棒（差し色）。丸は使わない。
+       PWA インストール時のアイコンに使う（purpose=any）。角丸・透明はランチャーが
+       自前のマスクを重ねて二重角丸の枠線を生むため、全面ベタ塗りの正方形にして
+       角丸は OS/ランチャーに任せる（maskable と同じ作り。#472）。 -->
+  <rect width="512" height="512" fill="#f3e7e7" />
+  <rect x="110" y="104" width="92" height="304" fill="#509120" />
+  <rect x="310" y="104" width="92" height="304" fill="#305713" />
+  <rect x="110" y="210" width="292" height="92" fill="#ff5460" />
 </svg>
