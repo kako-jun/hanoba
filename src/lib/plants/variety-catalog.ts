@@ -1,4 +1,4 @@
-// 品種タグ辞書（カテゴリ→属→品種・1,960件 / 228属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409 / #474・ヤシ/ソテツ/メロン/スイカ/コールラビ/梨を追補、苔玉/苔テラリウムは仕立てへ移設）。
+// 品種タグ辞書（カテゴリ→属→品種・2,062件 / 249属 / 23カテゴリ・#143 / #168 / #214 / #216 / #217 / #218 / #220 / #223 / #409 / #474 / #476・#476でスーパー定番野菜21属〔ねぎ/かぶ/ごぼう/れんこん/しょうが/アスパラ/セロリ/ニラ/山芋/チンゲン菜/菜の花/空心菜/中国野菜/しいたけ 等〕＋果樹のあんず/プルーン/ネクタリンを追補）。
 //
 // 趣味家の通称表記を Web 調査で裏取りした参照データ（読み取り専用・キュレーション済み）。
 // hanoba はバックエンドレス（DESIGN §6）なので DB は持たず、これは不変の `Def` データ。
@@ -15,7 +15,7 @@
  * 閲覧言語ごとの表示名（#409 P2 多言語）。ja は base（`label`/`name`）が原典なのでここには入れない。
  * 非対応言語名が無ければ base に graceful フォールバックする（`pickLoc`・plant-i18n.ts）。
  * **表示専用**＝本文に書き込むタグ・内部キーは常に ja 正準のまま（cross-language filter 要件・独自化禁止）。
- * カテゴリ23（PR1）・属228（PR2＋#474 追補分も含む）を populate 済み。品種は大半が固有名詞カルティバなので入れない（ja のみ）。
+ * カテゴリ23（PR1）・属249（PR2＋#474/#476 追補分も含む）を populate 済み。品種は大半が固有名詞カルティバなので入れない（ja のみ）。
  */
 export type Loc = Partial<Record<"en" | "zh" | "es", string>>;
 
@@ -35,7 +35,7 @@ export interface Genus {
   name: string;
   /** 属名自体がタグになるか（その他/原種 等のグルーピング見出しは false）。 */
   pickable: boolean;
-  /** 閲覧言語ごとの表示名（任意・#409・属228は PR2＋#474 で populate 済み・en/zh/es）。 */
+  /** 閲覧言語ごとの表示名（任意・#409・属249は PR2＋#474/#476 で populate 済み・en/zh/es）。 */
   loc?: Loc;
   /** 属名の別名（スラッシュ表記・括弧注記の吸収。検索用）。 */
   aliases?: string[];
@@ -987,6 +987,77 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "大玉スイカ", sci: "Citrullus lanatus" }, { name: "小玉スイカ", sci: "Citrullus lanatus 'Kodama'" }, { name: "黒皮スイカ", sci: "Citrullus lanatus 'Densuke'", aliases: ["でんすけスイカ"] }, { name: "縞王", sci: "Citrullus lanatus 'Shimaou'" },
         { name: "甘泉", sci: "Citrullus lanatus 'Kansen'" }, { name: "ひとりじめ", sci: "Citrullus lanatus 'Hitorijime'" }, { name: "黄玉スイカ", sci: "Citrullus lanatus 'Kidama'", aliases: ["クリームスイカ"] }, { name: "マダーボール", sci: "Citrullus lanatus 'Madder Ball'" },
       ] },
+      { name: "ねぎ", pickable: true, loc: { en: "Welsh onion", zh: "葱", es: "Cebolleta" }, aliases: ["葱", "ネギ"], varieties: [
+        { name: "長ねぎ", sci: "Allium fistulosum", aliases: ["根深ねぎ", "白ねぎ"] }, { name: "九条ねぎ", sci: "Allium fistulosum 'Kujo'" }, { name: "青ねぎ", sci: "Allium fistulosum", aliases: ["葉ねぎ"] }, { name: "万能ねぎ", sci: "Allium fistulosum 'Banno'" },
+        { name: "わけぎ", sci: "Allium × wakegi" }, { name: "あさつき", sci: "Allium schoenoprasum var. foliosum" }, { name: "下仁田ねぎ", sci: "Allium fistulosum 'Shimonita'" },
+      ] },
+      { name: "ニラ", pickable: true, loc: { en: "Garlic chives", zh: "韭菜", es: "Cebollino chino" }, aliases: ["韮", "にら"], varieties: [
+        { name: "大葉ニラ", sci: "Allium tuberosum 'Oba'" }, { name: "グリーンベルト", sci: "Allium tuberosum 'Green Belt'" }, { name: "ワイドグリーン", sci: "Allium tuberosum 'Wide Green'" }, { name: "テンダーポール", sci: "Allium tuberosum 'Tender Pole'" },
+      ] },
+      { name: "らっきょう", pickable: true, loc: { en: "Rakkyo", zh: "藠头", es: "Cebolleta china" }, aliases: ["辣韮", "ラッキョウ"], varieties: [
+        { name: "玉らっきょう", sci: "Allium chinense" }, { name: "エシャレット", sci: "Allium chinense 'Échalote'" }, { name: "九頭竜", sci: "Allium chinense 'Kuzuryu'" }, { name: "らくだ", sci: "Allium chinense 'Rakuda'" },
+      ] },
+      { name: "かぶ", pickable: true, loc: { en: "Turnip", zh: "芜菁", es: "Nabo" }, aliases: ["蕪", "カブ"], varieties: [
+        { name: "小かぶ", sci: "Brassica rapa var. rapa" }, { name: "聖護院かぶ", sci: "Brassica rapa var. rapa 'Shogoin'" }, { name: "赤かぶ", sci: "Brassica rapa var. rapa 'Aka Kabu'" }, { name: "金町小かぶ", sci: "Brassica rapa var. rapa 'Kanamachi Kokabu'" },
+        { name: "日野菜かぶ", sci: "Brassica rapa var. rapa 'Hinona'" }, { name: "天王寺かぶ", sci: "Brassica rapa var. rapa 'Tennoji'" }, { name: "もものすけ", sci: "Brassica rapa var. rapa 'Momonosuke'" },
+      ] },
+      { name: "チンゲン菜", pickable: true, loc: { en: "Bok choy", zh: "青梗菜", es: "Pak choi" }, aliases: ["青梗菜", "チンゲンサイ"], varieties: [
+        { name: "青帝", sci: "Brassica rapa var. chinensis 'Seitei'" }, { name: "美明", sci: "Brassica rapa var. chinensis 'Bimei'" }, { name: "シャオパオ", sci: "Brassica rapa var. chinensis 'Xiaopao'" }, { name: "ミニチンゲン菜", sci: "Brassica rapa var. chinensis 'Mini'" },
+      ] },
+      { name: "菜の花", pickable: true, loc: { en: "Nanohana", zh: "油菜花", es: "Flor de colza" }, aliases: ["なばな", "ナバナ", "菜花"], varieties: [
+        { name: "菜の花", sci: "Brassica rapa var. amplexicaulis" }, { name: "のらぼう菜", sci: "Brassica napus 'Norabona'" }, { name: "寒咲花菜", sci: "Brassica rapa 'Kanzaki Hanana'" }, { name: "三月菜", sci: "Brassica rapa 'Sangatsuna'" },
+      ] },
+      { name: "空心菜", pickable: true, loc: { en: "Water spinach", zh: "空心菜", es: "Espinaca de agua" }, aliases: ["エンサイ", "ヨウサイ", "アサガオナ"], varieties: [
+        { name: "空心菜", sci: "Ipomoea aquatica" },
+      ] },
+      { name: "つるむらさき", pickable: true, loc: { en: "Malabar spinach", zh: "落葵", es: "Espinaca de Malabar" }, aliases: ["蔓紫"], varieties: [
+        { name: "つるむらさき", sci: "Basella alba" }, { name: "赤茎つるむらさき", sci: "Basella alba 'Rubra'" },
+      ] },
+      { name: "モロヘイヤ", pickable: true, loc: { en: "Molokhia", zh: "长蒴黄麻", es: "Molojía" }, varieties: [
+        { name: "モロヘイヤ", sci: "Corchorus olitorius" },
+      ] },
+      { name: "アスパラガス", pickable: true, loc: { en: "Asparagus", zh: "芦笋", es: "Espárrago" }, aliases: ["アスパラ"], varieties: [
+        { name: "グリーンアスパラ", sci: "Asparagus officinalis" }, { name: "ホワイトアスパラ", sci: "Asparagus officinalis 'White'" }, { name: "紫アスパラ", sci: "Asparagus officinalis 'Purple Passion'" }, { name: "ウェルカム", sci: "Asparagus officinalis 'Welcome'" },
+        { name: "スーパーウェルカム", sci: "Asparagus officinalis 'Super Welcome'" }, { name: "満味紫", sci: "Asparagus officinalis 'Manmi Murasaki'" },
+      ] },
+      { name: "セロリ", pickable: true, loc: { en: "Celery", zh: "芹菜", es: "Apio" }, aliases: ["セルリー"], varieties: [
+        { name: "コーネル619", sci: "Apium graveolens 'Cornell 619'" }, { name: "トップセラー", sci: "Apium graveolens 'Top Seller'" }, { name: "ミニセロリ", sci: "Apium graveolens 'Mini'" }, { name: "スープセロリ", sci: "Apium graveolens var. secalinum", aliases: ["キンサイ", "中国セロリ"] },
+      ] },
+      { name: "クレソン", pickable: true, loc: { en: "Watercress", zh: "西洋菜", es: "Berro" }, aliases: ["オランダガラシ"], varieties: [
+        { name: "クレソン", sci: "Nasturtium officinale" },
+      ] },
+      { name: "ごぼう", pickable: true, loc: { en: "Burdock", zh: "牛蒡", es: "Bardana" }, aliases: ["牛蒡", "ゴボウ"], varieties: [
+        { name: "滝野川ごぼう", sci: "Arctium lappa 'Takinogawa'" }, { name: "大浦ごぼう", sci: "Arctium lappa 'Oura'" }, { name: "サラダごぼう", sci: "Arctium lappa 'Salad'" }, { name: "新ごぼう", sci: "Arctium lappa 'Shin Gobo'" },
+        { name: "堀川ごぼう", sci: "Arctium lappa 'Horikawa'" },
+      ] },
+      { name: "れんこん", pickable: true, loc: { en: "Lotus root", zh: "莲藕", es: "Raíz de loto" }, aliases: ["蓮根", "レンコン"], varieties: [
+        { name: "備中れんこん", sci: "Nelumbo nucifera 'Bicchu'" }, { name: "加賀れんこん", sci: "Nelumbo nucifera 'Kaga'" }, { name: "岩国れんこん", sci: "Nelumbo nucifera 'Iwakuni'" }, { name: "大村れんこん", sci: "Nelumbo nucifera 'Omura'" },
+      ] },
+      { name: "山芋", pickable: true, loc: { en: "Yam", zh: "山药", es: "Ñame" }, aliases: ["やまいも", "ヤマイモ", "山いも"], varieties: [
+        { name: "長芋", sci: "Dioscorea polystachya", aliases: ["ナガイモ"] }, { name: "自然薯", sci: "Dioscorea japonica", aliases: ["ジネンジョ"] }, { name: "大和芋", sci: "Dioscorea polystachya 'Yamato'", aliases: ["ヤマトイモ"] }, { name: "つくね芋", sci: "Dioscorea polystachya 'Tsukune'", aliases: ["仏掌薯"] },
+        { name: "いちょう芋", sci: "Dioscorea polystachya 'Icho'", aliases: ["銀杏芋"] },
+      ] },
+      { name: "しょうが", pickable: true, loc: { en: "Ginger", zh: "姜", es: "Jengibre" }, aliases: ["生姜", "ショウガ", "ジンジャー"], varieties: [
+        { name: "大生姜", sci: "Zingiber officinale 'Osyoga'" }, { name: "小生姜", sci: "Zingiber officinale 'Koshoga'" }, { name: "葉生姜", sci: "Zingiber officinale 'Hashoga'" }, { name: "谷中生姜", sci: "Zingiber officinale 'Yanaka'" },
+        { name: "新生姜", sci: "Zingiber officinale 'Shinshoga'" }, { name: "金時生姜", sci: "Zingiber officinale 'Kintoki'" }, { name: "三州生姜", sci: "Zingiber officinale 'Sanshu'" },
+      ] },
+      { name: "ビーツ", pickable: true, loc: { en: "Beetroot", zh: "甜菜根", es: "Remolacha" }, aliases: ["ビート", "テーブルビート", "火焔菜"], varieties: [
+        { name: "デトロイトダークレッド", sci: "Beta vulgaris 'Detroit Dark Red'" }, { name: "ゴルゴ", sci: "Beta vulgaris 'Chioggia'", aliases: ["キオッジャ"] }, { name: "イエロービーツ", sci: "Beta vulgaris 'Golden'" }, { name: "ウォルマー", sci: "Beta vulgaris 'Wodan'" },
+      ] },
+      { name: "冬瓜", pickable: true, loc: { en: "Winter melon", zh: "冬瓜", es: "Calabaza de invierno" }, aliases: ["とうがん", "トウガン"], varieties: [
+        { name: "大丸冬瓜", sci: "Benincasa hispida 'Omaru'" }, { name: "沖縄冬瓜", sci: "Benincasa hispida 'Okinawa'" }, { name: "琉球冬瓜", sci: "Benincasa hispida 'Ryukyu'" }, { name: "ミニ冬瓜", sci: "Benincasa hispida 'Mini'" },
+      ] },
+      { name: "たけのこ", pickable: true, loc: { en: "Bamboo shoot", zh: "竹笋", es: "Brote de bambú" }, aliases: ["筍", "タケノコ", "竹の子"], varieties: [
+        { name: "孟宗竹", sci: "Phyllostachys edulis", aliases: ["モウソウチク"] }, { name: "淡竹", sci: "Phyllostachys nigra var. henonis", aliases: ["ハチク"] }, { name: "真竹", sci: "Phyllostachys reticulata", aliases: ["マダケ"] }, { name: "四方竹", sci: "Tetragonocalamus angulatus" },
+        { name: "寒山竹", sci: "Phyllostachys aurea" },
+      ] },
+      { name: "中国野菜", pickable: false, loc: { en: "Chinese greens (others)", zh: "中国蔬菜·其他", es: "Verduras chinas (otras)" }, varieties: [
+        { name: "カイラン", sci: "Brassica oleracea var. alboglabra", aliases: ["芥藍", "チャイニーズブロッコリー"] }, { name: "ターサイ", sci: "Brassica rapa var. narinosa", aliases: ["搨菜", "タァサイ"] }, { name: "紅菜苔", sci: "Brassica rapa var. purpuraria", aliases: ["コウサイタイ"] }, { name: "パクチョイ", sci: "Brassica rapa var. chinensis 'Pak Choi'" },
+        { name: "ザーサイ", sci: "Brassica juncea var. tumida", aliases: ["搾菜"] }, { name: "豆苗", sci: "Pisum sativum 'Tomyo'", aliases: ["トウミョウ"] }, { name: "茎レタス", sci: "Lactuca sativa var. angustana", aliases: ["ステムレタス", "山くらげ"] }, { name: "高菜", sci: "Brassica juncea var. integrifolia", aliases: ["タカナ"] },
+      ] },
+      { name: "しいたけ", pickable: true, loc: { en: "Shiitake", zh: "香菇", es: "Shiitake" }, aliases: ["椎茸", "シイタケ"], varieties: [
+        { name: "原木しいたけ", sci: "Lentinula edodes" }, { name: "菌床しいたけ", sci: "Lentinula edodes" }, { name: "どんこ", sci: "Lentinula edodes 'Donko'", aliases: ["冬菇"] }, { name: "こうしん", sci: "Lentinula edodes 'Koshin'", aliases: ["香信"] },
+      ] },
       { name: "葉物・その他", pickable: false, loc: { en: "Leafy greens & others", zh: "叶菜·其他", es: "Verduras de hoja y otros" }, varieties: [
         { name: "ほうれん草", sci: "Spinacia oleracea" }, { name: "サラダほうれん草", sci: "Spinacia oleracea 'Salad'" }, { name: "ちぢみほうれん草", sci: "Spinacia oleracea 'Chijimi'" }, { name: "次郎丸ほうれん草", sci: "Spinacia oleracea 'Jiromaru'" },
         { name: "小松菜", sci: "Brassica rapa var. perviridis" }, { name: "レタス", sci: "Lactuca sativa" }, { name: "サニーレタス", sci: "Lactuca sativa var. crispa 'Sunny'" }, { name: "サンチュ", sci: "Lactuca sativa var. angustana" },
@@ -1104,12 +1175,15 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "新高", sci: "Pyrus pyrifolia 'Niitaka'" }, { name: "南水", sci: "Pyrus pyrifolia 'Nansui'" }, { name: "新興", sci: "Pyrus pyrifolia 'Shinko'" }, { name: "ラ・フランス", sci: "Pyrus communis 'La France'" },
         { name: "ル レクチエ", sci: "Pyrus communis 'Le Lectier'", aliases: ["ルレクチェ"] }, { name: "バートレット", sci: "Pyrus communis 'Bartlett'" },
       ] },
-      { name: "桃・さくらんぼ・梅・すもも", pickable: false, loc: { en: "Peach / Cherry / Plum", zh: "桃·樱桃·梅·李", es: "Melocotón / Cereza / Ciruela" }, varieties: [
+      { name: "桃・さくらんぼ・梅・すもも・あんず", pickable: false, loc: { en: "Stone fruits (peach/cherry/plum/apricot)", zh: "核果（桃·樱桃·李·杏）", es: "Frutas de hueso (melocotón/cereza/ciruela/albaricoque)" }, varieties: [
         { name: "桃", sci: "Prunus persica" }, { name: "佐藤錦", sci: "Prunus avium 'Sato Nishiki'" }, { name: "紅秀峰", sci: "Prunus avium 'Beni Shuho'" }, { name: "高砂", sci: "Prunus avium 'Takasago'" },
         { name: "ナポレオン", sci: "Prunus avium 'Napoleon'" }, { name: "紅さやか", sci: "Prunus avium 'Beni Sayaka'" }, { name: "南高梅", sci: "Prunus mume 'Nanko'" }, { name: "白加賀", sci: "Prunus mume 'Shirakaga'" },
         { name: "豊後", sci: "Prunus mume 'Bungo'" }, { name: "小梅", sci: "Prunus mume 'Koume'" }, { name: "古城", sci: "Prunus mume 'Gojiro'" }, { name: "鶯宿", sci: "Prunus mume 'Osuku'" },
         { name: "ソルダム", sci: "Prunus salicina 'Soldam'" }, { name: "大石早生", sci: "Prunus salicina 'Oishi Wase'" }, { name: "太陽", sci: "Prunus salicina 'Taiyo'" }, { name: "サンタローザ", sci: "Prunus salicina 'Santa Rosa'" },
         { name: "プラム", sci: "Prunus salicina", aliases: ["すもも", "スモモ"] },
+        { name: "あんず", sci: "Prunus armeniaca", aliases: ["杏", "アプリコット"] }, { name: "平和", sci: "Prunus armeniaca 'Heiwa'" }, { name: "信州大実", sci: "Prunus armeniaca 'Shinshu Omi'" }, { name: "ハーコット", sci: "Prunus armeniaca 'Harcot'" },
+        { name: "プルーン", sci: "Prunus domestica", aliases: ["西洋すもも", "セイヨウスモモ"] }, { name: "サンプルーン", sci: "Prunus domestica 'Sun Prune'" }, { name: "スタンレイ", sci: "Prunus domestica 'Stanley'" }, { name: "シュガープルーン", sci: "Prunus domestica 'Sugar'" },
+        { name: "ネクタリン", sci: "Prunus persica var. nucipersica", aliases: ["油桃"] }, { name: "ファンタジア", sci: "Prunus persica var. nucipersica 'Fantasia'" }, { name: "秀峰", sci: "Prunus persica var. nucipersica 'Shuho'" },
       ] },
       { name: "キウイ", pickable: true, loc: { en: "Kiwi", zh: "猕猴桃", es: "Kiwi" }, varieties: [
         { name: "ヘイワード", sci: "Actinidia deliciosa 'Hayward'" }, { name: "紅妃", sci: "Actinidia chinensis 'Hongfei'" }, { name: "香緑", sci: "Actinidia deliciosa 'Koryoku'" }, { name: "アップルキウイ", sci: "Actinidia deliciosa 'Apple'" },
