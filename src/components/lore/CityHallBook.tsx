@@ -84,11 +84,10 @@ async function deriveLevel(): Promise<{ level: CitizenLevel; levelFull: number }
 // 自分で <LocaleProvider value={loc}> を張り、子（PageContent 等）は useLocale() で読む。
 // loc はマウント後に resolveClientLocale() で確定する（en を選んでいれば en で描き直す）。
 export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
-  // lang は SSR/初期描画の種（ja）。マウント後にクライアント解決値（en を選んでいれば en）へ寄せる。
+  // lang は SSR/初期描画の種（既定言語＝go-live で en）。マウント後にクライアント解決値（ja を選んでいれば ja）へ寄せる。
+  // 解決は下の useIsoLayoutEffect（ペイント前）で行う＝殻が既定言語で焼かれるため、非既定言語の
+  // ユーザーで「一瞬 en → ja」のフラッシュが出るのを防ぐ（殻側の is:inline swap と同じ flash 回避方針）。
   const [loc, setLoc] = useState<Locale>(lang);
-  useEffect(() => {
-    setLoc(resolveClientLocale());
-  }, []);
   const t = useT(loc);
   // 本文（構造化データ）と味付け文言は locale で組み直す。
   const bookPages = buildCityHallBook(loc);
@@ -115,6 +114,9 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 暫定 L1（maxUnlocked=2）にしておけば 2p が即解放され ??? ティザーのちらつきも出ない。
   // 正確な L1/L2 は下の deriveLevel が後から確定して解放範囲を更新する。
   useIsoLayoutEffect(() => {
+    // 表示言語はクライアント解決（localStorage）。ペイント前（layout）に確定して
+    // 「一瞬 en → ja」の言語フラッシュを消す（useEffect だと描画後に走り en が一瞬見える）。
+    setLoc(resolveClientLocale());
     if (getDisplayName() !== null) {
       setLevel(1);
       setLevelFull(1); // 名乗り済みは最低 L1＝タイトルは即「… L1」。真レベルは下の deriveLevel が確定。
