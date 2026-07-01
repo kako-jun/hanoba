@@ -1,5 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { join } from "node:path";
+import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { CITIZEN_TIERS, TENURE_DAYS, TENURE_POSTS } from "../../lib/lore/citizen.ts";
@@ -473,5 +475,16 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 入力中なので本はめくれず、2p 街の地図のまま。
     expect(screen.getByText(/我が市の地図である/)).toBeInTheDocument();
     expect(screen.queryByText("？？？")).toBeNull();
+  });
+});
+
+// #484: 市長アイコン（ジョウロ写真）を 512x512 → 192x192 にダウンサイズした（preload コストを下げる）。
+// 表示は上の各テストが src で確認済みなので、ここではファイル実体の解像度が先祖返りしていないことを守る。
+describe("市長アイコン画像アセットの解像度（#484・先祖返り防止）", () => {
+  it("mayor-botanics-watering-can.webp は 192x192 にダウンサイズ済み", async () => {
+    const path = join(import.meta.dirname, "..", "..", "..", "public", "mayor-botanics-watering-can.webp");
+    const metadata = await sharp(path).metadata();
+    expect(metadata.width).toBe(192);
+    expect(metadata.height).toBe(192);
   });
 });

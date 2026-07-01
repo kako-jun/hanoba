@@ -126,6 +126,12 @@ const swapJson = JSON.stringify(SHELL_SWAP_BY_LOCALE);
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#509120" />
+    {/* ページ固有の head 追加分（#484）。既定は空＝渡さないページは今まで通り無変化。
+        例: about.astro が CityHallBook（client:only）の背景画像に preload ヒントを足す用途。
+        #484 should-1: preload スキャナーが HTML バイト列中でできるだけ早く発見できるよう、
+        head の最上流（最初の meta の直後）に置く。この後に続く Google Fonts の
+        render-blocking stylesheet や OGP/Twitter meta 群より前＝画像取得を早く始められる。 */}
+    <slot name="head" />
     {/* 暦由来の環境（時間帯・八節）を最初のペイント前に <html> へ反映する（#231 後段②/①）。
         body の背景オーバーレイ（時間帯）と背景写真（季節）を変えるので、ここで先に属性を立てないと
         既定→実値 のフラッシュが出る（市民手帳ラベル #262 と同じ flash 回避手法）。
