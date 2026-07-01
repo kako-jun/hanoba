@@ -22,10 +22,7 @@ import {
   mayorShortName,
 } from "../../lib/lore/cityHall.ts";
 import { useT, useLocale, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
-
-// 市長ボタニクス・フォン・ハノーバの肖像（語り手アイコン）。
-// 顔は秘密という世界観のため、肖像の代わりにジョウロの写真を掲げる（public 直下の静的アセット）。
-const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
+import { BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC } from "../../lib/lore/cityHallAssets.ts";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
 // = 図鑑（集めて埋める読み物・1 レベル=1 ページ解放・#469）。機能導線（discover/ranking/me/compose）は
@@ -271,10 +268,10 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
         onTouchEnd={onTouchEnd}
         style={{
           // 最初の AI 和綴じ枠（綴じ込み）。左（背）は綴じを見せるため厚い（slice 150）。
-          borderImageSource: "url('/book-frame-washi-v1.webp')",
+          borderImageSource: `url('${BOOK_FRAME_SRC}')`,
           borderImageSlice: "120 120 120 150",
           borderImageRepeat: "stretch",
-          backgroundImage: "url('/book-page-washi-v1.webp')",
+          backgroundImage: `url('${BOOK_PAGE_SRC}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundColor: "#13161e",

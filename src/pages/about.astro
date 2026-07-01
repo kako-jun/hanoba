@@ -16,6 +16,7 @@ import MainLayout from "../layouts/MainLayout.astro";
 import AffiliateGrid from "../components/AffiliateGrid.astro";
 import CityHallBook from "../components/lore/CityHallBook.tsx";
 import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+import { BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC } from "../lib/lore/cityHallAssets.ts";
 
 // 表示言語（#147）。今は既定（ja）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
 const locale: Locale = DEFAULT_LOCALE;
@@ -24,11 +25,13 @@ const locale: Locale = DEFAULT_LOCALE;
 <MainLayout title={t(locale, "meta.about.title")} description={t(locale, "meta.about.description")}>
   {/* CityHallBook は client:only（#479-A）＝サーバーは HTML を焼かず、背景画像は
       JS 実行後の inline style url(...) セットで初めてブラウザが発見する（直列の遅延）。
-      preload ヒントでこの3枚だけ HTML 解析と並行して先取りする（#484）。 */}
+      preload ヒントでこの3枚だけ HTML 解析と並行して先取りする（#484）。
+      パス自体は cityHallAssets.ts の共有定数（CityHallBook.tsx と共通の正本）から取る
+      ＝ここだけ古いパスをハードコードして先取りし続ける事故を防ぐ（#484 should-2）。 */}
   <Fragment slot="head">
-    <link rel="preload" as="image" href="/book-frame-washi-v1.webp" />
-    <link rel="preload" as="image" href="/book-page-washi-v1.webp" />
-    <link rel="preload" as="image" href="/mayor-botanics-watering-can.webp" />
+    <link rel="preload" as="image" href={BOOK_FRAME_SRC} />
+    <link rel="preload" as="image" href={BOOK_PAGE_SRC} />
+    <link rel="preload" as="image" href={MAYOR_AVATAR_SRC} />
   </Fragment>
   <SiteHeader current="about" wide />
 
