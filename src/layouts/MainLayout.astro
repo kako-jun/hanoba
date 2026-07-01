@@ -222,6 +222,9 @@ const swapJson = JSON.stringify(SHELL_SWAP_BY_LOCALE);
     {/* 構造化データ（JSON-LD）。<meta> でなく <script> で描画する（meta 化すると無効）。
         is:inline でそのまま出力（Astro のバンドル対象にしない＝検索エンジンが読む生 JSON）。 */}
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+    {/* ページ固有の head 追加分（#484）。既定は空＝渡さないページは今まで通り無変化。
+        例: about.astro が CityHallBook（client:only）の背景画像に preload ヒントを足す用途。 */}
+    <slot name="head" />
   </head>
   <body class="text-ha-ink min-h-screen antialiased flex flex-col">
     {/* 天気の前面環境レイヤ（#231 段階2・雨＝ガラスの水滴）。鼓門の今の天気で出し分ける。

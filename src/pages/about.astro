@@ -22,6 +22,14 @@ const locale: Locale = DEFAULT_LOCALE;
 ---
 
 <MainLayout title={t(locale, "meta.about.title")} description={t(locale, "meta.about.description")}>
+  {/* CityHallBook は client:only（#479-A）＝サーバーは HTML を焼かず、背景画像は
+      JS 実行後の inline style url(...) セットで初めてブラウザが発見する（直列の遅延）。
+      preload ヒントでこの3枚だけ HTML 解析と並行して先取りする（#484）。 */}
+  <Fragment slot="head">
+    <link rel="preload" as="image" href="/book-frame-washi-v1.webp" />
+    <link rel="preload" as="image" href="/book-page-washi-v1.webp" />
+    <link rel="preload" as="image" href="/mayor-botanics-watering-can.webp" />
+  </Fragment>
   <SiteHeader current="about" wide />
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
