@@ -51,14 +51,22 @@ describe("clientLocale", () => {
       expect(resolveClientLocale()).toBe("ja");
     });
 
-    it("未対応の値は既定（en）に落とす", () => {
+    it("無効な保存値(fr)は navigator 検出にフォールバック（navigator en → en）", () => {
+      stubLanguages(["en-US"]);
       localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
       expect(resolveClientLocale()).toBe("en");
     });
 
-    it("空文字も既定（en）に落とす", () => {
+    it("無効な保存値(fr)でも navigator が ja なら ja に検出フォールバックする（#482・殻と島の一致）", () => {
+      stubLanguages(["ja-JP"]);
+      localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
+      expect(resolveClientLocale()).toBe("ja");
+    });
+
+    it("空文字も無効として検出にフォールバック（navigator zh → zh）", () => {
+      stubLanguages(["zh-CN"]);
       localStorage.setItem(LOCALE_STORAGE_KEY, "");
-      expect(resolveClientLocale()).toBe("en");
+      expect(resolveClientLocale()).toBe("zh");
     });
   });
 

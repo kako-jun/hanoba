@@ -31,7 +31,7 @@ export function detectClientLocale(): Locale {
         ? [navigator.language]
         : [];
   for (const l of langs) {
-    const primary = l.toLowerCase().split("-")[0];
+    const primary = String(l).toLowerCase().split("-")[0];
     if (isLocale(primary)) return primary;
   }
   return DEFAULT_LOCALE;
