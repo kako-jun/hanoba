@@ -1,10 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resolveClientLocale, setClientLocale, LOCALE_STORAGE_KEY } from "./clientLocale.ts";
+import {
+  resolveClientLocale,
+  detectClientLocale,
+  setClientLocale,
+  LOCALE_STORAGE_KEY,
+} from "./clientLocale.ts";
+
+/** navigator.languages / navigator.language を差し替える（auto-detect #482 の検証用）。 */
+function stubLanguages(langs: string[]): void {
+  Object.defineProperty(navigator, "languages", { value: langs, configurable: true });
+  Object.defineProperty(navigator, "language", { value: langs[0] ?? "", configurable: true });
+}
 
 // happy-dom は localStorage を持つ。各テストの前にクリアして独立させる。
 describe("clientLocale", () => {
   beforeEach(() => {
     localStorage.clear();
+    // 既定は en 環境（auto-detect が既定へ落ちる）に固定してテストを決定的にする。
+    stubLanguages(["en-US"]);
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -12,7 +25,19 @@ describe("clientLocale", () => {
   });
 
   describe("resolveClientLocale", () => {
-    it("保存が無ければ既定（go-live で en）を返す", () => {
+    it("保存が無く navigator も対応外なら既定（en）を返す", () => {
+      stubLanguages(["en-US"]);
+      expect(resolveClientLocale()).toBe("en");
+    });
+
+    it("保存が無ければ navigator の優先言語から auto-detect する（ja-JP → ja・#482）", () => {
+      stubLanguages(["ja-JP", "en-US"]);
+      expect(resolveClientLocale()).toBe("ja");
+    });
+
+    it("保存値は navigator 検出より優先される（保存 en・navigator ja でも en）", () => {
+      stubLanguages(["ja-JP"]);
+      localStorage.setItem(LOCALE_STORAGE_KEY, "en");
       expect(resolveClientLocale()).toBe("en");
     });
 
@@ -26,14 +51,46 @@ describe("clientLocale", () => {
       expect(resolveClientLocale()).toBe("ja");
     });
 
-    it("未対応の値は既定（en）に落とす", () => {
+    it("無効な保存値(fr)は navigator 検出にフォールバック（navigator en → en）", () => {
+      stubLanguages(["en-US"]);
       localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
       expect(resolveClientLocale()).toBe("en");
     });
 
-    it("空文字も既定（en）に落とす", () => {
+    it("無効な保存値(fr)でも navigator が ja なら ja に検出フォールバックする（#482・殻と島の一致）", () => {
+      stubLanguages(["ja-JP"]);
+      localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
+      expect(resolveClientLocale()).toBe("ja");
+    });
+
+    it("空文字も無効として検出にフォールバック（navigator zh → zh）", () => {
+      stubLanguages(["zh-CN"]);
       localStorage.setItem(LOCALE_STORAGE_KEY, "");
-      expect(resolveClientLocale()).toBe("en");
+      expect(resolveClientLocale()).toBe("zh");
+    });
+  });
+
+  describe("detectClientLocale (#482)", () => {
+    it("navigator が ja なら ja を返す（日本語 OS/ブラウザ）", () => {
+      stubLanguages(["ja-JP", "en-US"]);
+      expect(detectClientLocale()).toBe("ja");
+    });
+
+    it("navigator が zh / es でもそれぞれ検出する", () => {
+      stubLanguages(["zh-CN"]);
+      expect(detectClientLocale()).toBe("zh");
+      stubLanguages(["es-ES"]);
+      expect(detectClientLocale()).toBe("es");
+    });
+
+    it("優先リスト全体を見て最初の対応言語を採る（fr-FR, ja-JP → ja）", () => {
+      stubLanguages(["fr-FR", "ja-JP", "en-US"]);
+      expect(detectClientLocale()).toBe("ja");
+    });
+
+    it("対応言語が一つも無ければ既定（en）", () => {
+      stubLanguages(["fr-FR", "de-DE"]);
+      expect(detectClientLocale()).toBe("en");
     });
   });
 

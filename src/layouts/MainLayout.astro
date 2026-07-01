@@ -256,10 +256,27 @@ const swapJson = JSON.stringify(SHELL_SWAP_BY_LOCALE);
     <script
       is:inline
       set:html={`(function(){try{
-  var L = localStorage.getItem("hanoba:lang");
-  var M = (${swapJson})[L];
-  if (!M) return;
+  var SWAP = (${swapJson});
+  var has = function(o, k){ return Object.prototype.hasOwnProperty.call(o, k); };
+  var saved = localStorage.getItem("hanoba:lang");
+  var L;
+  if (saved === "${DEFAULT_LOCALE}" || (saved && has(SWAP, saved))) {
+    // 保存済みの有効な言語（既定 or SWAP キー＝島の isLocale と同集合）はそのまま使う。
+    L = saved;
+  } else {
+    // 未保存 or 無効値は navigator の優先言語から検出する（#482・clientLocale.ts の resolveClientLocale/detectClientLocale と同一契約）。
+    // 既定言語(${DEFAULT_LOCALE})は殻が既にその言語で焼かれているので swap 不要＝検出しても SWAP に無く no-op。非既定(ja/zh/es)なら swap で当てる。
+    L = "${DEFAULT_LOCALE}";
+    var NAVS = (navigator.languages && navigator.languages.length) ? navigator.languages : (navigator.language ? [navigator.language] : []);
+    for (var i = 0; i < NAVS.length; i++) {
+      var P = String(NAVS[i]).toLowerCase().split("-")[0];
+      if (P === "${DEFAULT_LOCALE}" || has(SWAP, P)) { L = P; break; }
+    }
+  }
+  // 実効言語を html lang に必ず反映する（既定/検出/保存いずれでも）。後段の市民ラベル swap はこれを読む＝解決を一本化。
   document.documentElement.lang = L;
+  var M = SWAP[L];
+  if (!M) return; // 既定言語は殻が焼き済み＝swap 不要
   document.querySelectorAll("[data-i18n]").forEach(function(el){ var v = M[el.getAttribute("data-i18n")]; if (v != null) el.textContent = v; });
   document.querySelectorAll("[data-i18n-aria]").forEach(function(el){ var v = M[el.getAttribute("data-i18n-aria")]; if (v != null) el.setAttribute("aria-label", v); });
 }catch(e){}})();`}
@@ -279,7 +296,9 @@ const swapJson = JSON.stringify(SHELL_SWAP_BY_LOCALE);
       is:inline
       set:html={`(function(){try{
   if (!localStorage.getItem("hanoba:name")) return;
-  var L = localStorage.getItem("hanoba:lang");
+  // 実効言語は上の言語 swap が html lang に反映済み（保存値 / navigator 検出 / 既定を一本化・#482）。
+  // localStorage を再読みすると検出言語を取りこぼし、市民ラベルだけ既定 en に割れる（周囲は ja なのに市民手帳だけ英語）。
+  var L = document.documentElement.lang;
   document.querySelectorAll("[data-about-label][data-citizen]").forEach(function(el){
     var alt = (L && L !== "${DEFAULT_LOCALE}") ? el.getAttribute("data-citizen-" + L) : null;
     var v = alt != null ? alt : el.getAttribute("data-citizen");
