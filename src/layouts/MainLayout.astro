@@ -256,8 +256,18 @@ const swapJson = JSON.stringify(SHELL_SWAP_BY_LOCALE);
     <script
       is:inline
       set:html={`(function(){try{
+  var SWAP = (${swapJson});
   var L = localStorage.getItem("hanoba:lang");
-  var M = (${swapJson})[L];
+  if (L == null) {
+    // 未保存の初回は navigator の優先言語から対応言語を検出する（#482・clientLocale.ts の detectClientLocale と同ロジック）。
+    // 既定言語(${DEFAULT_LOCALE})は殻が既にその言語で焼かれているので swap 不要＝検出しても SWAP に無く no-op。非既定(ja/zh/es)なら swap で当てる。
+    var NAVS = (navigator.languages && navigator.languages.length) ? navigator.languages : (navigator.language ? [navigator.language] : []);
+    for (var i = 0; i < NAVS.length; i++) {
+      var P = String(NAVS[i]).toLowerCase().split("-")[0];
+      if (P === "${DEFAULT_LOCALE}" || SWAP[P]) { L = P; break; }
+    }
+  }
+  var M = SWAP[L];
   if (!M) return;
   document.documentElement.lang = L;
   document.querySelectorAll("[data-i18n]").forEach(function(el){ var v = M[el.getAttribute("data-i18n")]; if (v != null) el.textContent = v; });
