@@ -674,6 +674,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ハイグロフィラ", pickable: true, loc: { en: "Hygrophila", zh: "水蓑衣", es: "Hygrophila" }, varieties: [
         { name: "ポリスペルマ", sci: "Hygrophila polysperma" }, { name: "ピンナティフィダ", sci: "Hygrophila pinnatifida" }, { name: "ロザエネルビス", sci: "Hygrophila polysperma 'Rosanervig'" }, { name: "ギニア", sci: "Hygrophila sp. 'Guinea'" },
       ] },
+      { name: "カボンバ", pickable: true, loc: { en: "Cabomba", zh: "竹节水松属", es: "Cabomba" }, varieties: [
+        { name: "カボンバ", sci: "Cabomba caroliniana" },
+      ] },
       { name: "前景草・その他水草", pickable: false, loc: { en: "Foreground & other aquatic plants", zh: "前景草及其他水草", es: "Plantas de primer plano y otras acuáticas" }, varieties: [
         { name: "グロッソスティグマ", sci: "Glossostigma elatinoides" }, { name: "ニューラージパールグラス", sci: "Micranthemum tweediei" }, { name: "ヘアーグラス", sci: "Eleocharis acicularis" }, { name: "キューバパールグラス", sci: "Hemianthus callitrichoides" },
         { name: "バリスネリア", sci: "Vallisneria" }, { name: "ピグミーチェーンサジタリア", sci: "Sagittaria subulata" }, { name: "マツモ", sci: "Ceratophyllum demersum" }, { name: "アナカリス", sci: "Egeria densa" },
@@ -1300,6 +1303,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
       { name: "ライチ", pickable: true, loc: { en: "Lychee", zh: "荔枝", es: "Lichi" }, varieties: [
         { name: "玉荷包", sci: "Litchi chinensis 'Yu He Bao'" }, { name: "黒葉", sci: "Litchi chinensis 'Hak Ip'" },
+      ] },
+      { name: "ヤマモモ", pickable: true, loc: { en: "Yamamomo (Japanese bayberry)", zh: "杨梅", es: "Mirica roja (Yamamomo)" }, varieties: [
+        { name: "ヤマモモ", sci: "Myrica rubra" },
       ] },
       { name: "その他果樹", pickable: false, loc: { en: "Other fruit trees", zh: "其他果树", es: "Otros frutales" }, varieties: [
         { name: "茂木", sci: "Eriobotrya japonica 'Mogi'" }, { name: "田中", sci: "Eriobotrya japonica 'Tanaka'" }, { name: "長崎早生", sci: "Eriobotrya japonica 'Nagasaki Wase'", aliases: ["びわ"] }, { name: "丹波栗", sci: "Castanea crenata 'Tamba'" },
