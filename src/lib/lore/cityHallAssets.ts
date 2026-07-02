@@ -15,5 +15,11 @@ export const BOOK_PAGE_SRC = "/book-page-washi-v1.webp";
 /** 市長ボタニクス・フォン・ハノーバの肖像（顔は秘密という世界観のため、ジョウロの写真・#219①）。 */
 export const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 
+/** P2 街の地図の挿絵（葉形・葉脈川入り・#137/#504）。 */
+export const MAP_IMAGE_SRC = "/hanoba-map.webp";
+
+/** P1 移住案内の挿絵（街の俯瞰ビスタ・段落間に挟む・#504）。 */
+export const WELCOME_VISTA_SRC = "/hanoba-welcome-vista.webp";
+
 /** about.astro が head slot で preload する3枚（順序固定・#484）。 */
 export const CITY_HALL_PRELOAD_IMAGES = [BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC] as const;

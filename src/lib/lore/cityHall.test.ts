@@ -37,8 +37,8 @@ describe("街の地図ページ（cityHall.ts P2・#469）", () => {
     }
     // 末尾に注記（地図はまだ描きかけ）。
     expect(page!.note.length).toBeGreaterThan(0);
-    // 地図イラストは未生成＝image は null（#137 で webp パスを入れるまでの前方互換スロット・#469）。
-    expect(page!.image).toBeNull();
+    // 地図イラストは実画像を差し込み済み（#137/#504）。
+    expect(page!.image).toBe("/hanoba-map.webp");
   });
 
   it("市政の窓口は住民投票・品評会・市長ブログの3件だけ（discover 等の機能導線は手帳から外す）", () => {
@@ -56,6 +56,23 @@ describe("街の地図ページ（cityHall.ts P2・#469）", () => {
       expect(link.route, `${label} はまだ近日開庁のはず`).toBeNull();
       expect(link.comingSoon).toBe("近日開庁");
     }
+  });
+});
+
+// P1 移住案内の段落間に挿絵を挟む（#504）。挨拶（0番）の直後・規約説明（1番）の前。
+describe("移住案内ページの挿絵（cityHall.ts P1・#504）", () => {
+  it("welcome の blocks は para(0) → image → para(1) の順で挿絵を挟む", () => {
+    const page1 = buildCityHallBook("ja").find((p) => p.page === 1);
+    expect(page1?.kind).toBe("welcome");
+    if (page1?.kind !== "welcome") return;
+    expect(page1.blocks[0]).toMatchObject({ kind: "para" });
+    const imageBlock = page1.blocks[1];
+    expect(imageBlock?.kind).toBe("image");
+    if (imageBlock?.kind === "image") {
+      expect(imageBlock.src).toBe("/hanoba-welcome-vista.webp");
+      expect(imageBlock.alt.length).toBeGreaterThan(0);
+    }
+    expect(page1.blocks[2]).toMatchObject({ kind: "para" });
   });
 });
 

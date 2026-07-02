@@ -10,11 +10,13 @@
 
 import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
+import { WELCOME_VISTA_SRC, MAP_IMAGE_SRC } from "./cityHallAssets.ts";
 
-/** 本文の 1 段落。kind で見出し脇の実務注などを区別する。 */
+/** 本文の 1 段落。kind で見出し脇の実務注／段落間の挿絵などを区別する。 */
 export type Block =
   | { kind: "para"; text: string }
-  | { kind: "note"; text: string }; // 小さく添える実務注・注記
+  | { kind: "note"; text: string } // 小さく添える実務注・注記
+  | { kind: "image"; src: string; alt: string }; // 段落間に挟む挿絵（#504）
 
 /** 市政の窓口リンク 1 件。route が null なら「近日開庁」（未開設・非リンク表示）。 */
 export interface HubLink {
@@ -84,6 +86,8 @@ function page1(locale: Locale): BookPage {
     title: t(locale, "cityHall.welcome.title"),
     blocks: [
       { kind: "para", text: t(locale, "cityHall.welcome.0") },
+      // 「ようこそ、緑の市へ」の直後に街の俯瞰ビスタを挟む（#504・挨拶→街を見せる→規約の順）。
+      { kind: "image", src: WELCOME_VISTA_SRC, alt: t(locale, "cityHall.welcome.image.alt") },
       { kind: "para", text: t(locale, "cityHall.welcome.1") },
       { kind: "para", text: t(locale, "cityHall.welcome.2") },
       { kind: "note", text: t(locale, "cityHall.welcome.3") },
@@ -104,8 +108,8 @@ function page2(locale: Locale): BookPage {
     kind: "map",
     title: t(locale, "cityHall.map.title"),
     lead: t(locale, "cityHall.map.lead"),
-    // 実画像は #137 で webp を生成して差し込む。今は null＝仮置きフレーム（前方互換・パスを入れるだけで切替）。
-    image: null,
+    // 葉形の地図イラスト（#137/#504・kako-jun 制作）。
+    image: MAP_IMAGE_SRC,
     landmarks: [
       { name: t(locale, "cityHall.map.landmark.0.name"), text: t(locale, "cityHall.map.landmark.0.text") },
       { name: t(locale, "cityHall.map.landmark.1.name"), text: t(locale, "cityHall.map.landmark.1.text") },

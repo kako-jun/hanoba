@@ -404,6 +404,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   // P1 Welcome (the Mayor's address of greeting).
   "cityHall.welcome.title": "An Invitation to Settle",
   "cityHall.welcome.0": "Ahem. I am the Mayor of Hanōba, Botanics von Hanōba. Welcome, to the green city.",
+  "cityHall.welcome.image.alt": "An overview of Hanōba, wrapped in green",
   "cityHall.welcome.1": "In my city there is no rent for land. So long as you grow a plant, your plot is yours, free and forever. There is but one thing to do—plant a single pot of yours in a square plot, and add a word. With that, you too are a citizen of standing. Photographs of plants only (people and pets, take them to some other town).",
   "cityHall.welcome.2": "The city's chronicle, its ordinances, its flower shows—all may be viewed from this city hall. Come now, see to the formalities of settling. Decide upon a name you like, and the matter is done. No true name is required—it suffices that you are yourself.",
   "cityHall.welcome.3": "* Hanōba is a photo SNS for plants only. One square photo + a word, plants only. Register a name to post.",
