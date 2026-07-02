@@ -471,6 +471,18 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ソテツ", pickable: true, loc: { en: "Cycad", zh: "苏铁", es: "Cícada" }, varieties: [
         { name: "ソテツ", sci: "Cycas revoluta", aliases: ["蘇鉄"] }, { name: "ナンヨウソテツ", sci: "Cycas rumphii" },
       ] },
+      { name: "クロロフィツム", pickable: true, loc: { en: "Chlorophytum (Spider plant)", zh: "吊兰属", es: "Chlorophytum (Cinta)" }, aliases: ["オリヅルラン"], varieties: [
+        { name: "オリヅルラン", sci: "Chlorophytum comosum" },
+      ] },
+      { name: "セントポーリア", pickable: true, loc: { en: "African violet", zh: "非洲堇属", es: "Violeta africana" }, varieties: [
+        { name: "セントポーリア", sci: "Saintpaulia ionantha" },
+      ] },
+      { name: "ピレア", pickable: true, loc: { en: "Pilea", zh: "冷水花属", es: "Pilea" }, varieties: [
+        { name: "ペペロミオイデス", sci: "Pilea peperomioides", aliases: ["UFOプランツ", "コインプランツ"] },
+      ] },
+      { name: "トラデスカンチア", pickable: true, loc: { en: "Tradescantia", zh: "紫露草属", es: "Tradescantia" }, varieties: [
+        { name: "ムラサキゴテン", sci: "Tradescantia pallida 'Purpurea'" }, { name: "シマフィンレイシア", sci: "Tradescantia zebrina", aliases: ["ゼブリナ"] },
+      ] },
       { name: "その他観葉", pickable: false, loc: { en: "Other foliage plants", zh: "其他观叶植物", es: "Otras plantas de follaje" }, varieties: [
         { name: "ディフェンバキア", sci: "Dieffenbachia seguine" }, { name: "クワズイモ", sci: "Alocasia odora" }, { name: "アグラオネマ", sci: "Aglaonema" }, { name: "ザミオクルカス", sci: "Zamioculcas zamiifolia" },
         { name: "ペペロミア", sci: "Peperomia" }, { name: "ストレリチア", sci: "Strelitzia reginae" }, { name: "エバーフレッシュ", sci: "Cojoba arborea var. angustifolia" }, { name: "ストロマンテ", sci: "Stromanthe sanguinea" },
@@ -554,6 +566,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "エビネ", pickable: true, loc: { en: "Calanthe", zh: "虾脊兰", es: "Calanthe" }, varieties: [
         { name: "カランセ", sci: "Calanthe" }, { name: "ジエビネ", sci: "Calanthe discolor" }, { name: "キエビネ", sci: "Calanthe sieboldii" }, { name: "ニオイエビネ", sci: "Calanthe izu-insularis" },
         { name: "サルメンエビネ", sci: "Calanthe tricarinata" }, { name: "キリシマエビネ", sci: "Calanthe aristulifera" },
+      ] },
+      { name: "ジゴペタラム", pickable: true, loc: { en: "Zygopetalum", zh: "齿舌兰属", es: "Zygopetalum" }, varieties: [
+        { name: "マッカイ", sci: "Zygopetalum mackayi" },
       ] },
       { name: "その他の蘭", pickable: false, loc: { en: "Other orchids", zh: "其他兰花", es: "Otras orquídeas" }, varieties: [
         { name: "シンビジウム", sci: "Cymbidium" }, { name: "オンシジウム", sci: "Oncidium" }, { name: "バンダ", sci: "Vanda" }, { name: "デンドロキラム", sci: "Dendrochilum" },
@@ -785,6 +800,24 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "コキア", pickable: true, loc: { en: "Kochia (Summer cypress)", zh: "地肤", es: "Kochia" }, varieties: [
         { name: "ホウキギ", sci: "Bassia scoparia", aliases: ["ホウキグサ"] },
       ] },
+      { name: "インパチェンス", pickable: true, loc: { en: "Impatiens", zh: "凤仙花属", es: "Impatiens" }, varieties: [
+        { name: "インパチェンス", sci: "Impatiens walleriana" }, { name: "ニューギニアインパチェンス", sci: "Impatiens hawkeri" },
+      ] },
+      { name: "ポーチュラカ", pickable: true, loc: { en: "Portulaca", zh: "马齿苋属", es: "Portulaca" }, varieties: [
+        { name: "マツバボタン", sci: "Portulaca grandiflora" }, { name: "ポーチュラカ", sci: "Portulaca oleracea" },
+      ] },
+      { name: "ニチニチソウ", pickable: true, loc: { en: "Vinca (Madagascar periwinkle)", zh: "长春花", es: "Vinca de Madagascar" }, varieties: [
+        { name: "ニチニチソウ", sci: "Catharanthus roseus" },
+      ] },
+      { name: "ネモフィラ", pickable: true, loc: { en: "Nemophila (Baby blue eyes)", zh: "粉蝶花", es: "Nemophila" }, varieties: [
+        { name: "ネモフィラ", sci: "Nemophila menziesii" },
+      ] },
+      { name: "スイートピー", pickable: true, loc: { en: "Sweet pea", zh: "香豌豆", es: "Guisante de olor" }, varieties: [
+        { name: "スイートピー", sci: "Lathyrus odoratus" },
+      ] },
+      { name: "フクシア", pickable: true, loc: { en: "Fuchsia", zh: "倒挂金钟", es: "Fucsia" }, varieties: [
+        { name: "フクシア", sci: "Fuchsia × hybrida" },
+      ] },
       { name: "その他人気草花", pickable: false, loc: { en: "Other popular flowers", zh: "其他人气草花", es: "Otras flores populares" }, varieties: [
         { name: "プリムラ", sci: "Primula" }, { name: "多年草" }, { name: "宿根草" }, { name: "原種チューリップ", sci: "Tulipa" },
         { name: "ダリア", sci: "Dahlia" }, { name: "花菖蒲", sci: "Iris ensata var. ensata" }, { name: "君子蘭", sci: "Clivia miniata" },
@@ -900,6 +933,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "コニファー", pickable: true, loc: { en: "Conifer", zh: "针叶树", es: "Conífera" }, aliases: ["針葉樹"], varieties: [
         { name: "ゴールドクレスト", sci: "Cupressus macrocarpa 'Goldcrest'" }, { name: "エメラルドグリーン", sci: "Thuja occidentalis 'Smaragd'" }, { name: "ブルーアイス", sci: "Cupressus arizonica 'Blue Ice'" }, { name: "ブルーヘブン", sci: "Juniperus scopulorum 'Blue Heaven'" },
         { name: "カイヅカイブキ", sci: "Juniperus chinensis 'Kaizuka'" },
+      ] },
+      { name: "フジ", pickable: true, loc: { en: "Wisteria", zh: "紫藤", es: "Glicina" }, aliases: ["藤"], varieties: [
+        { name: "ノダフジ", sci: "Wisteria floribunda" }, { name: "ヤマフジ", sci: "Wisteria brachybotrys" },
       ] },
     ],
   },
