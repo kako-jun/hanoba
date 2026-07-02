@@ -170,6 +170,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "セデベリア", pickable: true, loc: { en: "Sedeveria", zh: "景天石莲属", es: "Sedeveria" }, varieties: [
         { name: "樹氷", sci: "×Sedeveria 'Juhyo'" }, { name: "レティジア", sci: "×Sedeveria 'Letizia'" },
       ] },
+      { name: "ディッキア", pickable: true, loc: { en: "Dyckia", zh: "刺凤梨属", es: "Dyckia" }, varieties: [
+        { name: "ブレビフォリア", sci: "Dyckia brevifolia" }, { name: "マニエリラポストレイ", sci: "Dyckia marnier-lapostollei" }, { name: "フォステリアナ", sci: "Dyckia fosteriana" },
+      ] },
     ],
   },
   {
