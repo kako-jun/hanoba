@@ -102,6 +102,25 @@ describe("山菜・野草カテゴリ・代表品種の検索到達性（#218）
   }
 });
 
+describe("シダカテゴリ・園芸シダ拡充の検索到達性（#486）", () => {
+  const ferns = [
+    "クエルシフォリア",
+    "ホエールフィン",
+    "ボニー",
+    "シマオオタニワタリ",
+    "ヘゴ",
+    "クロヘゴ",
+    "マルハチ",
+    "アンタークティカ",
+    "ブルースター",
+  ];
+  for (const term of ferns) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+});
+
 describe("属取りこぼし救済・代表種の検索到達性（#220）", () => {
   // 取りこぼしていた属・品種が searchCatalog で拾えること。
   const rescued = [
