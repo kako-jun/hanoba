@@ -102,6 +102,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "鉄錫杖", sci: "Senecio stapeliiformis" }, { name: "ヤコブセニー", sci: "Senecio jacobsenii" }, { name: "エンジェルティアーズ", sci: "Senecio herreanus 'Angel Tears'" }, { name: "ハリアヌス", sci: "Senecio harrianus" },
       ] },
       { name: "クラッスラ", pickable: true, loc: { en: "Crassula", zh: "青锁龙属", es: "Crassula" }, varieties: [
+        { name: "カゲツ", sci: "Crassula ovata", aliases: ["金のなる木", "花月"] },
         { name: "火祭り", sci: "Crassula capitella 'Campfire'" }, { name: "銀盃", sci: "Crassula arborescens 'Blue Bird'" }, { name: "神刀", sci: "Crassula perfoliata var. falcata" }, { name: "茜の塔", sci: "Crassula corymbulosa" },
         { name: "星の王子", sci: "Crassula perforata" }, { name: "桜星", sci: "Crassula 'Sakura Boshi'" }, { name: "紅稚児", sci: "Crassula pubescens subsp. radicans" }, { name: "若緑", sci: "Crassula muscosa 'Pseudolycopodioides'" },
         { name: "数珠星", sci: "Crassula rupestris subsp. marnieriana" }, { name: "南十字星", sci: "Crassula perforata 'Variegata'" }, { name: "ゴーラム", sci: "Crassula ovata 'Gollum'" }, { name: "宇宙の木", sci: "Crassula ovata 'Hobbit'" },
@@ -482,6 +483,9 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       ] },
       { name: "トラデスカンチア", pickable: true, loc: { en: "Tradescantia", zh: "紫露草属", es: "Tradescantia" }, varieties: [
         { name: "ムラサキゴテン", sci: "Tradescantia pallida 'Purpurea'" }, { name: "シマフィンレイシア", sci: "Tradescantia zebrina", aliases: ["ゼブリナ"] },
+      ] },
+      { name: "コーヒーノキ", pickable: true, loc: { en: "Coffee plant", zh: "咖啡属", es: "Cafeto" }, varieties: [
+        { name: "コーヒーの木", sci: "Coffea arabica" },
       ] },
       { name: "その他観葉", pickable: false, loc: { en: "Other foliage plants", zh: "其他观叶植物", es: "Otras plantas de follaje" }, varieties: [
         { name: "ディフェンバキア", sci: "Dieffenbachia seguine" }, { name: "クワズイモ", sci: "Alocasia odora" }, { name: "アグラオネマ", sci: "Aglaonema" }, { name: "ザミオクルカス", sci: "Zamioculcas zamiifolia" },
@@ -891,6 +895,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ツバキ", pickable: true, loc: { en: "Camellia", zh: "山茶", es: "Camelia" }, aliases: ["椿", "カメリア"], varieties: [
         { name: "侘助", sci: "Camellia 'Wabisuke'" }, { name: "乙女椿", sci: "Camellia japonica 'Otome'" }, { name: "数寄屋侘助", sci: "Camellia 'Sukiya'" }, { name: "卜伴", sci: "Camellia japonica 'Bokuhan'" },
         { name: "玉之浦", sci: "Camellia japonica 'Tama-no-ura'" }, { name: "ヤブツバキ", sci: "Camellia japonica" }, { name: "肥後椿", sci: "Camellia japonica 'Higo'" },
+        { name: "チャノキ", sci: "Camellia sinensis", aliases: ["茶の木", "茶"] },
       ] },
       { name: "サザンカ", pickable: true, loc: { en: "Sasanqua Camellia", zh: "茶梅", es: "Camelia sasanqua" }, aliases: ["山茶花"], varieties: [
         { name: "朝倉", sci: "Camellia sasanqua 'Asakura'" }, { name: "勘次郎", sci: "Camellia sasanqua 'Kanjiro'" }, { name: "富士の峰", sci: "Camellia sasanqua 'Fuji-no-mine'" }, { name: "獅子頭", sci: "Camellia sasanqua 'Shishigashira'" },
