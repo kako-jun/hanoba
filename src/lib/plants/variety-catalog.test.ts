@@ -147,6 +147,26 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("蘭カテゴリ・シンビジウム/オンシジウム固有属の検索到達性（#498）", () => {
+  const terms = ["シュンラン", "ケンラン", "カンラン", "シャリーベイビー", "スファセラータム"];
+  for (const term of terms) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  it("シンビジウム・オンシジウムは pickable な固有属として登録される（その他の蘭からは除去）", () => {
+    const ran = VARIETY_CATALOG.find((c) => c.label === "蘭")!;
+    const shinbi = ran.genera.find((g) => g.name === "シンビジウム")!;
+    const onshi = ran.genera.find((g) => g.name === "オンシジウム")!;
+    expect(shinbi.pickable).toBe(true);
+    expect(onshi.pickable).toBe(true);
+    const sonota = ran.genera.find((g) => g.name === "その他の蘭")!;
+    expect(sonota.varieties.map((v) => v.name)).not.toContain("シンビジウム");
+    expect(sonota.varieties.map((v) => v.name)).not.toContain("オンシジウム");
+  });
+});
+
 describe("コーヒーの木・チャノキ・金のなる木の検索到達性（#496）", () => {
   const terms = ["コーヒーの木", "チャノキ", "カゲツ"];
   for (const term of terms) {

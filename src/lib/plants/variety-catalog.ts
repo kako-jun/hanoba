@@ -574,8 +574,14 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ジゴペタラム", pickable: true, loc: { en: "Zygopetalum", zh: "齿舌兰属", es: "Zygopetalum" }, varieties: [
         { name: "マッカイ", sci: "Zygopetalum mackayi" },
       ] },
+      { name: "シンビジウム", pickable: true, loc: { en: "Cymbidium", zh: "蕙兰属", es: "Cymbidium" }, varieties: [
+        { name: "シンビジウム", sci: "Cymbidium" }, { name: "シュンラン", sci: "Cymbidium goeringii" }, { name: "ケンラン", sci: "Cymbidium ensifolium" }, { name: "カンラン", sci: "Cymbidium kanran" },
+      ] },
+      { name: "オンシジウム", pickable: true, loc: { en: "Oncidium", zh: "文心兰属", es: "Oncidium" }, varieties: [
+        { name: "オンシジウム", sci: "Oncidium" }, { name: "シャリーベイビー", sci: "Oncidium 'Sharry Baby'" }, { name: "スファセラータム", sci: "Oncidium sphacelatum" },
+      ] },
       { name: "その他の蘭", pickable: false, loc: { en: "Other orchids", zh: "其他兰花", es: "Otras orquídeas" }, varieties: [
-        { name: "シンビジウム", sci: "Cymbidium" }, { name: "オンシジウム", sci: "Oncidium" }, { name: "バンダ", sci: "Vanda" }, { name: "デンドロキラム", sci: "Dendrochilum" },
+        { name: "バンダ", sci: "Vanda" }, { name: "デンドロキラム", sci: "Dendrochilum" },
         { name: "リカステ", sci: "Lycaste" }, { name: "ミルトニア", sci: "Miltonia" }, { name: "マスデバリア", sci: "Masdevallia" }, { name: "アングレカム", sci: "Angraecum" },
       ] },
       { name: "野生ラン", pickable: false, loc: { en: "Wild orchids", zh: "野生兰", es: "Orquídeas silvestres" }, varieties: [
