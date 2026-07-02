@@ -560,7 +560,19 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "トキワシノブ", sci: "Davallia mariesii" }, { name: "玉シダ", sci: "Davallia" },
       ] },
       { name: "アスプレニウム", pickable: true, loc: { en: "Asplenium", zh: "铁角蕨", es: "Asplenium" }, aliases: ["タニワタリ"], varieties: [
-        { name: "オオタニワタリ", sci: "Asplenium antiquum" }, { name: "コブラ", sci: "Asplenium nidus 'Cobra'" }, { name: "エメラルドウェーブ", sci: "Asplenium nidus 'Emerald Wave'" }, { name: "アビス", sci: "Asplenium nidus 'Avis'" },
+        { name: "オオタニワタリ", sci: "Asplenium antiquum" }, { name: "シマオオタニワタリ", sci: "Asplenium nidus" }, { name: "コブラ", sci: "Asplenium nidus 'Cobra'" }, { name: "エメラルドウェーブ", sci: "Asplenium nidus 'Emerald Wave'" }, { name: "アビス", sci: "Asplenium nidus 'Avis'" },
+      ] },
+      { name: "ドリナリア", pickable: true, loc: { en: "Drynaria (Oak-leaf fern)", zh: "槲蕨", es: "Drynaria (Helecho de roble)" }, varieties: [
+        { name: "クエルシフォリア", sci: "Drynaria quercifolia" }, { name: "ホエールフィン", sci: "Drynaria rigidula 'Whale Fin'" }, { name: "ボニー", sci: "Drynaria bonii" },
+      ] },
+      { name: "ヘゴ", pickable: true, loc: { en: "Cyathea (Tree fern)", zh: "桫椤", es: "Cyathea (Helecho arbóreo)" }, varieties: [
+        { name: "ヘゴ", sci: "Cyathea spinulosa" }, { name: "クロヘゴ", sci: "Cyathea podophylla" }, { name: "マルハチ", sci: "Cyathea mertensiana" },
+      ] },
+      { name: "ディクソニア", pickable: true, loc: { en: "Dicksonia (Tasmanian tree fern)", zh: "蚌壳蕨", es: "Dicksonia (Helecho arbóreo de Tasmania)" }, varieties: [
+        { name: "アンタークティカ", sci: "Dicksonia antarctica" },
+      ] },
+      { name: "ポリポディウム", pickable: true, loc: { en: "Polypodium", zh: "水龙骨", es: "Polypodium" }, varieties: [
+        { name: "ブルースター", sci: "Polypodium formosanum 'Blue Star'" },
       ] },
       { name: "その他シダ", pickable: false, loc: { en: "Other ferns", zh: "其他蕨类", es: "Otros helechos" }, aliases: ["シダ"], varieties: [
         { name: "シダ" }, { name: "リュウビンタイ", sci: "Angiopteris lygodiifolia" }, { name: "ヒノキシダ", sci: "Asplenium prolongatum" }, { name: "クサソテツ", sci: "Matteuccia struthiopteris", aliases: ["コゴミ"] },
