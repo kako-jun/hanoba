@@ -441,6 +441,7 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "ウンベラータ", sci: "Ficus umbellata" }, { name: "ベンガレンシス", sci: "Ficus benghalensis" }, { name: "アルテシマ", sci: "Ficus altissima" }, { name: "バーガンディ", sci: "Ficus elastica 'Burgundy'" },
         { name: "ベンジャミン", sci: "Ficus benjamina", aliases: ["ベンジャミナ"] }, { name: "ガジュマル", sci: "Ficus microcarpa" }, { name: "ティネケ", sci: "Ficus elastica 'Tineke'" },
         { name: "ルビギノーサ", sci: "Ficus rubiginosa" }, { name: "ペティオラリス", sci: "Ficus petiolaris" }, { name: "リラータ", sci: "Ficus lyrata" }, { name: "プミラ", sci: "Ficus pumila" },
+        { name: "アスペラ", sci: "Ficus aspera 'Parcellii'", aliases: ["パーセリー", "クロンフィグ"] },
       ] },
       { name: "ドラセナ", pickable: true, loc: { en: "Dracaena", zh: "龙血树属", es: "Dracaena" }, varieties: [
         { name: "幸福の木", sci: "Dracaena fragrans" }, { name: "マッサンゲアナ", sci: "Dracaena fragrans 'Massangeana'" }, { name: "コンシンネ", sci: "Dracaena marginata", aliases: ["マジナータ"] },
