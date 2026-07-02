@@ -147,6 +147,26 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("コーヒーの木・チャノキ・金のなる木の検索到達性（#496）", () => {
+  const terms = ["コーヒーの木", "チャノキ", "カゲツ"];
+  for (const term of terms) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+
+  // alias 経由でも正準へ到達すること。
+  const aliasPairs: Array<[string, string]> = [
+    ["金のなる木", "カゲツ"],
+    ["茶の木", "チャノキ"],
+  ];
+  for (const [term, canonical] of aliasPairs) {
+    it(`alias「${term}」が正準「${canonical}」へ到達する`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).map((h) => h.name)).toContain(canonical);
+    });
+  }
+});
+
 describe("多肉植物カテゴリ・ディッキア属の検索到達性（#488）", () => {
   const dyckia = ["ディッキア", "ブレビフォリア", "マニエリラポストレイ", "フォステリアナ"];
   for (const term of dyckia) {
