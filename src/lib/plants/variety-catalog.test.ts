@@ -147,6 +147,15 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("多肉植物カテゴリ・ディッキア属の検索到達性（#488）", () => {
+  const dyckia = ["ディッキア", "ブレビフォリア", "マニエリラポストレイ", "フォステリアナ"];
+  for (const term of dyckia) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+});
+
 describe("スーパー定番の野菜・中国野菜・しいたけ・果樹あんず等 の検索到達性（#476）", () => {
   // kako-jun「普通に売ってる野菜・果物は全部あるか」。代表属/品種が searchCatalog で拾えること。
   const terms = [
