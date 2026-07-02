@@ -440,20 +440,30 @@ function PageContent({ page }: { page: BookPage }) {
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
           {/* 見出しの下に市長アイコン＋肩書き（語り手・#455 で全ページ共通化）。顔は秘密＝ジョウロ（#219①）。 */}
           <MayorMark />
-          {page.blocks.map((b, i) =>
-            b.kind === "note" ? (
-              <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
+          {page.blocks.map((b, i) => {
+            if (b.kind === "image") {
+              return (
+                <img
+                  key={i}
+                  src={b.src}
+                  alt={b.alt}
+                  className="w-full rounded-xl border border-white/10 object-cover ring-1 ring-white/10"
+                />
+              );
+            }
+            if (b.kind === "note") {
+              return (
+                <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
+                  {b.text}
+                </p>
+              );
+            }
+            return (
+              <p key={i} className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
                 {b.text}
               </p>
-            ) : (
-              <p
-                key={i}
-                className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]"
-              >
-                {b.text}
-              </p>
-            ),
-          )}
+            );
+          })}
         </article>
       );
 

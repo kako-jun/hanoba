@@ -155,6 +155,11 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByText("旅人")).toBeInTheDocument();
     // 実務注（site の一言説明）も出る。
     expect(screen.getByText(/植物専用の写真SNSです/)).toBeInTheDocument();
+    // 挨拶の直後に街の俯瞰ビスタが挟まる（#504）。
+    expect(screen.getByRole("img", { name: "緑に包まれたハノーバ市の俯瞰" })).toHaveAttribute(
+      "src",
+      "/hanoba-welcome-vista.webp",
+    );
     // 前は不可、次（ティザー）へは進める。
     expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
@@ -193,8 +198,8 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.queryByText("旅人")).toBeNull();
     // 名所（ランドマーク）が読み物として並ぶ。
     expect(screen.getByText("葉脈川")).toBeInTheDocument();
-    // 地図ビジュアルは未生成（image=null）＝仮置きフレームのキャプションが出る（#469・#137 で実画像差し込み）。
-    expect(screen.getByText("地図 製作中")).toBeInTheDocument();
+    // 地図ビジュアルは実画像が差し込み済み（#137/#504）＝仮置きフレームでなく img で出る。
+    expect(screen.getByRole("img", { name: "街の地図" })).toHaveAttribute("src", "/hanoba-map.webp");
     // 機能導線（discover/ranking/me/compose）は手帳から外しヘッダ/フッタへ＝地図には出さない。
     expect(screen.queryByRole("link", { name: /人気ランキング/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /あなたの植物/ })).toBeNull();
@@ -486,5 +491,22 @@ describe("市長アイコン画像アセットの解像度（#484・先祖返り
     const metadata = await sharp(path).metadata();
     expect(metadata.width).toBe(192);
     expect(metadata.height).toBe(192);
+  });
+});
+
+// #504: P1/P2 の挿絵アセット。1000px 長辺・元アスペクト比（4:3 / 3:2）のまま webp 化済み。
+describe("手帳の挿絵画像アセットの解像度（#504）", () => {
+  it("hanoba-map.webp は 1000x750（4:3）", async () => {
+    const path = join(import.meta.dirname, "..", "..", "..", "public", "hanoba-map.webp");
+    const metadata = await sharp(path).metadata();
+    expect(metadata.width).toBe(1000);
+    expect(metadata.height).toBe(750);
+  });
+
+  it("hanoba-welcome-vista.webp は 1000x667（3:2）", async () => {
+    const path = join(import.meta.dirname, "..", "..", "..", "public", "hanoba-welcome-vista.webp");
+    const metadata = await sharp(path).metadata();
+    expect(metadata.width).toBe(1000);
+    expect(metadata.height).toBe(667);
   });
 });
