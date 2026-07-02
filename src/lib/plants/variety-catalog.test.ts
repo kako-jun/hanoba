@@ -147,6 +147,15 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("フィカス属・アスペラの検索到達性（#500）", () => {
+  it("「アスペラ」が検索で 1 件以上ヒットする", () => {
+    expect(searchCatalog(VARIETY_CATALOG, "アスペラ").length).toBeGreaterThan(0);
+  });
+  it("alias「パーセリー」が正準「アスペラ」へ到達する", () => {
+    expect(searchCatalog(VARIETY_CATALOG, "パーセリー").map((h) => h.name)).toContain("アスペラ");
+  });
+});
+
 describe("蘭カテゴリ・シンビジウム/オンシジウム固有属の検索到達性（#498）", () => {
   const terms = ["シュンラン", "ケンラン", "カンラン", "シャリーベイビー", "スファセラータム"];
   for (const term of terms) {
