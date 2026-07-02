@@ -173,6 +173,18 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "ディッキア", pickable: true, loc: { en: "Dyckia", zh: "刺凤梨属", es: "Dyckia" }, varieties: [
         { name: "ブレビフォリア", sci: "Dyckia brevifolia" }, { name: "マニエリラポストレイ", sci: "Dyckia marnier-lapostollei" }, { name: "フォステリアナ", sci: "Dyckia fosteriana" },
       ] },
+      { name: "アドロミスクス", pickable: true, loc: { en: "Adromischus", zh: "天章属", es: "Adromischus" }, varieties: [
+        { name: "雅楽の舞", sci: "Adromischus cristatus" }, { name: "神想曲", sci: "Adromischus maculatus" }, { name: "クーペリー", sci: "Adromischus cooperi" },
+      ] },
+      { name: "オロスタキス", pickable: true, loc: { en: "Orostachys", zh: "瓦松属", es: "Orostachys" }, aliases: ["イワレンゲ"], varieties: [
+        { name: "イワレンゲ", sci: "Orostachys japonica" }, { name: "子持ち蓮華", sci: "Orostachys boehmeri" },
+      ] },
+      { name: "ポーチュラカリア", pickable: true, loc: { en: "Portulacaria", zh: "马齿苋树属", es: "Portulacaria" }, varieties: [
+        { name: "カゲツ", sci: "Portulacaria afra" }, { name: "斑入りカゲツ", sci: "Portulacaria afra 'Variegata'" },
+      ] },
+      { name: "セロペギア", pickable: true, loc: { en: "Ceropegia", zh: "吊灯花属", es: "Ceropegia" }, varieties: [
+        { name: "ハートカズラ", sci: "Ceropegia woodii" },
+      ] },
     ],
   },
   {
@@ -266,6 +278,12 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "フリチア", pickable: true, loc: { en: "Frithia", zh: "光玉属", es: "Frithia" }, varieties: [
         { name: "光玉", sci: "Frithia pulchra" },
       ] },
+      { name: "ランプランサス", pickable: true, loc: { en: "Lampranthus", zh: "松叶菊属", es: "Lampranthus" }, aliases: ["マツバギク"], varieties: [
+        { name: "マツバギク", sci: "Lampranthus spectabilis" },
+      ] },
+      { name: "メセンブリアンテマム", pickable: true, loc: { en: "Mesembryanthemum", zh: "冰花属", es: "Mesembryanthemum" }, varieties: [
+        { name: "アイスプラント", sci: "Mesembryanthemum crystallinum" },
+      ] },
     ],
   },
   {
@@ -316,6 +334,18 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
         { name: "岩牡丹", sci: "Ariocarpus retusus" }, { name: "亀甲牡丹", sci: "Ariocarpus fissuratus" }, { name: "玉牡丹", sci: "Ariocarpus retusus f. pectinatus" }, { name: "黒牡丹", sci: "Ariocarpus kotschoubeyanus" },
         { name: "花牡丹", sci: "Ariocarpus furfuraceus" }, { name: "象牙牡丹", sci: "Ariocarpus furfuraceus 'Magnificum'" }, { name: "三角牡丹", sci: "Ariocarpus trigonus" }, { name: "連山", sci: "Ariocarpus fissuratus var. lloydii" },
         { name: "亀甲牡丹ゴジラ", sci: "Ariocarpus fissuratus 'Godzilla'" },
+      ] },
+      { name: "シュルンベルゲラ", pickable: true, loc: { en: "Schlumbergera", zh: "蟹爪兰属", es: "Schlumbergera" }, aliases: ["シャコバサボテン", "カニバサボテン"], varieties: [
+        { name: "シャコバサボテン", sci: "Schlumbergera truncata" }, { name: "カニバサボテン", sci: "Schlumbergera × buckleyi" },
+      ] },
+      { name: "オプンチア", pickable: true, loc: { en: "Opuntia (Prickly pear)", zh: "仙人掌属", es: "Opuntia (Nopal)" }, aliases: ["ウチワサボテン"], varieties: [
+        { name: "バニーカクタス", sci: "Opuntia microdasys" }, { name: "ノパル", sci: "Opuntia ficus-indica" },
+      ] },
+      { name: "レブチア", pickable: true, loc: { en: "Rebutia", zh: "南國玉属", es: "Rebutia" }, varieties: [
+        { name: "ミヌスクラ", sci: "Rebutia minuscula" }, { name: "フィエブリギー", sci: "Rebutia fiebrigii" },
+      ] },
+      { name: "クレイストカクタス", pickable: true, loc: { en: "Cleistocactus", zh: "闭花掌属", es: "Cleistocactus" }, varieties: [
+        { name: "老楽", sci: "Cleistocactus strausii" },
       ] },
       { name: "その他", pickable: false, loc: { en: "Others", zh: "其他", es: "Otros" }, varieties: [
         { name: "月世界", sci: "Epithelantha micromeris" }, { name: "小人の帽子", sci: "Epithelantha bokei" }, { name: "鬼面角", sci: "Cereus repandus" }, { name: "残雪の峰", sci: "Cereus spegazzinii" },
