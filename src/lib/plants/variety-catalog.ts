@@ -952,6 +952,18 @@ export const VARIETY_CATALOG: VarietyCategory[] = [
       { name: "フジ", pickable: true, loc: { en: "Wisteria", zh: "紫藤", es: "Glicina" }, aliases: ["藤"], varieties: [
         { name: "ノダフジ", sci: "Wisteria floribunda" }, { name: "ヤマフジ", sci: "Wisteria brachybotrys" },
       ] },
+      { name: "プロテア", pickable: true, loc: { en: "Protea", zh: "帝王花属", es: "Protea" }, varieties: [
+        { name: "キングプロテア", sci: "Protea cynaroides" },
+      ] },
+      { name: "リューカデンドロン", pickable: true, loc: { en: "Leucadendron", zh: "银叶树属", es: "Leucadendron" }, varieties: [
+        { name: "サファリサンセット", sci: "Leucadendron 'Safari Sunset'" },
+      ] },
+      { name: "バンクシア", pickable: true, loc: { en: "Banksia", zh: "班克木属", es: "Banksia" }, varieties: [
+        { name: "エリキフォリア", sci: "Banksia ericifolia" }, { name: "メンジーシー", sci: "Banksia menziesii" },
+      ] },
+      { name: "グレビレア", pickable: true, loc: { en: "Grevillea", zh: "银桦属", es: "Grevillea" }, varieties: [
+        { name: "ロビンゴードン", sci: "Grevillea 'Robyn Gordon'" },
+      ] },
     ],
   },
   {

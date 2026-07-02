@@ -147,6 +147,15 @@ describe("属取りこぼし救済・代表種の検索到達性（#220）", () 
   });
 });
 
+describe("花木・庭木カテゴリ・プロテア科の検索到達性（#502）", () => {
+  const terms = ["キングプロテア", "サファリサンセット", "エリキフォリア", "メンジーシー", "ロビンゴードン"];
+  for (const term of terms) {
+    it(`「${term}」が検索で 1 件以上ヒットする`, () => {
+      expect(searchCatalog(VARIETY_CATALOG, term).length).toBeGreaterThan(0);
+    });
+  }
+});
+
 describe("フィカス属・アスペラの検索到達性（#500）", () => {
   it("「アスペラ」が検索で 1 件以上ヒットする", () => {
     expect(searchCatalog(VARIETY_CATALOG, "アスペラ").length).toBeGreaterThan(0);
