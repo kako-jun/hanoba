@@ -447,7 +447,7 @@ function PageContent({ page }: { page: BookPage }) {
                   key={i}
                   src={b.src}
                   alt={b.alt}
-                  className="w-full rounded-xl border border-white/10 object-cover ring-1 ring-white/10"
+                  className="mx-auto w-full max-w-[170px] rounded-xl object-cover"
                 />
               );
             }
@@ -481,7 +481,7 @@ function PageContent({ page }: { page: BookPage }) {
             <img
               src={page.image}
               alt={page.title}
-              className="w-full rounded-xl border border-white/10 object-cover ring-1 ring-white/10"
+              className="mx-auto w-full max-w-[170px] rounded-xl object-cover"
             />
           ) : (
             // 仮置きフレーム＝「絵は近日」の軽い未完感（ロック頁の veil ほど沈めない）。
