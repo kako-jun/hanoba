@@ -5,9 +5,12 @@
 // タグ（#143/#144/#181）が概要→詳細の全階層を付けてよいのとは別概念で、札は具体1つに畳む（最大マッチ）:
 // - カテゴリ（塊根植物/花木 等）は札にしない。
 // - 属に品種があれば「属単独」の札は捨てる（品種に畳む）。
-// - **属レベルの受け皿品種札も、同属に具体種札があれば畳む**（#506・上の doctrine の1段下）:
-//   解決後の sci が裸の属名（空白なし・例「エアプランツ」→ Tillandsia）の品種札は、同属に解決後 sci が
+// - **属レベルの受け皿品種札も、同じ植物学的属に具体種札があれば畳む**（#506・上の doctrine の1段下）:
+//   「同属」は catalog の genus オブジェクトでなく **学名の属トークン**（sci の先頭語）で判定する
+//   （1つの catalog genus は寄せ集め属〔その他観葉 等〕・別属の受け皿を束ねうる＝別属の具体種で受け皿を消さない）。
+//   解決後の sci が裸の属名（空白なし・例「エアプランツ」→ Tillandsia）の品種札は、**同じ属トークン**に解決後 sci が
 //   species/cultivar（空白あり・例 Tillandsia ionantha / Tillandsia 'Cotton Candy'）の札が1枚でもあれば落とす。
+//   `Genus sp.`（種未特定・例 Sansevieria sp.）は具体種でなく属レベル扱い（畳む側でなく畳まれる側）。
 //   具体的な兄弟が無い時（受け皿単独・木立性/根茎性ベゴニア＝全部 Begonia 等）はそのまま残す。
 // - 同属の複数品種はそれぞれ品種の札として残す。
 // - 非 pickable な見出し属（原種/その他塊根/コケ各種 等）配下の品種は #カテゴリ共起で品種札にする（#448）。
@@ -180,10 +183,12 @@ export function buildVarietyIndex(catalog: VarietyCategory[]): FudaIndex {
  * 重い索引作成を含まないので投稿ごとに軽い。属コンテキスト解決（#223）・安定順 emission（catalog
  * 出現順）は従来の `buildFuda` と同一の挙動。
  *
- * emission 時の畳み込み（#506）: ある属で emit 対象の品種のうち、**解決後 sci に空白を含む＝
- * species/cultivar（具体種）** が1枚でもあれば、同属の **解決後 sci が空白を含まない＝属レベル（裸属名の
- * 受け皿品種）** の札は落とす。具体的な兄弟が無ければ属レベル札はそのまま残す（受け皿単独・全部属レベル
- * のベゴニア等）。畳み込み判定は emit と同じ解決後 sci（`resolveVarietySci`）で行う（分類と emit の drift 防止）。
+ * emission 時の畳み込み（#506）: 「同属」は catalog の genus オブジェクトでなく **学名の属トークン**（解決後 sci の
+ * 先頭語）で判定する（1つの catalog genus は寄せ集め属・別属の受け皿を束ねうるので別属を巻き込まない）。ある
+ * 属トークンに **具体種（species/cultivar）** の札が1枚でもあれば、同じ属トークンの **属レベル（裸属名の受け皿
+ * 品種）** の札は落とす。`Genus sp.`（種未特定）は具体種でなく属レベル扱い。具体的な兄弟が無ければ属レベル札は
+ * そのまま残す（受け皿単独・全部属レベルのベゴニア等）。畳み込み判定は emit と同じ解決後 sci（`resolveVarietySci`）
+ * で行う（分類と emit の drift 防止）。
  */
 export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda[] {
   const { catalog, varietyIndex, pickableGenus, categoryLabels, genusSci } = index;
@@ -287,23 +292,31 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
       if (state === undefined) continue;
       if (state.varieties.size > 0) {
         // 品種があれば属単独は捨てる（畳む）。品種は catalog の並び順で安定化する。
-        // #506: emit 前に各品種の解決後 sci を求めて具体種（sci に空白あり＝species/cultivar）/
-        // 属レベル（sci に空白なし＝裸属名の受け皿品種）に分類し、具体種が1枚でもあれば同属の属レベル札は落とす。
-        // sci が null（学名を引けない品種）は分類対象外＝emit もしない（#459）。
-        const pending: { entry: { genus: string; varietyName: string; sci?: string }; tags: string[]; specific: boolean }[] = [];
-        let hasSpecific = false;
+        // #506: emit 前に各品種の解決後 sci から **学名の属トークン**（先頭語）を取り、具体種（species/cultivar）か
+        // 属レベル（裸属名の受け皿）かを分類する。畳み込みは catalog genus 単位でなく **属トークン単位** で判定する
+        // ＝1つの catalog genus は複数の植物学的属を束ねうる（寄せ集め属・pickable 属に別属の受け皿が同居）ので、
+        // 同じ属トークンに具体種がある時だけその属トークンの受け皿札を落とす（無関係な別属の具体種で受け皿を消さない）。
+        // `Genus sp.`（種未特定）は具体種でなく属レベル扱い（spec §学名データの丸め方針 rule 2）。sci が null
+        // （学名を引けない品種）は分類対象外＝emit もしない（#459）。
+        const pending: { entry: { genus: string; varietyName: string; sci?: string }; tags: string[]; genusToken: string; concrete: boolean }[] = [];
+        const specificTokens = new Set<string>(); // 具体種を持つ属トークン（＝この属トークンの受け皿札を畳む）。
         for (const v of genus.varieties) {
           const tags = state.varieties.get(v.name);
           if (tags === undefined) continue;
           const entry = { genus: genus.name, varietyName: v.name, sci: v.sci };
           const sci = resolveVarietySci(entry);
           if (sci === null) continue; // 学名を引けない品種は畳み込み判定にも emit にも載せない（#459）。
-          const specific = /\s/.test(sci); // 空白あり＝具体種/園芸品種、空白なし＝属レベル（裸属名）。
-          if (specific) hasSpecific = true;
-          pending.push({ entry, tags, specific });
+          const tokens = sci.trim().split(/\s+/);
+          const genusToken = tokens[0] ?? "";
+          // 具体種＝空白があり、属名の次のトークンが sp./spp. でない（実際の種小名 or 園芸品種 'Cultivar'）。
+          // `Genus sp.`（種未特定・例 Sansevieria sp.）は属レベル扱い＝非具体種（#506・丸め方針 rule 2）。
+          const concrete = tokens.length >= 2 && tokens[1] !== "sp." && tokens[1] !== "spp." && tokens[1] !== "sp";
+          if (concrete) specificTokens.add(genusToken);
+          pending.push({ entry, tags, genusToken, concrete });
         }
         for (const p of pending) {
-          if (hasSpecific && !p.specific) continue; // 属レベルの受け皿品種札を同属の具体種に畳む（#506）。
+          // 属レベルの受け皿品種札を **同じ属トークン** の具体種に畳む（#506）。別属トークンの具体種では畳まない。
+          if (!p.concrete && specificTokens.has(p.genusToken)) continue;
           emitVariety(p.entry, p.tags);
         }
       } else if (state.genusOnly) {
