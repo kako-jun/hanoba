@@ -310,7 +310,12 @@ export function resolveFuda(hashtags: readonly string[], index: FudaIndex): Fuda
           const genusToken = tokens[0] ?? "";
           // 具体種＝空白があり、属名の次のトークンが sp./spp. でない（実際の種小名 or 園芸品種 'Cultivar'）。
           // `Genus sp.`（種未特定・例 Sansevieria sp.）は属レベル扱い＝非具体種（#506・丸め方針 rule 2）。
-          const concrete = tokens.length >= 2 && tokens[1] !== "sp." && tokens[1] !== "spp." && tokens[1] !== "sp";
+          const concrete =
+            tokens.length >= 2 &&
+            tokens[1] !== "sp." &&
+            tokens[1] !== "spp." &&
+            tokens[1] !== "sp" &&
+            tokens[1] !== "spp";
           if (concrete) specificTokens.add(genusToken);
           pending.push({ entry, tags, genusToken, concrete });
         }
