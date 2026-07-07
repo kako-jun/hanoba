@@ -160,7 +160,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(vista).toHaveAttribute("src", "/hanoba-welcome-vista.webp");
     // 挿絵は全幅で大きく出さず中央寄せ＋最大幅を制限し、枠線/リングは付けない（#507）。
     expect(vista.className).toContain("mx-auto");
-    expect(vista.className).toContain("max-w-[280px]");
+    expect(vista.className).toContain("max-w-[170px]");
     expect(vista.className).not.toContain("border");
     expect(vista.className).not.toContain("ring");
     // 前は不可、次（ティザー）へは進める。
@@ -206,7 +206,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(mapImg).toHaveAttribute("src", "/hanoba-map.webp");
     // 地図の挿絵も全幅で出さず中央寄せ＋最大幅を制限し、枠線/リングは付けない（#507）。
     expect(mapImg.className).toContain("mx-auto");
-    expect(mapImg.className).toContain("max-w-[280px]");
+    expect(mapImg.className).toContain("max-w-[170px]");
     expect(mapImg.className).not.toContain("border");
     expect(mapImg.className).not.toContain("ring");
     // 機能導線（discover/ranking/me/compose）は手帳から外しヘッダ/フッタへ＝地図には出さない。
