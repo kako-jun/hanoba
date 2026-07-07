@@ -156,10 +156,13 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 実務注（site の一言説明）も出る。
     expect(screen.getByText(/植物専用の写真SNSです/)).toBeInTheDocument();
     // 挨拶の直後に街の俯瞰ビスタが挟まる（#504）。
-    expect(screen.getByRole("img", { name: "緑に包まれたハノーバ市の俯瞰" })).toHaveAttribute(
-      "src",
-      "/hanoba-welcome-vista.webp",
-    );
+    const vista = screen.getByRole("img", { name: "緑に包まれたハノーバ市の俯瞰" });
+    expect(vista).toHaveAttribute("src", "/hanoba-welcome-vista.webp");
+    // 挿絵は全幅で大きく出さず中央寄せ＋最大幅を制限し、枠線/リングは付けない（#507）。
+    expect(vista.className).toContain("mx-auto");
+    expect(vista.className).toContain("max-w-[280px]");
+    expect(vista.className).not.toContain("border");
+    expect(vista.className).not.toContain("ring");
     // 前は不可、次（ティザー）へは進める。
     expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
@@ -199,7 +202,13 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     // 名所（ランドマーク）が読み物として並ぶ。
     expect(screen.getByText("葉脈川")).toBeInTheDocument();
     // 地図ビジュアルは実画像が差し込み済み（#137/#504）＝仮置きフレームでなく img で出る。
-    expect(screen.getByRole("img", { name: "街の地図" })).toHaveAttribute("src", "/hanoba-map.webp");
+    const mapImg = screen.getByRole("img", { name: "街の地図" });
+    expect(mapImg).toHaveAttribute("src", "/hanoba-map.webp");
+    // 地図の挿絵も全幅で出さず中央寄せ＋最大幅を制限し、枠線/リングは付けない（#507）。
+    expect(mapImg.className).toContain("mx-auto");
+    expect(mapImg.className).toContain("max-w-[280px]");
+    expect(mapImg.className).not.toContain("border");
+    expect(mapImg.className).not.toContain("ring");
     // 機能導線（discover/ranking/me/compose）は手帳から外しヘッダ/フッタへ＝地図には出さない。
     expect(screen.queryByRole("link", { name: /人気ランキング/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /あなたの植物/ })).toBeNull();
