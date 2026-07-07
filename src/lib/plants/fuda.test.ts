@@ -23,6 +23,37 @@ const SYNTH: VarietyCategory[] = [
   },
 ];
 
+// #506 の畳み込み専用の合成カタログ。sci を catalog に直書きし、辞書・属フォールバックに一切依存させない
+// （実カタログの学名付与が進んでも陳腐化しない・#182）。同属に「具体種（解決後 sci に空白あり）」と
+// 「属レベルの受け皿品種（解決後 sci が裸属名＝空白なし）」を並べ、具体種があれば受け皿が落ち・
+// 受け皿単独なら残ることを辞書非依存で固定する。属名は架空にして dictionary 一致を避ける。
+const FOLD_SYNTH: VarietyCategory[] = [
+  {
+    label: "畳みテスト科",
+    genera: [
+      {
+        name: "フォルダ属",
+        pickable: true,
+        varieties: [
+          { name: "受け皿品種", sci: "Folda" }, // 空白なし＝属レベル（裸属名の受け皿）
+          { name: "具体品種", sci: "Folda specifica" }, // 空白あり＝具体種（species）
+        ],
+      },
+      {
+        // #506 Q1: `Genus sp.`（種未特定）が属レベル扱い（具体種と誤認しない）ことを決定的に固定する属。
+        // 同一 catalog genus 内へ 受け皿（裸属名）・`Xenia sp.`・具体種（species）を並べる。
+        name: "クセニア属",
+        pickable: true,
+        varieties: [
+          { name: "クセニア受け皿", sci: "Xenia" }, // 空白なし＝属レベル（裸属名の受け皿）
+          { name: "クセニア未特定", sci: "Xenia sp." }, // Genus sp.＝種未特定＝属レベル扱い（非具体種）
+          { name: "クセニア具体", sci: "Xenia realis" }, // 空白あり・sp. でない＝具体種（species）
+        ],
+      },
+    ],
+  },
+];
+
 describe("buildFuda", () => {
   it("属＋品種は品種1枚に畳む（属単独は出さない）＋ filterTags=[属,品種]（#272 逆算）", () => {
     const fuda = buildFuda(["パキポディウム", "グラキリス"], VARIETY_CATALOG);
@@ -314,6 +345,123 @@ describe("buildFuda", () => {
       key: "コシヒカリ",
       filterTags: ["イネ", "コシヒカリ"],
     });
+  });
+});
+
+// #506 属レベルの受け皿品種札の畳み込み。ある属で emit 対象の品種のうち具体種（解決後 sci に空白あり）が
+// 1枚でもあれば、同属の属レベル受け皿札（解決後 sci が裸属名＝空白なし）を落とす。具体種が0枚なら残す。
+// 実カタログの チランジア（エアプランツ=Tillandsia / イオナンタ=Tillandsia ionantha）・ベゴニア
+// （木立性/根茎性/球根性ベゴニア=Begonia / マクラータ=Begonia maculata）は品種に catalog.sci があり
+// 辞書非依存で決定的。1枚境界（具体種1枚で落ちる／0枚で残る）を両側とも持つ。
+describe("#506 属レベル受け皿札の畳み込み", () => {
+  it("畳み込み本命: 具体種が1枚あれば同属の属レベル受け皿札を落とす（エアプランツ＋イオナンタ＋チランジア）", () => {
+    // エアプランツ=Tillandsia（空白なし＝属レベル受け皿）は、同属の具体種 イオナンタ=Tillandsia ionantha
+    // が1枚あるので落ちる。残るのは具体種のイオナンタ札1枚のみ。key/filterTags も逆算どおり。
+    const fuda = buildFuda(["エアプランツ", "イオナンタ", "チランジア"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({
+      key: "イオナンタ",
+      sci: "Tillandsia ionantha",
+      filterTags: ["チランジア", "イオナンタ"],
+    });
+  });
+
+  it("受け皿単独は残す: 同属に具体種が無ければ属レベル受け皿札はそのまま（チランジア＋エアプランツ）＝回帰防止の要", () => {
+    // 具体種の兄弟がいない受け皿単独（エアプランツ=Tillandsia）は落とさない。1枚境界の残す側。
+    const fuda = buildFuda(["チランジア", "エアプランツ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({
+      key: "エアプランツ",
+      sci: "Tillandsia",
+      filterTags: ["チランジア", "エアプランツ"],
+    });
+  });
+
+  it("具体種0枚なら属レベルを全部残す: 木立性/根茎性/球根性ベゴニア（全て Begonia）→3枚とも残る・catalog 出現順", () => {
+    // 3枚とも解決後 sci が裸属名 Begonia（空白なし）＝具体種0枚。落とさず全部残す。1枚境界の逆側（0枚）。
+    const fuda = buildFuda(["ベゴニア", "木立性ベゴニア", "根茎性ベゴニア", "球根性ベゴニア"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(3);
+    expect(fuda.map((f) => f.key)).toEqual(["木立性ベゴニア", "根茎性ベゴニア", "球根性ベゴニア"]);
+    expect(fuda.map((f) => f.sci)).toEqual(["Begonia", "Begonia", "Begonia"]);
+  });
+
+  it("具体種＋園芸品種（両方 sci に空白あり・属レベル無し）は両方 emit する（イオナンタ＋コットンキャンディ）", () => {
+    // イオナンタ=Tillandsia ionantha（species）と コットンキャンディ=Tillandsia 'Cotton Candy'（cultivar）は
+    // 両方とも空白あり＝具体種。属レベル受け皿が無いので畳まず両方残す（catalog 出現順）。
+    const fuda = buildFuda(["チランジア", "イオナンタ", "コットンキャンディ"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.sci)).toEqual(["Tillandsia ionantha", "Tillandsia 'Cotton Candy'"]);
+  });
+
+  it("種＋属レベル混在なら属レベルだけ畳む: マクラータ残し 木立性/根茎性ベゴニアは落とす", () => {
+    // マクラータ=Begonia maculata（具体種）が1枚あるので、同属の属レベル受け皿（木立性/根茎性ベゴニア=Begonia）は
+    // まとめて落ちる。残るのは具体種のマクラータ1枚。
+    const fuda = buildFuda(["ベゴニア", "マクラータ", "木立性ベゴニア", "根茎性ベゴニア"], VARIETY_CATALOG);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ key: "マクラータ", sci: "Begonia maculata" });
+  });
+
+  it("畳んだ属レベル札は湧出しない: 落とした受け皿の key も sci も結果配列に一切現れない（dedupe/二重計上防止）", () => {
+    // 畳み込みは continue で emit をスキップするだけ＝別経路で復活してはいけない（ランキング二重計上の担保）。
+    const fuda = buildFuda(["エアプランツ", "イオナンタ", "チランジア"], VARIETY_CATALOG);
+    expect(fuda.some((f) => f.key === "エアプランツ")).toBe(false); // 受け皿の key は湧出しない
+    expect(fuda.some((f) => f.sci === "Tillandsia")).toBe(false); // 裸属名 sci も湧出しない（属単独札としても出ない）
+  });
+
+  it("合成カタログで決定的: 具体種があれば属レベル受け皿は落ちる（辞書非依存）", () => {
+    // FOLD_SYNTH: 具体品種=Folda specifica（空白あり）が居るので 受け皿品種=Folda（空白なし）は落ちる。
+    const fuda = buildFuda(["フォルダ属", "受け皿品種", "具体品種"], FOLD_SYNTH);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ key: "具体品種", sci: "Folda specifica" });
+  });
+
+  it("合成カタログで決定的: 受け皿単独なら残る（辞書非依存）", () => {
+    // FOLD_SYNTH: 具体種が来なければ 受け皿品種=Folda（裸属名・空白なし）はそのまま残る。
+    const fuda = buildFuda(["フォルダ属", "受け皿品種"], FOLD_SYNTH);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ key: "受け皿品種", sci: "Folda" });
+  });
+
+  it("S1a 別属の受け皿は畳まない（寄せ集め属・実カタログ）: 観葉植物＋ペペロミア＋ディフェンバキア→両方残す", () => {
+    // その他観葉（非 pickable 見出し属）は複数の植物学的属を束ねる寄せ集め属。ペペロミア=Peperomia（裸属名＝
+    // 属レベル受け皿）は、同じ catalog genus に別属の具体種 ディフェンバキア=Dieffenbachia seguine が居ても、
+    // **属トークンが別（Peperomia≠Dieffenbachia）なので畳まれない**。非 pickable なのでカテゴリ（観葉植物）共起で
+    // 品種札になり filterTags=[カテゴリ, 品種]（#448）。両方残るのが回帰防止の要（旧実装は Peperomia を消していた）。
+    const fuda = buildFuda(["観葉植物", "ペペロミア", "ディフェンバキア"], VARIETY_CATALOG);
+    // catalog 出現順は ディフェンバキア（idx0）→ ペペロミア（idx4）。
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.sci)).toEqual(["Dieffenbachia seguine", "Peperomia"]);
+    expect(fuda.some((f) => f.sci === "Peperomia")).toBe(true); // 別属の具体種で消えないこと
+    expect(fuda.find((f) => f.key === "ペペロミア")).toMatchObject({ filterTags: ["観葉植物", "ペペロミア"] });
+  });
+
+  it("S1b 別属の受け皿は畳まない（pickable 属に別属受け皿・実カタログ）: ペチュニア＋サフィニア＋カリブラコア→両方残す", () => {
+    // pickable 属 ペチュニア（Petunia）の varieties に別植物学属の受け皿 カリブラコア=Calibrachoa（裸属名）が同居する。
+    // 同じ catalog genus に具体種 サフィニア=Petunia 'Surfinia' が居ても、属トークンが別（Petunia≠Calibrachoa）なので
+    // カリブラコアは畳まれない。両方 pickable 属配下なので filterTags=[属, 品種]。旧実装は Calibrachoa を消していた。
+    const fuda = buildFuda(["ペチュニア", "サフィニア", "カリブラコア"], VARIETY_CATALOG);
+    // catalog 出現順は サフィニア（idx0）→ カリブラコア（idx6）。
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.sci)).toEqual(["Petunia 'Surfinia'", "Calibrachoa"]);
+    expect(fuda.some((f) => f.sci === "Calibrachoa")).toBe(true); // 別属の具体種で消えないこと
+    expect(fuda.find((f) => f.key === "カリブラコア")).toMatchObject({ filterTags: ["ペチュニア", "カリブラコア"] });
+  });
+
+  it("Q1a `Genus sp.` は属レベル扱い（合成）: 受け皿＋Xenia sp.＋具体種→具体種のみ（sp. も畳まれる）", () => {
+    // クセニア属: 受け皿=Xenia（裸属名）と クセニア未特定=Xenia sp.（種未特定＝属レベル）は、同じ属トークン Xenia の
+    // 具体種 クセニア具体=Xenia realis があるので両方畳まれる。残るのは具体種1枚。
+    const fuda = buildFuda(["クセニア属", "クセニア受け皿", "クセニア未特定", "クセニア具体"], FOLD_SYNTH);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ key: "クセニア具体", sci: "Xenia realis" });
+  });
+
+  it("Q1b `Genus sp.` は具体種と誤認しない（合成）: 受け皿＋Xenia sp. だけ（具体種なし）→両方残す", () => {
+    // クセニア未特定=Xenia sp. は空白を含むが `sp.` なので **具体種でない**。具体種が居ないので受け皿を畳まない
+    // ＝両方残る（旧 /\s/ 判定なら Xenia sp. を具体種と誤認して受け皿を消していた）。catalog 出現順。
+    const fuda = buildFuda(["クセニア属", "クセニア受け皿", "クセニア未特定"], FOLD_SYNTH);
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.key)).toEqual(["クセニア受け皿", "クセニア未特定"]);
+    expect(fuda.map((f) => f.sci)).toEqual(["Xenia", "Xenia sp."]);
   });
 });
 
