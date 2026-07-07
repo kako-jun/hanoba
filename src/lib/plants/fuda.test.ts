@@ -39,6 +39,17 @@ const FOLD_SYNTH: VarietyCategory[] = [
           { name: "具体品種", sci: "Folda specifica" }, // 空白あり＝具体種（species）
         ],
       },
+      {
+        // #506 Q1: `Genus sp.`（種未特定）が属レベル扱い（具体種と誤認しない）ことを決定的に固定する属。
+        // 同一 catalog genus 内へ 受け皿（裸属名）・`Xenia sp.`・具体種（species）を並べる。
+        name: "クセニア属",
+        pickable: true,
+        varieties: [
+          { name: "クセニア受け皿", sci: "Xenia" }, // 空白なし＝属レベル（裸属名の受け皿）
+          { name: "クセニア未特定", sci: "Xenia sp." }, // Genus sp.＝種未特定＝属レベル扱い（非具体種）
+          { name: "クセニア具体", sci: "Xenia realis" }, // 空白あり・sp. でない＝具体種（species）
+        ],
+      },
     ],
   },
 ];
@@ -409,6 +420,48 @@ describe("#506 属レベル受け皿札の畳み込み", () => {
     const fuda = buildFuda(["フォルダ属", "受け皿品種"], FOLD_SYNTH);
     expect(fuda).toHaveLength(1);
     expect(fuda[0]).toMatchObject({ key: "受け皿品種", sci: "Folda" });
+  });
+
+  it("S1a 別属の受け皿は畳まない（寄せ集め属・実カタログ）: 観葉植物＋ペペロミア＋ディフェンバキア→両方残す", () => {
+    // その他観葉（非 pickable 見出し属）は複数の植物学的属を束ねる寄せ集め属。ペペロミア=Peperomia（裸属名＝
+    // 属レベル受け皿）は、同じ catalog genus に別属の具体種 ディフェンバキア=Dieffenbachia seguine が居ても、
+    // **属トークンが別（Peperomia≠Dieffenbachia）なので畳まれない**。非 pickable なのでカテゴリ（観葉植物）共起で
+    // 品種札になり filterTags=[カテゴリ, 品種]（#448）。両方残るのが回帰防止の要（旧実装は Peperomia を消していた）。
+    const fuda = buildFuda(["観葉植物", "ペペロミア", "ディフェンバキア"], VARIETY_CATALOG);
+    // catalog 出現順は ディフェンバキア（idx0）→ ペペロミア（idx4）。
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.sci)).toEqual(["Dieffenbachia seguine", "Peperomia"]);
+    expect(fuda.some((f) => f.sci === "Peperomia")).toBe(true); // 別属の具体種で消えないこと
+    expect(fuda.find((f) => f.key === "ペペロミア")).toMatchObject({ filterTags: ["観葉植物", "ペペロミア"] });
+  });
+
+  it("S1b 別属の受け皿は畳まない（pickable 属に別属受け皿・実カタログ）: ペチュニア＋サフィニア＋カリブラコア→両方残す", () => {
+    // pickable 属 ペチュニア（Petunia）の varieties に別植物学属の受け皿 カリブラコア=Calibrachoa（裸属名）が同居する。
+    // 同じ catalog genus に具体種 サフィニア=Petunia 'Surfinia' が居ても、属トークンが別（Petunia≠Calibrachoa）なので
+    // カリブラコアは畳まれない。両方 pickable 属配下なので filterTags=[属, 品種]。旧実装は Calibrachoa を消していた。
+    const fuda = buildFuda(["ペチュニア", "サフィニア", "カリブラコア"], VARIETY_CATALOG);
+    // catalog 出現順は サフィニア（idx0）→ カリブラコア（idx6）。
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.sci)).toEqual(["Petunia 'Surfinia'", "Calibrachoa"]);
+    expect(fuda.some((f) => f.sci === "Calibrachoa")).toBe(true); // 別属の具体種で消えないこと
+    expect(fuda.find((f) => f.key === "カリブラコア")).toMatchObject({ filterTags: ["ペチュニア", "カリブラコア"] });
+  });
+
+  it("Q1a `Genus sp.` は属レベル扱い（合成）: 受け皿＋Xenia sp.＋具体種→具体種のみ（sp. も畳まれる）", () => {
+    // クセニア属: 受け皿=Xenia（裸属名）と クセニア未特定=Xenia sp.（種未特定＝属レベル）は、同じ属トークン Xenia の
+    // 具体種 クセニア具体=Xenia realis があるので両方畳まれる。残るのは具体種1枚。
+    const fuda = buildFuda(["クセニア属", "クセニア受け皿", "クセニア未特定", "クセニア具体"], FOLD_SYNTH);
+    expect(fuda).toHaveLength(1);
+    expect(fuda[0]).toMatchObject({ key: "クセニア具体", sci: "Xenia realis" });
+  });
+
+  it("Q1b `Genus sp.` は具体種と誤認しない（合成）: 受け皿＋Xenia sp. だけ（具体種なし）→両方残す", () => {
+    // クセニア未特定=Xenia sp. は空白を含むが `sp.` なので **具体種でない**。具体種が居ないので受け皿を畳まない
+    // ＝両方残る（旧 /\s/ 判定なら Xenia sp. を具体種と誤認して受け皿を消していた）。catalog 出現順。
+    const fuda = buildFuda(["クセニア属", "クセニア受け皿", "クセニア未特定"], FOLD_SYNTH);
+    expect(fuda).toHaveLength(2);
+    expect(fuda.map((f) => f.key)).toEqual(["クセニア受け皿", "クセニア未特定"]);
+    expect(fuda.map((f) => f.sci)).toEqual(["Xenia", "Xenia sp."]);
   });
 });
 
