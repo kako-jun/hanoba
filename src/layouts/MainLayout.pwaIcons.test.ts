@@ -85,7 +85,8 @@ describe("PWA アイコン版数の 3ソース整合（#511 ドリフト検出�
     const currentVersion = current[0];
 
     // 昇版例コメント（「-vN → -vM」）は将来版を意図的に含むので走査対象から除く。
-    const stripUpgradeExamples = (s: string) => s.replace(/-v\d+\s*→\s*-v\d+/g, "");
+    // 「→」で 2 つ以上連なる版数チェーン（-v3 → -v4 → -v5）を丸ごと除く＝末尾版数の取りこぼしを防ぐ。
+    const stripUpgradeExamples = (s: string) => s.replace(/-v\d+(?:\s*→\s*-v\d+)+/g, "");
 
     const sources: readonly [label: string, src: string][] = [
       ["astro.config.mjs", configSrc],
