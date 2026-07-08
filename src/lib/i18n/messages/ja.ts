@@ -496,9 +496,6 @@ export const ja = {
   "cityHall.ordinance.4.article": "第五条（写真）",
   "cityHall.ordinance.4.text": "当市に掲げる写真は、植物のものに限る。",
   "cityHall.ordinance.4.commentary": "人もペットも、それぞれの街で輝けばよい。ここは植物の市だ。",
-  // ロック頁のティザー（図鑑式・？？？）。
-  "cityHall.locked.title": "？？？",
-  "cityHall.locked.note": "このページは、もう少し市に馴染んでから。",
   // レベル昇格時に小さく添える市長のひとこと（味付け）。
   "cityHall.flavor.citizen": "移住、確かに受理した。ようこそ、市民諸君。",
   "cityHall.flavor.tenured": "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",

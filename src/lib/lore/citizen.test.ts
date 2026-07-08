@@ -6,7 +6,6 @@ import {
   citizenLevelFull,
   citizenLevelLabel,
   defaultPage,
-  maxUnlockedPage,
   TENURE_DAYS,
   TENURE_POSTS,
 } from "./citizen.ts";
@@ -153,17 +152,10 @@ describe("citizenLevelFull（市民Ln 非キャップ・#272 段階2・複合 �
   });
 });
 
-describe("maxUnlockedPage（図鑑式・1 レベル=1 ページ・#469）", () => {
-  it("L0 → 1 / L1 → 2（地図） / L2 → 3（沿革） / L3 → 4（条文）", () => {
-    expect(maxUnlockedPage(0)).toBe(1);
-    expect(maxUnlockedPage(1)).toBe(2);
-    expect(maxUnlockedPage(2)).toBe(3);
-    expect(maxUnlockedPage(3)).toBe(4);
-  });
-});
-
-describe("defaultPage", () => {
-  it("L0 → 1 / それ以外 → 2（地図＝早期のご褒美ページを最初に見せる・奥は前送り・#469）", () => {
+// #510 方針B: レベル解禁ゲート（maxUnlockedPage）は撤去した。全ページ最初から閲覧可能で、
+// defaultPage は初期表示ページ（ページ解禁とは無関係）だけを決める。
+describe("defaultPage（初期表示ページ・ページ解禁とは無関係・#510 方針B）", () => {
+  it("L0 → 1 / それ以外 → 2（地図＝ご褒美ページを最初に見せる・奥は前送り・#469）", () => {
     const cases: Array<[CitizenLevel, number]> = [
       [0, 1],
       [1, 2],
@@ -172,13 +164,6 @@ describe("defaultPage", () => {
     ];
     for (const [level, expected] of cases) {
       expect(defaultPage(level)).toBe(expected);
-    }
-  });
-
-  it("既定ページは常に maxUnlockedPage 以下（解放済みページを指す）", () => {
-    const levels: CitizenLevel[] = [0, 1, 2, 3];
-    for (const level of levels) {
-      expect(defaultPage(level)).toBeLessThanOrEqual(maxUnlockedPage(level));
     }
   });
 });

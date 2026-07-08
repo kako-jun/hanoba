@@ -57,7 +57,6 @@ export type BookPage =
       /** 地図イラストの画像パス（#137 で gpt-image-2 生成 webp を入れる）。未生成は null＝仮置きフレーム。 */
       image: string | null;
       landmarks: Landmark[];
-      civic: HubLink[];
       note: string;
     }
   | { page: 3; kind: "chronicle"; title: string; lead: string; entries: ChronicleEntry[]; note: string }
@@ -96,13 +95,27 @@ function page1(locale: Locale): BookPage {
 }
 
 /**
- * P2 街の地図（図鑑の早期ご褒美ページ・#469）。ロア（名所＝ランドマーク）を読み物として見せ、
- * 末尾に「市政の窓口」strip（civic）を添える。機能導線の本体（discover/ranking/me/compose）は
+ * 市政の窓口（civic strip）。**全ページ共通で手帳ページの下に常設する窓口**（#510 方針B）。
+ * かつては街の地図 P2 末尾にだけ添えていたが、レベル解禁ゲートの撤去に合わせて全ページ共通の
+ * 導線として切り出した（「解禁＝窓口」の偶然の結び付きを断つ）。機能導線の本体（discover/ranking/me/compose）は
  * ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここには手帳が唯一の入口だった
- * 住民投票（/vote）と、近日開庁の品評会・市長ブログだけを残す。実在ルートのみ機能、未開設は「近日開庁」。
+ * 住民投票（/vote）と、近日開庁の品評会・市長ブログだけを並べる。実在ルートのみ機能、未開設は「近日開庁」。
+ */
+export function civicHub(locale: Locale = DEFAULT_LOCALE): HubLink[] {
+  const comingSoon = t(locale, "cityHall.map.comingSoon");
+  return [
+    { label: t(locale, "cityHall.map.civic.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
+    { label: t(locale, "cityHall.map.civic.1.label"), route: null, comingSoon }, // 品評会（#161 未実装）。
+    { label: t(locale, "cityHall.map.civic.2.label"), route: null, comingSoon }, // 市長ブログ（#164 未実装）。
+  ];
+}
+
+/**
+ * P2 街の地図（図鑑の読み物ページ・#469）。ロア（名所＝ランドマーク）を読み物として見せる。
+ * 機能導線の本体（discover/ranking/me/compose）はヘッダ/フッタ（SiteHeader/SiteFooter）が持つので
+ * 手帳からは外す。「市政の窓口」strip は全ページ共通の常設導線（civicHub）へ移した（#510 方針B）。
  */
 function page2(locale: Locale): BookPage {
-  const comingSoon = t(locale, "cityHall.map.comingSoon");
   return {
     page: 2,
     kind: "map",
@@ -114,12 +127,6 @@ function page2(locale: Locale): BookPage {
       { name: t(locale, "cityHall.map.landmark.0.name"), text: t(locale, "cityHall.map.landmark.0.text") },
       { name: t(locale, "cityHall.map.landmark.1.name"), text: t(locale, "cityHall.map.landmark.1.text") },
       { name: t(locale, "cityHall.map.landmark.2.name"), text: t(locale, "cityHall.map.landmark.2.text") },
-    ],
-    // 市政の窓口（civic strip）。住民投票はヘッダ/フッタに無く手帳が唯一の入口なので退避必須（#469）。
-    civic: [
-      { label: t(locale, "cityHall.map.civic.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
-      { label: t(locale, "cityHall.map.civic.1.label"), route: null, comingSoon }, // 品評会（#161 未実装）。
-      { label: t(locale, "cityHall.map.civic.2.label"), route: null, comingSoon }, // 市長ブログ（#164 未実装）。
     ],
     note: t(locale, "cityHall.map.note"),
   };
@@ -184,14 +191,6 @@ export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
   return [page1(locale), page2(locale), page3(locale), page4(locale)];
 }
 
-/** ロックされたページのティザー（図鑑式・？？？）を locale で引く。 */
-export function lockedTeaser(locale: Locale = DEFAULT_LOCALE): { title: string; note: string } {
-  return {
-    title: t(locale, "cityHall.locked.title"),
-    note: t(locale, "cityHall.locked.note"),
-  };
-}
-
 /** レベル昇格時に小さく添える市長のひとこと（味付け）を locale で引く。 */
 export function levelFlavor(locale: Locale = DEFAULT_LOCALE): { citizen: string; tenured: string } {
   return {
@@ -216,24 +215,5 @@ export const MAYOR_SHORT_NAME = mayorShortName(DEFAULT_LOCALE);
 /** 全ページ（1〜4・順序固定・ja 既定）。 */
 export const BOOK_PAGES: BookPage[] = buildCityHallBook(DEFAULT_LOCALE);
 
-/** ロックされたページのティザー（ja 既定）。 */
-export const LOCKED_TEASER = lockedTeaser(DEFAULT_LOCALE);
-
 /** レベル昇格時の市長のひとこと（ja 既定）。 */
 export const LEVEL_FLAVOR = levelFlavor(DEFAULT_LOCALE);
-
-/**
- * ロック頁の背後に敷く「読めない頁」のフェイク本文（#219 ③）。
- * 「？？？」の下に、blur で潰した崩し字を流して「頁はあるが今は読めない」図鑑的示唆を出す。
- * 純粋な装飾（描画側で aria-hidden / select-none）＝意味は持たせない。日本語の伝統的な
- * 流し書き素材＝いろは歌（全仮名を一度ずつ）を行ごとに長さを変えて流用し、本文の段落らしく見せる
- * （最終行は短め）。ぼかすので語としては読めず、支援技術・コピーからは隠れる。
- */
-export const LOCKED_PAGE_VEIL: readonly string[] = [
-  "いろはにほへとちりぬるをわかよたれそ",
-  "つねならむうゐのおくやまけふこえて",
-  "あさきゆめみしゑひもせすいろはにほへと",
-  "ちりぬるをわかよたれそつねならむうゐの",
-  "おくやまけふこえてあさきゆめみし",
-  "ゑひもせす",
-];

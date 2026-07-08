@@ -10,32 +10,26 @@ import {
   citizenLevel,
   citizenLevelFull,
   defaultPage,
-  maxUnlockedPage,
 } from "../../lib/lore/citizen.ts";
 import {
   type BookPage,
   buildCityHallBook,
+  civicHub,
   type HubLink,
   levelFlavor,
-  LOCKED_PAGE_VEIL,
-  lockedTeaser,
   mayorShortName,
 } from "../../lib/lore/cityHall.ts";
 import { useT, useLocale, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import { BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC } from "../../lib/lore/cityHallAssets.ts";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
-// = 図鑑（集めて埋める読み物・1 レベル=1 ページ解放・#469）。機能導線（discover/ranking/me/compose）は
-//   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアと早期ご褒美（街の地図）に割り切る。
+// = 図鑑（集めて埋める読み物・#469）。機能導線（discover/ranking/me/compose）は
+//   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアに割り切る。
 //
-// 市民レベル（Nostr 由来＝backendless）でページが 1 枚ずつ解放される（#469）。
-// - L0 旅人: 名前未登録 → 1p 移住案内のみ。
-// - L1 市民: 名前登録済み → 2p 街の地図まで（既定で 2p を開く＝ご褒美ページを先に見せる）。
-// - L2:      名前＋投稿数 >= 5 ＋ 在籍 >= 14 日 → 3p 沿革まで。
-// - L3:      名前＋投稿数 >= 15 ＋ 在籍 >= 30 日 → 4p 市の条文まで。
-//
-// 前方ロック／後方オープン: 解放済みページ（<= maxUnlocked）には自由に行き来でき、
-// その先は「？？？」ティザー（枠は見えるが開けない・図鑑式）で進む動機にする。
+// #510 方針B: レベル解禁ゲートを撤去し、全 4 ページを最初から閲覧可能にした。市民レベル（Nostr 由来
+// ＝backendless）はページの閲覧可否を司らず、タイトルの進捗バッジ（Ln）としてだけ残る。
+// 既定表示ページは defaultPage(level)（L0→1p 移住案内 / それ以外→2p 街の地図＝ご褒美ページを先に見せる）だけを決める。
+// 「市政の窓口」（civicHub）は全ページ共通で手帳ページの下に常設する（解禁との偶然の結び付きを断つ）。
 //
 // client:load。鍵・relay 取得はクライアントのみ（getDisplayName / getPublicKeyHex / fetchMyPosts）。
 // SSR では window/localStorage を触らない（keys.ts が SSR 安全・取得は useEffect 内）。
@@ -49,7 +43,7 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 
 /**
  * 名前・投稿から市民レベルを判定する（クライアント専用）。
- * - `level`     ページ解放用のキャップ済みレベル（0|1|2|3・maxUnlocked 等に使う）。
+ * - `level`     味付け・既定ページ判定用の capped レベル（0|1|2|3・levelFlavor / defaultPage に使う。ページ閲覧可否は司らない＝全ページ開放・#510 方針B）。
  * - `levelFull` タイトル表記用の真レベル（非キャップ・L1〜L6＝CitizenStats と同じ・#469 変更A）。
  * 名前が無ければ即 L0。名前があれば投稿を引いて判定。
  * 投稿取得が失敗しても名前があれば L1（名乗った市民を締め出さない・resilient）。
@@ -91,9 +85,9 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   const bookTitleText = t("cityHall.book.title");
   const flavorMap = levelFlavor(loc);
 
-  // 判定中は安全側＝L0（1p のみ）で始め、ロック状態を実市民に見せない。
-  // 名乗り済みなら下の useIsoLayoutEffect がペイント前に L1/2p へ寄せる（フラッシュ防止）。
-  // level=ページ解放用（capped）／levelFull=タイトル表記用の真レベル（非キャップ・#469 変更A）。
+  // 判定中は安全側＝L0（既定 1p 移住案内）で始める。名乗り済みなら下の useIsoLayoutEffect が
+  // ペイント前に 2p へ寄せる（既定表示ページのフラッシュ防止）。全ページは最初から閲覧可能（#510 方針B）。
+  // level=味付け／既定ページ判定用（capped）／levelFull=タイトルの進捗バッジ用の真レベル（非キャップ・#469 変更A）。
   const [level, setLevel] = useState<CitizenLevel>(0);
   const [levelFull, setLevelFull] = useState(0);
   const [resolved, setResolved] = useState(false);
@@ -107,9 +101,8 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 名乗り済みユーザーの「一瞬1ページ目→2ページ目」フラッシュを消す。
   // deriveLevel はネットワーク（fetchMyPosts）を待つので、それで page を寄せると 1p が一瞬見える。
   // getDisplayName は同期（localStorage）で読めるので、ペイント前（layout）に初期ページと
-  // 最低レベルを確定する。名乗り済みは deriveLevel が必ず L1 以上を返す（取得失敗でも L1）ため、
-  // 暫定 L1（maxUnlocked=2）にしておけば 2p が即解放され ??? ティザーのちらつきも出ない。
-  // 正確な L1/L2 は下の deriveLevel が後から確定して解放範囲を更新する。
+  // 最低レベルを確定する。名乗り済みは既定表示ページ 2p（街の地図）から始める。
+  // 正確な L1/L2 は下の deriveLevel が後から確定してタイトルの進捗バッジを更新する。
   useIsoLayoutEffect(() => {
     // 表示言語はクライアント解決（localStorage）。ペイント前（layout）に確定して
     // 「一瞬 en → ja」の言語フラッシュを消す（useEffect だと描画後に走り en が一瞬見える）。
@@ -127,7 +120,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
       const { level: lv, levelFull: lvFull } = await deriveLevel();
       if (!aliveRef.current) return;
       // 初期 page・最低レベルは useIsoLayoutEffect が同期確定済み。ここでは正確なレベルを
-      // 確定して maxUnlocked（解放範囲・capped）とタイトル表記（levelFull・真レベル）を更新するだけ＝
+      // 確定して味付け分岐用の level とタイトルの進捗バッジ（levelFull・真レベル）を更新するだけ＝
       // page は触らない（ユーザー操作を奪わない）。
       setLevel(lv);
       setLevelFull(lvFull);
@@ -138,10 +131,9 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     };
   }, []);
 
-  const maxUnlocked = maxUnlockedPage(level);
   // 手帳タイトルは進捗を一目で示すレベル番号表記（#469 変更A・kako-jun 確定）。
   // L0（旅人・未名乗り）はレベル番号を出さず素のタイトル＋副題「旅人」、L1+ は「… L{n}」で副題なし。
-  // n は真レベル（levelFull・非キャップ）＝CitizenStats と同じ表記（ページ解放は capped の level）。
+  // n は真レベル（levelFull・非キャップ）＝CitizenStats と同じ表記（ページの閲覧可否とは無関係の進捗バッジ）。
   // レベル番号は deriveLevel が真レベルを確定してから（resolved）だけ出す。名乗り済みは
   // useIsoLayoutEffect が暫定 levelFull=1 を置くが、それを番号として見せると実 L2 の人が
   // 「一瞬 L1 → L2」のフラッシュを踏む（#479-B）。番号は resolved まで伏せ、確定後に付くだけにする。
@@ -149,11 +141,10 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   const showLevel = resolved && levelFull > 0;
   const subtitleText = levelFull === 0 ? t("citizen.level.traveler") : null;
   const current = bookPages.find((p) => p.page === page) ?? bookPages[0]!;
-  const isLockedView = page > maxUnlocked;
 
   const canPrev = page > 1;
-  // 前方は maxUnlocked の「次の 1 枚」（ティザー）まで進める。その先は無い。
-  const canNext = page < Math.min(maxUnlocked + 1, TOTAL_PAGES);
+  // 全ページ最初から閲覧可能（#510 方針B）＝最終ページまで前送りできる。ロック上限は無い。
+  const canNext = page < TOTAL_PAGES;
 
   function goPrev() {
     if (canPrev) setPage((p) => p - 1);
@@ -202,8 +193,8 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }
 
   // ←/→ で本をめくる（本のメタファー・PostDetail のカルーセル操作に倣う）。
-  // ← = 前（後方オープン・1p 未満には行かない）／→ = 次（前方ロックを尊重し、
-  // ティザー上限より先へは進めない）。入力欄にフォーカスがあるときは横取りしない。
+  // ← = 前（1p 未満には行かない）／→ = 次（最終ページより先へは進めない）。全ページ閲覧可（#510 方針B）。
+  // 入力欄にフォーカスがあるときは横取りしない。
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       // フォーム入力中・編集可能要素の上では矢印を奪わない（テキスト移動を妨げない）。
@@ -230,7 +221,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // - 市民歓迎: L1 が 2p（街の地図）を開いたときだけ。古参（L2 以上）には再掲しない
   //   （長く居る市民に毎回「移住を受理した」と告げない）。
   // - 古参歓迎: L2 以上が初めて奥（3p 沿革・古参の最初のページ）に達したときだけ。2p では出さない。
-  //   #469 で L3 まで解放が伸びても、奥に達した古参へ古参歓迎を出す挙動は保つ（level >= 2）。
+  //   全ページ閲覧可（#510）でも、奥に達した古参へ古参歓迎を出す挙動は level（capped）で保つ（level >= 2）。
   const flavor =
     resolved && level === 1 && page === 2
       ? flavorMap.citizen
@@ -292,11 +283,7 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
             transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
           }}
         >
-          {isLockedView ? (
-            <LockedTeaser />
-          ) : (
-            <PageContent page={current} />
-          )}
+          <PageContent page={current} />
         </div>
 
         {flavor !== null && (
@@ -305,7 +292,12 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
           </p>
         )}
 
-        {/* めくり操作＋ページ表示。前=戻る（後方オープン）／次=進む（前方ロック）。 */}
+        {/* 市政の窓口（civic strip）は全ページ共通で手帳ページの下に常設する（#510 方針B）。
+            key={page} のぼかし容器の外に置くので、ページをめくっても常に同じ窓口が下に残る
+            （かつては街の地図 P2 末尾にだけ在り「解禁＝窓口」の偶然の結び付きがあった・#510 で解消）。 */}
+        <CivicWindows />
+
+        {/* めくり操作＋ページ表示。前=戻る／次=進む（全ページ閲覧可・#510 方針B）。 */}
         <nav className="flex items-center justify-between gap-3 pt-1" aria-label={t("cityHall.nav.aria")}>
           <button
             type="button"
@@ -340,49 +332,27 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
 }
 
 /**
- * ロックされたページのティザー（？？？・開けない枠）。
- * 「？？？」＋ひとことは残しつつ、背後に「読めない頁」＝ぼかした崩し字を敷き、
- * 「頁はあるが今は読めない」図鑑的な示唆を出す（#219 ③）。
- * blur は静的（アニメ無し）なので reduced-motion 懸念なし。暗地に沈めた低グレア（§5）。
+ * 市政の窓口（civic strip）。**全ページ共通で手帳ページの下に常設する**導線（#510 方針B）。
+ * 住民投票（/vote・#160 開庁）はヘッダ/フッタに無く手帳が唯一の入口なので健在。品評会（#161）・
+ * 市長ブログ（#164）は近日開庁のまま並ぶ。地図本体との間は「にじみ」（.ha-bleed）の柔らかい境界で
+ * 区切る（#263 踏襲）。開庁＝リンク／近日開庁＝非リンク（HubLinkItem が出し分ける）。
  */
-function LockedTeaser() {
+function CivicWindows() {
   const locale = useLocale();
-  const teaser = lockedTeaser(locale);
+  const t = useT(locale);
+  const links = civicHub(locale);
   return (
-    <div
-      className="relative isolate flex min-h-[360px] flex-col items-center justify-center gap-3 overflow-hidden py-10 text-center select-none"
-      aria-disabled="true"
-    >
-      {/* 読めない頁＝ぼかした崩し字（純粋な装飾）。仮名を流し blur で潰して不可読にする。
-          支援技術・コピーからは隠す（aria-hidden / select-none / pointer-events-none）。 */}
-      <div
-        data-testid="lore-veil"
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 flex flex-col justify-center gap-3 px-7 [filter:blur(5px)]"
-      >
-        {LOCKED_PAGE_VEIL.map((line, i) => (
-          <span
-            key={i}
-            className="block text-base leading-relaxed tracking-[0.2em] text-ha-ink/15 [word-break:break-all]"
-          >
-            {line}
-          </span>
+    <section className="flex flex-col gap-2">
+      <div className="ha-bleed" aria-hidden="true" />
+      <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
+        {t("cityHall.map.civic.heading")}
+      </h3>
+      <ul className="flex flex-col gap-2">
+        {links.map((link) => (
+          <HubLinkItem key={link.label} link={link} />
         ))}
-      </div>
-      {/* 中央を少し沈める scrim＝ぼかし頁の上で「？？？」を読みやすく（低グレア・地と同色 #13161e）。 */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(60% 55% at 50% 45%, rgba(19,22,30,0.72) 0%, rgba(19,22,30,0) 78%)",
-        }}
-      />
-      <p className="font-display text-4xl font-extrabold tracking-widest text-ha-ink/30">
-        {teaser.title}
-      </p>
-      <p className="text-sm text-ha-ink/50 [word-break:auto-phrase]">{teaser.note}</p>
-    </div>
+      </ul>
+    </section>
   );
 }
 
@@ -503,21 +473,9 @@ function PageContent({ page }: { page: BookPage }) {
               </li>
             ))}
           </ul>
-          {/* 地図はまだ描きかけ、の注記（小さく添える）。 */}
+          {/* 地図はまだ描きかけ、の注記（小さく添える）。市政の窓口（civic strip）は
+              全ページ共通の常設導線 CivicWindows へ移した（本体パネル側で描く・#510 方針B）。 */}
           <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>
-          {/* 市政の窓口（civic strip）。地図本体との間は「にじみ」（.ha-bleed）の柔らかい境界で区切る（#263 踏襲）。
-              開庁＝リンク／近日開庁＝非リンク（HubLinkItem が出し分ける）。 */}
-          <section className="flex flex-col gap-2">
-            <div className="ha-bleed" aria-hidden="true" />
-            <h3 className="px-1 text-sm font-semibold tracking-wide text-ha-green-deep/75">
-              {t("cityHall.map.civic.heading")}
-            </h3>
-            <ul className="flex flex-col gap-2">
-              {page.civic.map((link) => (
-                <HubLinkItem key={link.label} link={link} />
-              ))}
-            </ul>
-          </section>
         </article>
       );
 
