@@ -48,7 +48,7 @@ export default defineConfig({
         lang: "ja",
         categories: ["lifestyle", "photo"],
         // 192/512 の PNG（purpose=any）2つだけに絞る。PNG は scripts/generate-icons.mjs が
-        // public の SVG から生成する（生成物の SVG / maskable はディスクに残す＝掃除は別タスク）。
+        // public/icon.svg から生成する（maskable/SVG の生成物はディスクからも撤去済み #515）。
         // 以前は先頭に SVG（sizes=any）と maskable PNG 2つを足していたが、これが Android スプラッシュで
         // アイコンを板／マスク付きに描かせ、極薄い四角い枠を生んだ。SVG/maskable を持たず
         // purpose:"any" の PNG 2つだけにすると板／マスクが描かれず枠が出ないので、その構成に絞って枠を消す（#513）。
