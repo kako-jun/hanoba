@@ -98,6 +98,62 @@ describe("PostGrid × deep-link `?p=<nevent>`（#386）", () => {
     expect(window.location.search).toBe("");
   });
 
+  it("(21b) カードで2枚目を表示して写真を開くと、PostDetail も2枚目から始まる（#522）", async () => {
+    const user = userEvent.setup();
+    const id = hexId("aa");
+    render(
+      <PostGrid
+        posts={[
+          makePost({
+            id,
+            caption: "連携",
+            imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+            imageUrl: "https://image.nostr.build/one.jpg",
+          }),
+        ]}
+        onSelectHashtag={() => {}}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "次の写真" }));
+    await user.click(screen.getByRole("button", { name: "連携" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
+    expect(within(dialog).getByRole("img", { name: "連携 2枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/two.jpg",
+    );
+    expect(within(dialog).getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("(21c) カードで2枚目を表示して本文側から開いても、PostDetail は2枚目から始まる（#522）", async () => {
+    const user = userEvent.setup();
+    const id = hexId("ac");
+    render(
+      <PostGrid
+        posts={[
+          makePost({
+            id,
+            caption: "本文から開く",
+            imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+            imageUrl: "https://image.nostr.build/one.jpg",
+          }),
+        ]}
+        onSelectHashtag={() => {}}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "次の写真" }));
+    await user.click(screen.getByText("本文から開く"));
+
+    const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
+    expect(within(dialog).getByRole("img", { name: "本文から開く 2枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/two.jpg",
+    );
+    expect(within(dialog).getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
+  });
+
   // ---- closePost（DT-2） ----
 
   it("(22) openPost で開いた後に閉じる→history.back が呼ばれ replaceState は呼ばれない", async () => {
@@ -168,6 +224,32 @@ describe("PostGrid × deep-link `?p=<nevent>`（#386）", () => {
     const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
     // caption はカード・モーダル両方に出るので dialog 内に限定して確認する。
     expect(within(dialog).getByText("母集団内")).toBeInTheDocument();
+    expect(fetchPostById).not.toHaveBeenCalled();
+  });
+
+  it("(25b) `?p=` deep-link 着地はカード状態を持たないため1枚目から始まる（#522）", async () => {
+    const id = hexId("e6");
+    window.history.replaceState(null, "", `/?p=${neventOf(id)}`);
+    render(
+      <PostGrid
+        posts={[
+          makePost({
+            id,
+            caption: "着地写真",
+            imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+            imageUrl: "https://image.nostr.build/one.jpg",
+          }),
+        ]}
+        onSelectHashtag={() => {}}
+      />,
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
+    expect(within(dialog).getByRole("img", { name: "着地写真 1枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/one.jpg",
+    );
+    expect(within(dialog).getByRole("button", { name: "1枚目を表示" })).toHaveAttribute("aria-current", "true");
     expect(fetchPostById).not.toHaveBeenCalled();
   });
 

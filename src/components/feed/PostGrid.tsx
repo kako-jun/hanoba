@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { diluteFeed } from "../../lib/feed/dilution.ts";
 import { fetchEngagementCountsBatch } from "../../lib/nostr/client.ts";
@@ -32,6 +32,8 @@ interface Props {
  */
 export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedInitialPhotoIndex, setSelectedInitialPhotoIndex] = useState(0);
+  const openingFromCardRef = useRef(false);
 
   // 投稿頻度の高い人を「薄める」設定（#138）。取得済みリスト → 表示の間に間引き段を挟む。
   // 人ごとの level（1/2・1/5・1/10）で id ハッシュにより決定的に間引く＝リロードしても残る投稿は同じ。
@@ -42,7 +44,14 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   // 共有・ブックマーク・リロードで開き直せる deep-link `?p=<nevent>`（#386）。URL ↔ 選択状態の同期を
   // フックに隔離する（PostGrid を太らせない）。selectedPost は**間引き前の posts** から id 引き
   // （薄めた人でもモーダルを開ける）、フィード外の `?p=` 着地は内部で fetch した externalPost を返す。
-  const { selectedPost, openPost, closePost } = usePostDeepLink({ posts, selectedId, setSelectedId });
+  const { selectedPost, openPost, closePost } = usePostDeepLink({
+    posts,
+    selectedId,
+    setSelectedId: (id) => {
+      if (!openingFromCardRef.current) setSelectedInitialPhotoIndex(0);
+      setSelectedId(id);
+    },
+  });
 
   // 札解決の索引（#239/#257）。品種カタログを1回だけ動的 import し、catalog 全走査（~2,000品種＋別名）を
   // グリッド単位で**1回だけ**行って各 PostCard へ配る（カードごとに作り直さない）。フックに隔離（VarietyFilter
@@ -93,6 +102,18 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     onSelectHashtag(tag);
   }
 
+  function openCardPost(post: FeedPost, photoIndex = 0) {
+    openingFromCardRef.current = true;
+    setSelectedInitialPhotoIndex(photoIndex);
+    openPost(post);
+    openingFromCardRef.current = false;
+  }
+
+  function closeSelectedPost(opts?: { viaHistory?: boolean }) {
+    setSelectedInitialPhotoIndex(0);
+    closePost(opts);
+  }
+
   return (
     <>
       <ul className="flex flex-col gap-4">
@@ -102,7 +123,7 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             post={post}
             index={i}
             now={now}
-            onOpen={() => openPost(post)}
+            onOpen={(photoIndex) => openCardPost(post, photoIndex)}
             onSelectHashtag={selectHashtag}
             profile={profiles.get(post.pubkey) ?? null}
             fudaIndex={fudaIndex}
@@ -116,8 +137,9 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
         <PostDetail
           post={selectedPost}
           profile={profiles.get(selectedPost.pubkey) ?? null}
-          onClose={closePost}
+          onClose={closeSelectedPost}
           onSelectHashtag={selectHashtag}
+          initialPhotoIndex={selectedInitialPhotoIndex}
           // フィード/discover は他人を薄める導線を出す（#138）。/me（MyGrid）は出さない＝自分を薄めない。
           showDilution
         />

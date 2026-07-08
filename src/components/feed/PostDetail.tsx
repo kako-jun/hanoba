@@ -40,6 +40,13 @@ interface Props {
    * フィード/discover（他人を薄める）では true、/me（自分の投稿）では false＝自分は薄めない。
    */
   showDilution?: boolean;
+  /** カードで見ていた写真から開く時の初期 index。未指定なら従来どおり1枚目。 */
+  initialPhotoIndex?: number;
+}
+
+function clampPhotoIndex(i: number | undefined, len: number): number {
+  if (len <= 0 || i === undefined || !Number.isFinite(i)) return 0;
+  return Math.max(0, Math.min(Math.trunc(i), len - 1));
 }
 
 /**
@@ -54,7 +61,7 @@ interface Props {
  *
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
  */
-export default function PostDetail({ post, profile, onClose, onSelectHashtag, showDilution = false }: Props) {
+export default function PostDetail({ post, profile, onClose, onSelectHashtag, showDilution = false, initialPhotoIndex }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
@@ -65,7 +72,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
-  const [photoIndex, setPhotoIndex] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(() => clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
   const locale = useLocale();
   const t = useT(locale);
   // 現在表示中の写真の撮影日（#324・写真↔日付の対応を保つ）。無ければ出さない。
@@ -79,6 +86,13 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // （短い写真でも最終的にぴたり収まる）。ラッパは img を密に包む内側 div（ぼかしラッパ）を測る。
   const photoWrapRef = useRef<HTMLDivElement>(null);
   const [reservedH, setReservedH] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    setPhotoIndex(clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
+    setSwipeBlur(0);
+    setReservedH(undefined);
+    touchStartRef.current = null;
+  }, [post.id, post.imageUrls.length, initialPhotoIndex]);
 
   // X シェアのメニュー開閉（複数パートのときだけ「全文／1/n…」を出す・#37）。
   const [shareOpen, setShareOpen] = useState(false);
