@@ -106,6 +106,49 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
   });
 
+  it("initialPhotoIndex があればその写真から始まり、範囲外は末尾に丸める", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const post = makePost({
+      id: "initial-index",
+      caption: "成長記録",
+      imageUrls: [
+        "https://image.nostr.build/one.jpg",
+        "https://image.nostr.build/two.jpg",
+        "https://image.nostr.build/three.jpg",
+      ],
+      imageUrl: "https://image.nostr.build/one.jpg",
+    });
+    const { rerender } = render(
+      <PostDetail
+        post={post}
+        initialPhotoIndex={1}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "成長記録 2枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/two.jpg",
+    );
+    await screen.findByLabelText("いいね 0");
+    await screen.findByText("まだコメントはありません");
+
+    rerender(
+      <PostDetail
+        post={{ ...post, id: "initial-index-next" }}
+        initialPhotoIndex={99}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "成長記録 3枚目" })).toHaveAttribute(
+      "src",
+      "https://image.nostr.build/three.jpg",
+    );
+    await screen.findByLabelText("いいね 0");
+    await screen.findByText("まだコメントはありません");
+  });
+
   it("複数画像は写真領域の左スワイプで次へ・右スワイプで前へ切り替えられる（#184）", async () => {
     fetchReactionCount.mockResolvedValue(0);
     render(

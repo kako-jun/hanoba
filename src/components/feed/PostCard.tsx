@@ -1,9 +1,17 @@
-import { type CSSProperties, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type TouchEvent as ReactTouchEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
 import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
 import { shotDateRange, SHOT_DATE_RANGE_SEP } from "../../lib/feed/shotDate.ts";
+import {
+  nextPhotoIndex,
+  prevPhotoIndex,
+  swipeDirection,
+  swipeProgress,
+  swipeToBlur,
+} from "../../lib/feed/carousel.ts";
+import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { useT, useLocale } from "../../lib/i18n/index.ts";
 import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
@@ -16,8 +24,8 @@ interface Props {
   index: number;
   /** 相対時刻の基準（秒）。親で1回計算して配る。 */
   now: number;
-  /** 写真タップで拡大（PostDetail モーダルを開く）。 */
-  onOpen: () => void;
+  /** 写真タップで拡大（PostDetail モーダルを開く）。写真から開く時は現在の写真 index を渡す。 */
+  onOpen: (photoIndex?: number) => void;
   /** タグクリック（クライアント側絞り込み/再検索）。 */
   onSelectHashtag: (tag: string) => void;
   /** 著者プロフィール（#35・未取得なら null＝npub フォールバック表示）。 */
@@ -64,6 +72,7 @@ export default function PostCard({
   const t = useT(locale);
   const captionText = stripHashtags(post.caption);
   const photoCount = post.imageUrls.length;
+  const hasMultiplePhotos = photoCount > 1;
   // 撮影期間（#324・kako-jun A案）。写真ごとの撮影日があれば表紙に「2024-06-01〜2024-06-22」を出す
   // ＝「1つの被写体の1ヶ月を振り返る」投稿が一目で分かる。無ければ null（出さない）。全言語 ISO 固定（#347）。
   const dateRange = shotDateRange(post.photoShotDates ?? []);
@@ -71,8 +80,13 @@ export default function PostCard({
   const authorName = profile?.name ?? shortNpub(post.pubkey);
   const [expanded, setExpanded] = useState(false);
   const [clipped, setClipped] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [swipeBlur, setSwipeBlur] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const suppressNextPhotoClickRef = useRef(false);
   const captionRef = useRef<HTMLParagraphElement>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
+  const currentImageUrl = post.imageUrls[photoIndex] ?? post.imageUrl ?? post.imageUrls[0] ?? null;
 
   // 投稿の植物札（#182/#23）。索引未ロード時は空＝出さない。タグ列の上（右列の最上部）に出す（#239）。
   // 索引は PostGrid がグリッド単位で1回作って配る（#257）。resolveFuda は純粋（hashtags は post 固定）。
@@ -88,6 +102,59 @@ export default function PostCard({
     setClipped(capOver || colOver);
   }, [captionText, post.hashtags.length, fuda.length, expanded]);
 
+  // 投稿が差し替わった時は表紙に戻す。フィードの再利用描画で前投稿の index を持ち越さない。
+  useEffect(() => {
+    setPhotoIndex(0);
+    setSwipeBlur(0);
+    touchStartRef.current = null;
+    suppressNextPhotoClickRef.current = false;
+  }, [post.id, photoCount]);
+
+  function onTouchStart(e: ReactTouchEvent) {
+    if (!hasMultiplePhotos) return;
+    const t = e.touches[0];
+    if (t === undefined) return;
+    suppressNextPhotoClickRef.current = false;
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }
+
+  function onTouchMove(e: ReactTouchEvent) {
+    const start = touchStartRef.current;
+    if (start === null || !hasMultiplePhotos) return;
+    if (prefersReducedMotion()) return;
+    const t = e.touches[0];
+    if (t === undefined) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) <= Math.abs(dy)) {
+      setSwipeBlur(0);
+      return;
+    }
+    const next = Math.round(swipeToBlur(swipeProgress(dx)));
+    setSwipeBlur((prev) => (prev === next ? prev : next));
+  }
+
+  function onTouchEnd(e: ReactTouchEvent) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    setSwipeBlur(0);
+    if (start === null || !hasMultiplePhotos) return;
+    const t = e.changedTouches[0];
+    if (t === undefined) return;
+    const dir = swipeDirection(t.clientX - start.x, t.clientY - start.y);
+    if (dir === "next") {
+      suppressNextPhotoClickRef.current = true;
+      e.preventDefault();
+      e.stopPropagation();
+      setPhotoIndex((i) => nextPhotoIndex(i, photoCount));
+    } else if (dir === "prev") {
+      suppressNextPhotoClickRef.current = true;
+      e.preventDefault();
+      e.stopPropagation();
+      setPhotoIndex((i) => prevPhotoIndex(i, photoCount));
+    }
+  }
+
   return (
     <li
       className="ha-rise glass rounded-xl overflow-hidden"
@@ -96,30 +163,80 @@ export default function PostCard({
       {/* カードの非インタラクティブ領域はどこを押しても拡大（#101）。リンク・タグ・続きを読む等の
           個別操作は stopPropagation で従来動作を維持。写真ボタンはキーボード/SR 用の主導線として残す。 */}
       <article
-        onClick={onOpen}
+        onClick={() => onOpen(photoIndex)}
         className={`flex flex-col sm:flex-row cursor-pointer ${expanded ? "" : "sm:h-56 lg:h-72"}`}
       >
-        {post.imageUrl !== null && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen();
-            }}
-            // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
-            aria-label={post.caption === "" ? t("card.photo.zoom") : post.caption}
+        {currentImageUrl !== null && (
+          <div
             // self-start で stretch を切り、展開でカードが伸びても写真は正方形のまま。
-            className="relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            className="group/photo relative block self-start shrink-0 w-full aspect-square sm:w-56 sm:h-56 lg:w-72 lg:h-72 sm:aspect-auto overflow-hidden bg-ha-green-soft"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onClickCapture={(e) => {
+              if (!suppressNextPhotoClickRef.current) return;
+              suppressNextPhotoClickRef.current = false;
+              e.stopPropagation();
+            }}
           >
-            <ProgressiveImage
-              src={post.imageUrl}
-              alt={post.caption}
-              className="w-full h-full object-cover"
-            />
-            {photoCount > 1 && (
-              <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">
-                {t("card.photos.count", { n: photoCount })}
-              </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (suppressNextPhotoClickRef.current) {
+                  suppressNextPhotoClickRef.current = false;
+                  return;
+                }
+                onOpen(photoIndex);
+              }}
+              // caption 空は仕様上起きない（一言必須・DESIGN §1）が、他クライアント投稿への防御。
+              aria-label={post.caption === "" ? t("card.photo.zoom") : post.caption}
+              className="block h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+            >
+              <div
+                className="h-full w-full"
+                style={{
+                  filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
+                  transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
+                }}
+              >
+                <ProgressiveImage
+                  key={photoIndex}
+                  src={currentImageUrl}
+                  alt={hasMultiplePhotos ? t("detail.photo.alt", { caption: post.caption, n: photoIndex + 1 }) : post.caption}
+                  className="w-full h-full select-none object-cover"
+                  draggable={false}
+                />
+              </div>
+            </button>
+            {hasMultiplePhotos && (
+              <>
+                <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-base font-bold text-ha-white backdrop-blur-sm">
+                  {photoIndex + 1}/{photoCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPhotoIndex((i) => prevPhotoIndex(i, photoCount));
+                  }}
+                  aria-label={t("detail.photo.prev")}
+                  className="absolute left-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white opacity-0 backdrop-blur-md transition-all hover:bg-ha-green focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ha-green group-hover/photo:opacity-100 group-focus-within/photo:opacity-100"
+                >
+                  <Icon name="chevron" className="h-5 w-5 rotate-90" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPhotoIndex((i) => nextPhotoIndex(i, photoCount));
+                  }}
+                  aria-label={t("detail.photo.next")}
+                  className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-ha-white opacity-0 backdrop-blur-md transition-all hover:bg-ha-green focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ha-green group-hover/photo:opacity-100 group-focus-within/photo:opacity-100"
+                >
+                  <Icon name="chevron" className="h-5 w-5 -rotate-90" />
+                </button>
+              </>
             )}
             {/* 撮影期間（#324・A案）。表紙**左下**に控えめに（#375・写真らしいスタンプ位置＝拡大の
                 オーバーレイ撮影日と左下で揃える。写真枚数バッジは右上のまま）。レンジ＝この投稿が
@@ -140,7 +257,7 @@ export default function PostCard({
                 ))}
               </span>
             )}
-          </button>
+          </div>
         )}
 
         {/* 本文列。折りたたみ時はカード高さ（写真の正方形）に収め、はみ出しは clip。 */}

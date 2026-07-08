@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import PostCard from "./PostCard.tsx";
@@ -60,6 +60,44 @@ function makePost(overrides: Partial<FeedPost> = {}): FeedPost {
 }
 
 const noop = () => {};
+
+function makeMultiPhotoPost(overrides: Partial<FeedPost> = {}): FeedPost {
+  return makePost({
+    id: "multi1",
+    caption: "成長記録 #アガベ",
+    imageUrls: ["https://example.com/one.jpg", "https://example.com/two.jpg"],
+    imageUrl: "https://example.com/one.jpg",
+    hashtags: ["アガベ"],
+    ...overrides,
+  });
+}
+
+function photoTouchArea(img: HTMLElement): HTMLElement {
+  return img.parentElement!.parentElement!.parentElement!;
+}
+
+function stubReducedMotion(reduce: boolean) {
+  const original = Object.getOwnPropertyDescriptor(window, "matchMedia");
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: (query: string) =>
+      ({
+        matches: reduce && query.includes("prefers-reduced-motion"),
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList,
+  });
+  return () => {
+    if (original) Object.defineProperty(window, "matchMedia", original);
+    else delete (window as unknown as { matchMedia?: Window["matchMedia"] }).matchMedia;
+  };
+}
 
 describe("PostCard", () => {
   afterEach(() => cleanup());
@@ -200,32 +238,32 @@ describe("PostCard", () => {
     }
   });
 
-  it("写真タップで onOpen を呼ぶ（拡大）", async () => {
+  it("写真タップで onOpen を呼び、表示中の写真 index を渡す（拡大）", async () => {
     const restore = mockSizes(0, 0);
     try {
       const user = userEvent.setup();
-      let opened = 0;
+      const opened: Array<number | undefined> = [];
       render(
-        <PostCard post={makePost()} index={0} now={2000} onOpen={() => (opened += 1)} onSelectHashtag={noop} />,
+        <PostCard post={makePost()} index={0} now={2000} onOpen={(i) => opened.push(i)} onSelectHashtag={noop} />,
       );
       await user.click(screen.getByRole("button", { name: "開花した #アガベ" }));
-      expect(opened).toBe(1);
+      expect(opened).toEqual([0]);
     } finally {
       restore();
     }
   });
 
-  it("本文など非インタラクティブ領域クリックで onOpen を呼ぶ（#101）", async () => {
+  it("本文など非インタラクティブ領域クリックでも表示中の写真 index を渡す（#101/#522）", async () => {
     const restore = mockSizes(0, 0);
     try {
       const user = userEvent.setup();
-      let opened = 0;
+      const opened: Array<number | undefined> = [];
       render(
-        <PostCard post={makePost()} index={0} now={2000} onOpen={() => (opened += 1)} onSelectHashtag={noop} />,
+        <PostCard post={makePost()} index={0} now={2000} onOpen={(i) => opened.push(i)} onSelectHashtag={noop} />,
       );
       // 写真でもタグでもない本文テキストをクリック → カード全体クリックで拡大。
       await user.click(screen.getByText("開花した"));
-      expect(opened).toBe(1);
+      expect(opened).toEqual([0]);
     } finally {
       restore();
     }
@@ -249,6 +287,256 @@ describe("PostCard", () => {
       await user.click(screen.getByRole("button", { name: "#アガベ" }));
       expect(picked).toEqual(["アガベ"]);
       expect(opened).toBe(0); // stopPropagation でカード拡大は発火しない
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数写真カードで「次の写真」を押すと画像/alt/ページ表示が進み、onOpen は呼ばない（#522）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      let opened = 0;
+      render(
+        <PostCard
+          post={makeMultiPhotoPost()}
+          index={0}
+          now={2000}
+          onOpen={() => (opened += 1)}
+          onSelectHashtag={noop}
+        />,
+      );
+      expect(screen.getByRole("img", { name: "成長記録 #アガベ 1枚目" })).toHaveAttribute(
+        "src",
+        "https://example.com/one.jpg",
+      );
+      expect(screen.getByText("1/2")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "次の写真" }));
+
+      expect(screen.getByRole("img", { name: "成長記録 #アガベ 2枚目" })).toHaveAttribute(
+        "src",
+        "https://example.com/two.jpg",
+      );
+      expect(screen.getByText("2/2")).toBeInTheDocument();
+      expect(opened).toBe(0);
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数写真カードで2枚目を表示中に写真を押すと onOpen に現在 index を渡す（#522）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      const opened: Array<number | undefined> = [];
+      render(
+        <PostCard
+          post={makeMultiPhotoPost()}
+          index={0}
+          now={2000}
+          onOpen={(i) => opened.push(i)}
+          onSelectHashtag={noop}
+        />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "次の写真" }));
+      await user.click(screen.getByRole("button", { name: "成長記録 #アガベ" }));
+
+      expect(opened).toEqual([1]);
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数写真カードで2枚目を表示中に本文側を押しても onOpen に現在 index を渡す（#522）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      const opened: Array<number | undefined> = [];
+      render(
+        <PostCard
+          post={makeMultiPhotoPost()}
+          index={0}
+          now={2000}
+          onOpen={(i) => opened.push(i)}
+          onSelectHashtag={noop}
+        />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "次の写真" }));
+      await user.click(screen.getByText("成長記録"));
+
+      expect(opened).toEqual([1]);
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数写真カードで「前の写真」を押すと先頭から末尾へ wrap する（#522）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      render(<PostCard post={makeMultiPhotoPost()} index={0} now={2000} onOpen={noop} onSelectHashtag={noop} />);
+
+      await user.click(screen.getByRole("button", { name: "前の写真" }));
+
+      expect(screen.getByRole("img", { name: "成長記録 #アガベ 2枚目" })).toHaveAttribute(
+        "src",
+        "https://example.com/two.jpg",
+      );
+      expect(screen.getByText("2/2")).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("1枚では矢印・ページ表示を出さず、2枚以上でだけ出す（#522）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const { rerender } = render(<PostCard post={makePost()} index={0} now={2000} onOpen={noop} onSelectHashtag={noop} />);
+      expect(screen.queryByRole("button", { name: "前の写真" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "次の写真" })).toBeNull();
+      expect(screen.queryByText("1/1")).toBeNull();
+
+      rerender(<PostCard post={makeMultiPhotoPost()} index={0} now={2000} onOpen={noop} onSelectHashtag={noop} />);
+
+      expect(screen.getByRole("button", { name: "前の写真" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "次の写真" })).toBeInTheDocument();
+      expect(screen.getByText("1/2")).toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("左スワイプで次、右スワイプで前に切り替わる（#522）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <PostCard
+          post={makeMultiPhotoPost({
+            imageUrls: ["https://example.com/one.jpg", "https://example.com/two.jpg", "https://example.com/three.jpg"],
+          })}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+        />,
+      );
+      const area = photoTouchArea(screen.getByRole("img", { name: "成長記録 #アガベ 1枚目" }));
+
+      fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+      fireEvent.touchEnd(area, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+      expect(screen.getByRole("img", { name: "成長記録 #アガベ 2枚目" })).toHaveAttribute(
+        "src",
+        "https://example.com/two.jpg",
+      );
+
+      fireEvent.touchStart(area, { touches: [{ clientX: 80, clientY: 100 }] });
+      fireEvent.touchEnd(area, { changedTouches: [{ clientX: 200, clientY: 95 }] });
+      expect(screen.getByRole("img", { name: "成長記録 #アガベ 1枚目" })).toHaveAttribute(
+        "src",
+        "https://example.com/one.jpg",
+      );
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数写真の horizontal swipe は reduced-motion=false で move 中だけ blur が付き、touchEnd で消える（#522）", () => {
+    const restoreSizes = mockSizes(0, 0);
+    const restoreMotion = stubReducedMotion(false);
+    try {
+      render(<PostCard post={makeMultiPhotoPost()} index={0} now={2000} onOpen={noop} onSelectHashtag={noop} />);
+      const img = screen.getByRole("img", { name: "成長記録 #アガベ 1枚目" });
+      const blurWrapper = img.parentElement!;
+      const area = photoTouchArea(img);
+
+      fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+      fireEvent.touchMove(area, { touches: [{ clientX: 120, clientY: 105 }] });
+      const m = blurWrapper.style.filter.match(/blur\(([\d.]+)px\)/);
+      expect(m).not.toBeNull();
+      expect(Number.parseFloat(m![1]!)).toBeGreaterThan(0);
+
+      fireEvent.touchEnd(area, { changedTouches: [{ clientX: 120, clientY: 105 }] });
+      expect(blurWrapper.style.filter).toBe("");
+    } finally {
+      restoreMotion();
+      restoreSizes();
+    }
+  });
+
+  it("swipe成立直後に合成 click 相当が来ても onOpen を呼ばない（#522）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      let opened = 0;
+      render(
+        <PostCard
+          post={makeMultiPhotoPost()}
+          index={0}
+          now={2000}
+          onOpen={() => (opened += 1)}
+          onSelectHashtag={noop}
+        />,
+      );
+      const img = screen.getByRole("img", { name: "成長記録 #アガベ 1枚目" });
+      const button = screen.getByRole("button", { name: "成長記録 #アガベ" });
+      const area = photoTouchArea(img);
+
+      fireEvent.touchStart(area, { touches: [{ clientX: 200, clientY: 100 }] });
+      fireEvent.touchEnd(area, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+      fireEvent.click(button);
+
+      expect(screen.getByRole("img", { name: "成長記録 #アガベ 2枚目" })).toBeInTheDocument();
+      expect(opened).toBe(0);
+    } finally {
+      restore();
+    }
+  });
+
+  it("複数写真化後もタグクリックは onSelectHashtag のみ・onOpen は呼ばない（#522）", async () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const user = userEvent.setup();
+      let opened = 0;
+      const picked: string[] = [];
+      render(
+        <PostCard
+          post={makeMultiPhotoPost()}
+          index={0}
+          now={2000}
+          onOpen={() => (opened += 1)}
+          onSelectHashtag={(t) => picked.push(t)}
+        />,
+      );
+
+      await user.click(screen.getByRole("button", { name: "#アガベ" }));
+
+      expect(picked).toEqual(["アガベ"]);
+      expect(opened).toBe(0);
+    } finally {
+      restore();
+    }
+  });
+
+  it("imageUrls=[] かつ imageUrl=null でも例外なく描画し、写真操作UIを出さない（#522）", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <PostCard
+          post={makePost({ imageUrls: [], imageUrl: null })}
+          index={0}
+          now={2000}
+          onOpen={noop}
+          onSelectHashtag={noop}
+        />,
+      );
+
+      expect(screen.queryByRole("img")).toBeNull();
+      expect(screen.queryByRole("button", { name: "前の写真" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "次の写真" })).toBeNull();
+      expect(screen.queryByText(/\d+\/\d+/)).toBeNull();
+      expect(screen.getByText("開花した")).toBeInTheDocument();
     } finally {
       restore();
     }
