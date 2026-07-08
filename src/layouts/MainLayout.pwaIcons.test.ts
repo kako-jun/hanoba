@@ -19,11 +19,16 @@ const layoutSrc = readFileSync(join(import.meta.dirname, "MainLayout.astro"), "u
 const iconScriptSrc = readFileSync(join(import.meta.dirname, "..", "..", "scripts", "generate-icons.mjs"), "utf8");
 const publicDir = join(import.meta.dirname, "..", "..", "public");
 
-/** astro.config.mjs の manifest.icons 配列から src 値を全抽出する（SVG も typo 検知目的で含める）。 */
-function manifestIconSrcs(): string[] {
+/** astro.config.mjs の manifest.icons 配列ブロックの中身（角括弧の内側）を文字列で返す。 */
+function manifestIconsBlock(): string {
   const block = configSrc.match(/icons:\s*\[([\s\S]*?)\]/);
   if (!block) throw new Error("astro.config.mjs に manifest.icons 配列が見つからない");
-  return [...block[1].matchAll(/src:\s*["']([^"']+)["']/g)].map((m) => m[1]);
+  return block[1];
+}
+
+/** astro.config.mjs の manifest.icons 配列から src 値を全抽出する（SVG も typo 検知目的で含める）。 */
+function manifestIconSrcs(): string[] {
+  return [...manifestIconsBlock().matchAll(/src:\s*["']([^"']+)["']/g)].map((m) => m[1]);
 }
 
 /** MainLayout.astro の rel="apple-touch-icon" の href を抽出する（属性順に依存しない）。 */
@@ -99,5 +104,20 @@ describe("PWA アイコン版数の 3ソース整合（#511 ドリフト検出�
         expect(v, `${label} に旧版数 -v${v} が残存（現行 -v${currentVersion}）`).toBe(currentVersion);
       }
     }
+  });
+});
+
+describe("manifest.icons に枠を生む maskable/SVG を持たない（#513 スプラッシュ枠再発防止）", () => {
+  // #513: SVG（sizes=any）や maskable PNG を manifest.icons に足すと、Android スプラッシュが
+  // アイコンを板／マスク付きに描いて極薄い四角い枠を生む。any PNG 2つだけの構成に絞って枠を
+  // 消したので、将来またこの種のエントリが足されて枠が再発することをここで赤にして止める。
+  it("purpose に maskable を含むエントリが存在しない", () => {
+    const maskable = [...manifestIconsBlock().matchAll(/purpose:\s*["'][^"']*maskable[^"']*["']/g)];
+    expect(maskable, "maskable アイコンは Android スプラッシュに四角い枠を生む（#513 で撤去済み）").toHaveLength(0);
+  });
+
+  it("type が image/svg+xml（SVG）のエントリが存在しない", () => {
+    const svg = [...manifestIconsBlock().matchAll(/type:\s*["']image\/svg\+xml["']/g)];
+    expect(svg, "SVG アイコンは Android スプラッシュで板状に描かれ枠を生む（#513 で撤去済み）").toHaveLength(0);
   });
 });
