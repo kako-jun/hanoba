@@ -131,14 +131,14 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(mayor).toBeDefined();
   });
 
-  it("名乗り済み（L1/L2）は最初から2ページ目を出す（1ページ目フラッシュ・???ちらつきなし）", async () => {
+  it("名乗り済み（L1/L2）は最初から2ページ目を出す（1ページ目フラッシュなし・全ページ開放で ??? ロック頁は出ない）", async () => {
     getDisplayName.mockReturnValue("みどり");
     fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
     render(<CityHallBook />);
     // useIsoLayoutEffect が同期で 2p・最低 L1 を確定するので、最初の描画から:
     // ・1p 移住案内の歓迎の辞は出ない（page-1 フラッシュなし）
     expect(screen.queryByText(/ようこそ、緑の市へ/)).toBeNull();
-    // ・2p 街の地図が即出る（maxUnlocked=2 なので ??? ティザーのちらつきもない）
+    // ・2p 街の地図が即出る（全ページ開放でロック頁自体が存在しない＝??? は構造的に出ない）
     expect(screen.getByText(/我が市の地図である/)).toBeInTheDocument();
     expect(screen.queryByText("？？？")).toBeNull();
   });
