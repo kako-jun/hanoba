@@ -454,9 +454,6 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.ordinance.4.article": "Article V (Photograph)",
   "cityHall.ordinance.4.text": "Photographs displayed in this city shall be of plants alone.",
   "cityHall.ordinance.4.commentary": "Let people and pets shine each in their own town. This is a city of plants.",
-  // Locked-page teaser.
-  "cityHall.locked.title": "???",
-  "cityHall.locked.note": "This page is for once you have grown a little more at home in the city.",
   // The Mayor's brief word added upon a level promotion.
   "cityHall.flavor.citizen": "Your settlement is duly received. Welcome, citizens.",
   "cityHall.flavor.tenured": "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",

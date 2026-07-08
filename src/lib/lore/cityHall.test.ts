@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildCityHallBook, type HubLink } from "./cityHall.ts";
+import { buildCityHallBook, civicHub, type HubLink } from "./cityHall.ts";
 
-// 街の地図（P2・図鑑の早期ご褒美ページ・#469）の正本テスト。
-// 機能導線（discover/ranking/me/compose）はヘッダ/フッタが持つので手帳からは外し、
-// 地図には名所（ランドマーク）と「市政の窓口」strip（住民投票＋近日開庁）だけを残す。
+// 街の地図（P2・図鑑の読み物ページ・#469）と市政の窓口（civicHub）の正本テスト。
+// 機能導線（discover/ranking/me/compose）はヘッダ/フッタが持つので手帳からは外す。
+// #510 方針B: 「市政の窓口」strip は街の地図 P2 固有をやめ、全ページ共通の常設導線 civicHub に切り出した。
 // 役所が「開庁」したか（実在ルート）／「近日開庁」（route:null）かを、表示テキストでなく
 // データ側で固定する（cityHall.ts が単一ソース・#160）。
 
@@ -14,7 +14,7 @@ function mapPage() {
 }
 
 function civicLinks(): HubLink[] {
-  return mapPage()?.civic ?? [];
+  return civicHub("ja");
 }
 
 function findCivic(label: string): HubLink {

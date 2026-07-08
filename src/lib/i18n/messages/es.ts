@@ -452,9 +452,6 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.ordinance.4.article": "Artículo V (Fotografía)",
   "cityHall.ordinance.4.text": "Las fotografías que se exhiban en esta ciudad serán únicamente de plantas.",
   "cityHall.ordinance.4.commentary": "Que las personas y las mascotas brillen cada una en su propia ciudad. Esta es una ciudad de plantas.",
-  // Avance de la página bloqueada.
-  "cityHall.locked.title": "???",
-  "cityHall.locked.note": "Esta página es para cuando te hayas asentado un poco más en la ciudad.",
   // La breve palabra del Alcalde que se añade al subir de nivel.
   "cityHall.flavor.citizen": "Tu residencia queda debidamente recibida. Bienvenidos, ciudadanos.",
   "cityHall.flavor.tenured": "Ejem. Ahora eres un viejo amigo de la ciudad. He dejado abiertas las salas interiores para ti.",

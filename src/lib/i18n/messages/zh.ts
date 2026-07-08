@@ -452,9 +452,6 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.ordinance.4.article": "第五条（照片）",
   "cityHall.ordinance.4.text": "在这座城里展示的照片，应当只有植物。",
   "cityHall.ordinance.4.commentary": "让人和宠物各自在自己的城里闪耀吧。这是一座植物之城。",
-  // 锁定页面的预告。
-  "cityHall.locked.title": "???",
-  "cityHall.locked.note": "这一页，要等你在城里再安顿熟络一些才会开启。",
   // 升级时附上的市长简短寄语。
   "cityHall.flavor.citizen": "你的定居业已如实受理。欢迎诸位市民。",
   "cityHall.flavor.tenured": "咳咳。如今你已是城市的老朋友了。我已为你敞开了内厅。",
