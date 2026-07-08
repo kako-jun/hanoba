@@ -5,7 +5,6 @@ import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import { CITIZEN_TIERS, TENURE_DAYS, TENURE_POSTS } from "../../lib/lore/citizen.ts";
-import { LOCKED_PAGE_VEIL } from "../../lib/lore/cityHall.ts";
 
 // ネットワーク・鍵はモック境界で止める（実 relay・localStorage を呼ばない）。
 const fetchMyPosts = vi.fn();
@@ -144,7 +143,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.queryByText("？？？")).toBeNull();
   });
 
-  it("L0 訪問者（名前なし）: 1p 移住案内のみ・次はティザー止まり", async () => {
+  it("L0 旅人（名前なし）: 既定は 1p 移住案内・前は無い/次へ進める（全ページ閲覧可・#510）", async () => {
     getDisplayName.mockReturnValue(null);
     render(<CityHallBook />);
 
@@ -163,29 +162,31 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(vista.className).toContain("max-w-[170px]");
     expect(vista.className).not.toContain("border");
     expect(vista.className).not.toContain("ring");
-    // 前は不可、次（ティザー）へは進める。
+    // 先頭ページなので前は不可、次へは進める（#510 でレベル解禁ゲート撤去＝全ページ閲覧可）。
     expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
-    // 解放済みページ（1p 本文）にはロック頁のぼかし装飾は出ない。
-    expect(screen.queryByTestId("lore-veil")).toBeNull();
+    // ロック頁の「？？？」ティザーは撤去済み＝どこにも出ない。
+    expect(screen.queryByText("？？？")).toBeNull();
   });
 
-  it("L0: 次を押すと？？？ティザー、その先へは進めない", async () => {
+  it("L0: 名前なしでも全 4 ページ（地図→沿革→条文）を最後まで前送りできる（Ln がゲートしない・#510）", async () => {
     const user = userEvent.setup();
     getDisplayName.mockReturnValue(null);
     render(<CityHallBook />);
     await screen.findByText(/ボタニクス・フォン・ハノーバである/);
 
+    // 1p → 2p 街の地図（旅人でも閲覧可）。
     await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(screen.getByText("？？？")).toBeInTheDocument();
-    // ③ ロック頁: 「？？？」の背後に「読めない頁」（ぼかし崩し字）が装飾として敷かれる。
-    const veil = screen.getByTestId("lore-veil");
-    expect(veil).toHaveAttribute("aria-hidden", "true");
-    expect(veil).toHaveTextContent(LOCKED_PAGE_VEIL[0]!);
-    // ティザーの先（街の地図の中身）には行けない。
+    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
+    expect(screen.queryByText("？？？")).toBeNull();
+    // 2p → 3p 沿革。
+    await user.click(screen.getByRole("button", { name: "次のページ" }));
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
+    // 3p → 4p 条文（最深ページ）。
+    await user.click(screen.getByRole("button", { name: "次のページ" }));
+    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
+    // 4p が最終＝次は無い。ロックではなく単に末尾。
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
-    // 後方には戻れる。
-    expect(screen.getByRole("button", { name: "前のページ" })).toBeEnabled();
   });
 
   it("L1 市民（名前あり・投稿少）: 既定で 2p 街の地図を開く（#469）", async () => {
@@ -223,26 +224,52 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.getByText(/移住、確かに受理した/)).toBeInTheDocument();
   });
 
-  it("L1: 沿革（3p）はロックされ、次を押すとティザー", async () => {
+  it("市政の窓口は全ページ共通で手帳ページの下に常設される（#510 方針B）", async () => {
+    const user = userEvent.setup();
+    getDisplayName.mockReturnValue(null); // L0: 既定 1p 移住案内から辿る。
+    render(<CityHallBook />);
+
+    // 1p 移住案内（地図ではないページ）でも窓口が下部に出る＝住民投票が /vote へ、近日開庁が 2 件。
+    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
+    expect(screen.getByRole("heading", { name: "市政の窓口" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
+    expect(screen.getAllByText("近日開庁").length).toBe(2);
+
+    // 前送りで最終ページ（4p 条文）まで進めても、同じ窓口が常設される（ページ固有ではない）。
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 2p 地図
+    await screen.findByText(/我が市の地図である/);
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 3p 沿革
+    await screen.findByText(/荒れ地に最初の一鉢を植える/);
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 4p 条文
+    await screen.findByText(/第一条（土地）/);
+    // 条文ページの下にも同一の窓口（住民投票 /vote・近日開庁 2 件）が出る。
+    expect(screen.getByRole("heading", { name: "市政の窓口" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
+    expect(screen.getAllByText("近日開庁").length).toBe(2);
+  });
+
+  it("L1: 沿革（3p）も最初から閲覧可能（次を押すと沿革本文が出る・ティザー無し・#510）", async () => {
     const user = userEvent.setup();
     getDisplayName.mockReturnValue("みどり");
     fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
     render(<CityHallBook />);
     await screen.findByText(/我が市の地図である/);
 
-    // 2p から次 → 3p はティザー。
+    // 2p から次 → 3p 沿革の本文が直接出る（レベル解禁ゲートは撤去済み）。
     await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(screen.getByText("？？？")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
+    expect(screen.queryByText("？？？")).toBeNull();
+    // さらに 4p 条文へも進める。
+    expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
   });
 
-  it("L2（名前＋5投稿＋14日以上）: 沿革（3p）まで開ける・条文（4p）はまだロック（1レベル=1ページ・#469）", async () => {
+  it("L2（名前＋5投稿＋14日以上）: 味付けは level 依存で保つ・条文（4p）も閲覧可（#510）", async () => {
     const user = userEvent.setup();
     getDisplayName.mockReturnValue("ふるつわもの");
     fetchMyPosts.mockResolvedValue(tenuredPosts());
     render(<CityHallBook />);
 
-    // 既定は 2p 街の地図（奥は自動で開かない）。
+    // 既定は 2p 街の地図（奥は自動で開かない＝初期表示ページの決定は defaultPage が担う）。
     await screen.findByText(/我が市の地図である/);
     // タイトルは真レベル表記「ハノーバ市民手帳 L2」（#469 変更A）。
     expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L2" })).toBeInTheDocument();
@@ -255,11 +282,13 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
     // 沿革も冒頭に市長の前口上が出る（全ページ冒頭に市長の言葉・#469 変更B）。
     expect(screen.getByText(/我が市の来し方を、少し語らせてもらおう/)).toBeInTheDocument();
-    // 古参歓迎は奥（3p）に初めて達したときだけ出す。
+    // 古参歓迎は奥（3p）に初めて達したときだけ出す（level>=2・ページ解禁とは無関係に維持）。
     expect(screen.getByText(/諸君はもう、市の古い友人だ/)).toBeInTheDocument();
-    // 4p 条文はまだロック＝次はティザー止まり（L3 で開く）。
+    // 4p 条文へも進める（レベル解禁ゲート撤去＝全ページ閲覧可・#510）。ティザーは無い。
     await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(screen.getByText("？？？")).toBeInTheDocument();
+    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
+    expect(screen.queryByText("？？？")).toBeNull();
+    // 4p が最終＝次は無い。
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
   });
 
@@ -348,20 +377,26 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(await screen.findByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
   });
 
-  it("←/→ キーで本をめくれる（前方ロックを尊重し、入力中は横取りしない）", async () => {
+  it("←/→ キーで本をめくれる（末尾ページより先へは進めない・入力中は横取りしない）", async () => {
     const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり"); // L1: 2p まで解放。
+    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
     fetchMyPosts.mockResolvedValue([]);
     render(<CityHallBook />);
     await screen.findByText(/我が市の地図である/);
 
-    // → でティザー（3p）まで進める（前方ロックの上限の 1 枚先）。
+    // → で 3p 沿革へ（レベル解禁ゲート撤去＝直接本文が出る・ティザー無し）。
     await user.keyboard("{ArrowRight}");
-    expect(await screen.findByText("？？？")).toBeInTheDocument();
-    // その先（4p）へは → でも進めない（前方ロック）。
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
+    // → で 4p 条文（最深ページ）へ。
     await user.keyboard("{ArrowRight}");
-    expect(screen.getByText("？？？")).toBeInTheDocument();
-    // ← で街の地図（2p）へ戻る。
+    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
+    // 4p より先（末尾上限）へは → でも進まない＝条文のまま。
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByText(/第一条（土地）/)).toBeInTheDocument();
+    // ← で 3p 沿革へ戻る。
+    await user.keyboard("{ArrowLeft}");
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
+    // ← で 2p 街の地図へ。
     await user.keyboard("{ArrowLeft}");
     expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
     // ← で移住案内（1p）へ。
@@ -373,7 +408,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
   });
 
   it("左スワイプで次ページ・右スワイプで前ページにめくれる（#275）", async () => {
-    getDisplayName.mockReturnValue("みどり"); // L1: 2p まで解放（次=ティザー3p）。
+    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
     fetchMyPosts.mockResolvedValue([]);
     render(<CityHallBook />);
     await screen.findByText(/我が市の地図である/);
@@ -382,10 +417,10 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     const content = document.querySelector('[aria-live="polite"]')!;
     const panel = content.parentElement!;
 
-    // 左スワイプ（dx<-40・水平優位）＝次へ＝ティザー（3p）。
+    // 左スワイプ（dx<-40・水平優位）＝次へ＝3p 沿革の本文。
     fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 105 }] });
-    expect(await screen.findByText("？？？")).toBeInTheDocument();
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
 
     // 右スワイプ（dx>+40・水平優位）＝前へ＝街の地図（2p）へ戻る。
     fireEvent.touchStart(panel, { touches: [{ clientX: 80, clientY: 100 }] });
@@ -408,24 +443,26 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     expect(screen.queryByText("？？？")).toBeNull();
   });
 
-  it("ロック境界で左スワイプは進めない（canNext=false・前方ロック・#275）", async () => {
+  it("末尾ページ（条文4p）で左スワイプは進めない（canNext=false・末尾上限・#275/#510）", async () => {
     const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり"); // L1: 2p まで解放、3p はティザー上限。
+    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
     fetchMyPosts.mockResolvedValue([]);
     render(<CityHallBook />);
     await screen.findByText(/我が市の地図である/);
 
-    // まずティザー（3p＝前方ロック上限）まで進める。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(screen.getByText("？？？")).toBeInTheDocument();
+    // まず末尾（4p 条文＝前送りの上限）まで進める。
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 3p 沿革
+    await screen.findByText(/荒れ地に最初の一鉢を植える/);
+    await user.click(screen.getByRole("button", { name: "次のページ" })); // 4p 条文
+    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
 
     const content = document.querySelector('[aria-live="polite"]')!;
     const panel = content.parentElement!;
 
-    // ティザーから更に左スワイプ（次へ）＝ロック越え不可（canNext=false）でページ不変＝ティザーのまま。
+    // 条文から更に左スワイプ（次へ）＝末尾より先は無い（canNext=false）でページ不変＝条文のまま。
     fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 60, clientY: 100 }] });
-    expect(screen.getByText("？？？")).toBeInTheDocument();
+    expect(screen.getByText(/第一条（土地）/)).toBeInTheDocument();
   });
 
   it("スワイプ中はページ内容に blur が付き、指を離すと消える（#275）", async () => {
@@ -453,7 +490,7 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
 
   it("reduced-motion はぼかさないがページ遷移は起きる（#275）", async () => {
     stubMatchMedia(true); // prefers-reduced-motion: reduce。
-    getDisplayName.mockReturnValue("みどり"); // L1: 次=ティザー3p。
+    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
     fetchMyPosts.mockResolvedValue([]);
     render(<CityHallBook />);
     await screen.findByText(/我が市の地図である/);
@@ -466,9 +503,9 @@ describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
     fireEvent.touchMove(panel, { touches: [{ clientX: 120, clientY: 105 }] });
     expect(content.style.filter).toBe("");
 
-    // それでも左スワイプの遷移自体は起きる＝ティザー（3p）へ。
+    // それでも左スワイプの遷移自体は起きる＝3p 沿革へ。
     fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 100 }] });
-    expect(await screen.findByText("？？？")).toBeInTheDocument();
+    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
   });
 
   it("←/→: 入力欄にフォーカスがあるときはページめくりを横取りしない", async () => {
