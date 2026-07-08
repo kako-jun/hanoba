@@ -47,17 +47,17 @@ export default defineConfig({
         orientation: "portrait",
         lang: "ja",
         categories: ["lifestyle", "photo"],
-        // SVG（vector）＋ PNG（iOS A2HS / 旧 Android が要求するラスタ）の両方を持つ。
-        // PNG は scripts/generate-icons.mjs が public の SVG から生成する。
+        // 192/512 の PNG（purpose=any）2つだけに絞る。PNG は scripts/generate-icons.mjs が
+        // public の SVG から生成する（生成物の SVG / maskable はディスクに残す＝掃除は別タスク）。
+        // 以前は先頭に SVG（sizes=any）と maskable PNG 2つを足していたが、これが Android スプラッシュで
+        // アイコンを板／マスク付きに描かせ、極薄い四角い枠を生んだ。枠の出ない他 PWA アプリ群
+        // （3min/agasteer/machigai-salad/mypace）と同じ「any PNG 2つだけ」構成に合わせて枠を消す（#513）。
         // PNG は -v3 サフィックス付き＝アイコンの中身を差し替えただけでは Android の WebAPK が
         // 焼き直されず古いスプラッシュが残るため、URL を変えて manifest 内容を変化させ OS に
         // WebAPK を強制再生成させる（#478。中身を変えたら必ず URL も上げる）。
         icons: [
-          { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
           { src: "/icon-192-v3.png", sizes: "192x192", type: "image/png", purpose: "any" },
           { src: "/icon-512-v3.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "/icon-maskable-192-v3.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
-          { src: "/icon-maskable-512-v3.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
     }),
