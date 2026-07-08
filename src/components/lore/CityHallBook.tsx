@@ -43,7 +43,7 @@ const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : use
 
 /**
  * 名前・投稿から市民レベルを判定する（クライアント専用）。
- * - `level`     ページ解放用のキャップ済みレベル（0|1|2|3・maxUnlocked 等に使う）。
+ * - `level`     味付け・既定ページ判定用の capped レベル（0|1|2|3・levelFlavor / defaultPage に使う。ページ閲覧可否は司らない＝全ページ開放・#510 方針B）。
  * - `levelFull` タイトル表記用の真レベル（非キャップ・L1〜L6＝CitizenStats と同じ・#469 変更A）。
  * 名前が無ければ即 L0。名前があれば投稿を引いて判定。
  * 投稿取得が失敗しても名前があれば L1（名乗った市民を締め出さない・resilient）。
