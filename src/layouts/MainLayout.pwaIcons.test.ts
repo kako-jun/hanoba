@@ -23,12 +23,12 @@ const publicDir = join(import.meta.dirname, "..", "..", "public");
 function manifestIconsBlock(): string {
   const block = configSrc.match(/icons:\s*\[([\s\S]*?)\]/);
   if (!block) throw new Error("astro.config.mjs に manifest.icons 配列が見つからない");
-  return block[1];
+  return block[1]!;
 }
 
 /** astro.config.mjs の manifest.icons 配列から src 値を全抽出する（SVG も typo 検知目的で含める）。 */
 function manifestIconSrcs(): string[] {
-  return [...manifestIconsBlock().matchAll(/src:\s*["']([^"']+)["']/g)].map((m) => m[1]);
+  return [...manifestIconsBlock().matchAll(/src:\s*["']([^"']+)["']/g)].map((m) => m[1]!);
 }
 
 /** MainLayout.astro の rel="apple-touch-icon" の href を抽出する（属性順に依存しない）。 */
@@ -38,14 +38,14 @@ function appleTouchHref(): string {
   if (!tag) throw new Error("MainLayout.astro に apple-touch-icon の <link> が見つからない");
   const href = tag.match(/href="([^"]+)"/);
   if (!href) throw new Error("apple-touch-icon の <link> に href が無い");
-  return href[1];
+  return href[1]!;
 }
 
 /** generate-icons.mjs の jobs 配列に並ぶ出力ファイル名（.png）を全抽出する。 */
 function iconScriptJobFilenames(): string[] {
   const block = iconScriptSrc.match(/const jobs = \[([\s\S]*?)\];/);
   if (!block) throw new Error("generate-icons.mjs に jobs 配列が見つからない");
-  return [...block[1].matchAll(/["']([^"']+\.png)["']/g)].map((m) => m[1]);
+  return [...block[1]!.matchAll(/["']([^"']+\.png)["']/g)].map((m) => m[1]!);
 }
 
 /** 文字列群から版数サフィックス（-vN）の N を数値で全収集する（-v を持たない SVG 等は無視）。 */
@@ -149,7 +149,7 @@ describe("maskable アセット/生成ジョブが物理的に復活していな
     // すべて anySvg（= icon.svg 読み込み）であることを縛る。別ソース（maskable 専用 SVG 等）の復活を赤にする。
     const block = iconScriptSrc.match(/const jobs = \[([\s\S]*?)\];/);
     if (!block) throw new Error("generate-icons.mjs に jobs 配列が見つからない");
-    const sources = [...block[1].matchAll(/\[\s*(\w+)\s*,/g)].map((m) => m[1]);
+    const sources = [...block[1]!.matchAll(/\[\s*(\w+)\s*,/g)].map((m) => m[1]!);
     expect(sources.length, "jobs からソース変数が採れない").toBeGreaterThan(0);
     expect([...new Set(sources)], `PNG 生成ソースが単一でない: ${sources.join(", ")}`).toEqual(["anySvg"]);
   });
