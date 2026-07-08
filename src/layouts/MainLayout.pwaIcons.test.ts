@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -126,5 +126,31 @@ describe("manifest.icons に枠を生む maskable/SVG を持たない（#513 ス
       [...byType, ...bySrc],
       "SVG アイコンは Android スプラッシュで板状に描かれ枠を生む（#513 で撤去済み・type 省略の .svg src も含む）",
     ).toHaveLength(0);
+  });
+});
+
+describe("maskable アセット/生成ジョブが物理的に復活していない（#515 撤去の回帰ガード）", () => {
+  // #515: 未使用の maskable アイコン（icon-maskable.svg / icon-maskable-*.png）とその生成ジョブを撤去し、
+  // apple-touch も含め全 PNG を icon.svg 1本由来に統一した。#513 ガードは manifest.icons 配列内の
+  // maskable/SVG エントリ非在を守るが、こちらは別観点＝ディスク上の物理ファイルと生成器（jobs）に
+  // maskable が再出現しないことを縛る。maskable アセットが復活すれば manifest に足す誘惑と枠再発の温床になる。
+  it("public/ に maskable アイコンファイルが存在しない（icon-maskable.svg / icon-maskable-*.png の再出現を検出）", () => {
+    const maskables = readdirSync(publicDir).filter((f) => /icon-maskable/.test(f));
+    expect(maskables, `public/ に maskable アイコンが再出現（#515 で撤去済み）: ${maskables.join(", ")}`).toHaveLength(0);
+  });
+
+  it("generate-icons.mjs の生成ジョブに maskable 出力が無い", () => {
+    const maskables = iconScriptJobFilenames().filter((f) => f.includes("maskable"));
+    expect(maskables, `生成ジョブに maskable 出力が復活（#515 で撤去済み）: ${maskables.join(", ")}`).toHaveLength(0);
+  });
+
+  it("全 PNG 生成ジョブが単一の SVG ソース（anySvg = icon.svg）由来である", () => {
+    // #515 の統一意図＝生成元を icon.svg 1本に絞る。jobs の各エントリ先頭のソース変数を採り、
+    // すべて anySvg（= icon.svg 読み込み）であることを縛る。別ソース（maskable 専用 SVG 等）の復活を赤にする。
+    const block = iconScriptSrc.match(/const jobs = \[([\s\S]*?)\];/);
+    if (!block) throw new Error("generate-icons.mjs に jobs 配列が見つからない");
+    const sources = [...block[1].matchAll(/\[\s*(\w+)\s*,/g)].map((m) => m[1]);
+    expect(sources.length, "jobs からソース変数が採れない").toBeGreaterThan(0);
+    expect([...new Set(sources)], `PNG 生成ソースが単一でない: ${sources.join(", ")}`).toEqual(["anySvg"]);
   });
 });
