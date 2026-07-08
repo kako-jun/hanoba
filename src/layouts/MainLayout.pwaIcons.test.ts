@@ -116,8 +116,15 @@ describe("manifest.icons に枠を生む maskable/SVG を持たない（#513 ス
     expect(maskable, "maskable アイコンは Android スプラッシュに四角い枠を生む（#513 で撤去済み）").toHaveLength(0);
   });
 
-  it("type が image/svg+xml（SVG）のエントリが存在しない", () => {
-    const svg = [...manifestIconsBlock().matchAll(/type:\s*["']image\/svg\+xml["']/g)];
-    expect(svg, "SVG アイコンは Android スプラッシュで板状に描かれ枠を生む（#513 で撤去済み）").toHaveLength(0);
+  it("SVG エントリを持たない（type 省略の .svg src も検出・枠再発防止）", () => {
+    // type だけを見ると `{ src:"/icon.svg", sizes:"any", purpose:"any" }` のように type 省略で
+    // 戻された SVG（ブラウザは拡張子から SVG と解釈する）を取りこぼす。type と src(.svg) の両方を縛る。
+    const block = manifestIconsBlock();
+    const byType = [...block.matchAll(/type:\s*["']image\/svg\+xml["']/g)];
+    const bySrc = [...block.matchAll(/src:\s*["'][^"']*\.svg(?:[?#][^"']*)?["']/g)];
+    expect(
+      [...byType, ...bySrc],
+      "SVG アイコンは Android スプラッシュで板状に描かれ枠を生む（#513 で撤去済み・type 省略の .svg src も含む）",
+    ).toHaveLength(0);
   });
 });
