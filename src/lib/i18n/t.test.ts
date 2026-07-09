@@ -124,6 +124,16 @@ describe("新規キーの多言語完備（#525・#164）", () => {
   );
 });
 
+describe("未名乗り著者キーの多言語完備（#531）", () => {
+  const CATALOGS = { ja, en, es, zh } as const;
+  const EXPECTED = { ja: "旅人", en: "Traveler", es: "Viajero", zh: "旅人" } as const;
+
+  it.each(Object.entries(EXPECTED))("%s の author.unnamed は専用訳を持つ", (locale, expected) => {
+    const catalog = CATALOGS[locale as keyof typeof CATALOGS];
+    expect(catalog["author.unnamed"]).toBe(expected);
+  });
+});
+
 // gazette.* は見出しだけでなく body/closing/links も含めて全キーを動的に列挙して検証する
 // （手打ち列挙だと新規記事追加時に body/closing/links の訳し忘れが素通りする・#164）。
 describe("gazette.* 全キーの多言語完備（#164・動的列挙）", () => {

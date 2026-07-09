@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
+import type { Profile } from "../../lib/feed/parse.ts";
+import { nip19 } from "nostr-tools";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない・#12）。
 const fetchReactionCount = vi.fn();
@@ -78,6 +80,47 @@ describe("PostDetail いいね数表示", () => {
       const like = screen.getByLabelText("いいね 取得中");
       expect(like).toHaveTextContent("-");
     });
+  });
+
+  it("空白名は旅人として表示し、正しい npub href と aria 識別だけに npub を残す", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    const pubkey = "4".repeat(64);
+    const profile: Profile = {
+      name: " \n ",
+      picture: null,
+      about: null,
+      websites: [],
+      favoriteVarieties: [],
+    };
+    render(
+      <PostDetail
+        post={makePost({ id: "author-empty", pubkey })}
+        profile={profile}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    const link = screen.getByRole("link", { name: /^旅人（npub1.*….*）のプロフィール$/ });
+    expect(link).toHaveAttribute("href", `/u?npub=${nip19.npubEncode(pubkey)}`);
+    expect(link).toHaveTextContent("旅人");
+    expect(link).not.toHaveTextContent("npub");
+    await screen.findByLabelText("いいね 0");
+    await screen.findByText("まだコメントはありません");
+  });
+
+  it("表示名があれば前後空白を除去して維持する", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    render(
+      <PostDetail
+        post={makePost({ id: "author-named", pubkey: "5".repeat(64) })}
+        profile={{ name: "  葉子  ", picture: null, about: null, websites: [], favoriteVarieties: [] }}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "葉子 のプロフィール" })).toHaveTextContent("葉子");
+    await screen.findByLabelText("いいね 0");
+    await screen.findByText("まだコメントはありません");
   });
 
   it("複数画像は前後ボタンで切り替えられる", async () => {

@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Comment, CommentOrder } from "../../lib/feed/comments.ts";
 import type { Profile } from "../../lib/feed/parse.ts";
+import { nip19 } from "nostr-tools";
 
 // useComments（relay 経由の取得/送信/削除）と useProfiles（kind:0 取得）はモック境界で止める。
 // 実ネットワーク・リレーは呼ばない（#142）。
@@ -156,5 +157,41 @@ describe("CommentSection", () => {
       "href",
       expect.stringMatching(/^\/u\?npub=npub1/),
     );
+  });
+
+  it("複数の旅人を各 pubkey のリンクと aria-label で区別し、可視名には npub を出さない", () => {
+    const first = "11".repeat(32);
+    const second = "22".repeat(32);
+    useCommentsState.comments = [
+      comment({ id: "c1", pubkey: first }),
+      comment({ id: "c2", pubkey: second }),
+    ];
+    useCommentsState.loading = false;
+    render(<CommentSection postId="p1" />);
+
+    const links = screen.getAllByRole("link", { name: /^旅人（npub1.*….*）のプロフィール$/ });
+    expect(links).toHaveLength(2);
+    const [firstLink, secondLink] = links;
+    expect(firstLink!).toHaveAttribute("href", `/u?npub=${nip19.npubEncode(first)}`);
+    expect(secondLink!).toHaveAttribute("href", `/u?npub=${nip19.npubEncode(second)}`);
+    expect(firstLink!.getAttribute("aria-label")).not.toBe(secondLink!.getAttribute("aria-label"));
+    for (const link of links) {
+      expect(link).toHaveTextContent("旅人");
+      expect(link).not.toHaveTextContent("npub");
+    }
+  });
+
+  it("空白名は旅人にし、プロフィール取得後は trim 済み表示名へ遷移する", () => {
+    const pubkey = "33".repeat(32);
+    useCommentsState.comments = [comment({ id: "c1", pubkey })];
+    useCommentsState.loading = false;
+    profiles.set(pubkey, { name: "   ", picture: null, about: null, websites: [], favoriteVarieties: [] });
+    const { rerender } = render(<CommentSection postId="p1" />);
+    expect(screen.getByText("旅人")).toBeInTheDocument();
+
+    profiles.set(pubkey, { name: "  葉子  ", picture: null, about: null, websites: [], favoriteVarieties: [] });
+    rerender(<CommentSection postId="p1" />);
+    expect(screen.queryByText("旅人")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "葉子 のプロフィール" })).toHaveTextContent("葉子");
   });
 });
