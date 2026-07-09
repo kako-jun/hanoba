@@ -55,7 +55,7 @@ function clampPhotoIndex(i: number | undefined, len: number): number {
  * ＝静的サイト（CF Pages・SSR なし）を維持する。
  *
  * 内容: 1:1 画像 ＋ 一言（caption）＋ ハッシュタグ（クリックで絞り込み）
- *       ＋ 投稿者（npub 短縮）＋ 相対時刻 ＋ いいね数（♡ N）。
+ *       ＋ 投稿者（名前、未名乗りは author.unnamed。npub はリンク/aria 識別のみ）＋ 相対時刻 ＋ いいね数（♡ N）。
  * いいね数は NIP-25 の kind:7 リアクションの読み取り集計（表示のみ・#12）。
  * いいねの書き込み（kind:7 publish）はこの Issue では作らない。
  * モーダルに反応領域を足せるよう、本文と meta を分けた構造にしてある。

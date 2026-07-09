@@ -70,7 +70,7 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
     setStatus("loading");
     try {
       // 投稿とプロフィールは独立に取れる＝並行。投稿取得が本体（失敗時は error）。
-      // プロフィールは best-effort（取れなくても npub フォールバックで表示できる）。
+      // プロフィールは best-effort（取れなくても可視名は author.unnamed、npub は URL/aria 識別に残る）。
       const [result, prof] = await Promise.all([
         fetchMyPosts(target),
         fetchMyProfileResilient(target).catch(() => null),
@@ -136,7 +136,7 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
   return (
     <LocaleProvider value={loc}>
     <section className="flex flex-col gap-5">
-      {/* プロフィールヘッダ（アバター・名前・自己紹介・サイトリンク）。取得前/失敗時も npub で骨格を出す。 */}
+      {/* プロフィールヘッダ。取得前/失敗時の可視名は author.unnamed、npub は URL/aria 識別にだけ残す。 */}
       <div className="glass rounded-2xl p-5 flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <Avatar src={profile?.picture ?? null} name={subjectName} className="w-16 h-16" />

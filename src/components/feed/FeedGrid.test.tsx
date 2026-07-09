@@ -13,7 +13,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
   // コメント欄（#142）は検証対象外なので空（コメント0件）で固定。
   fetchReplies: () => Promise.resolve([]),
-  // 著者プロフィール一括取得（#35）。テストでは空 Map（npub フォールバック表示）。
+  // 著者プロフィール一括取得（#35）。テストでは空 Map（可視名は author.unnamed）。
   fetchProfiles: () => Promise.resolve(new Map()),
   // カードのいいね/コメント数（#276 / #462・統合バッチ）はグリッド単位取得。この検証では空 Map（カードに数を出さない）。
   fetchEngagementCountsBatch: () => Promise.resolve({ reactions: new Map(), comments: new Map() }),

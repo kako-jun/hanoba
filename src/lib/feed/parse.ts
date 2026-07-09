@@ -220,8 +220,8 @@ export function parseProfileName(content: string): string | null {
 }
 
 /**
- * pubkey（hex）を短い npub 表示にする（npub1abc…wxyz）。#35。
- * プロフィール名が取れないときのフォールバック表示に使う。nip19 は純粋。
+ * pubkey（hex）を短い npub 識別子にする（npub1abc…wxyz）。#35/#531。
+ * 未名乗りの可視名には使わず、プロフィールリンク等の aria 識別補助にだけ使う。nip19 は純粋。
  */
 export function shortNpub(pubkey: string): string {
   let npub: string;

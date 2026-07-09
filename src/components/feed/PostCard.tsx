@@ -29,7 +29,7 @@ interface Props {
   onOpen: (photoIndex?: number) => void;
   /** タグクリック（クライアント側絞り込み/再検索）。 */
   onSelectHashtag: (tag: string) => void;
-  /** 著者プロフィール（#35・未取得なら null＝npub フォールバック表示）。 */
+  /** 著者プロフィール（#35・未取得なら null＝可視名は author.unnamed、npub はリンク/aria 識別のみ）。 */
   profile?: Profile | null;
   /**
    * 札解決の索引（#239/#257・植物札用）。`PostGrid` がグリッド単位で1回 `buildVarietyIndex` した

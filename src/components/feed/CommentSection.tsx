@@ -26,7 +26,7 @@ interface Props {
 export default function CommentSection({ postId }: Props) {
   const t = useT(useLocale());
   const { comments, loading, myPubkey, order, setOrder, submit, remove } = useComments(postId);
-  // 著者プロフィール（アイコン・名前）。取得前は npub フォールバック。
+  // 著者プロフィール（アイコン・名前）。未取得/未名乗りの可視名は author.unnamed、npub はリンク/aria 識別のみ。
   const profiles = useProfiles((comments ?? []).map((c) => c.pubkey));
 
   const [draft, setDraft] = useState("");
