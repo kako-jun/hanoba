@@ -123,7 +123,6 @@ export const zh: Partial<Record<MessageKey, string>> = {
 
   "citizen.level.traveler": "旅人",
   "citizen.level.citizen": "市民",
-  "citizen.level.citizenN": "市民 L{n}",
 
   "stats.subject.default": "这位市民",
   "stats.activity.heading": "{subject}的活动",

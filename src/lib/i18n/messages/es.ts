@@ -130,7 +130,6 @@ export const es: Partial<Record<MessageKey, string>> = {
 
   "citizen.level.traveler": "Viajero",
   "citizen.level.citizen": "Ciudadano",
-  "citizen.level.citizenN": "Ciudadano N{n}",
 
   "stats.subject.default": "este ciudadano",
   "stats.activity.heading": "Actividad de {subject}",

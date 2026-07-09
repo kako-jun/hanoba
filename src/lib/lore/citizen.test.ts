@@ -168,7 +168,7 @@ describe("defaultPage（初期表示ページ・ページ解禁とは無関係�
   });
 });
 
-describe("citizenLevelLabel（旅人/市民/市民Ln・#272）", () => {
+describe("citizenLevelLabel（旅人/市民の二値表示・#525＝#272 から方針転換）", () => {
   it("0 以下は旅人（まだ名乗っていない＝市民でない）", () => {
     expect(citizenLevelLabel(0, "ja")).toBe("旅人");
     expect(citizenLevelLabel(-1, "ja")).toBe("旅人");
@@ -176,9 +176,9 @@ describe("citizenLevelLabel（旅人/市民/市民Ln・#272）", () => {
   it("1 は市民", () => {
     expect(citizenLevelLabel(1, "ja")).toBe("市民");
   });
-  it("2 以上は市民Ln（古参という別語は使わない）", () => {
-    expect(citizenLevelLabel(2, "ja")).toBe("市民L2");
-    expect(citizenLevelLabel(3, "ja")).toBe("市民L3");
-    expect(citizenLevelLabel(10, "ja")).toBe("市民L10");
+  it("2 以上も数字を出さず市民のまま（Ln 表記は一切出さない）", () => {
+    expect(citizenLevelLabel(2, "ja")).toBe("市民");
+    expect(citizenLevelLabel(3, "ja")).toBe("市民");
+    expect(citizenLevelLabel(10, "ja")).toBe("市民");
   });
 });

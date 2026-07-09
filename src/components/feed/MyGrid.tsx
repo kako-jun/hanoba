@@ -121,7 +121,7 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       )}
 
       {/* 活動スタッツ（#272・段階1）。自分の t:hanoba 投稿からクライアント集計（投稿数/写真数/品種/在籍）。
-          名乗り有無で市民レベル（旅人/市民/市民Ln）を出す。取得済み（loaded）のときだけ。 */}
+          名乗り有無で市民レベル（旅人/市民の二値・#525）を出す。取得済み（loaded）のときだけ。 */}
       {status === "loaded" && (
         <CitizenStats posts={posts} hasName={getDisplayName() !== null} subjectName={t("my.subject")} />
       )}

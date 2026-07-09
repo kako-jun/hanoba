@@ -143,10 +143,9 @@ export const ja = {
   "vote.board.bugs.intro":
     "市の不具合を見つけたら、ここへ。直ちに修繕隊を送る。",
 
-  // 市民レベルの表示名（citizen.ts・#272）。Ln は {n} 補間。
+  // 市民レベルの表示名（citizen.ts）。#525 で「旅人/市民」の二値表示に統一（数字付き Ln は表示しない）。
   "citizen.level.traveler": "旅人",
   "citizen.level.citizen": "市民",
-  "citizen.level.citizenN": "市民L{n}",
 
   // 活動スタッツ節（CitizenStats・#272）。見出しの主語 {subject} は自分=あなた/他人=表示名。
   "stats.subject.default": "この市民",

@@ -129,7 +129,6 @@ export const en: Partial<Record<MessageKey, string>> = {
 
   "citizen.level.traveler": "Traveler",
   "citizen.level.citizen": "Citizen",
-  "citizen.level.citizenN": "Citizen L{n}",
 
   "stats.subject.default": "this citizen",
   "stats.activity.heading": "{subject}'s activity",
