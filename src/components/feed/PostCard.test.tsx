@@ -641,7 +641,7 @@ describe("PostCard", () => {
     }
   });
 
-  it("profile 未取得なら npub 短縮にフォールバック（#35）", () => {
+  it("profile 未取得なら旅人にフォールバックし、リンクの識別補助には npub を残す（#531）", () => {
     const restore = mockSizes(0, 0);
     try {
       render(
@@ -654,7 +654,8 @@ describe("PostCard", () => {
           profile={null}
         />,
       );
-      expect(screen.getByText(/^npub1.*…/)).toBeInTheDocument();
+      expect(screen.getByText("旅人")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /^旅人（npub1.*….*）のプロフィール$/ })).toBeInTheDocument();
     } finally {
       restore();
     }

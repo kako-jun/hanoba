@@ -42,6 +42,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "card.photo.zoom": "放大照片",
   "card.photos.count": "{n}",
   "card.author.profile": "{name} 的主页",
+  "card.author.profileWithId": "{name}（{id}）的主页",
   "card.readMore": "查看更多",
   "reaction.likes.aria": "{n} 个赞",
   "reaction.comments.aria": "{n} 条评论",
@@ -161,6 +162,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "activity.legend.high": "高",
 
   "profile.subject.default": "市民",
+  "profile.subject.withId": "{name}（{id}）",
   "profile.notFound": "找不到这位市民的主页。",
   "profile.toDiscover": "前往大家的植物",
   "profile.isMe": "这是你的公开主页（前往你的植物）",

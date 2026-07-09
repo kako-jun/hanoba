@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { relativeTime, shortNpub } from "../../lib/feed/parse.ts";
+import { relativeTime } from "../../lib/feed/parse.ts";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import { useComments } from "./useComments.ts";
 import { useProfiles } from "./useProfiles.ts";
@@ -99,8 +99,8 @@ export default function CommentSection({ postId }: Props) {
         <ul className="flex flex-col gap-3">
           {comments.map((c) => {
             const profile = profiles.get(c.pubkey);
-            // 名前が無ければ npub 短縮へ（shortNpub は必ず文字列を返す＝表示が空にならない）。
-            const name = profile?.name ?? shortNpub(c.pubkey);
+            // 未名乗りの人も内部識別は pubkey のまま、可視名だけ各言語の「旅人」にする（#531）。
+            const name = profile?.name ?? t("citizen.level.traveler");
             const isMine = myPubkey !== null && c.pubkey === myPubkey;
             const isRemoving = removingId === c.id;
             return (

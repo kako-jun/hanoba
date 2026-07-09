@@ -89,8 +89,12 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pubkey]);
 
-  // 表示名（取れればプロフィール名・無ければ npub 短縮）。見出し・タイトルに使う。
-  const subjectName = profile?.name ?? (typeof pubkey === "string" ? shortNpub(pubkey) : t("profile.subject.default"));
+  // npub は URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
+  const subjectName = profile?.name ?? (typeof pubkey === "string" ? t("citizen.level.traveler") : t("profile.subject.default"));
+  const subjectLabel =
+    profile?.name == null && typeof pubkey === "string"
+      ? t("profile.subject.withId", { name: subjectName, id: shortNpub(pubkey) })
+      : undefined;
   // 自分のページかどうか（ローカルに名乗り済みの名と一致するか）。鍵生成の副作用（getPublicKeyHex は
   // 鍵が無いと生成してしまう）を避け、getDisplayName（localStorage のみ）と表示名の一致で緩く判定する。
   // 表示名の衝突で別人を「あなた」と誤認しうるが、用途は /me への戻り導線だけ＝実害が無い範囲。
@@ -129,7 +133,10 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
         <div className="flex items-center gap-4">
           <Avatar src={profile?.picture ?? null} name={subjectName} className="w-16 h-16" />
           <div className="min-w-0 flex flex-col gap-1">
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep break-words">
+            <h1
+              aria-label={subjectLabel}
+              className="font-display text-2xl font-extrabold tracking-tight text-ha-green-deep break-words"
+            >
               {subjectName}
             </h1>
             {isLikelyMe && (

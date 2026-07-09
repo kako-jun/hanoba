@@ -150,7 +150,7 @@ describe("CommentSection", () => {
     useCommentsState.comments = [comment({ id: "c1", pubkey: "cc".repeat(32), content: "やあ" })];
     useCommentsState.loading = false;
     render(<CommentSection postId="p1" />);
-    // 名前は npub 短縮（npub1…）になる＝profile が無いとき。
-    expect(screen.getByText(/^npub1/)).toBeInTheDocument();
+    // profile が無くても内部 pubkey は維持し、可視名は「旅人」にする。
+    expect(screen.getByText("旅人")).toBeInTheDocument();
   });
 });

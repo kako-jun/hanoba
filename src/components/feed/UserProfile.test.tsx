@@ -88,7 +88,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
     expect(within(section).getByText("写真").parentElement).toHaveTextContent("3枚");
   });
 
-  it("プロフィール名が無い人は npub 短縮を見出しにし、活動は旅人（未名乗り）", async () => {
+  it("プロフィール名が無い人は旅人を見出しにし、aria-label に npub の識別補助を残す", async () => {
     fetchMyPosts.mockResolvedValue([makePost({ id: "1" })]);
     fetchMyProfileResilient.mockResolvedValue(null);
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
@@ -96,7 +96,8 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
 
     await waitFor(() => expect(fetchMyPosts).toHaveBeenCalledWith(PUBKEY));
     const h1 = await screen.findByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/^npub1/);
+    expect(h1).toHaveTextContent("旅人");
+    expect(h1.getAttribute("aria-label")).toMatch(/^旅人（npub1.*….*）$/);
     // hasName=false → 旅人。
     const section = await screen.findByRole("region", { name: /の活動$/ });
     expect(within(section).getByText("旅人")).toBeInTheDocument();

@@ -66,15 +66,20 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   const panelRef = useRef<HTMLDivElement>(null);
   // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const authorName = profile?.name ?? shortNpub(post.pubkey);
+  // npub はプロフィール URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
+  const hasAuthorName = profile?.name != null;
+  const locale = useLocale();
+  const t = useT(locale);
+  const authorName = profile?.name ?? t("citizen.level.traveler");
+  const authorProfileLabel = hasAuthorName
+    ? t("card.author.profile", { name: authorName })
+    : t("card.author.profileWithId", { name: authorName, id: shortNpub(post.pubkey) });
   // 著者の複数サイトリンク（#35 Piece 2）。kind:0 拡張 websites[] をアイコン列で出す。
   const siteLinks = toSiteLinks(profile?.websites ?? []);
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [photoIndex, setPhotoIndex] = useState(() => clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
-  const locale = useLocale();
-  const t = useT(locale);
   // 現在表示中の写真の撮影日（#324・写真↔日付の対応を保つ）。無ければ出さない。
   const currentShotDate = post.photoShotDates?.[photoIndex] ?? null;
   // スワイプ中の写真ぼかし（px・#275）。0＝ぼかし無し。指を離すと 0 に戻し、
@@ -405,7 +410,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 ) : (
                   <a
                     href={href}
-                    aria-label={t("card.author.profile", { name: authorName })}
+                    aria-label={authorProfileLabel}
                     className="flex min-w-0 items-center gap-2 rounded-full hover:text-ha-green-deep transition-colors"
                   >
                     {inner}
