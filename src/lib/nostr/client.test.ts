@@ -1,10 +1,20 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // fetchDiscoverFiltered のリレー問い合わせを検証するため SimplePool をモックする（#258）。
 // pool は client.ts の遅延シングルトンなので、querySync を hoisted な vi.fn に差し替える。
-const { querySyncMock } = vi.hoisted(() => ({ querySyncMock: vi.fn() }));
+const { querySyncMock, publishMock, getPublicKeyHexMock, signTemplateMock } = vi.hoisted(() => ({
+  querySyncMock: vi.fn(),
+  publishMock: vi.fn(),
+  getPublicKeyHexMock: vi.fn(),
+  signTemplateMock: vi.fn(),
+}));
 vi.mock("nostr-tools/pool", () => ({
-  SimplePool: vi.fn(() => ({ querySync: querySyncMock })),
+  SimplePool: vi.fn(() => ({ querySync: querySyncMock, publish: publishMock })),
+}));
+vi.mock("./keys.ts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./keys.ts")>()),
+  getPublicKeyHex: (...args: unknown[]) => getPublicKeyHexMock(...args),
+  signTemplate: (...args: unknown[]) => signTemplateMock(...args),
 }));
 
 import {
@@ -13,6 +23,7 @@ import {
   fetchEngagementCountsBatch,
   fetchMyProfileResilient,
   fetchPostById,
+  publishReaction,
 } from "./client.ts";
 import type { Profile } from "../feed/parse.ts";
 import type { NostrEvent } from "./types.ts";
@@ -30,6 +41,98 @@ const withSites: Profile = {
 };
 const noSites: Profile = { name: "みどり園", picture: null, about: null, websites: [], favoriteVarieties: [] };
 const noWait = () => Promise.resolve();
+
+const reactionEvent = (content = "+"): NostrEvent => ({
+  id: "c".repeat(64),
+  pubkey: PUBKEY,
+  created_at: 1700000000,
+  kind: 7,
+  tags: [["e", "a".repeat(64)]],
+  content,
+  sig: "",
+});
+
+describe("publishReaction", () => {
+  const targetId = "a".repeat(64);
+  const targetPubkey = "b".repeat(64);
+  const signed = reactionEvent("+");
+
+  beforeEach(() => {
+    querySyncMock.mockReset();
+    publishMock.mockReset();
+    getPublicKeyHexMock.mockReset().mockResolvedValue(PUBKEY);
+    signTemplateMock.mockReset().mockResolvedValue(signed);
+    publishMock.mockReturnValue([Promise.resolve()]);
+  });
+
+  it("未反応なら署名・publish・保存確認後に published を返す", async () => {
+    querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([signed]);
+
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toBe("published");
+    expect(querySyncMock.mock.calls[0]![1]).toMatchObject({
+      kinds: [7],
+      authors: [PUBKEY],
+      "#e": [targetId],
+    });
+    expect(signTemplateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 7,
+        content: "+",
+        tags: [["e", targetId], ["p", targetPubkey]],
+      }),
+    );
+    expect(publishMock).toHaveBeenCalledWith(expect.any(Array), signed);
+    expect(querySyncMock.mock.calls[1]![1]).toEqual({ ids: [signed.id] });
+  });
+
+  it.each(["+", "🌱"])("既存の有効な反応 %s があれば再送しない", async (content) => {
+    querySyncMock.mockResolvedValueOnce([reactionEvent(content)]);
+
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toBe("already-reacted");
+    expect(signTemplateMock).not.toHaveBeenCalled();
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  it("既存が dislike のみなら新しい like を送る", async () => {
+    querySyncMock.mockResolvedValueOnce([reactionEvent("-")]).mockResolvedValueOnce([signed]);
+
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toBe("published");
+    expect(signTemplateMock).toHaveBeenCalledTimes(1);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("自分の既存反応 query が失敗したら送信せず reject する", async () => {
+    querySyncMock.mockRejectedValueOnce(new Error("query failed"));
+    await expect(publishReaction(targetId, targetPubkey)).rejects.toThrow("query failed");
+    expect(signTemplateMock).not.toHaveBeenCalled();
+  });
+
+  it("公開鍵取得が失敗したら query も送信もしない", async () => {
+    getPublicKeyHexMock.mockRejectedValueOnce(new Error("key failed"));
+    await expect(publishReaction(targetId, targetPubkey)).rejects.toThrow("key failed");
+    expect(querySyncMock).not.toHaveBeenCalled();
+    expect(signTemplateMock).not.toHaveBeenCalled();
+  });
+
+  it("署名が失敗したら publish しない", async () => {
+    querySyncMock.mockResolvedValueOnce([]);
+    signTemplateMock.mockRejectedValueOnce(new Error("sign failed"));
+    await expect(publishReaction(targetId, targetPubkey)).rejects.toThrow("sign failed");
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  it("publish が全リレーで失敗したら reject する", async () => {
+    querySyncMock.mockResolvedValueOnce([]);
+    publishMock.mockReturnValue([Promise.reject(new Error("publish failed"))]);
+    await expect(publishReaction(targetId, targetPubkey)).rejects.toBeInstanceOf(AggregateError);
+    expect(querySyncMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("accept 後も読み取りリレーで保存未確認なら reject する", async () => {
+    querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    await expect(publishReaction(targetId, targetPubkey)).rejects.toThrow("確認できませんでした");
+  });
+});
 
 describe("fetchMyProfileResilient (#93 bounded retry)", () => {
   it("初回で websites を掴めば 1 回で確定し、待たない", async () => {

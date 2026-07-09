@@ -4,6 +4,7 @@ import {
   buildNip98AuthEvent,
   buildNoteTemplate,
   buildProfileEvent,
+  buildReactionTemplate,
   buildReplyTemplate,
 } from "./events.ts";
 
@@ -259,6 +260,36 @@ describe("buildReplyTemplate", () => {
 
   it("parentEventId が空なら throw する", () => {
     expect(() => buildReplyTemplate("コメント", "")).toThrow();
+  });
+});
+
+describe("buildReactionTemplate", () => {
+  it("標準 NIP-25 の kind・content・対象 e/p・時刻を構築する", () => {
+    expect(buildReactionTemplate("event123", "author456", 1700000000)).toEqual({
+      kind: 7,
+      created_at: 1700000000,
+      tags: [
+        ["e", "event123"],
+        ["p", "author456"],
+      ],
+      content: "+",
+    });
+  });
+
+  it("createdAt 省略時は現在時刻（秒）を入れる", () => {
+    const before = Math.floor(Date.now() / 1000);
+    const t = buildReactionTemplate("event123", "author456");
+    const after = Math.floor(Date.now() / 1000);
+    expect(t.created_at).toBeGreaterThanOrEqual(before);
+    expect(t.created_at).toBeLessThanOrEqual(after);
+  });
+
+  it("対象イベント id が空なら throw する", () => {
+    expect(() => buildReactionTemplate("", "author456")).toThrow();
+  });
+
+  it("対象投稿者 pubkey が空なら throw する", () => {
+    expect(() => buildReactionTemplate("event123", "")).toThrow();
   });
 });
 
