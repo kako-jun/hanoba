@@ -57,11 +57,11 @@ export interface Ordinance {
 }
 
 const DISTRICT_KEYS = [
-  { name: "cityHall.districts.0.name", text: "cityHall.districts.0.text" },
-  { name: "cityHall.districts.1.name", text: "cityHall.districts.1.text" },
-  { name: "cityHall.districts.2.name", text: "cityHall.districts.2.text" },
-  { name: "cityHall.districts.3.name", text: "cityHall.districts.3.text" },
-  { name: "cityHall.districts.4.name", text: "cityHall.districts.4.text" },
+  { name: "cityHall.districts.0.name", text: "cityHall.districts.0.text", note: "cityHall.districts.0.note" },
+  { name: "cityHall.districts.1.name", text: "cityHall.districts.1.text", note: "cityHall.districts.1.note" },
+  { name: "cityHall.districts.2.name", text: "cityHall.districts.2.text", note: "cityHall.districts.2.note" },
+  { name: "cityHall.districts.3.name", text: "cityHall.districts.3.text", note: "cityHall.districts.3.note" },
+  { name: "cityHall.districts.4.name", text: "cityHall.districts.4.text", note: "cityHall.districts.4.note" },
 ] as const;
 
 const CHRONICLE_KEYS = [
@@ -233,7 +233,7 @@ export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
       t(locale, keys.name),
       t(locale, keys.text),
       DISTRICT_IMAGE_SRCS[index],
-      t(locale, "cityHall.districts.note"),
+      t(locale, keys.note),
     ),
   );
   return [

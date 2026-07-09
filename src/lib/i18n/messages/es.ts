@@ -466,7 +466,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.map.landmark.2.text":
     "Donde os halláis ahora. Las ventanillas cívicas están justo debajo.",
   "cityHall.map.note":
-    "El escudo, los productos de la tierra... todo ello lo consignaré a su debido tiempo. El mapa aún está a medio trazar.",
+    "El escudo y nuestras especialidades figuran en una página posterior. Consúltalos junto con este mapa durante tu paseo.",
   "cityHall.map.placeholder": "Mapa en preparación",
   "cityHall.map.civic.heading": "Ventanillas cívicas",
   "cityHall.map.civic.0.label": "Urna ciudadana",
@@ -479,20 +479,23 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.districts.0.name": "Barrio de los invernaderos",
   "cityHall.districts.0.text":
     "Una ciudad de cristal, luz y humedad para plantas de interior y orquídeas.",
+  "cityHall.districts.0.note": "La mañana comienza leyendo la luz tras el cristal; al mediodía, los pulverizadores llenan las calles.",
   "cityHall.districts.1.name": "Distrito de los huertos",
   "cityHall.districts.1.text":
     "Parcelas cuadradas de verduras y hierbas comparten las aguas del Río de las Venas.",
+  "cityHall.districts.1.note": "Los vecinos acuerdan cuándo abrir los canales y comparten las cestas de cosecha bajo el pabellón.",
   "cityHall.districts.2.name": "Colina de los frutales",
   "cityHall.districts.2.text":
     "Cítricos y árboles frutales cambian de flores y aroma con cada estación.",
+  "cityHall.districts.2.note": "Las laderas altas reciben la brisa. Se ayudan con la polinización y, después, con la cosecha.",
   "cityHall.districts.3.name": "Callejón de los semilleros",
   "cityHall.districts.3.text":
     "Un callejón para amantes de semillas y brotes. La maceta más pequeña guarda el mayor futuro.",
+  "cityHall.districts.3.note": "Las etiquetas anotan la fecha de siembra; las semillas sobrantes van a la caja de intercambio.",
   "cityHall.districts.4.name": "Calle de los cuidados",
   "cityHall.districts.4.text":
     "Un vivero común donde se comparten saberes de trasplante, poda y riego.",
-  "cityHall.districts.note":
-    "La tierra es gratuita en todos los distritos. La voluntad de cultivar es el único alquiler.",
+  "cityHall.districts.4.note": "Mesas y herramientas son comunes. Traed una maceta débil y algún saber acudirá en su ayuda.",
   // P3 Crónica. Abre con el preámbulo del Alcalde (toda página encabeza con la voz del Alcalde · #469 cambio B).
   "cityHall.guide.vista": "Vista de la ciudad",
   "cityHall.guide.landmarks": "Río de las Venas y lugares",
@@ -517,7 +520,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.2.era": "Año Uno, Otoño",
   "cityHall.chronicle.entry.2.text":
     "Las aguas del río Nervadura nutren por primera vez el barrio de los invernaderos.",
-  "cityHall.chronicle.entry.3.era": "Año Dos",
+  "cityHall.chronicle.entry.3.era": "Año Uno, Invierno",
   "cityHall.chronicle.entry.3.text":
     "Se decreta que todas las parcelas sean cuadradas. El motivo queda registrado únicamente como «porque es hermoso».",
   "cityHall.chronicle.note":

@@ -456,7 +456,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.map.landmark.2.text":
     "Where you stand now. The civic windows are just below.",
   "cityHall.map.note":
-    "The crest, the local produce — these I shall set down in time. The map is yet half-drawn.",
+    "The crest and our specialties are recorded on a later page. Consult them with this map as you explore.",
   "cityHall.map.placeholder": "Map in the making",
   "cityHall.map.civic.heading": "Civic Windows",
   "cityHall.map.civic.0.label": "Town Vote",
@@ -469,20 +469,23 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.districts.0.name": "Glasshouse Quarter",
   "cityHall.districts.0.text":
     "A city of glass, light, and moisture for houseplants and orchids.",
+  "cityHall.districts.0.note": "Morning begins by reading the light through the glass; by noon, the streets echo with misting bottles.",
   "cityHall.districts.1.name": "Field District",
   "cityHall.districts.1.text":
     "Square plots of vegetables and herbs share the waters of the Vein River.",
+  "cityHall.districts.1.note": "Neighbors agree when to open the channels, and share their harvest baskets beneath the pavilion.",
   "cityHall.districts.2.name": "Orchard Hill",
   "cityHall.districts.2.text":
     "Citrus and fruit trees change their flowers and fragrance with every season.",
+  "cityHall.districts.2.note": "The upper slopes catch the breeze. Citizens help with pollination in bloom and harvest when fruit ripens.",
   "cityHall.districts.3.name": "Seedling Alley",
   "cityHall.districts.3.text":
     "A narrow lane for lovers of seeds and sprouts. The smallest pot holds the largest future.",
+  "cityHall.districts.3.note": "Doorway tags record each sowing date; spare seeds go into the alley's exchange box.",
   "cityHall.districts.4.name": "Plant-Care Street",
   "cityHall.districts.4.text":
     "A communal nursery where knowledge of repotting, pruning, and watering is exchanged.",
-  "cityHall.districts.note":
-    "Land is free in every district. The will to grow is the only rent required.",
+  "cityHall.districts.4.note": "Benches and tools are shared. Bring a struggling pot, and someone's knowledge will lend a hand.",
   // P3 Chronicle. Opens with the Mayor's preamble (every page leads with the Mayor's voice · #469 change B).
   "cityHall.guide.vista": "City Vista",
   "cityHall.guide.landmarks": "Vein River and Landmarks",
@@ -507,7 +510,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.chronicle.entry.2.era": "Year One, Autumn",
   "cityHall.chronicle.entry.2.text":
     "The waters of the Leafvein River first nourish the greenhouse quarter.",
-  "cityHall.chronicle.entry.3.era": "Year Two",
+  "cityHall.chronicle.entry.3.era": "Year One, Winter",
   "cityHall.chronicle.entry.3.text":
     'All plots are decreed to be square. The reason is recorded only as "because it is beautiful."',
   "cityHall.chronicle.note":

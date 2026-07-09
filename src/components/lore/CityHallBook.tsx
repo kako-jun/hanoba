@@ -333,16 +333,19 @@ export default function CityHallBook({
             className="flex items-center justify-between gap-3 pt-1"
             aria-label={t("cityHall.nav.aria")}
           >
-            <button
-              type="button"
-              onClick={goPrev}
-              disabled={!canPrev}
-              aria-label={t("cityHall.nav.prev")}
-              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <Icon name="chevron" className="w-4 h-4 rotate-90" />
-              {t("cityHall.nav.prev.label")}
-            </button>
+            <div className="flex items-center">
+              <button type="button" onClick={() => goTo(1)} disabled={!canPrev} aria-label={t("cityHall.nav.first")} className="rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">|←</button>
+              <button
+                type="button"
+                onClick={goPrev}
+                disabled={!canPrev}
+                aria-label={t("cityHall.nav.prev")}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <Icon name="chevron" className="w-4 h-4 rotate-90" />
+                {t("cityHall.nav.prev.label")}
+              </button>
+            </div>
 
             <span
               className="text-sm text-ha-ink/60 tabular-nums"
@@ -467,7 +470,9 @@ function PageContent({ page }: { page: BookPage }) {
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
           <MayorMark />
           {page.image !== undefined && (
-            <img src={page.image} alt={page.title} className="mx-auto w-full max-w-[280px] rounded-xl object-cover" />
+            <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-xl">
+              <img src={page.image} alt={page.title} className="w-full scale-[1.02] object-cover" />
+            </div>
           )}
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">{page.lead}</p>
           {page.note !== undefined && <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>}

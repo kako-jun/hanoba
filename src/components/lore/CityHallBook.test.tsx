@@ -53,12 +53,14 @@ describe("CityHallBook 10ページナビ（#137）", () => {
     expect(screen.getByText("10 / 10")).toBeInTheDocument();
   });
 
-  it("既存ページャーから末尾へ一気に移動できる", async () => {
+  it("既存ページャーから先頭・末尾へ一気に移動できる", async () => {
     const user = userEvent.setup();
     render(<CityHallBook />);
     await screen.findByText("1 / 10");
     await user.click(screen.getByRole("button", { name: "最後のページ" }));
     expect(screen.getByText("10 / 10")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "最初のページ" }));
+    expect(screen.getByText("1 / 10")).toBeInTheDocument();
   });
 
   it("市政の窓口は全ページ下部に表示する", async () => {

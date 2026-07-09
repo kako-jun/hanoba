@@ -505,7 +505,7 @@ export const ja = {
   "cityHall.map.landmark.2.name": "市役所",
   "cityHall.map.landmark.2.text": "諸君が今いる場所。市政の窓口は、この下に。",
   "cityHall.map.note":
-    "市章も、特産の品も、追って記す。地図はまだ、描きかけだ。",
+    "市章と特産の品は、後ろの頁に記した。地図とあわせ、諸君の散策に役立てたまえ。",
   "cityHall.map.placeholder": "地図 製作中",
   "cityHall.map.civic.heading": "市政の窓口",
   "cityHall.map.civic.0.label": "住民投票",
@@ -518,20 +518,23 @@ export const ja = {
   "cityHall.districts.0.name": "温室街",
   "cityHall.districts.0.text":
     "観葉植物と蘭のための、光と湿り気に満ちたガラスの街。",
+  "cityHall.districts.0.note": "朝はガラス越しの光を読み、昼には霧吹きの音が通りを満たす。",
   "cityHall.districts.1.name": "畑地区",
   "cityHall.districts.1.text":
     "野菜と香草の正方形区画が、葉脈川の水を分け合う。",
+  "cityHall.districts.1.note": "水路を開く時刻は隣の畝と相談する。収穫籠は東屋で分け合うのが習わしだ。",
   "cityHall.districts.2.name": "果樹の丘",
   "cityHall.districts.2.text":
     "柑橘と実のなる木々が並び、季節ごとに花と香りが変わる丘。",
+  "cityHall.districts.2.note": "坂の上ほど風が通る。花の季節には受粉を、実りの季節には収穫を助け合う。",
   "cityHall.districts.3.name": "実生横丁",
   "cityHall.districts.3.text":
     "種と芽を愛する者が集う細い路地。小さな鉢ほど大きな未来を持つ。",
+  "cityHall.districts.3.note": "軒先の札には播種日を記す。余った種は、路地の交換箱へ。",
   "cityHall.districts.4.name": "世話通り",
   "cityHall.districts.4.text":
     "植替え、剪定、水やりの知恵が行き交う、市民共有の苗場。",
-  "cityHall.districts.note":
-    "土地代はどの地区も無料。育てる意志だけを、地代として納めればよい。",
+  "cityHall.districts.4.note": "作業台と道具は共同物。弱った鉢を持ち寄れば、誰かの知恵が手を差し伸べる。",
   // P3 沿革（年表・遊び）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
   "cityHall.guide.vista": "街の全景",
   "cityHall.guide.landmarks": "葉脈川と名所",
@@ -556,7 +559,7 @@ export const ja = {
   "cityHall.chronicle.entry.2.era": "第一年 秋",
   "cityHall.chronicle.entry.2.text":
     "葉脈川（はみゃくがわ）の水、初めて温室街を潤す。",
-  "cityHall.chronicle.entry.3.era": "第二年",
+  "cityHall.chronicle.entry.3.era": "第一年 冬",
   "cityHall.chronicle.entry.3.text":
     "区画はすべて正方形と定められる。理由は「美しいから」とのみ記録される。",
   "cityHall.chronicle.note": "市民が増えるたび、この年表は書き足される。",
