@@ -148,7 +148,7 @@ function page1(locale: Locale): BookPage {
  * 市政の窓口（civic strip）。全ページ下部に共通表示する窓口。
  * discover/me/compose の導線本体はヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外す。
  * 住民投票（/vote）・市勢調査（/ranking）はフッタとも重複表示する（#525・命名統一＝フッタと窓口の
- * 命名・導線を揃え、手帳を唯一の入口にしない）。品評会・市長ブログは近日開庁のまま並ぶ。
+ * 命名・導線を揃え、手帳を唯一の入口にしない）。品評会は近日開庁のまま並ぶ。
  * 実在ルートのみ機能、未開設は「近日開庁」。
  */
 export function civicHub(locale: Locale = DEFAULT_LOCALE): HubLink[] {
