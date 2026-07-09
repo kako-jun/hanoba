@@ -93,12 +93,26 @@ describe("カタログ整合", () => {
   });
 });
 
-// #525 で新規追加/改称したキーは、ja へのグレースフル fallback に頼らず全 locale に実訳を持つことを
+// #525 / #164 で新規追加/改称したキーは、ja へのグレースフル fallback に頼らず全 locale に実訳を持つことを
 // 固定する（fallback で通ってしまうと、訳し忘れが気付かれず英語圏に日本語が漏れる・過去事故パターン）。
-describe("新規キーの多言語完備（#525）", () => {
+describe("新規キーの多言語完備（#525・#164）", () => {
   const CATALOGS: Record<string, Partial<Record<string, string>>> = { ja, en, es, zh };
 
-  it.each(["nav.vote", "account.profile.editHint", "cityHall.map.civic.3.label", "nav.ranking"])(
+  it.each([
+    "nav.vote",
+    "account.profile.editHint",
+    "cityHall.map.civic.3.label",
+    "nav.ranking",
+    "nav.gazette",
+    "cityHall.map.civic.2.label",
+    "meta.gazette.title",
+    "meta.gazette.description",
+    "gazette.book.title",
+    "gazette.articles.0.heading",
+    "gazette.articles.1.heading",
+    "gazette.articles.2.heading",
+    "gazette.articles.3.heading",
+  ])(
     "%s は ja/en/es/zh 全てに空でない値を持つ",
     (key) => {
       for (const [locale, catalog] of Object.entries(CATALOGS)) {
@@ -108,4 +122,31 @@ describe("新規キーの多言語完備（#525）", () => {
       }
     },
   );
+});
+
+// gazette.* は見出しだけでなく body/closing/links も含めて全キーを動的に列挙して検証する
+// （手打ち列挙だと新規記事追加時に body/closing/links の訳し忘れが素通りする・#164）。
+describe("gazette.* 全キーの多言語完備（#164・動的列挙）", () => {
+  const CATALOGS: Record<string, Partial<Record<string, string>>> = { ja, en, es, zh };
+  const gazetteKeys = Object.keys(ja).filter((key) => key.startsWith("gazette."));
+
+  it("gazette.* キーが1件以上列挙される（列挙自体が空にならないことのガード）", () => {
+    expect(gazetteKeys.length).toBeGreaterThan(0);
+  });
+
+  it.each(gazetteKeys)("%s は ja/en/es/zh 全てに空でない値を持つ", (key) => {
+    for (const [locale, catalog] of Object.entries(CATALOGS)) {
+      const value = catalog[key];
+      expect(value, `${locale}.${key} が欠落している`).toBeTypeOf("string");
+      expect(value!.length, `${locale}.${key} が空文字`).toBeGreaterThan(0);
+    }
+  });
+});
+
+// nav.gazette（フッタ）と cityHall.map.civic.2.label（市政の窓口）は同じ機能への別導線なので、
+// 全 locale で文言が一致すること（呼び名がページによってブレない）を固定する（#164 命名統一）。
+describe("nav.gazette と cityHall.map.civic.2.label の命名統一（#164）", () => {
+  it.each(["ja", "en", "es", "zh"] as const)("%s で両キーが同一文言になる", (locale) => {
+    expect(t(locale, "nav.gazette")).toBe(t(locale, "cityHall.map.civic.2.label"));
+  });
 });

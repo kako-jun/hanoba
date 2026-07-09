@@ -16,6 +16,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "nav.compose": "Post",
   "nav.ranking": "Census",
   "nav.vote": "Town Vote",
+  "nav.gazette": "Municipal Gazette",
   "nav.menu.open": "Open menu",
   "nav.menu.close": "Close menu",
   "nav.home.aria": "Hanōba home",
@@ -104,6 +105,9 @@ export const en: Partial<Record<MessageKey, string>> = {
   "meta.vote.title": "Residents' Vote — Hanōba City Hall",
   "meta.vote.description":
     "Hanōba City Hall's residents' vote. Variety ordering, feature requests, and bug reports — drop a note on the boards. Name optional.",
+  "meta.gazette.title": "Municipal Gazette — Hanōba",
+  "meta.gazette.description":
+    "Notes from Mayor Botanics von Hanōba on what's new in the city — new civic windows, features, and improvements, written up as a gazette.",
 
   "discover.lead":
     "Browse the plants of all of Nostr (#plantstr) together with Hanōba's posts.",
@@ -462,7 +466,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.heading": "Civic Windows",
   "cityHall.map.civic.0.label": "Town Vote",
   "cityHall.map.civic.1.label": "Exhibition (Contest)",
-  "cityHall.map.civic.2.label": "Mayor's Blog",
+  "cityHall.map.civic.2.label": "Municipal Gazette",
   "cityHall.map.civic.3.label": "Census",
   "cityHall.map.comingSoon": "Opening soon",
   "cityHall.districts.title": "District Guide",
@@ -497,8 +501,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.guide.specialties.text": "Foliage, field produce, fruit trees, seeds and sprouts, and the tools of care: the pride of five districts.",
   "cityHall.nav.jumpBack": "Back 5 pages",
   "cityHall.nav.jumpForward": "Forward 5 pages",
-  "cityHall.nav.first": "First page",
-  "cityHall.nav.last": "Last page",
+  "book.nav.first": "First page",
+  "book.nav.last": "Last page",
   "cityHall.nav.toc": "Contents",
   "cityHall.chronicle.title": "Chronicle",
   "cityHall.chronicle.lead":
@@ -553,10 +557,47 @@ export const en: Partial<Record<MessageKey, string>> = {
     "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",
   // CityHallBook UI chrome.
   "cityHall.mayorTitle": "Mayor {name}",
-  "cityHall.nav.aria": "Turn the page",
-  "cityHall.nav.prev": "Previous page",
-  "cityHall.nav.prev.label": "Back",
-  "cityHall.nav.next": "Next page",
-  "cityHall.nav.next.label": "Next",
-  "cityHall.nav.indicator": "{page} / {total}",
+  "book.nav.aria": "Turn the page",
+  "book.nav.prev": "Previous page",
+  "book.nav.prev.label": "Back",
+  "book.nav.next": "Next page",
+  "book.nav.next.label": "Next",
+  "book.nav.indicator": "{page} / {total}",
+
+  // Municipal Gazette (gazette.ts / GazetteBook · #164). A static changelog written in the voice of
+  // Mayor Botanics von Hanōba. Shares the same book pager (BookPager) as the Citizen's Handbook.
+  // The newest article is page 1; "Next" steps back through older articles (reverse of the handbook).
+  "gazette.book.title": "The Hanōba Municipal Gazette",
+  // Article 0 (newest): the Citizen's Handbook revision (#137).
+  "gazette.articles.0.heading": "A Revised Citizen's Handbook",
+  "gazette.articles.0.body.0":
+    "Ahem. I have given the Citizen's Handbook a full revision. District guides, the city chronicle, the ordinances — everything a traveler might wish to know, gathered anew into one volume.",
+  "gazette.articles.0.body.1":
+    "Pick it up and leaf through it, and Hanōba's origins and rules become clear at a glance. No more wandering lost.",
+  "gazette.articles.0.closing": "Do carry this volume with you as a companion on your travels.",
+  "gazette.articles.0.link.0.label": "Open the Citizen's Handbook",
+  // Article 1: multilingual display language support (#147).
+  "gazette.articles.1.heading": "Our Language Opens to the World",
+  "gazette.articles.1.body.0":
+    "Ahem. I have switched Hanōba's default display language to English and set multilingual support properly in motion. The switch is available from any page.",
+  "gazette.articles.1.body.1":
+    "Words may differ, but the heart of cultivation is one. Welcoming plant lovers from every corner of the world — that is the measure of our city.",
+  "gazette.articles.1.closing": "Friends who journey from afar are welcomed just the same as you.",
+  // Article 2: the residents' vote and census windows open (#160 · #162).
+  "gazette.articles.2.heading": "Two Civic Windows, Now Open",
+  "gazette.articles.2.body.0":
+    "Ahem. I have opened the residents' vote and a window onto the rising popularity of varieties. The former carries your voice; the latter shows which varieties are thriving in this city right now.",
+  "gazette.articles.2.body.1":
+    "At last, we have a proper way to reflect both the citizens' voice and the varieties' momentum in city affairs.",
+  "gazette.articles.2.closing": "I miss neither your vote nor a variety's rise — rest assured of that.",
+  "gazette.articles.2.link.0.label": "Visit the Residents' Vote",
+  "gazette.articles.2.link.1.label": "Visit the Census",
+  // Article 3 (oldest): the "Your Plants" screen merges name and profile (#104).
+  "gazette.articles.3.heading": "Your Plants, Now on a Single Card",
+  "gazette.articles.3.body.0":
+    "Ahem. I have revised the \"Your Plants\" screen and combined your name and profile onto a single card.",
+  "gazette.articles.3.body.1":
+    "Now a single glance at that card tells you just what kind of citizen you are.",
+  "gazette.articles.3.closing": "Your card, too, shall surely be one to take pride in.",
+  "gazette.articles.3.link.0.label": "View Your Plants",
 };

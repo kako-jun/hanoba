@@ -49,3 +49,21 @@ describe("フッタ・窓口ナビの統合（#525）", () => {
     expect(shellKeysBlock).toContain('"nav.vote"');
   });
 });
+
+describe("フッタ・窓口ナビの統合（#164）", () => {
+  it("/gazette への市政だよりリンクが存在する", () => {
+    expect(footerSrc).toContain('href="/gazette"');
+    expect(footerSrc).toContain('data-i18n="nav.gazette"');
+  });
+
+  it("nav.gazette のラベルは窓口（cityHall.map.civic.2.label）と同名になる（命名統一）", () => {
+    expect(t("ja", "nav.gazette")).toBe(t("ja", "cityHall.map.civic.2.label"));
+  });
+
+  it("MainLayout の shellKeys に nav.gazette が含まれる（言語 swap 対象からの漏れ防止・past incident pattern）", () => {
+    const start = layoutSrc.indexOf("const shellKeys");
+    const end = layoutSrc.indexOf("];", start);
+    const shellKeysBlock = layoutSrc.slice(start, end);
+    expect(shellKeysBlock).toContain('"nav.gazette"');
+  });
+});
