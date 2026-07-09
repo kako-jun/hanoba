@@ -115,7 +115,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "me.lead":
     "Las que has colocado. Elimina una y la publicación y sus fotos se van juntas.",
   "ranking.lead":
-    "Las variedades de moda ahora, contadas semanalmente a partir de las publicaciones de Hanōba, con la variación respecto a la semana anterior (↑↓, NEW, RE). Las publicaciones de todos mueven el gráfico.",
+    "Ejem. Esta es la oficina del censo. Las variedades de moda ahora se cuentan semanalmente a partir de las publicaciones de los ciudadanos, con la variación respecto a la semana anterior (↑↓, NEW, RE) indicada junto a ellas. Cada publicación de un ciudadano mueve este mismo gráfico.",
 
   "vote.h1": "Voto de los residentes",
   "vote.intro":
@@ -539,7 +539,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.ordinance.0.text":
     "El alquiler de la tierra en la Ciudad de Hanōba será gratuito, mientras se cultive una planta.",
   "cityHall.ordinance.0.commentary":
-    "Ejem. La voluntad de cultivar es en sí misma tu alquiler. Regar, contemplar una hoja: con eso ya has pagado por completo.",
+    "La voluntad de cultivar es en sí misma tu alquiler. Regar, contemplar una hoja: con eso ya has pagado por completo.",
   "cityHall.ordinance.1.article": "Artículo II (Parcela)",
   "cityHall.ordinance.1.text":
     "A cada parcela se añadirá una fotografía cuadrada y una palabra.",
