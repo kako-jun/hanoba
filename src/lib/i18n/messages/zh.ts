@@ -102,6 +102,9 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "meta.vote.title": "居民投票 — Hanōba 市政厅",
   "meta.vote.description":
     "Hanōba 市政厅的居民投票。品种排序、功能请求、错误报告——在留言板上留下一笔吧。署名自愿。",
+  "meta.gazette.title": "市政通讯 — Hanōba",
+  "meta.gazette.description":
+    "市长 Botanics von Hanōba 亲笔撰写的城市动态：新开的市政窗口、新功能与改进，以市政通讯的形式呈送。",
 
   "discover.lead": "和 Hanōba 的帖子一起，浏览整个 Nostr（#plantstr）的植物。",
   "me.lead": "你放下的那些。删除一篇，帖子和它的照片会一同消失。",
@@ -530,4 +533,41 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "book.nav.next": "下一页",
   "book.nav.next.label": "下一页",
   "book.nav.indicator": "{page} / {total}",
+
+  // 市政通讯（gazette.ts / GazetteBook · #164）。以市长 Botanics von Hanōba 之声撰写的静态更新记录，
+  // 与市民手册共用同一套本页翻页组件（BookPager）。最新一条为第1页，「下一页」翻向更早的记录
+  // （与手册方向相反）。
+  "gazette.book.title": "Hanōba 市政通讯",
+  // 第0条（最新）：市民手册全面修订（#137）。
+  "gazette.articles.0.heading": "市民手册全面修订",
+  "gazette.articles.0.body.0":
+    "咳咳。本市长将市民手册作了一次全面修订。各街区指南、编年史、市政条文——旅途中诸位想知道的一切，如今重新汇编成一册。",
+  "gazette.articles.0.body.1":
+    "翻开它，便能一目了然 Hanōba 的由来与规矩。诸位再无需迷路。",
+  "gazette.articles.0.closing": "愿诸位携此一册，作为旅途的良伴。",
+  "gazette.articles.0.link.0.label": "翻开市民手册",
+  // 第1条：显示语言的多语言支持（#147）。
+  "gazette.articles.1.heading": "语言，面向世界敞开",
+  "gazette.articles.1.body.0":
+    "咳咳。本市长已将 Hanōba 的默认显示语言切换为英语，并正式启动多语言支持。切换入口在任意页面皆可找到。",
+  "gazette.articles.1.body.1":
+    "语言虽异，养护之心相通。迎接世界各地的植物爱好者，正是本市应有的气度。",
+  "gazette.articles.1.closing": "远道而来的朋友，亦与诸位同受欢迎。",
+  // 第2条：居民投票与市情普查窗口开庁（#160 · #162）。
+  "gazette.articles.2.heading": "两处市政窗口，同日开庁",
+  "gazette.articles.2.body.0":
+    "咳咳。本市长开设了居民投票所，以及查看品种人气走势的窗口。前者聆听诸位的声音，后者呈现此刻本市哪些品种正在兴起。",
+  "gazette.articles.2.body.1":
+    "如此一来，市民之声与品种之势，终于都能反映到市政之中了。",
+  "gazette.articles.2.closing": "诸位的一票，与品种的势头，本市长皆看在眼里。",
+  "gazette.articles.2.link.0.label": "前往居民投票",
+  "gazette.articles.2.link.1.label": "查看市情普查",
+  // 第3条（最早）：「你的植物」页面合并姓名与个人资料（#104）。
+  "gazette.articles.3.heading": "「你的植物」合并为一张卡片",
+  "gazette.articles.3.body.0":
+    "咳咳。本市长将「你的植物」页面作了修改，把姓名与个人资料合并成了一张卡片。",
+  "gazette.articles.3.body.1":
+    "如今只需看这一张卡片，便知诸位是怎样一位市民。",
+  "gazette.articles.3.closing": "诸位的这张卡片，想必也会成为值得骄傲的一张。",
+  "gazette.articles.3.link.0.label": "查看你的植物",
 };

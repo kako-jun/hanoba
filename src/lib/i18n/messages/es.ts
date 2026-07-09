@@ -105,6 +105,9 @@ export const es: Partial<Record<MessageKey, string>> = {
   "meta.vote.title": "Voto de los residentes — Ayuntamiento de Hanōba",
   "meta.vote.description":
     "El voto de los residentes del Ayuntamiento de Hanōba. Orden de las variedades, peticiones de funciones e informes de errores: deja una nota en los tablones. El nombre es opcional.",
+  "meta.gazette.title": "Gaceta Municipal — Hanōba",
+  "meta.gazette.description":
+    "Notas del Alcalde Botanics von Hanōba sobre las novedades de la ciudad: nuevas ventanillas cívicas, funciones y mejoras, relatadas como una gaceta.",
 
   "discover.lead":
     "Explora las plantas de todo Nostr (#plantstr) junto con las publicaciones de Hanōba.",
@@ -569,4 +572,42 @@ export const es: Partial<Record<MessageKey, string>> = {
   "book.nav.next": "Página siguiente",
   "book.nav.next.label": "Siguiente",
   "book.nav.indicator": "{page} / {total}",
+
+  // Gaceta Municipal (gazette.ts / GazetteBook · #164). Un historial de cambios estático narrado con
+  // la voz del Alcalde Botanics von Hanōba. Comparte el mismo paginador de libro (BookPager) que el
+  // manual del ciudadano. El artículo más reciente es la página 1; "Siguiente" retrocede hacia
+  // artículos más antiguos (al revés que el manual).
+  "gazette.book.title": "La Gaceta Municipal de Hanōba",
+  // Artículo 0 (el más reciente): la revisión del manual del ciudadano (#137).
+  "gazette.articles.0.heading": "El manual del ciudadano, revisado por completo",
+  "gazette.articles.0.body.0":
+    "Ejem. He revisado por completo el manual del ciudadano. Las guías de cada distrito, la crónica de la ciudad, las ordenanzas: todo lo que un viajero querría saber, reunido de nuevo en un solo volumen.",
+  "gazette.articles.0.body.1":
+    "Tómalo, hojéalo, y los orígenes y las reglas de Hanōba quedarán claros de un vistazo. Ya no habrá lugar para perderse.",
+  "gazette.articles.0.closing": "Llévate este volumen como compañero de viaje.",
+  "gazette.articles.0.link.0.label": "Abrir el manual del ciudadano",
+  // Artículo 1: soporte multilingüe del idioma de visualización (#147).
+  "gazette.articles.1.heading": "Nuestro idioma se abre al mundo",
+  "gazette.articles.1.body.0":
+    "Ejem. He cambiado el idioma predeterminado de Hanōba al inglés y he puesto en marcha, como es debido, el soporte multilingüe. El cambio está disponible desde cualquier página.",
+  "gazette.articles.1.body.1":
+    "Las palabras difieren, pero el corazón de quien cultiva es uno solo. Recibir a los amantes de las plantas de cada rincón del mundo: esa es la medida de nuestra ciudad.",
+  "gazette.articles.1.closing": "A los amigos que llegan de lejos, se les da la misma bienvenida que a ti.",
+  // Artículo 2: apertura de la urna ciudadana y el censo municipal (#160 · #162).
+  "gazette.articles.2.heading": "Dos ventanillas cívicas, abiertas a la vez",
+  "gazette.articles.2.body.0":
+    "Ejem. He abierto la urna ciudadana y una ventanilla para ver el impulso de popularidad de las variedades. La primera recoge tu voz; la segunda muestra qué variedades están en auge ahora mismo en esta ciudad.",
+  "gazette.articles.2.body.1":
+    "Por fin contamos con un modo adecuado de reflejar en la vida municipal tanto la voz de los ciudadanos como el impulso de las variedades.",
+  "gazette.articles.2.closing": "No pierdo de vista ni tu voto ni el auge de una variedad.",
+  "gazette.articles.2.link.0.label": "Ir a la urna ciudadana",
+  "gazette.articles.2.link.1.label": "Ir al censo municipal",
+  // Artículo 3 (el más antiguo): "Tus plantas" une nombre y perfil (#104).
+  "gazette.articles.3.heading": "«Tus plantas», ahora en una sola tarjeta",
+  "gazette.articles.3.body.0":
+    "Ejem. He revisado la pantalla de «Tus plantas» y he unido tu nombre y tu perfil en una sola tarjeta.",
+  "gazette.articles.3.body.1":
+    "Ahora, con solo mirar esa tarjeta, se sabe qué clase de ciudadano eres.",
+  "gazette.articles.3.closing": "Tu tarjeta también será, sin duda, motivo de orgullo.",
+  "gazette.articles.3.link.0.label": "Ver tus plantas",
 };
