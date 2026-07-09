@@ -1,558 +1,99 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { join } from "node:path";
-import sharp from "sharp";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FeedPost } from "../../lib/feed/parse.ts";
-import { CITIZEN_TIERS, TENURE_DAYS, TENURE_POSTS } from "../../lib/lore/citizen.ts";
 
-// ネットワーク・鍵はモック境界で止める（実 relay・localStorage を呼ばない）。
 const fetchMyPosts = vi.fn();
 const getDisplayName = vi.fn();
 const getPublicKeyHex = vi.fn();
 
-vi.mock("../../lib/nostr/client.ts", () => ({
-  fetchMyPosts: (...a: unknown[]) => fetchMyPosts(...a),
-}));
+vi.mock("../../lib/nostr/client.ts", () => ({ fetchMyPosts: (...args: unknown[]) => fetchMyPosts(...args) }));
 vi.mock("../../lib/nostr/keys.ts", () => ({
-  getDisplayName: (...a: unknown[]) => getDisplayName(...a),
-  getPublicKeyHex: (...a: unknown[]) => getPublicKeyHex(...a),
+  getDisplayName: (...args: unknown[]) => getDisplayName(...args),
+  getPublicKeyHex: (...args: unknown[]) => getPublicKeyHex(...args),
 }));
 
-import CityHallBook from "./CityHallBook.tsx";
+import CityHallBook, { BOOK_PAGE_STORAGE_KEY } from "./CityHallBook.tsx";
 
-// matchMedia を差し替えて reduced-motion の on/off を制御する（#275・DandelionBurst と同型）。
-// グローバル汚染しないよう afterEach の vi.restoreAllMocks() が stub も戻す。
-function stubMatchMedia(reduce: boolean) {
-  vi.stubGlobal("matchMedia", (query: string) => ({
-    matches: reduce && query.includes("prefers-reduced-motion"),
-    media: query,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    addListener: () => {},
-    removeListener: () => {},
-    onchange: null,
-    dispatchEvent: () => false,
-  }));
-}
-
-const NOW_MS = 1781913600 * 1000;
-const DAY = 86400;
-
-function makePost(createdAt: number, id: string): FeedPost {
-  return {
-    id,
-    pubkey: "a".repeat(64),
-    createdAt,
-    caption: "",
-    imageUrls: ["https://x/y.jpg"],
-    imageUrl: "https://x/y.jpg",
-    hashtags: [],
-    shotDates: [],  };
-}
-
-/** L2 相当の投稿: 5 件・最古は 20 日前（投稿数 5 / 居住 14 日〜の境界を満たす）。 */
-function tenuredPosts(): FeedPost[] {
-  const now = Math.floor(NOW_MS / 1000);
-  return Array.from({ length: TENURE_POSTS }, (_, i) =>
-    makePost(now - (TENURE_DAYS + 6) * DAY + i * DAY, `p${i}`),
-  );
-}
-
-/** L3 相当の投稿: 15 件・最古は 35 日前（投稿数 15 / 居住 30 日〜の L3 tier を満たす・#469）。 */
-function level3Posts(): FeedPost[] {
-  const now = Math.floor(NOW_MS / 1000);
-  return Array.from({ length: 15 }, (_, i) => makePost(now - 35 * DAY + i * DAY, `p${i}`));
-}
-
-/** L4 tier（CITIZEN_TIERS の level===4）。tier 定義が動いても追従するよう table から引く。 */
-const L4_TIER = CITIZEN_TIERS.find((tier) => tier.level === 4)!;
-
-/**
- * L4 相当の投稿（#469・真レベル配線の固定用）。L4 tier（既定 40 投稿 かつ 居住 90 日〜）を満たすが
- * L5（80 投稿/180 日）には満たない量＝citizenLevelFull が 4 を返す。最古を now-minDays に置く。
- */
-function level4Posts(): FeedPost[] {
-  const now = Math.floor(NOW_MS / 1000);
-  return Array.from({ length: L4_TIER.minPosts }, (_, i) =>
-    makePost(now - L4_TIER.minDays * DAY + i * DAY, `p${i}`),
-  );
-}
-
-describe("CityHallBook（ハノーバ市民手帳・#163）", () => {
+describe("CityHallBook 20ページナビ（#137）", () => {
   beforeEach(() => {
     fetchMyPosts.mockReset().mockResolvedValue([]);
     getDisplayName.mockReset().mockReturnValue(null);
     getPublicKeyHex.mockReset().mockResolvedValue("a".repeat(64));
-    vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
+    localStorage.clear();
+    localStorage.setItem("hanoba:lang", "ja");
+    history.replaceState(null, "", "/about");
+    Element.prototype.scrollIntoView = vi.fn();
   });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
-    // matchMedia の stub も毎回外す（reduced-motion スタブのグローバル汚染防止・#275）。
-    vi.unstubAllGlobals();
   });
 
-  it("常に手帳のタイトルを出す", async () => {
+  it("全20ページを最初から開放し、1ページ目を表示する", async () => {
     render(<CityHallBook />);
-    expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳" })).toBeInTheDocument();
+    expect(await screen.findByText(/ようこそ、緑の市へ/)).toBeInTheDocument();
+    expect(screen.getByText("1 / 20")).toBeInTheDocument();
   });
 
-  it("移住案内（1p）の冒頭に市長ボタニクスのアイコン（ジョウロ写真）を出す", async () => {
-    const { container } = render(<CityHallBook />);
-    // L0（名前なし）の既定は 1p 移住案内。歓迎の辞が出るのを待ってから走査する。
-    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
-    // Avatar は装飾扱いで alt="" ＝ presentational なので role=img では拾えない。
-    // 素の <img> を走査し src でジョウロ写真を絞り込む。
-    const imgs = Array.from(container.querySelectorAll("img"));
-    const mayor = imgs.find((el) =>
-      (el.getAttribute("src") ?? "").includes("mayor-botanics-watering-can.webp"),
-    );
-    expect(mayor).toBeDefined();
-  });
-
-  it("移住案内の冒頭に語り手として「ボタニクス市長」の名を添える（フルネームは本文側・#262）", async () => {
+  it("最後に開いた安定IDから再開する", async () => {
+    localStorage.setItem(BOOK_PAGE_STORAGE_KEY, "crest");
     render(<CityHallBook />);
-    // 本文（歓迎の辞）にはフルネームが残る。
-    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
-    // 肖像の脇は親しみのある短い呼び名「ボタニクス市長」。
-    expect(screen.getByText("ボタニクス市長")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "市章" })).toBeInTheDocument();
+    expect(screen.getByText("11 / 20")).toBeInTheDocument();
   });
 
-  it("街の地図（2p・map）でも冒頭に市長アイコンを出す（本全体が市長の語り＝全ページ共通・#455）", async () => {
-    getDisplayName.mockReturnValue("みどり"); // L1: 既定 2p（街の地図）。
-    fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
-    const { container } = render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-    const imgs = Array.from(container.querySelectorAll("img"));
-    const mayor = imgs.find((el) =>
-      (el.getAttribute("src") ?? "").includes("mayor-botanics-watering-can.webp"),
-    );
-    expect(mayor).toBeDefined();
-  });
-
-  it("名乗り済み（L1/L2）は最初から2ページ目を出す（1ページ目フラッシュなし・全ページ開放で ??? ロック頁は出ない）", async () => {
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
+  it("URL指定を保存位置より優先する", async () => {
+    localStorage.setItem(BOOK_PAGE_STORAGE_KEY, "crest");
+    history.replaceState(null, "", "/about?page=specialties");
     render(<CityHallBook />);
-    // useIsoLayoutEffect が同期で 2p・最低 L1 を確定するので、最初の描画から:
-    // ・1p 移住案内の歓迎の辞は出ない（page-1 フラッシュなし）
-    expect(screen.queryByText(/ようこそ、緑の市へ/)).toBeNull();
-    // ・2p 街の地図が即出る（全ページ開放でロック頁自体が存在しない＝??? は構造的に出ない）
-    expect(screen.getByText(/我が市の地図である/)).toBeInTheDocument();
-    expect(screen.queryByText("？？？")).toBeNull();
+    expect(await screen.findByRole("heading", { level: 2, name: "特産物" })).toBeInTheDocument();
+    expect(screen.getByText("12 / 20")).toBeInTheDocument();
   });
 
-  it("L0 旅人（名前なし）: 既定は 1p 移住案内・前は無い/次へ進める（全ページ閲覧可・#510）", async () => {
-    getDisplayName.mockReturnValue(null);
-    render(<CityHallBook />);
-
-    // 移住案内の歓迎の辞が出る。
-    expect(await screen.findByText(/ハノーバ市長、ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
-    // L0（旅人）はタイトルにレベル番号を出さず素のタイトル＋副題「旅人」（#469 変更A）。
-    expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳" })).toBeInTheDocument();
-    expect(screen.getByText("旅人")).toBeInTheDocument();
-    // 実務注（site の一言説明）も出る。
-    expect(screen.getByText(/植物専用の写真SNSです/)).toBeInTheDocument();
-    // 挨拶の直後に街の俯瞰ビスタが挟まる（#504）。
-    const vista = screen.getByRole("img", { name: "緑に包まれたハノーバ市の俯瞰" });
-    expect(vista).toHaveAttribute("src", "/hanoba-welcome-vista.webp");
-    // 挿絵は全幅で大きく出さず中央寄せ＋最大幅を制限し、枠線/リングは付けない（#507）。
-    expect(vista.className).toContain("mx-auto");
-    expect(vista.className).toContain("max-w-[170px]");
-    expect(vista.className).not.toContain("border");
-    expect(vista.className).not.toContain("ring");
-    // 先頭ページなので前は不可、次へは進める（#510 でレベル解禁ゲート撤去＝全ページ閲覧可）。
-    expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
-    // ロック頁の「？？？」ティザーは撤去済み＝どこにも出ない。
-    expect(screen.queryByText("？？？")).toBeNull();
-  });
-
-  it("L0: 名前なしでも全 4 ページ（地図→沿革→条文）を最後まで前送りできる（Ln がゲートしない・#510）", async () => {
+  it("5ページ進む・先頭・末尾へ一気に移動できる", async () => {
     const user = userEvent.setup();
-    getDisplayName.mockReturnValue(null);
     render(<CityHallBook />);
-    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
-
-    // 1p → 2p 街の地図（旅人でも閲覧可）。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
-    expect(screen.queryByText("？？？")).toBeNull();
-    // 2p → 3p 沿革。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    // 3p → 4p 条文（最深ページ）。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
-    // 4p が最終＝次は無い。ロックではなく単に末尾。
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
+    await screen.findByText("1 / 20");
+    await user.click(screen.getByRole("button", { name: "5ページ進む" }));
+    expect(screen.getByText("6 / 20")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "最後のページ" }));
+    expect(screen.getByText("20 / 20")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "最初のページ" }));
+    expect(screen.getByText("1 / 20")).toBeInTheDocument();
   });
 
-  it("L1 市民（名前あり・投稿少）: 既定で 2p 街の地図を開く（#469）", async () => {
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
-    render(<CityHallBook />);
-
-    // 既定ページ＝街の地図（早期のご褒美ページ）。
-    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
-    // L1+ はタイトルにレベル番号を出し（「ハノーバ市民手帳 L1」）、副題「旅人」は出さない（#469 変更A）。
-    // レベル番号は真レベル確定後（resolved）だけ付く＝findByRole で待つ（#479-B フラッシュ防止）。
-    expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L1" })).toBeInTheDocument();
-    expect(screen.queryByText("旅人")).toBeNull();
-    // 名所（ランドマーク）が読み物として並ぶ。
-    expect(screen.getByText("葉脈川")).toBeInTheDocument();
-    // 地図ビジュアルは実画像が差し込み済み（#137/#504）＝仮置きフレームでなく img で出る。
-    const mapImg = screen.getByRole("img", { name: "街の地図" });
-    expect(mapImg).toHaveAttribute("src", "/hanoba-map.webp");
-    // 地図の挿絵も全幅で出さず中央寄せ＋最大幅を制限し、枠線/リングは付けない（#507）。
-    expect(mapImg.className).toContain("mx-auto");
-    expect(mapImg.className).toContain("max-w-[170px]");
-    expect(mapImg.className).not.toContain("border");
-    expect(mapImg.className).not.toContain("ring");
-    // 機能導線（discover/ranking/me/compose）は手帳から外しヘッダ/フッタへ＝地図には出さない。
-    expect(screen.queryByRole("link", { name: /人気ランキング/ })).toBeNull();
-    expect(screen.queryByRole("link", { name: /あなたの植物/ })).toBeNull();
-    expect(screen.queryByRole("link", { name: /投稿する/ })).toBeNull();
-    expect(screen.queryByRole("link", { name: /みんなの植物/ })).toBeNull();
-    // 市政の窓口: 住民投票（#160）は /vote への実リンク（退避先として健在）。
-    expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
-    // 残る窓口（品評会/市長ブログ）は「近日開庁」でリンクにならない＝丁度 2。
-    expect(screen.getAllByText("近日開庁").length).toBe(2);
-    expect(screen.queryByRole("link", { name: /品評会/ })).toBeNull();
-    // 昇格の味付け（L1 が地図を開いた）。
-    expect(screen.getByText(/移住、確かに受理した/)).toBeInTheDocument();
-  });
-
-  it("市政の窓口は全ページ共通で手帳ページの下に常設される（#510 方針B）", async () => {
+  it("目次から任意ページへ直接移動し位置を保存する", async () => {
     const user = userEvent.setup();
-    getDisplayName.mockReturnValue(null); // L0: 既定 1p 移住案内から辿る。
     render(<CityHallBook />);
+    const toc = screen.getByLabelText("目次");
+    await user.selectOptions(toc, "district-3");
+    expect(screen.getByRole("heading", { level: 2, name: "果樹の丘" })).toBeInTheDocument();
+    expect(localStorage.getItem(BOOK_PAGE_STORAGE_KEY)).toBe("district-3");
+    expect(new URLSearchParams(location.search).get("page")).toBe("district-3");
+  });
 
-    // 1p 移住案内（地図ではないページ）でも窓口が下部に出る＝住民投票が /vote へ、近日開庁が 2 件。
-    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
+  it("市政の窓口は巻末だけに表示する", async () => {
+    const user = userEvent.setup();
+    render(<CityHallBook />);
+    expect(screen.queryByRole("heading", { name: "市政の窓口" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "最後のページ" }));
     expect(screen.getByRole("heading", { name: "市政の窓口" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
-    expect(screen.getAllByText("近日開庁").length).toBe(2);
-
-    // 前送りで最終ページ（4p 条文）まで進めても、同じ窓口が常設される（ページ固有ではない）。
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 2p 地図
-    await screen.findByText(/我が市の地図である/);
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 3p 沿革
-    await screen.findByText(/荒れ地に最初の一鉢を植える/);
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 4p 条文
-    await screen.findByText(/第一条（土地）/);
-    // 条文ページの下にも同一の窓口（住民投票 /vote・近日開庁 2 件）が出る。
-    expect(screen.getByRole("heading", { name: "市政の窓口" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
-    expect(screen.getAllByText("近日開庁").length).toBe(2);
   });
 
-  it("L1: 沿革（3p）も最初から閲覧可能（次を押すと沿革本文が出る・ティザー無し・#510）", async () => {
+  it("矢印キーとスワイプでもページ・URL・保存位置を同期する", async () => {
     const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([makePost(Math.floor(NOW_MS / 1000), "p0")]);
     render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    // 2p から次 → 3p 沿革の本文が直接出る（レベル解禁ゲートは撤去済み）。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    expect(screen.queryByText("？？？")).toBeNull();
-    // さらに 4p 条文へも進める。
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeEnabled();
-  });
-
-  it("L2（名前＋5投稿＋14日以上）: 味付けは level 依存で保つ・条文（4p）も閲覧可（#510）", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("ふるつわもの");
-    fetchMyPosts.mockResolvedValue(tenuredPosts());
-    render(<CityHallBook />);
-
-    // 既定は 2p 街の地図（奥は自動で開かない＝初期表示ページの決定は defaultPage が担う）。
-    await screen.findByText(/我が市の地図である/);
-    // タイトルは真レベル表記「ハノーバ市民手帳 L2」（#469 変更A）。
-    expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L2" })).toBeInTheDocument();
-    // 古参は 2p で移住受理の文言を出さない（長く居る市民に再掲しない）。
-    expect(screen.queryByText(/移住、確かに受理した/)).toBeNull();
-    // 古参歓迎の味付けも、まだ奥に達していない 2p では出さない。
-    expect(screen.queryByText(/諸君はもう、市の古い友人だ/)).toBeNull();
-    // 3p 沿革へ。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    // 沿革も冒頭に市長の前口上が出る（全ページ冒頭に市長の言葉・#469 変更B）。
-    expect(screen.getByText(/我が市の来し方を、少し語らせてもらおう/)).toBeInTheDocument();
-    // 古参歓迎は奥（3p）に初めて達したときだけ出す（level>=2・ページ解禁とは無関係に維持）。
-    expect(screen.getByText(/諸君はもう、市の古い友人だ/)).toBeInTheDocument();
-    // 4p 条文へも進める（レベル解禁ゲート撤去＝全ページ閲覧可・#510）。ティザーは無い。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
-    expect(screen.queryByText("？？？")).toBeNull();
-    // 4p が最終＝次は無い。
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
-  });
-
-  it("L3（名前＋15投稿＋30日以上）: 条文（4p）まで開ける（最深ページ・#469）", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("ながいすまい");
-    fetchMyPosts.mockResolvedValue(level3Posts());
-    render(<CityHallBook />);
-
-    // 既定は 2p（奥は自動で開かない）。
-    await screen.findByText(/我が市の地図である/);
-    // タイトルは真レベル表記「ハノーバ市民手帳 L3」（#469 変更A）。
-    expect(await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L3" })).toBeInTheDocument();
-    // 3p 沿革へ（古参歓迎は L3 でも維持）。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    expect(screen.getByText(/諸君はもう、市の古い友人だ/)).toBeInTheDocument();
-    // 4p 条文へ。
-    await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
-    // 条文も冒頭に市長の前口上が出る（全ページ冒頭に市長の言葉・#469 変更B）。
-    expect(screen.getByText(/これが我が市の憲章だ/)).toBeInTheDocument();
-    expect(screen.getByText(/育てる意志こそが地代だ/)).toBeInTheDocument();
-    // 4p が最後（次は無い）。
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
-  });
-
-  it("L4（L4 tier 達成）: タイトルは真レベル L4（capped 3 で頭打ちにしない）・解放は条文 P4 止まり（#469）", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("おおふるつわもの");
-    fetchMyPosts.mockResolvedValue(level4Posts());
-    render(<CityHallBook />);
-
-    // ① 本命: タイトル（h1）は真レベル levelFull=4＝「ハノーバ市民手帳 L4」。
-    //    タイトルが capped level（=3）に配線されていれば「L3」になり、この findByRole が失敗する。
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "ハノーバ市民手帳 L4" }),
-    ).toBeInTheDocument();
-    // capped 表記「L3」はタイトルに出ない（誤配線の検出を兼ねる）。
-    expect(screen.queryByRole("heading", { level: 1, name: "ハノーバ市民手帳 L3" })).toBeNull();
-
-    // ② 解放はページ解放用 capped level(=3)＝条文 P4 が最終実ページ。L4 でも P5 以降は無い。
-    await screen.findByText(/我が市の地図である/); // 2p 街の地図
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 3p 沿革
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 4p 条文
-    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
-    // 4p が最終＝次は無い（条文は解放済みの最終ページ＝ティザーすら先に出ない）。
-    expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
-    expect(screen.queryByText("？？？")).toBeNull();
-  });
-
-  it("relay ダウン（投稿が空）でも名前があれば L1 に落ちてロックアウトしない", async () => {
-    // fetchMyPosts は client.ts 内で try/catch して [] を返す（reject しない）。
-    // よって relay ダウンの実経路は「[] が返る → citizenLevel(hasName, 0, null) → L1」。
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-
-    // 投稿ゼロでも街の地図（2p）まで開く＝市民として扱う。
-    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
-    // L2 ではないので沿革（3p）はロックされ、次はティザー止まり。
-    const next = screen.getByRole("button", { name: "次のページ" });
-    expect(next).toBeEnabled();
-  });
-
-  it("鍵取得に失敗しても（NIP-07 reject 等）名前があれば L1 に落ちてロックアウトしない", async () => {
-    // 実 catch 経路は getPublicKeyHex() の throw（NIP-07 拡張が拒否する等）。
-    // deriveLevel の catch が hasName を尊重して L1 にフォールバックする。
-    getDisplayName.mockReturnValue("みどり");
-    getPublicKeyHex.mockRejectedValue(new Error("NIP-07 rejected"));
-    render(<CityHallBook />);
-
-    // 鍵が取れなくても街の地図（2p）まで開く＝名乗った市民を締め出さない。
-    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
-  });
-
-  it("後方オープン: 2p から前へ戻ると 1p 移住案内に行ける", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    await user.click(screen.getByRole("button", { name: "前のページ" }));
-    expect(await screen.findByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
-  });
-
-  it("←/→ キーで本をめくれる（末尾ページより先へは進めない・入力中は横取りしない）", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    // → で 3p 沿革へ（レベル解禁ゲート撤去＝直接本文が出る・ティザー無し）。
     await user.keyboard("{ArrowRight}");
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    // → で 4p 条文（最深ページ）へ。
-    await user.keyboard("{ArrowRight}");
-    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
-    // 4p より先（末尾上限）へは → でも進まない＝条文のまま。
-    await user.keyboard("{ArrowRight}");
-    expect(screen.getByText(/第一条（土地）/)).toBeInTheDocument();
-    // ← で 3p 沿革へ戻る。
-    await user.keyboard("{ArrowLeft}");
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-    // ← で 2p 街の地図へ。
-    await user.keyboard("{ArrowLeft}");
-    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
-    // ← で移住案内（1p）へ。
-    await user.keyboard("{ArrowLeft}");
-    expect(await screen.findByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
-    // 1p より前（後方下限）には ← でも行かない。
-    await user.keyboard("{ArrowLeft}");
-    expect(screen.getByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
-  });
-
-  it("左スワイプで次ページ・右スワイプで前ページにめくれる（#275）", async () => {
-    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    // 本パネル（touch ハンドラ）＝ aria-live のページ内容コンテナの親。
-    const content = document.querySelector('[aria-live="polite"]')!;
-    const panel = content.parentElement!;
-
-    // 左スワイプ（dx<-40・水平優位）＝次へ＝3p 沿革の本文。
-    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
-    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 105 }] });
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-
-    // 右スワイプ（dx>+40・水平優位）＝前へ＝街の地図（2p）へ戻る。
-    fireEvent.touchStart(panel, { touches: [{ clientX: 80, clientY: 100 }] });
-    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 200, clientY: 95 }] });
-    expect(await screen.findByText(/我が市の地図である/)).toBeInTheDocument();
-  });
-
-  it("先頭ページで右スワイプは no-op（後方下限・#275）", async () => {
-    getDisplayName.mockReturnValue(null); // L0: 既定 1p 移住案内（前は無い）。
-    render(<CityHallBook />);
-    await screen.findByText(/ボタニクス・フォン・ハノーバである/);
+    expect(screen.getByText("2 / 20")).toBeInTheDocument();
+    expect(new URLSearchParams(location.search).get("page")).toBe("settlement");
 
     const content = document.querySelector('[aria-live="polite"]')!;
     const panel = content.parentElement!;
-
-    // 右スワイプ（前へ）。1p より前は無い＝ページ不変。
-    fireEvent.touchStart(panel, { touches: [{ clientX: 80, clientY: 100 }] });
-    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 220, clientY: 100 }] });
-    expect(screen.getByText(/ボタニクス・フォン・ハノーバである/)).toBeInTheDocument();
-    expect(screen.queryByText("？？？")).toBeNull();
-  });
-
-  it("末尾ページ（条文4p）で左スワイプは進めない（canNext=false・末尾上限・#275/#510）", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    // まず末尾（4p 条文＝前送りの上限）まで進める。
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 3p 沿革
-    await screen.findByText(/荒れ地に最初の一鉢を植える/);
-    await user.click(screen.getByRole("button", { name: "次のページ" })); // 4p 条文
-    expect(await screen.findByText(/第一条（土地）/)).toBeInTheDocument();
-
-    const content = document.querySelector('[aria-live="polite"]')!;
-    const panel = content.parentElement!;
-
-    // 条文から更に左スワイプ（次へ）＝末尾より先は無い（canNext=false）でページ不変＝条文のまま。
     fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
-    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 60, clientY: 100 }] });
-    expect(screen.getByText(/第一条（土地）/)).toBeInTheDocument();
-  });
-
-  it("スワイプ中はページ内容に blur が付き、指を離すと消える（#275）", async () => {
-    stubMatchMedia(false); // reduced-motion なし＝ぼかしが効く側。
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    const content = document.querySelector('[aria-live="polite"]') as HTMLElement;
-    const panel = content.parentElement!;
-
-    // 水平優位ドラッグ中＝内容コンテナに blur(px)（px>0・インライン style で確認）。
-    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
-    fireEvent.touchMove(panel, { touches: [{ clientX: 120, clientY: 105 }] });
-    const m = content.style.filter.match(/blur\(([\d.]+)px\)/);
-    expect(m).not.toBeNull();
-    expect(Number.parseFloat(m![1]!)).toBeGreaterThan(0);
-
-    // 指を離すと blur は解ける。しきい値（40px）未満で離す＝ページ遷移は起こさず
-    // 同じ内容コンテナ（key 不変）の filter が消えることを確認する。
-    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 190, clientY: 100 }] });
-    expect(content.style.filter).toBe("");
-  });
-
-  it("reduced-motion はぼかさないがページ遷移は起きる（#275）", async () => {
-    stubMatchMedia(true); // prefers-reduced-motion: reduce。
-    getDisplayName.mockReturnValue("みどり"); // L1: 全ページ閲覧可（#510）。
-    fetchMyPosts.mockResolvedValue([]);
-    render(<CityHallBook />);
-    await screen.findByText(/我が市の地図である/);
-
-    const content = document.querySelector('[aria-live="polite"]') as HTMLElement;
-    const panel = content.parentElement!;
-
-    // move 中も blur は付かない（onTouchMove が prefersReducedMotion で即 return）。
-    fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
-    fireEvent.touchMove(panel, { touches: [{ clientX: 120, clientY: 105 }] });
-    expect(content.style.filter).toBe("");
-
-    // それでも左スワイプの遷移自体は起きる＝3p 沿革へ。
     fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 100 }] });
-    expect(await screen.findByText(/荒れ地に最初の一鉢を植える/)).toBeInTheDocument();
-  });
-
-  it("←/→: 入力欄にフォーカスがあるときはページめくりを横取りしない", async () => {
-    const user = userEvent.setup();
-    getDisplayName.mockReturnValue("みどり");
-    fetchMyPosts.mockResolvedValue([]);
-    render(
-      <div>
-        <input aria-label="ダミー入力" />
-        <CityHallBook />
-      </div>,
-    );
-    await screen.findByText(/我が市の地図である/);
-
-    const input = screen.getByRole("textbox", { name: "ダミー入力" });
-    input.focus();
-    await user.keyboard("{ArrowRight}");
-    // 入力中なので本はめくれず、2p 街の地図のまま。
-    expect(screen.getByText(/我が市の地図である/)).toBeInTheDocument();
-    expect(screen.queryByText("？？？")).toBeNull();
-  });
-});
-
-// #484: 市長アイコン（ジョウロ写真）を 512x512 → 192x192 にダウンサイズした（preload コストを下げる）。
-// 表示は上の各テストが src で確認済みなので、ここではファイル実体の解像度が先祖返りしていないことを守る。
-describe("市長アイコン画像アセットの解像度（#484・先祖返り防止）", () => {
-  it("mayor-botanics-watering-can.webp は 192x192 にダウンサイズ済み", async () => {
-    const path = join(import.meta.dirname, "..", "..", "..", "public", "mayor-botanics-watering-can.webp");
-    const metadata = await sharp(path).metadata();
-    expect(metadata.width).toBe(192);
-    expect(metadata.height).toBe(192);
-  });
-});
-
-// #504: P1/P2 の挿絵アセット。1000px 長辺・元アスペクト比（4:3 / 3:2）のまま webp 化済み。
-describe("手帳の挿絵画像アセットの解像度（#504）", () => {
-  it("hanoba-map.webp は 1000x750（4:3）", async () => {
-    const path = join(import.meta.dirname, "..", "..", "..", "public", "hanoba-map.webp");
-    const metadata = await sharp(path).metadata();
-    expect(metadata.width).toBe(1000);
-    expect(metadata.height).toBe(750);
-  });
-
-  it("hanoba-welcome-vista.webp は 1000x667（3:2）", async () => {
-    const path = join(import.meta.dirname, "..", "..", "..", "public", "hanoba-welcome-vista.webp");
-    const metadata = await sharp(path).metadata();
-    expect(metadata.width).toBe(1000);
-    expect(metadata.height).toBe(667);
+    expect(screen.getByText("3 / 20")).toBeInTheDocument();
+    expect(localStorage.getItem(BOOK_PAGE_STORAGE_KEY)).toBe("vista");
   });
 });

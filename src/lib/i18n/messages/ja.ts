@@ -21,14 +21,16 @@ export const ja = {
   "nav.home.aria": "葉の場 Hanoba トップへ",
 
   // 共通フッタ（SiteFooter）。
-  "footer.tagline": "架空の植物好き都市ハノーバ（葉の場）を、みんなで育てています。",
+  "footer.tagline":
+    "架空の植物好き都市ハノーバ（葉の場）を、みんなで育てています。",
 
   // 一番上へ戻る（ScrollToTop）。
   "scrollToTop.aria": "一番上へ戻る",
 
   // PWA「ホーム画面に追加」促し（InstallPrompt）。
   "install.title": "ホーム画面に追加",
-  "install.ios": "共有メニュー {arrow} から「ホーム画面に追加」を選ぶと、アプリのように開けます。",
+  "install.ios":
+    "共有メニュー {arrow} から「ホーム画面に追加」を選ぶと、アプリのように開けます。",
   "install.tagline": "アプリのように開けます。",
   "install.add": "追加",
   "install.later": "あとで",
@@ -60,7 +62,8 @@ export const ja = {
   "feed.filter.clear": "絞り込みを解除",
   "feed.tag.empty": "「#{tag}」の投稿はまだありません。",
   "discover.loading": "「{summary}」を探しています…",
-  "discover.empty": "「{summary}」の投稿は見つかりませんでした。別の品種で試してみましょう。",
+  "discover.empty":
+    "「{summary}」の投稿は見つかりませんでした。別の品種で試してみましょう。",
 
   // あなたの植物（MyGrid・自分の投稿の編集/削除）。
   "my.subject": "あなた",
@@ -68,7 +71,8 @@ export const ja = {
   "my.edit.aria": "この投稿を編集",
   "my.delete.aria": "この投稿を削除",
   "my.edit.done": "投稿を編集しました（新しい投稿として再投稿しました）。",
-  "my.delete.photoUnconfirmed": "投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。",
+  "my.delete.photoUnconfirmed":
+    "投稿は削除しましたが、写真の削除を確認できませんでした（数分後に消える場合があります）。",
   "my.delete.failed": "削除できませんでした。時間をおいて再試行してください。",
   "my.firstPost": "最初の1枚を置く",
   "my.loading.sr": "あなたの植物を読み込み中…",
@@ -80,48 +84,64 @@ export const ja = {
 
   // ホーム（index）ヒーロー。世界観文言＝直訳でなく意訳前提（en.ts 参照）。
   "home.hero.title": "育てて、見せる。",
-  "home.hero.lead": "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。畑もビカクも実生も、この一画に。",
-  "home.hero.sub": "ここは Hanōba に置かれた植物のタイムライン。Nostr 全体の植物は{link}へ。",
+  "home.hero.lead":
+    "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。畑もビカクも実生も、この一画に。",
+  "home.hero.sub":
+    "ここは Hanōba に置かれた植物のタイムライン。Nostr 全体の植物は{link}へ。",
   "home.hero.sub.link": "みんなの植物",
 
   // 投稿フローティングボタン（PostFAB）。
   "fab.compose.aria": "投稿する",
 
   // サイト既定メタ（MainLayout）。
-  "site.description": "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。",
+  "site.description":
+    "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。",
 
   // 各ページのメタ（<title> / <meta description>・SEO・OGP）。
   "meta.about.title": "Hanōba とは — 架空の植物都市",
-  "meta.about.description": "Hanōba は植物写真の SNS。架空の植物好き都市ハノーバを、みんなで育てる場所です。",
+  "meta.about.description":
+    "Hanōba は植物写真の SNS。架空の植物好き都市ハノーバを、みんなで育てる場所です。",
   "meta.compose.title": "投稿する — Hanōba",
   "meta.discover.title": "みんなの植物 — Hanōba",
-  "meta.discover.description": "Nostr 全体の植物（#plantstr）と、Hanōba の投稿をまとめて眺める。",
+  "meta.discover.description":
+    "Nostr 全体の植物（#plantstr）と、Hanōba の投稿をまとめて眺める。",
   "meta.me.title": "あなたの植物 — Hanōba",
-  "meta.me.description": "あなたが Hanōba に置いた植物の一覧。ここから投稿を削除できます（写真ごと）。",
+  "meta.me.description":
+    "あなたが Hanōba に置いた植物の一覧。ここから投稿を削除できます（写真ごと）。",
   "meta.ranking.title": "人気ランキング — Hanōba",
-  "meta.ranking.description": "Hanōba の投稿から、いま人気の品種を週次で集計。先週比（↑↓・NEW・RE）つき。",
+  "meta.ranking.description":
+    "Hanōba の投稿から、いま人気の品種を週次で集計。先週比（↑↓・NEW・RE）つき。",
   "meta.u.title": "市民のプロフィール — Hanōba",
-  "meta.u.description": "Hanōba の市民の公開プロフィール。置いた植物と活動スタッツ（投稿・写真・育てた品種・居住日数）を眺める。",
+  "meta.u.description":
+    "Hanōba の市民の公開プロフィール。置いた植物と活動スタッツ（投稿・写真・育てた品種・居住日数）を眺める。",
   "meta.vote.title": "住民投票 — ハノーバ市役所",
-  "meta.vote.description": "ハノーバ市役所の住民投票所。品種の並び順・欲しい機能・バグ報告を、掲示板で気軽に。名前は任意。",
+  "meta.vote.description":
+    "ハノーバ市役所の住民投票所。品種の並び順・欲しい機能・バグ報告を、掲示板で気軽に。名前は任意。",
 
   // 各ページ本体のリード文（h1 は既存ナビキーを再利用）。
-  "discover.lead": "Nostr 全体の植物（#plantstr）と、Hanōba の投稿をまとめて眺めます。",
-  "me.lead": "あなたが置いた1枚たち。削除すると、投稿と写真がいっしょに消えます。",
+  "discover.lead":
+    "Nostr 全体の植物（#plantstr）と、Hanōba の投稿をまとめて眺めます。",
+  "me.lead":
+    "あなたが置いた1枚たち。削除すると、投稿と写真がいっしょに消えます。",
   // 原文は2文が改行＋字下げで分かれ JSX が1スペースに畳む＝ここでは半角スペース1つで繋ぐ。
-  "ranking.lead": "Hanōba の投稿から、いま人気の品種を週ごとに集計します。先週との比較（↑↓・NEW・RE）つき。 みんなの投稿がそのままチャートを動かします。",
+  "ranking.lead":
+    "Hanōba の投稿から、いま人気の品種を週ごとに集計します。先週との比較（↑↓・NEW・RE）つき。 みんなの投稿がそのままチャートを動かします。",
 
   // 住民投票ページ（vote・市長ボタニクスの声）。
   "vote.h1": "住民投票",
-  "vote.intro": "おっほん。ここは住民投票所だ。市政に物申したい諸君、遠慮はいらぬ。名乗らずとも一票は一票。市長が必ず目を通す。",
+  "vote.intro":
+    "おっほん。ここは住民投票所だ。市政に物申したい諸君、遠慮はいらぬ。名乗らずとも一票は一票。市長が必ず目を通す。",
   "vote.note": "※ 各欄は掲示板です。気軽に書き込めます（名前は任意）。",
   "vote.board.aria": "住民投票 — {title}",
   "vote.board.requests.title": "品種への要望",
-  "vote.board.requests.intro": "品種に関する願いはすべてここへ。並び順、名簿に無い品種の追加、その他、遠慮はいらぬ。市長が必ず目を通す。",
+  "vote.board.requests.intro":
+    "品種に関する願いはすべてここへ。並び順、名簿に無い品種の追加、その他、遠慮はいらぬ。市長が必ず目を通す。",
   "vote.board.features.title": "欲しい機能",
-  "vote.board.features.intro": "この市にあったらいい仕組みを請願せよ。市長が善処する（かもしれない）。",
+  "vote.board.features.intro":
+    "この市にあったらいい仕組みを請願せよ。市長が善処する（かもしれない）。",
   "vote.board.bugs.title": "バグ報告",
-  "vote.board.bugs.intro": "市の不具合を見つけたら、ここへ。直ちに修繕隊を送る。",
+  "vote.board.bugs.intro":
+    "市の不具合を見つけたら、ここへ。直ちに修繕隊を送る。",
 
   // 市民レベルの表示名（citizen.ts・#272）。Ln は {n} 補間。
   "citizen.level.traveler": "旅人",
@@ -177,7 +197,8 @@ export const ja = {
   // 写真セクション（見出し・枚数・上限案内・サムネ alt・並べ替え）。
   "compose.photos.heading": "写真",
   "compose.photos.count": "{count}/{max}枚",
-  "compose.photos.limitNotice": "写真は4枚までです。追加できる分だけ追加しました。",
+  "compose.photos.limitNotice":
+    "写真は4枚までです。追加できる分だけ追加しました。",
   "compose.photos.thumbAlt": "{n}枚目",
   "compose.reorder.left.aria": "選択中の写真を左へ移動",
   "compose.reorder.left": "左へ",
@@ -186,7 +207,8 @@ export const ja = {
   "compose.reorder.counter": "{index}枚目 / 全{total}枚",
   // フィルタ節（Composer の見出し）。
   "compose.undo": "1手戻す",
-  "compose.undo.aria": "直前の画像編集（角度・フィルタ・クロップ・撮影日）を1手戻す",
+  "compose.undo.aria":
+    "直前の画像編集（角度・フィルタ・クロップ・撮影日）を1手戻す",
   "compose.filter.heading": "フィルタ",
   // 撮影日節（#324）。
   "compose.shotDate.heading": "撮影日",
@@ -206,7 +228,8 @@ export const ja = {
   "compose.submit": "投稿する",
   // 投稿の結果メッセージ（done / error）。
   "compose.done": "投稿しました。あなたの植物へ移動します…",
-  "compose.error.notConfirmed": "投稿を確認できませんでした。電波の良いところでもう一度お試しください（下書きは残っています）。",
+  "compose.error.notConfirmed":
+    "投稿を確認できませんでした。電波の良いところでもう一度お試しください（下書きは残っています）。",
   "compose.error.generic": "投稿に失敗しました。",
   "compose.error.imageLoad": "画像の読み込みに失敗しました。",
 
@@ -224,7 +247,8 @@ export const ja = {
 
   // CaptionInput（一言入力・ハッシュタグ補完・#165）。
   "caption.label": "ひとこと",
-  "caption.placeholder": "株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。",
+  "caption.placeholder":
+    "株のこと。ひとことでも、じっくりでも。#アガベ のようにタグも。",
   "caption.suggest.aria": "ハッシュタグ候補",
 
   // FilterChips（フィルタ強度チップ・#171）。
@@ -238,8 +262,10 @@ export const ja = {
   // ImagePicker（画像の選択・撮影/アルバム・#29）。
   "picker.shoot": "撮影",
   "picker.album": "アルバム",
-  "picker.hint": "植物の写真を撮るか、アルバムから選んでください。最大4枚まで。",
-  "picker.error.notImage": "画像ファイルを選んでください（動画は投稿できません）。",
+  "picker.hint":
+    "植物の写真を撮るか、アルバムから選んでください。最大4枚まで。",
+  "picker.error.notImage":
+    "画像ファイルを選んでください（動画は投稿できません）。",
   "picker.error.limit": "写真は4枚までです。",
   "picker.add.aria": "写真を追加",
   "picker.camera.aria": "カメラで撮影",
@@ -277,15 +303,18 @@ export const ja = {
   "account.name.import.label": "お持ちのアカウントで続ける",
   "account.name.import.placeholder": "nsec1… を貼り付け",
   "account.name.import.aria": "nsec 秘密鍵",
-  "account.name.import.error.invalid": "nsec が正しくありません。`nsec1…` を貼り付けてください。",
-  "account.name.import.help": "mypace 等で使っているアカウントで続けられます。情報はこの端末にだけ保存されます。",
+  "account.name.import.error.invalid":
+    "nsec が正しくありません。`nsec1…` を貼り付けてください。",
+  "account.name.import.help":
+    "mypace 等で使っているアカウントで続けられます。情報はこの端末にだけ保存されます。",
   "account.name.import.cancel": "やめる",
   "account.name.import.submitting": "確認中…",
   "account.name.import.submit": "続ける",
   "account.name.edit.placeholder": "ハンドルネーム（あとで変えられます）",
   "account.name.edit.aria": "ハンドルネーム",
   "account.name.edit.save": "保存",
-  "account.name.edit.hint": "ハンドルネームを決めると、見るだけでなく投稿できます。",
+  "account.name.edit.hint":
+    "ハンドルネームを決めると、見るだけでなく投稿できます。",
   "account.name.edit.haveAccount": "すでにアカウントをお持ちですか？",
   "account.name.set": "ハンドルネームを設定",
   "account.name.change": "ハンドルネームを変更",
@@ -301,11 +330,13 @@ export const ja = {
   "account.profile.icon.remove": "削除",
   "account.profile.icon.urlPlaceholder": "または画像 URL を貼る（https://…）",
   "account.profile.icon.urlAria": "アイコン画像 URL",
-  "account.profile.icon.uploadError": "画像をアップロードできませんでした。時間をおいて再試行してください。",
+  "account.profile.icon.uploadError":
+    "画像をアップロードできませんでした。時間をおいて再試行してください。",
   "account.profile.about.label": "自己紹介",
   "account.profile.about.placeholder": "育てている植物のこと、好きな品種など",
   "account.profile.sites.label": "サイト・SNS",
-  "account.profile.sites.hint": "拡大写真の著者欄にアイコンで並びます。各人が自分のサイトへ誘導できます。",
+  "account.profile.sites.hint":
+    "拡大写真の著者欄にアイコンで並びます。各人が自分のサイトへ誘導できます。",
   "account.profile.sites.urlPlaceholder": "https://…",
   "account.profile.sites.urlAria": "サイト {n} の URL",
   "account.profile.sites.clearAria": "サイト {n} をクリア",
@@ -320,7 +351,8 @@ export const ja = {
   "account.profile.save": "保存",
   "account.profile.nsec.label": "秘密鍵（バックアップ）",
   // 原文は2文が改行＋字下げで分かれ JSX が1スペースに畳む＝ここでは半角スペース1つで繋ぐ。
-  "account.profile.nsec.warning": "この鍵を控えておかないと、端末を変えたりブラウザのデータを消すと二度と戻せません。 また、この鍵を知られると、あなたの投稿をすべて操作されます。人に見せたり貼り付けたりしないでください。",
+  "account.profile.nsec.warning":
+    "この鍵を控えておかないと、端末を変えたりブラウザのデータを消すと二度と戻せません。 また、この鍵を知られると、あなたの投稿をすべて操作されます。人に見せたり貼り付けたりしないでください。",
   "account.profile.nsec.codeAria": "秘密鍵（nsec）",
   "account.profile.nsec.hideAria": "秘密鍵を隠す",
   "account.profile.nsec.showAria": "秘密鍵を表示する",
@@ -331,7 +363,8 @@ export const ja = {
   "account.profile.nsec.copied": "コピーしました",
 
   // 好きな品種ピッカー（FavoriteVarietyPicker・#141）。多くは tag.* / profile.* を再利用。
-  "account.favorites.hint": "プロフィールに並びます。同じ品種が好きな人と見つけ合えます。",
+  "account.favorites.hint":
+    "プロフィールに並びます。同じ品種が好きな人と見つけ合えます。",
   "account.favorites.removeAria": "{name} を好きな品種から外す",
   "account.favorites.search.aria": "品種を検索",
   "account.favorites.dict.empty": "—",
@@ -362,7 +395,8 @@ export const ja = {
   "comment.sort.old": "古い順",
   "comment.sort.new": "新しい順",
   "comment.loading": "読み込み中…",
-  "comment.error.submit": "コメントを送れませんでした。少し待って試してください。",
+  "comment.error.submit":
+    "コメントを送れませんでした。少し待って試してください。",
   "comment.error.remove": "コメントを削除できませんでした。",
   "comment.empty": "まだコメントはありません",
   "comment.delete.aria": "このコメントを削除",
@@ -403,8 +437,10 @@ export const ja = {
   "ranking.board.reload": "再読み込み",
   "ranking.board.empty": "まだランキングを出すほどの投稿が集まっていません。",
   "ranking.board.firstPost": "最初の一鉢を投稿する",
-  "ranking.board.demo": "開発プレビュー（?demo）— 合成データです。実際の投稿ではありません。",
-  "ranking.board.firstWeek": "今週が集計の最初の週です。先週との比較（↑↓）は来週から表示されます。",
+  "ranking.board.demo":
+    "開発プレビュー（?demo）— 合成データです。実際の投稿ではありません。",
+  "ranking.board.firstWeek":
+    "今週が集計の最初の週です。先週との比較（↑↓）は来週から表示されます。",
   "ranking.board.count.unit": "件",
   "ranking.board.chart.loading": "グラフを読み込み中…",
   // 行の読み上げ要約（DeltaBadge の意味語）。aria-label の組み立てに使う。
@@ -418,8 +454,10 @@ export const ja = {
 
   // 途中経過チャート（RankRunChart・#162/#261/#147 段階2）。canvas/凡例は装飾、説明は aria/figcaption。
   "ranking.chart.sparse": "推移グラフは週が2つ以上たまると表示されます。",
-  "ranking.chart.caption": "途中経過（変動）— 週ごとの投稿数の推移。詳しい順位は上の表をご覧ください。",
-  "ranking.chart.summary": "上位品種（{names}）の週ごとの投稿数の推移グラフ。詳しくは上の表を参照。",
+  "ranking.chart.caption":
+    "途中経過（変動）— 週ごとの投稿数の推移。詳しい順位は上の表をご覧ください。",
+  "ranking.chart.summary":
+    "上位品種（{names}）の週ごとの投稿数の推移グラフ。詳しくは上の表を参照。",
 
   // 人ごとに「フィードで減らす」コントロール（DilutionControl・#138/#147 段階2）。{name}=著者名・{n}=減量。
   "dilution.stop.none": "なし",
@@ -445,60 +483,114 @@ export const ja = {
   "cityHall.mayor.shortName": "ボタニクス",
   // P1 移住案内（市長の歓迎の辞）。
   "cityHall.welcome.title": "移住案内",
-  "cityHall.welcome.0": "おっほん。ハノーバ市長、ボタニクス・フォン・ハノーバである。ようこそ、緑の市へ。",
+  "cityHall.welcome.0":
+    "おっほん。ハノーバ市長、ボタニクス・フォン・ハノーバである。ようこそ、緑の市へ。",
   "cityHall.welcome.image.alt": "緑に包まれたハノーバ市の俯瞰",
-  "cityHall.welcome.1": "わが市に土地代はない。植物を育てている限り、区画は永久に無料で諸君のものだ。やることはただ一つ——正方形の区画にあなたの一鉢を植え、ひとこと添える。それだけで、あなたも立派な市民だ。写真は植物に限る（人もペットも、よその街でやりたまえ）。",
-  "cityHall.welcome.2": "市の沿革も、条文も、品評会も、すべてこの市役所からご覧になれる。さあ、移住の手続きを。好きな呼び名をひとつ決めれば、それで完了だ。本名は要らぬ——諸君が諸君であればよい。",
-  "cityHall.welcome.3": "※ ハノーバは植物専用の写真SNSです。正方形の写真1枚＋ひとこと、植物だけ。名前を登録すると投稿できます。",
+  "cityHall.welcome.1":
+    "わが市に土地代はない。植物を育てている限り、区画は永久に無料で諸君のものだ。やることはただ一つ——正方形の区画にあなたの一鉢を植え、ひとこと添える。それだけで、あなたも立派な市民だ。写真は植物に限る（人もペットも、よその街でやりたまえ）。",
+  "cityHall.welcome.2":
+    "市の沿革も、条文も、品評会も、すべてこの市役所からご覧になれる。さあ、移住の手続きを。好きな呼び名をひとつ決めれば、それで完了だ。本名は要らぬ——諸君が諸君であればよい。",
+  "cityHall.welcome.3":
+    "※ ハノーバは植物専用の写真SNSです。正方形の写真1枚＋ひとこと、植物だけ。名前を登録すると投稿できます。",
   // P2 街の地図（図鑑の早期ご褒美ページ・#469）。名所（ランドマーク）を読み物に、末尾に「市政の窓口」strip。
   "cityHall.map.title": "街の地図",
-  "cityHall.map.lead": "おっほん。我が市の地図である。ハノーバは一枚の葉のごとく、葉脈川（はみゃくがわ）に沿って広がっておる。",
+  "cityHall.map.lead":
+    "おっほん。我が市の地図である。ハノーバは一枚の葉のごとく、葉脈川（はみゃくがわ）に沿って広がっておる。",
   "cityHall.map.landmark.0.name": "葉脈川",
-  "cityHall.map.landmark.0.text": "市の背骨。すべての区画は、この川の葉脈から水を分け合う。",
+  "cityHall.map.landmark.0.text":
+    "市の背骨。すべての区画は、この川の葉脈から水を分け合う。",
   "cityHall.map.landmark.1.name": "正方形の区画",
-  "cityHall.map.landmark.1.text": "初代市長が定めた決まり。どの庭も等しく四角い。大きな庭も小さな庭も、市にとっては等しく宝だ。",
+  "cityHall.map.landmark.1.text":
+    "初代市長が定めた決まり。どの庭も等しく四角い。大きな庭も小さな庭も、市にとっては等しく宝だ。",
   "cityHall.map.landmark.2.name": "市役所",
   "cityHall.map.landmark.2.text": "諸君が今いる場所。市政の窓口は、この下に。",
-  "cityHall.map.note": "市章も、特産の品も、追って記す。地図はまだ、描きかけだ。",
+  "cityHall.map.note":
+    "市章も、特産の品も、追って記す。地図はまだ、描きかけだ。",
   "cityHall.map.placeholder": "地図 製作中",
   "cityHall.map.civic.heading": "市政の窓口",
   "cityHall.map.civic.0.label": "住民投票",
   "cityHall.map.civic.1.label": "品評会（コンテスト）",
   "cityHall.map.civic.2.label": "市長ブログ",
   "cityHall.map.comingSoon": "近日開庁",
+  "cityHall.districts.title": "地区案内",
+  "cityHall.districts.lead":
+    "おっほん。植物の好みが違えば、住みよい土地も違う。諸君の一鉢にふさわしい町を案内しよう。",
+  "cityHall.districts.0.name": "温室街",
+  "cityHall.districts.0.text":
+    "観葉植物と蘭のための、光と湿り気に満ちたガラスの街。",
+  "cityHall.districts.1.name": "畑地区",
+  "cityHall.districts.1.text":
+    "野菜と香草の正方形区画が、葉脈川の水を分け合う。",
+  "cityHall.districts.2.name": "果樹の丘",
+  "cityHall.districts.2.text":
+    "柑橘と実のなる木々が並び、季節ごとに花と香りが変わる丘。",
+  "cityHall.districts.3.name": "実生横丁",
+  "cityHall.districts.3.text":
+    "種と芽を愛する者が集う細い路地。小さな鉢ほど大きな未来を持つ。",
+  "cityHall.districts.4.name": "世話通り",
+  "cityHall.districts.4.text":
+    "植替え、剪定、水やりの知恵が行き交う、市民共有の苗場。",
+  "cityHall.districts.note":
+    "土地代はどの地区も無料。育てる意志だけを、地代として納めればよい。",
   // P3 沿革（年表・遊び）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
+  "cityHall.guide.vista": "街の全景",
+  "cityHall.guide.landmarks": "葉脈川と名所",
+  "cityHall.guide.crest": "市章",
+  "cityHall.guide.crest.text": "一枚の葉、枝分かれする葉脈川、その中心の正方形区画。これがハノーバ市章である。",
+  "cityHall.guide.specialties": "特産物",
+  "cityHall.guide.specialties.text": "観葉植物、畑の実り、果樹、種と芽、そして世話の道具。五地区の誇りをここに記す。",
+  "cityHall.nav.jumpBack": "5ページ戻る",
+  "cityHall.nav.jumpForward": "5ページ進む",
+  "cityHall.nav.first": "最初のページ",
+  "cityHall.nav.last": "最後のページ",
+  "cityHall.nav.toc": "目次",
   "cityHall.chronicle.title": "沿革",
-  "cityHall.chronicle.lead": "おっほん。我が市の来し方を、少し語らせてもらおう。",
+  "cityHall.chronicle.lead":
+    "おっほん。我が市の来し方を、少し語らせてもらおう。",
   "cityHall.chronicle.entry.0.era": "第一年 春",
-  "cityHall.chronicle.entry.0.text": "初代市長ボタニクス・フォン・ハノーバ、荒れ地に最初の一鉢を植える。芽が出た日を、市の誕生とする。",
+  "cityHall.chronicle.entry.0.text":
+    "初代市長ボタニクス・フォン・ハノーバ、荒れ地に最初の一鉢を植える。芽が出た日を、市の誕生とする。",
   "cityHall.chronicle.entry.1.era": "第一年 夏",
-  "cityHall.chronicle.entry.1.text": "市長、「雑草という植物は無い」と布告。優劣をつける条例の制定を永久に禁ずる。",
+  "cityHall.chronicle.entry.1.text":
+    "市長、「雑草という植物は無い」と布告。優劣をつける条例の制定を永久に禁ずる。",
   "cityHall.chronicle.entry.2.era": "第一年 秋",
-  "cityHall.chronicle.entry.2.text": "葉脈川（はみゃくがわ）の水、初めて温室街を潤す。",
+  "cityHall.chronicle.entry.2.text":
+    "葉脈川（はみゃくがわ）の水、初めて温室街を潤す。",
   "cityHall.chronicle.entry.3.era": "第二年",
-  "cityHall.chronicle.entry.3.text": "区画はすべて正方形と定められる。理由は「美しいから」とのみ記録される。",
+  "cityHall.chronicle.entry.3.text":
+    "区画はすべて正方形と定められる。理由は「美しいから」とのみ記録される。",
   "cityHall.chronicle.note": "市民が増えるたび、この年表は書き足される。",
   // P4 市の条文（ハノーバ市憲章・各条に市長解説）。冒頭は市長の前口上（全ページ共通・#469 変更B）。
   "cityHall.ordinance.title": "市の条文",
-  "cityHall.ordinance.lead": "おっほん。これが我が市の憲章だ。堅苦しいが、どれも植物のための決まりである。",
+  "cityHall.ordinance.lead":
+    "おっほん。これが我が市の憲章だ。堅苦しいが、どれも植物のための決まりである。",
   "cityHall.ordinance.0.article": "第一条（土地）",
-  "cityHall.ordinance.0.text": "ハノーバ市の土地代は、植物を育てている限り、無料とする。",
-  "cityHall.ordinance.0.commentary": "おっほん。育てる意志こそが地代だ。水をやり、葉を見つめる——それで諸君は十分に納めている。",
+  "cityHall.ordinance.0.text":
+    "ハノーバ市の土地代は、植物を育てている限り、無料とする。",
+  "cityHall.ordinance.0.commentary":
+    "おっほん。育てる意志こそが地代だ。水をやり、葉を見つめる——それで諸君は十分に納めている。",
   "cityHall.ordinance.1.article": "第二条（区画）",
-  "cityHall.ordinance.1.text": "一つの区画には、正方形の写真一枚と、ひとことを添えるものとする。",
-  "cityHall.ordinance.1.commentary": "区画は正方形に限る。なぜか？ 美しいからだ。理由は以上である。",
+  "cityHall.ordinance.1.text":
+    "一つの区画には、正方形の写真一枚と、ひとことを添えるものとする。",
+  "cityHall.ordinance.1.commentary":
+    "区画は正方形に限る。なぜか？ 美しいからだ。理由は以上である。",
   "cityHall.ordinance.2.article": "第三条（住民）",
   "cityHall.ordinance.2.text": "名を名乗った者を、市民とみなす。",
-  "cityHall.ordinance.2.commentary": "名乗りは移住届だ。本名である必要はない。諸君が諸君であればよい。",
+  "cityHall.ordinance.2.commentary":
+    "名乗りは移住届だ。本名である必要はない。諸君が諸君であればよい。",
   "cityHall.ordinance.3.article": "第四条（平等）",
-  "cityHall.ordinance.3.text": "市は、すべての植物を等しく愛する。雑草という名の植物は、当市には存在しない。",
-  "cityHall.ordinance.3.commentary": "日陰の苔も、軒先の多肉も、みな市の宝。優劣をつける条例は、永久に制定しない。",
+  "cityHall.ordinance.3.text":
+    "市は、すべての植物を等しく愛する。雑草という名の植物は、当市には存在しない。",
+  "cityHall.ordinance.3.commentary":
+    "日陰の苔も、軒先の多肉も、みな市の宝。優劣をつける条例は、永久に制定しない。",
   "cityHall.ordinance.4.article": "第五条（写真）",
   "cityHall.ordinance.4.text": "当市に掲げる写真は、植物のものに限る。",
-  "cityHall.ordinance.4.commentary": "人もペットも、それぞれの街で輝けばよい。ここは植物の市だ。",
+  "cityHall.ordinance.4.commentary":
+    "人もペットも、それぞれの街で輝けばよい。ここは植物の市だ。",
   // レベル昇格時に小さく添える市長のひとこと（味付け）。
   "cityHall.flavor.citizen": "移住、確かに受理した。ようこそ、市民諸君。",
-  "cityHall.flavor.tenured": "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
+  "cityHall.flavor.tenured":
+    "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
   // CityHallBook の UI クローム（肖像脇の呼び名・めくり操作・ページ表示）。
   "cityHall.mayorTitle": "{name}市長",
   "cityHall.nav.aria": "ページめくり",

@@ -19,12 +19,14 @@ export const en: Partial<Record<MessageKey, string>> = {
   "nav.menu.close": "Close menu",
   "nav.home.aria": "Hanōba home",
 
-  "footer.tagline": "Hanōba — an imaginary city of plant lovers — grown by all of us.",
+  "footer.tagline":
+    "Hanōba — an imaginary city of plant lovers — grown by all of us.",
 
   "scrollToTop.aria": "Back to top",
 
   "install.title": "Add to Home Screen",
-  "install.ios": "Tap {arrow} in the share menu and choose “Add to Home Screen” to open it like an app.",
+  "install.ios":
+    "Tap {arrow} in the share menu and choose “Add to Home Screen” to open it like an app.",
   "install.tagline": "Opens like an app.",
   "install.add": "Add",
   "install.later": "Later",
@@ -73,44 +75,57 @@ export const en: Partial<Record<MessageKey, string>> = {
   "home.hero.title": "Grow it. Show it.",
   "home.hero.lead":
     "A social feed for plant photos. Faster and simpler than Instagram — just add a word. Field crops, staghorns, seedlings: all in one place.",
-  "home.hero.sub": "This is the timeline of plants kept in Hanōba. For plants across all of Nostr, see {link}.",
+  "home.hero.sub":
+    "This is the timeline of plants kept in Hanōba. For plants across all of Nostr, see {link}.",
   "home.hero.sub.link": "Everyone's Plants",
 
   "fab.compose.aria": "Post",
 
-  "site.description": "A social feed for plant photos. Faster and simpler than Instagram — just add a word.",
+  "site.description":
+    "A social feed for plant photos. Faster and simpler than Instagram — just add a word.",
 
   "meta.about.title": "About Hanōba — an imaginary plant city",
-  "meta.about.description": "Hanōba is a social feed for plant photos — an imaginary city of plant lovers that we all grow together.",
+  "meta.about.description":
+    "Hanōba is a social feed for plant photos — an imaginary city of plant lovers that we all grow together.",
   "meta.compose.title": "Post — Hanōba",
   "meta.discover.title": "Everyone's Plants — Hanōba",
-  "meta.discover.description": "Browse the plants of all of Nostr (#plantstr) together with Hanōba's posts.",
+  "meta.discover.description":
+    "Browse the plants of all of Nostr (#plantstr) together with Hanōba's posts.",
   "meta.me.title": "Your Plants — Hanōba",
-  "meta.me.description": "The plants you've placed in Hanōba. You can delete posts here (photos and all).",
+  "meta.me.description":
+    "The plants you've placed in Hanōba. You can delete posts here (photos and all).",
   "meta.ranking.title": "Rankings — Hanōba",
-  "meta.ranking.description": "The varieties trending now, tallied weekly from Hanōba's posts — with week-over-week change (↑↓, NEW, RE).",
+  "meta.ranking.description":
+    "The varieties trending now, tallied weekly from Hanōba's posts — with week-over-week change (↑↓, NEW, RE).",
   "meta.u.title": "Citizen profile — Hanōba",
-  "meta.u.description": "A Hanōba citizen's public profile — the plants they've placed and their activity stats (posts, photos, varieties grown, days resident).",
+  "meta.u.description":
+    "A Hanōba citizen's public profile — the plants they've placed and their activity stats (posts, photos, varieties grown, days resident).",
   "meta.vote.title": "Residents' Vote — Hanōba City Hall",
-  "meta.vote.description": "Hanōba City Hall's residents' vote. Variety ordering, feature requests, and bug reports — drop a note on the boards. Name optional.",
+  "meta.vote.description":
+    "Hanōba City Hall's residents' vote. Variety ordering, feature requests, and bug reports — drop a note on the boards. Name optional.",
 
-  "discover.lead": "Browse the plants of all of Nostr (#plantstr) together with Hanōba's posts.",
-  "me.lead": "The ones you've placed. Delete one and the post and its photos go together.",
+  "discover.lead":
+    "Browse the plants of all of Nostr (#plantstr) together with Hanōba's posts.",
+  "me.lead":
+    "The ones you've placed. Delete one and the post and its photos go together.",
   "ranking.lead":
     "The varieties trending now, tallied weekly from Hanōba's posts — with week-over-week change (↑↓, NEW, RE). Everyone's posts move the chart.",
 
   "vote.h1": "Residents' Vote",
   "vote.intro":
     "Ahem. This is the residents' ballot. Citizens with something to say about city affairs — speak freely. A vote counts even unsigned. The Mayor reads every one.",
-  "vote.note": "* Each section is a message board. Write freely (name optional).",
+  "vote.note":
+    "* Each section is a message board. Write freely (name optional).",
   "vote.board.aria": "Residents' Vote — {title}",
   "vote.board.requests.title": "Variety requests",
   "vote.board.requests.intro":
     "Every wish about varieties belongs here — ordering, varieties missing from the register, anything else. No need to hold back. The Mayor reads them all.",
   "vote.board.features.title": "Feature requests",
-  "vote.board.features.intro": "Petition for any mechanism this city ought to have. The Mayor shall see to it (perhaps).",
+  "vote.board.features.intro":
+    "Petition for any mechanism this city ought to have. The Mayor shall see to it (perhaps).",
   "vote.board.bugs.title": "Bug reports",
-  "vote.board.bugs.intro": "Found a fault in the city? Report it here. The repair crew will be dispatched at once.",
+  "vote.board.bugs.intro":
+    "Found a fault in the city? Report it here. The repair crew will be dispatched at once.",
 
   "citizen.level.traveler": "Traveler",
   "citizen.level.citizen": "Citizen",
@@ -166,7 +181,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "compose.reorder.right": "Right",
   "compose.reorder.counter": "Photo {index} / {total}",
   "compose.undo": "Undo",
-  "compose.undo.aria": "Undo the last image edit (rotation, filter, crop, shot date)",
+  "compose.undo.aria":
+    "Undo the last image edit (rotation, filter, crop, shot date)",
   "compose.filter.heading": "Filters",
   "compose.shotDate.heading": "Date taken",
   "compose.shotDate.auto": "Detected automatically.",
@@ -183,7 +199,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "compose.submit.publishing": "Posting…",
   "compose.submit": "Post",
   "compose.done": "Posted. Heading to Your Plants…",
-  "compose.error.notConfirmed": "Couldn't confirm the post. Please try again with a better connection (your draft is kept).",
+  "compose.error.notConfirmed":
+    "Couldn't confirm the post. Please try again with a better connection (your draft is kept).",
   "compose.error.generic": "Posting failed.",
   "compose.error.imageLoad": "Couldn't load the image.",
 
@@ -199,7 +216,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "crop.dragHint": "Drag the frame to position it.",
 
   "caption.label": "A word",
-  "caption.placeholder": "About your plant. A word, or more. Add tags like #agave too.",
+  "caption.placeholder":
+    "About your plant. A word, or more. Add tags like #agave too.",
   "caption.suggest.aria": "Hashtag suggestions",
 
   "filter.strength.none": "Off",
@@ -211,8 +229,10 @@ export const en: Partial<Record<MessageKey, string>> = {
 
   "picker.shoot": "Camera",
   "picker.album": "Album",
-  "picker.hint": "Take a photo of your plant, or choose from your album. Up to 4.",
-  "picker.error.notImage": "Please choose an image file (videos can't be posted).",
+  "picker.hint":
+    "Take a photo of your plant, or choose from your album. Up to 4.",
+  "picker.error.notImage":
+    "Please choose an image file (videos can't be posted).",
   "picker.error.limit": "Up to 4 photos.",
   "picker.add.aria": "Add a photo",
   "picker.camera.aria": "Take with camera",
@@ -248,7 +268,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "account.name.import.label": "Continue with an account you already have",
   "account.name.import.placeholder": "Paste nsec1…",
   "account.name.import.aria": "nsec secret key",
-  "account.name.import.error.invalid": "That nsec isn't valid. Paste an `nsec1…` key.",
+  "account.name.import.error.invalid":
+    "That nsec isn't valid. Paste an `nsec1…` key.",
   "account.name.import.help":
     "You can continue with an account you use on mypace and elsewhere. Your information is saved only on this device.",
   "account.name.import.cancel": "Cancel",
@@ -272,9 +293,11 @@ export const en: Partial<Record<MessageKey, string>> = {
   "account.profile.icon.remove": "Remove",
   "account.profile.icon.urlPlaceholder": "Or paste an image URL (https://…)",
   "account.profile.icon.urlAria": "Icon image URL",
-  "account.profile.icon.uploadError": "Couldn't upload the image. Please try again later.",
+  "account.profile.icon.uploadError":
+    "Couldn't upload the image. Please try again later.",
   "account.profile.about.label": "Bio",
-  "account.profile.about.placeholder": "Your plants, favorite varieties, and so on",
+  "account.profile.about.placeholder":
+    "Your plants, favorite varieties, and so on",
   "account.profile.sites.label": "Sites & SNS",
   "account.profile.sites.hint":
     "They line up as icons in the author area of enlarged photos. Each person can guide visitors to their own site.",
@@ -302,7 +325,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "account.profile.nsec.copy": "Copy",
   "account.profile.nsec.copied": "Copied",
 
-  "account.favorites.hint": "They appear on your profile. Find others who like the same varieties.",
+  "account.favorites.hint":
+    "They appear on your profile. Find others who like the same varieties.",
   "account.favorites.removeAria": "Remove {name} from favorite varieties",
   "account.favorites.search.aria": "Search varieties",
   "account.favorites.dict.empty": "—",
@@ -329,7 +353,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "comment.sort.old": "Oldest first",
   "comment.sort.new": "Newest first",
   "comment.loading": "Loading…",
-  "comment.error.submit": "Couldn't send your comment. Please wait a moment and try again.",
+  "comment.error.submit":
+    "Couldn't send your comment. Please wait a moment and try again.",
   "comment.error.remove": "Couldn't delete the comment.",
   "comment.empty": "No comments yet",
   "comment.delete.aria": "Delete this comment",
@@ -354,7 +379,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "edit.confirm.has.prefix": "this post's ",
   "edit.confirm.has.counts": "{likes} likes and {comments} comments",
   "edit.confirm.has.suffix": " won't carry over.",
-  "edit.confirm.none": "The likes and comments on the original post won't carry over.",
+  "edit.confirm.none":
+    "The likes and comments on the original post won't carry over.",
   "edit.confirm.q": "Are you sure?",
   "edit.back": "Back",
   "edit.confirm.submit": "Edit and re-post",
@@ -368,7 +394,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "ranking.board.empty": "There aren't enough posts yet to show a ranking.",
   "ranking.board.firstPost": "Post the first pot",
   "ranking.board.demo": "Dev preview (?demo) — synthetic data, not real posts.",
-  "ranking.board.firstWeek": "This is the first week of tallying. Comparison with last week (↑↓) starts next week.",
+  "ranking.board.firstWeek":
+    "This is the first week of tallying. Comparison with last week (↑↓) starts next week.",
   "ranking.board.count.unit": "",
   "ranking.board.chart.loading": "Loading chart…",
   "ranking.board.delta.new": "new entry",
@@ -378,9 +405,12 @@ export const en: Partial<Record<MessageKey, string>> = {
   "ranking.board.delta.down": "down {by}",
   "ranking.board.rowSummary": "#{rank} {sci} {count} posts {delta}",
 
-  "ranking.chart.sparse": "The trend chart appears once two or more weeks have accumulated.",
-  "ranking.chart.caption": "Progress (movement) — weekly post counts. See the table above for exact ranks.",
-  "ranking.chart.summary": "A chart of weekly post counts for the top varieties ({names}). See the table above for details.",
+  "ranking.chart.sparse":
+    "The trend chart appears once two or more weeks have accumulated.",
+  "ranking.chart.caption":
+    "Progress (movement) — weekly post counts. See the table above for exact ranks.",
+  "ranking.chart.summary":
+    "A chart of weekly post counts for the top varieties ({names}). See the table above for details.",
 
   "dilution.stop.none": "None",
   "dilution.trigger.idle": "Adjust how {name} appears",
@@ -403,60 +433,119 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.mayor.shortName": "Botanics",
   // P1 Welcome (the Mayor's address of greeting).
   "cityHall.welcome.title": "An Invitation to Settle",
-  "cityHall.welcome.0": "Ahem. I am the Mayor of Hanōba, Botanics von Hanōba. Welcome, to the green city.",
+  "cityHall.welcome.0":
+    "Ahem. I am the Mayor of Hanōba, Botanics von Hanōba. Welcome, to the green city.",
   "cityHall.welcome.image.alt": "An overview of Hanōba, wrapped in green",
-  "cityHall.welcome.1": "In my city there is no rent for land. So long as you grow a plant, your plot is yours, free and forever. There is but one thing to do—plant a single pot of yours in a square plot, and add a word. With that, you too are a citizen of standing. Photographs of plants only (people and pets, take them to some other town).",
-  "cityHall.welcome.2": "The city's chronicle, its ordinances, its flower shows—all may be viewed from this city hall. Come now, see to the formalities of settling. Decide upon a name you like, and the matter is done. No true name is required—it suffices that you are yourself.",
-  "cityHall.welcome.3": "* Hanōba is a photo SNS for plants only. One square photo + a word, plants only. Register a name to post.",
+  "cityHall.welcome.1":
+    "In my city there is no rent for land. So long as you grow a plant, your plot is yours, free and forever. There is but one thing to do—plant a single pot of yours in a square plot, and add a word. With that, you too are a citizen of standing. Photographs of plants only (people and pets, take them to some other town).",
+  "cityHall.welcome.2":
+    "The city's chronicle, its ordinances, its flower shows—all may be viewed from this city hall. Come now, see to the formalities of settling. Decide upon a name you like, and the matter is done. No true name is required—it suffices that you are yourself.",
+  "cityHall.welcome.3":
+    "* Hanōba is a photo SNS for plants only. One square photo + a word, plants only. Register a name to post.",
   // P2 Town Map (the figure-book's early reward page; civic windows strip at the foot).
   "cityHall.map.title": "Town Map",
-  "cityHall.map.lead": "Ahem. Behold the map of our city. Hanōba spreads like a single leaf, along the Vein River.",
+  "cityHall.map.lead":
+    "Ahem. Behold the map of our city. Hanōba spreads like a single leaf, along the Vein River.",
   "cityHall.map.landmark.0.name": "The Vein River",
-  "cityHall.map.landmark.0.text": "The city's spine. Every plot shares the water drawn from its veins.",
+  "cityHall.map.landmark.0.text":
+    "The city's spine. Every plot shares the water drawn from its veins.",
   "cityHall.map.landmark.1.name": "The Square Plots",
-  "cityHall.map.landmark.1.text": "A rule set by the first mayor. Every garden is equally square. Large garden or small, to this city all are treasures.",
+  "cityHall.map.landmark.1.text":
+    "A rule set by the first mayor. Every garden is equally square. Large garden or small, to this city all are treasures.",
   "cityHall.map.landmark.2.name": "City Hall",
-  "cityHall.map.landmark.2.text": "Where you stand now. The civic windows are just below.",
-  "cityHall.map.note": "The crest, the local produce — these I shall set down in time. The map is yet half-drawn.",
+  "cityHall.map.landmark.2.text":
+    "Where you stand now. The civic windows are just below.",
+  "cityHall.map.note":
+    "The crest, the local produce — these I shall set down in time. The map is yet half-drawn.",
   "cityHall.map.placeholder": "Map in the making",
   "cityHall.map.civic.heading": "Civic Windows",
   "cityHall.map.civic.0.label": "Town Vote",
   "cityHall.map.civic.1.label": "Exhibition (Contest)",
   "cityHall.map.civic.2.label": "Mayor's Blog",
   "cityHall.map.comingSoon": "Opening soon",
+  "cityHall.districts.title": "District Guide",
+  "cityHall.districts.lead":
+    "Ahem. Different plants favor different homes. Allow me to show you the quarter worthy of your pot.",
+  "cityHall.districts.0.name": "Glasshouse Quarter",
+  "cityHall.districts.0.text":
+    "A city of glass, light, and moisture for houseplants and orchids.",
+  "cityHall.districts.1.name": "Field District",
+  "cityHall.districts.1.text":
+    "Square plots of vegetables and herbs share the waters of the Vein River.",
+  "cityHall.districts.2.name": "Orchard Hill",
+  "cityHall.districts.2.text":
+    "Citrus and fruit trees change their flowers and fragrance with every season.",
+  "cityHall.districts.3.name": "Seedling Alley",
+  "cityHall.districts.3.text":
+    "A narrow lane for lovers of seeds and sprouts. The smallest pot holds the largest future.",
+  "cityHall.districts.4.name": "Plant-Care Street",
+  "cityHall.districts.4.text":
+    "A communal nursery where knowledge of repotting, pruning, and watering is exchanged.",
+  "cityHall.districts.note":
+    "Land is free in every district. The will to grow is the only rent required.",
   // P3 Chronicle. Opens with the Mayor's preamble (every page leads with the Mayor's voice · #469 change B).
+  "cityHall.guide.vista": "City Vista",
+  "cityHall.guide.landmarks": "Vein River and Landmarks",
+  "cityHall.guide.crest": "Civic Crest",
+  "cityHall.guide.crest.text": "One leaf, the branching Vein River, and a square plot at its heart: the crest of Hanōba.",
+  "cityHall.guide.specialties": "Local Specialties",
+  "cityHall.guide.specialties.text": "Foliage, field produce, fruit trees, seeds and sprouts, and the tools of care: the pride of five districts.",
+  "cityHall.nav.jumpBack": "Back 5 pages",
+  "cityHall.nav.jumpForward": "Forward 5 pages",
+  "cityHall.nav.first": "First page",
+  "cityHall.nav.last": "Last page",
+  "cityHall.nav.toc": "Contents",
   "cityHall.chronicle.title": "Chronicle",
-  "cityHall.chronicle.lead": "Ahem. Let me tell you a little of how our city came to be.",
+  "cityHall.chronicle.lead":
+    "Ahem. Let me tell you a little of how our city came to be.",
   "cityHall.chronicle.entry.0.era": "Year One, Spring",
-  "cityHall.chronicle.entry.0.text": "The first mayor, Botanics von Hanōba, plants the first pot upon the wasteland. The day the sprout appears is decreed the city's birth.",
+  "cityHall.chronicle.entry.0.text":
+    "The first mayor, Botanics von Hanōba, plants the first pot upon the wasteland. The day the sprout appears is decreed the city's birth.",
   "cityHall.chronicle.entry.1.era": "Year One, Summer",
-  "cityHall.chronicle.entry.1.text": "The Mayor proclaims, \"There is no plant called a weed.\" The making of any ordinance that ranks one above another is forbidden, forever.",
+  "cityHall.chronicle.entry.1.text":
+    'The Mayor proclaims, "There is no plant called a weed." The making of any ordinance that ranks one above another is forbidden, forever.',
   "cityHall.chronicle.entry.2.era": "Year One, Autumn",
-  "cityHall.chronicle.entry.2.text": "The waters of the Leafvein River first nourish the greenhouse quarter.",
+  "cityHall.chronicle.entry.2.text":
+    "The waters of the Leafvein River first nourish the greenhouse quarter.",
   "cityHall.chronicle.entry.3.era": "Year Two",
-  "cityHall.chronicle.entry.3.text": "All plots are decreed to be square. The reason is recorded only as \"because it is beautiful.\"",
-  "cityHall.chronicle.note": "Each time a citizen arrives, this chronicle is written further.",
+  "cityHall.chronicle.entry.3.text":
+    'All plots are decreed to be square. The reason is recorded only as "because it is beautiful."',
+  "cityHall.chronicle.note":
+    "Each time a citizen arrives, this chronicle is written further.",
   // P4 City ordinances (the Hanōba Charter, each article with the Mayor's commentary). Opens with the Mayor's preamble (#469 change B).
   "cityHall.ordinance.title": "City Ordinances",
-  "cityHall.ordinance.lead": "Ahem. Here is our city's charter. Formal, yes — but every article is a rule made for the plants.",
+  "cityHall.ordinance.lead":
+    "Ahem. Here is our city's charter. Formal, yes — but every article is a rule made for the plants.",
   "cityHall.ordinance.0.article": "Article I (Land)",
-  "cityHall.ordinance.0.text": "The rent for land in the City of Hanōba shall be free, so long as a plant is grown.",
-  "cityHall.ordinance.0.commentary": "Ahem. The will to grow is itself your rent. To water, to gaze upon a leaf—with that, you have paid in full.",
+  "cityHall.ordinance.0.text":
+    "The rent for land in the City of Hanōba shall be free, so long as a plant is grown.",
+  "cityHall.ordinance.0.commentary":
+    "Ahem. The will to grow is itself your rent. To water, to gaze upon a leaf—with that, you have paid in full.",
   "cityHall.ordinance.1.article": "Article II (Plot)",
-  "cityHall.ordinance.1.text": "To a single plot shall be added one square photograph, and a word.",
-  "cityHall.ordinance.1.commentary": "Plots are square, and square alone. Why? Because they are beautiful. That is reason enough.",
+  "cityHall.ordinance.1.text":
+    "To a single plot shall be added one square photograph, and a word.",
+  "cityHall.ordinance.1.commentary":
+    "Plots are square, and square alone. Why? Because they are beautiful. That is reason enough.",
   "cityHall.ordinance.2.article": "Article III (Resident)",
-  "cityHall.ordinance.2.text": "One who has given a name shall be deemed a citizen.",
-  "cityHall.ordinance.2.commentary": "To give a name is to file for settlement. It need not be your true name. It suffices that you are yourself.",
+  "cityHall.ordinance.2.text":
+    "One who has given a name shall be deemed a citizen.",
+  "cityHall.ordinance.2.commentary":
+    "To give a name is to file for settlement. It need not be your true name. It suffices that you are yourself.",
   "cityHall.ordinance.3.article": "Article IV (Equality)",
-  "cityHall.ordinance.3.text": "The city loves all plants equally. No plant by the name of weed exists in this city.",
-  "cityHall.ordinance.3.commentary": "The moss in the shade, the succulent at the eaves—all are treasures of the city. An ordinance that ranks them shall never be enacted.",
+  "cityHall.ordinance.3.text":
+    "The city loves all plants equally. No plant by the name of weed exists in this city.",
+  "cityHall.ordinance.3.commentary":
+    "The moss in the shade, the succulent at the eaves—all are treasures of the city. An ordinance that ranks them shall never be enacted.",
   "cityHall.ordinance.4.article": "Article V (Photograph)",
-  "cityHall.ordinance.4.text": "Photographs displayed in this city shall be of plants alone.",
-  "cityHall.ordinance.4.commentary": "Let people and pets shine each in their own town. This is a city of plants.",
+  "cityHall.ordinance.4.text":
+    "Photographs displayed in this city shall be of plants alone.",
+  "cityHall.ordinance.4.commentary":
+    "Let people and pets shine each in their own town. This is a city of plants.",
   // The Mayor's brief word added upon a level promotion.
-  "cityHall.flavor.citizen": "Your settlement is duly received. Welcome, citizens.",
-  "cityHall.flavor.tenured": "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",
+  "cityHall.flavor.citizen":
+    "Your settlement is duly received. Welcome, citizens.",
+  "cityHall.flavor.tenured":
+    "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",
   // CityHallBook UI chrome.
   "cityHall.mayorTitle": "Mayor {name}",
   "cityHall.nav.aria": "Turn the page",

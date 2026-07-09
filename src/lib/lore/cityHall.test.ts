@@ -1,97 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { buildCityHallBook, civicHub, type HubLink } from "./cityHall.ts";
+import { buildCityHallBook, civicHub } from "./cityHall.ts";
 
-// 街の地図（P2・図鑑の読み物ページ・#469）と市政の窓口（civicHub）の正本テスト。
-// 機能導線（discover/ranking/me/compose）はヘッダ/フッタが持つので手帳からは外す。
-// #510 方針B: 「市政の窓口」strip は街の地図 P2 固有をやめ、全ページ共通の常設導線 civicHub に切り出した。
-// 役所が「開庁」したか（実在ルート）／「近日開庁」（route:null）かを、表示テキストでなく
-// データ側で固定する（cityHall.ts が単一ソース・#160）。
-
-function mapPage() {
-  const page2 = buildCityHallBook("ja").find((p) => p.page === 2);
-  expect(page2?.kind).toBe("map");
-  return page2 && page2.kind === "map" ? page2 : null;
-}
-
-function civicLinks(): HubLink[] {
-  return civicHub("ja");
-}
-
-function findCivic(label: string): HubLink {
-  const link = civicLinks().find((l) => l.label === label);
-  expect(link, `市政の窓口に「${label}」が無い`).toBeDefined();
-  return link!;
-}
-
-describe("街の地図ページ（cityHall.ts P2・#469）", () => {
-  it("page2 は kind:\"map\" で、地図の名所（ランドマーク）を持つ", () => {
-    const page = mapPage();
-    expect(page).not.toBeNull();
-    expect(page!.landmarks.length).toBe(3);
-    // 葉脈川がランドマークとして並ぶ（読み物の中身が在ることを固定）。
-    expect(page!.landmarks.map((l) => l.name)).toContain("葉脈川");
-    // 各ランドマークは名と説明を持つ。
-    for (const lm of page!.landmarks) {
-      expect(lm.name.length).toBeGreaterThan(0);
-      expect(lm.text.length).toBeGreaterThan(0);
-    }
-    // 末尾に注記（地図はまだ描きかけ）。
-    expect(page!.note.length).toBeGreaterThan(0);
-    // 地図イラストは実画像を差し込み済み（#137/#504）。
-    expect(page!.image).toBe("/hanoba-map.webp");
+describe("20ページの市民手帳（#137）", () => {
+  it("安定IDを持つ20ページを重複なく組み立てる", () => {
+    const pages = buildCityHallBook("ja");
+    expect(pages).toHaveLength(20);
+    expect(pages.map((page) => page.page)).toEqual(Array.from({ length: 20 }, (_, index) => index + 1));
+    expect(new Set(pages.map((page) => page.id)).size).toBe(20);
   });
 
-  it("市政の窓口は住民投票・品評会・市長ブログの3件だけ（discover 等の機能導線は手帳から外す）", () => {
-    const labels = civicLinks().map((l) => l.label);
-    expect(labels).toEqual(["住民投票", "品評会（コンテスト）", "市長ブログ"]);
+  it("地図・地区・市章特産物の完成画像を配置する", () => {
+    const pages = buildCityHallBook("ja");
+    expect(pages.find((page) => page.id === "map")).toMatchObject({ image: "/hanoba-map.webp" });
+    expect(pages.filter((page) => page.id.startsWith("district-"))).toHaveLength(5);
+    expect(pages.find((page) => page.id === "district-1")).toMatchObject({ image: "/hanoba-districts.webp" });
+    expect(pages.find((page) => page.id === "crest")).toMatchObject({ image: "/hanoba-crest-specialties.webp" });
+    expect(pages.find((page) => page.id === "specialties")).toMatchObject({ image: "/hanoba-crest-specialties.webp" });
   });
 
-  it("住民投票（#160）は /vote へ開庁している（route が /vote の実リンク・退避先として健在）", () => {
-    expect(findCivic("住民投票").route).toBe("/vote");
+  it("市憲章5条を16〜20ページへ1条ずつ分ける", () => {
+    const pages = buildCityHallBook("ja").slice(15);
+    expect(pages.every((page) => page.kind === "ordinances" && page.ordinances.length === 1)).toBe(true);
   });
 
-  it("品評会/市長ブログは近日開庁のまま（route:null）", () => {
-    for (const label of ["品評会（コンテスト）", "市長ブログ"]) {
-      const link = findCivic(label);
-      expect(link.route, `${label} はまだ近日開庁のはず`).toBeNull();
-      expect(link.comingSoon).toBe("近日開庁");
-    }
-  });
-});
-
-// P1 移住案内の段落間に挿絵を挟む（#504）。挨拶（0番）の直後・規約説明（1番）の前。
-describe("移住案内ページの挿絵（cityHall.ts P1・#504）", () => {
-  it("welcome の blocks は para(0) → image → para(1) の順で挿絵を挟む", () => {
-    const page1 = buildCityHallBook("ja").find((p) => p.page === 1);
-    expect(page1?.kind).toBe("welcome");
-    if (page1?.kind !== "welcome") return;
-    expect(page1.blocks[0]).toMatchObject({ kind: "para" });
-    const imageBlock = page1.blocks[1];
-    expect(imageBlock?.kind).toBe("image");
-    if (imageBlock?.kind === "image") {
-      expect(imageBlock.src).toBe("/hanoba-welcome-vista.webp");
-      expect(imageBlock.alt.length).toBeGreaterThan(0);
-    }
-    expect(page1.blocks[2]).toMatchObject({ kind: "para" });
-  });
-});
-
-// 全ページ冒頭に市長の言葉を必須化（#469 変更B）。welcome(lead相当の歓迎辞)・map(lead)に加え、
-// chronicle(P3)・ordinances(P4) も冒頭に市長の前口上 lead を持つ。
-describe("全ページ冒頭の市長 lead（#469 変更B）", () => {
-  it("沿革（P3）・条文（P4）に市長の前口上 lead がある（おっほん。で始まる）", () => {
-    const book = buildCityHallBook("ja");
-    const p3 = book.find((p) => p.page === 3);
-    const p4 = book.find((p) => p.page === 4);
-    expect(p3?.kind).toBe("chronicle");
-    expect(p4?.kind).toBe("ordinances");
-    if (p3?.kind === "chronicle") {
-      expect(p3.lead.length).toBeGreaterThan(0);
-      expect(p3.lead.startsWith("おっほん")).toBe(true);
-    }
-    if (p4?.kind === "ordinances") {
-      expect(p4.lead.length).toBeGreaterThan(0);
-      expect(p4.lead.startsWith("おっほん")).toBe(true);
-    }
+  it("市政の窓口は実在routeと近日開庁を維持する", () => {
+    expect(civicHub("ja").map((link) => link.route)).toEqual(["/vote", null, null]);
   });
 });

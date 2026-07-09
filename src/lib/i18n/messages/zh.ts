@@ -23,7 +23,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "scrollToTop.aria": "回到顶部",
 
   "install.title": "添加到主屏幕",
-  "install.ios": "点击分享菜单里的 {arrow}，选择「添加到主屏幕」，就能像应用一样打开。",
+  "install.ios":
+    "点击分享菜单里的 {arrow}，选择「添加到主屏幕」，就能像应用一样打开。",
   "install.tagline": "像应用一样打开。",
   "install.add": "添加",
   "install.later": "以后再说",
@@ -72,26 +73,34 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "home.hero.title": "种下它，亮出它。",
   "home.hero.lead":
     "一个分享植物照片的社交动态。比 Instagram 更快更简单——只需加一个词。农作物、鹿角蕨、幼苗：全都汇于一处。",
-  "home.hero.sub": "这是保存在 Hanōba 里的植物时间线。想看遍整个 Nostr 的植物，请前往 {link}。",
+  "home.hero.sub":
+    "这是保存在 Hanōba 里的植物时间线。想看遍整个 Nostr 的植物，请前往 {link}。",
   "home.hero.sub.link": "大家的植物",
 
   "fab.compose.aria": "发布",
 
-  "site.description": "一个分享植物照片的社交动态。比 Instagram 更快更简单——只需加一个词。",
+  "site.description":
+    "一个分享植物照片的社交动态。比 Instagram 更快更简单——只需加一个词。",
 
   "meta.about.title": "关于 Hanōba——一座虚构的植物之城",
-  "meta.about.description": "Hanōba 是一个分享植物照片的社交动态——一座由我们大家共同培育、爱植物之人的虚构城市。",
+  "meta.about.description":
+    "Hanōba 是一个分享植物照片的社交动态——一座由我们大家共同培育、爱植物之人的虚构城市。",
   "meta.compose.title": "发布 — Hanōba",
   "meta.discover.title": "大家的植物 — Hanōba",
-  "meta.discover.description": "和 Hanōba 的帖子一起，浏览整个 Nostr（#plantstr）的植物。",
+  "meta.discover.description":
+    "和 Hanōba 的帖子一起，浏览整个 Nostr（#plantstr）的植物。",
   "meta.me.title": "你的植物 — Hanōba",
-  "meta.me.description": "你在 Hanōba 放下的植物。你可以在这里删除帖子（连同照片）。",
+  "meta.me.description":
+    "你在 Hanōba 放下的植物。你可以在这里删除帖子（连同照片）。",
   "meta.ranking.title": "排行榜 — Hanōba",
-  "meta.ranking.description": "当下正流行的品种，每周从 Hanōba 的帖子中统计——并附上较上周的变化（↑↓、NEW、RE）。",
+  "meta.ranking.description":
+    "当下正流行的品种，每周从 Hanōba 的帖子中统计——并附上较上周的变化（↑↓、NEW、RE）。",
   "meta.u.title": "市民主页 — Hanōba",
-  "meta.u.description": "一位 Hanōba 市民的公开主页——他放下的植物，以及活动数据（帖子、照片、栽培过的品种、居住天数）。",
+  "meta.u.description":
+    "一位 Hanōba 市民的公开主页——他放下的植物，以及活动数据（帖子、照片、栽培过的品种、居住天数）。",
   "meta.vote.title": "居民投票 — Hanōba 市政厅",
-  "meta.vote.description": "Hanōba 市政厅的居民投票。品种排序、功能请求、错误报告——在留言板上留下一笔吧。署名自愿。",
+  "meta.vote.description":
+    "Hanōba 市政厅的居民投票。品种排序、功能请求、错误报告——在留言板上留下一笔吧。署名自愿。",
 
   "discover.lead": "和 Hanōba 的帖子一起，浏览整个 Nostr（#plantstr）的植物。",
   "me.lead": "你放下的那些。删除一篇，帖子和它的照片会一同消失。",
@@ -107,7 +116,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "vote.board.requests.intro":
     "关于品种的一切心愿都写在这里——排序、登记册里缺的品种，随便什么都行。无需顾虑。市长会全部阅读。",
   "vote.board.features.title": "功能请求",
-  "vote.board.features.intro": "为这座城市该有的任何机制请愿吧。市长会处理的（也许）。",
+  "vote.board.features.intro":
+    "为这座城市该有的任何机制请愿吧。市长会处理的（也许）。",
   "vote.board.bugs.title": "错误报告",
   "vote.board.bugs.intro": "在城里发现了故障？请在这里报告。维修队会立刻出动。",
 
@@ -182,7 +192,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "compose.submit.publishing": "发布中…",
   "compose.submit": "发布",
   "compose.done": "已发布。正前往你的植物…",
-  "compose.error.notConfirmed": "无法确认帖子是否发布。请在网络更好时再试（你的草稿已保留）。",
+  "compose.error.notConfirmed":
+    "无法确认帖子是否发布。请在网络更好时再试（你的草稿已保留）。",
   "compose.error.generic": "发布失败。",
   "compose.error.imageLoad": "无法加载图像。",
 
@@ -198,7 +209,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "crop.dragHint": "拖动取景框来定位。",
 
   "caption.label": "一个词",
-  "caption.placeholder": "关于你的植物。一个词，或更多。也可以加上 #龙舌兰 这样的标签。",
+  "caption.placeholder":
+    "关于你的植物。一个词，或更多。也可以加上 #龙舌兰 这样的标签。",
   "caption.suggest.aria": "标签建议",
 
   "filter.strength.none": "关",
@@ -247,7 +259,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "account.name.import.label": "用你已有的账号继续",
   "account.name.import.placeholder": "粘贴 nsec1…",
   "account.name.import.aria": "nsec 私钥",
-  "account.name.import.error.invalid": "这个 nsec 无效。请粘贴一个「nsec1…」密钥。",
+  "account.name.import.error.invalid":
+    "这个 nsec 无效。请粘贴一个「nsec1…」密钥。",
   "account.name.import.help":
     "你可以用在 mypace 等地方使用的账号继续。你的信息只保存在本设备上。",
   "account.name.import.cancel": "取消",
@@ -301,7 +314,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "account.profile.nsec.copy": "复制",
   "account.profile.nsec.copied": "已复制",
 
-  "account.favorites.hint": "它们会显示在你的主页上。找到同样喜爱这些品种的人。",
+  "account.favorites.hint":
+    "它们会显示在你的主页上。找到同样喜爱这些品种的人。",
   "account.favorites.removeAria": "从喜爱的品种中移除 {name}",
   "account.favorites.search.aria": "搜索品种",
   "account.favorites.dict.empty": "—",
@@ -379,7 +393,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
 
   "ranking.chart.sparse": "积累两周以上后，趋势图就会出现。",
   "ranking.chart.caption": "进展（变动）——每周帖子数。准确排名请见上方表格。",
-  "ranking.chart.summary": "一张展示最热门品种（{names}）每周帖子数的图表。详情请见上方表格。",
+  "ranking.chart.summary":
+    "一张展示最热门品种（{names}）每周帖子数的图表。详情请见上方表格。",
 
   "dilution.stop.none": "无",
   "dilution.trigger.idle": "调整 {name} 的出现方式",
@@ -402,17 +417,24 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.mayor.shortName": "Botanics",
   // P1 欢迎（市长的问候致辞）。
   "cityHall.welcome.title": "一封定居的邀请",
-  "cityHall.welcome.0": "咳咳。我是 Hanōba 的市长，Botanics von Hanōba。欢迎来到这座绿色之城。",
-  "cityHall.welcome.1": "在我的城里，土地不收租。只要你种着一株植物，那块地就永远免费地属于你。要做的只有一件事——在一块方形的地里种下你自己的一盆，再添上一个词。如此，你也就是一位堂堂正正的市民了。只发植物的照片（人和宠物，请带到别的城去）。",
-  "cityHall.welcome.2": "城市的编年史、它的法令、它的花展——都能从这座市政厅查看。来吧，去办理定居的手续。决定一个你喜欢的名字，事情就办妥了。无需真名——只要你是你自己，就足够了。",
-  "cityHall.welcome.3": "* Hanōba 是一个只发植物的照片 SNS。一张方形照片 + 一个词，只发植物。注册一个名字即可发布。",
+  "cityHall.welcome.0":
+    "咳咳。我是 Hanōba 的市长，Botanics von Hanōba。欢迎来到这座绿色之城。",
+  "cityHall.welcome.1":
+    "在我的城里，土地不收租。只要你种着一株植物，那块地就永远免费地属于你。要做的只有一件事——在一块方形的地里种下你自己的一盆，再添上一个词。如此，你也就是一位堂堂正正的市民了。只发植物的照片（人和宠物，请带到别的城去）。",
+  "cityHall.welcome.2":
+    "城市的编年史、它的法令、它的花展——都能从这座市政厅查看。来吧，去办理定居的手续。决定一个你喜欢的名字，事情就办妥了。无需真名——只要你是你自己，就足够了。",
+  "cityHall.welcome.3":
+    "* Hanōba 是一个只发植物的照片 SNS。一张方形照片 + 一个词，只发植物。注册一个名字即可发布。",
   // P2 城市地图（图鉴的早期奖励页；末尾附「市政窗口」一栏）。
   "cityHall.map.title": "城市地图",
-  "cityHall.map.lead": "咳咳。这便是我市的地图。Hanōba 宛如一片叶子，沿着叶脉河铺展开来。",
+  "cityHall.map.lead":
+    "咳咳。这便是我市的地图。Hanōba 宛如一片叶子，沿着叶脉河铺展开来。",
   "cityHall.map.landmark.0.name": "叶脉河",
-  "cityHall.map.landmark.0.text": "城市的脊梁。每一方地块，都从这条河的叶脉中分得水源。",
+  "cityHall.map.landmark.0.text":
+    "城市的脊梁。每一方地块，都从这条河的叶脉中分得水源。",
   "cityHall.map.landmark.1.name": "方形地块",
-  "cityHall.map.landmark.1.text": "首任市长定下的规矩。每一座庭院都同样方正。无论大小，对本市而言皆是珍宝。",
+  "cityHall.map.landmark.1.text":
+    "首任市长定下的规矩。每一座庭院都同样方正。无论大小，对本市而言皆是珍宝。",
   "cityHall.map.landmark.2.name": "市政厅",
   "cityHall.map.landmark.2.text": "诸位此刻所在之处。市政窗口，就在其下。",
   "cityHall.map.note": "市徽，特产，皆容后再录。这地图，还只是半成的草图。",
@@ -422,39 +444,78 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.1.label": "花展（比赛）",
   "cityHall.map.civic.2.label": "市长博客",
   "cityHall.map.comingSoon": "即将开放",
+  "cityHall.districts.title": "街区指南",
+  "cityHall.districts.lead":
+    "咳咳。植物喜好不同，宜居之地自然也不同。让我为诸位的一盆引路。",
+  "cityHall.districts.0.name": "温室街",
+  "cityHall.districts.0.text":
+    "为观叶植物与兰花而设，充满光线与湿气的玻璃街区。",
+  "cityHall.districts.1.name": "田园区",
+  "cityHall.districts.1.text": "蔬菜与香草的方形地块，共享叶脉河的水。",
+  "cityHall.districts.2.name": "果树丘",
+  "cityHall.districts.2.text": "柑橘与果树成行，花朵与香气随四季更替。",
+  "cityHall.districts.3.name": "实生巷",
+  "cityHall.districts.3.text":
+    "热爱种子与嫩芽的人聚集的小巷。盆越小，未来越大。",
+  "cityHall.districts.4.name": "养护街",
+  "cityHall.districts.4.text": "交流换盆、修剪与浇水智慧的市民共享苗圃。",
+  "cityHall.districts.note": "所有街区的土地皆免费。只需以栽培的意愿缴纳地租。",
   // P3 编年史。以市长的前言开篇（每页皆以市长之声起首·#469 变更B）。
+  "cityHall.guide.vista": "城市全景",
+  "cityHall.guide.landmarks": "叶脉河与名胜",
+  "cityHall.guide.crest": "市徽",
+  "cityHall.guide.crest.text": "一片叶、分叉的叶脉河，以及中心的方形地块——这便是 Hanōba 市徽。",
+  "cityHall.guide.specialties": "特产",
+  "cityHall.guide.specialties.text": "观叶植物、田园收成、果树、种子嫩芽与养护工具，是五个街区的骄傲。",
+  "cityHall.nav.jumpBack": "后退5页",
+  "cityHall.nav.jumpForward": "前进5页",
+  "cityHall.nav.first": "第一页",
+  "cityHall.nav.last": "最后一页",
+  "cityHall.nav.toc": "目录",
   "cityHall.chronicle.title": "编年史",
   "cityHall.chronicle.lead": "咳咳。容我略述我市的来历。",
   "cityHall.chronicle.entry.0.era": "元年·春",
-  "cityHall.chronicle.entry.0.text": "首任市长 Botanics von Hanōba 在荒原上种下第一盆。新芽冒出的那天被定为城市的诞生之日。",
+  "cityHall.chronicle.entry.0.text":
+    "首任市长 Botanics von Hanōba 在荒原上种下第一盆。新芽冒出的那天被定为城市的诞生之日。",
   "cityHall.chronicle.entry.1.era": "元年·夏",
-  "cityHall.chronicle.entry.1.text": "市长宣告：「没有一株植物叫杂草。」永远禁止制定任何把一株植物排在另一株之上的法令。",
+  "cityHall.chronicle.entry.1.text":
+    "市长宣告：「没有一株植物叫杂草。」永远禁止制定任何把一株植物排在另一株之上的法令。",
   "cityHall.chronicle.entry.2.era": "元年·秋",
   "cityHall.chronicle.entry.2.text": "叶脉河的水首次滋润了温室街区。",
   "cityHall.chronicle.entry.3.era": "二年",
-  "cityHall.chronicle.entry.3.text": "法令定下所有地块皆为方形。理由仅记作「因为它很美」。",
+  "cityHall.chronicle.entry.3.text":
+    "法令定下所有地块皆为方形。理由仅记作「因为它很美」。",
   "cityHall.chronicle.note": "每当一位市民到来，这部编年史便继续书写下去。",
   // P4 城市法令（Hanōba 宪章，每一条都附市长的注解）。以市长的前言开篇（#469 变更B）。
   "cityHall.ordinance.title": "城市法令",
-  "cityHall.ordinance.lead": "咳咳。这便是我市的宪章。虽显刻板，但每一条都是为植物而立的规矩。",
+  "cityHall.ordinance.lead":
+    "咳咳。这便是我市的宪章。虽显刻板，但每一条都是为植物而立的规矩。",
   "cityHall.ordinance.0.article": "第一条（土地）",
-  "cityHall.ordinance.0.text": "Hanōba 市的土地租金应当免费，只要其上种着一株植物。",
-  "cityHall.ordinance.0.commentary": "咳咳。栽培的意愿本身就是你的租金。浇水、凝视一片叶子——如此，你便已付清了全款。",
+  "cityHall.ordinance.0.text":
+    "Hanōba 市的土地租金应当免费，只要其上种着一株植物。",
+  "cityHall.ordinance.0.commentary":
+    "咳咳。栽培的意愿本身就是你的租金。浇水、凝视一片叶子——如此，你便已付清了全款。",
   "cityHall.ordinance.1.article": "第二条（地块）",
   "cityHall.ordinance.1.text": "每一块地都应附上一张方形照片，和一个词。",
-  "cityHall.ordinance.1.commentary": "地块是方形的，且只能是方形。为何？因为它们很美。这理由便足够了。",
+  "cityHall.ordinance.1.commentary":
+    "地块是方形的，且只能是方形。为何？因为它们很美。这理由便足够了。",
   "cityHall.ordinance.2.article": "第三条（居民）",
   "cityHall.ordinance.2.text": "凡取了名字者，应视为市民。",
-  "cityHall.ordinance.2.commentary": "取一个名字，就是提交定居的申请。它不必是你的真名。只要你是你自己，就足够了。",
+  "cityHall.ordinance.2.commentary":
+    "取一个名字，就是提交定居的申请。它不必是你的真名。只要你是你自己，就足够了。",
   "cityHall.ordinance.3.article": "第四条（平等）",
-  "cityHall.ordinance.3.text": "城市平等地爱着每一株植物。这座城里没有一株植物叫杂草。",
-  "cityHall.ordinance.3.commentary": "阴影里的苔藓、屋檐下的多肉——都是城市的珍宝。把它们排出高下的法令，永远不会颁布。",
+  "cityHall.ordinance.3.text":
+    "城市平等地爱着每一株植物。这座城里没有一株植物叫杂草。",
+  "cityHall.ordinance.3.commentary":
+    "阴影里的苔藓、屋檐下的多肉——都是城市的珍宝。把它们排出高下的法令，永远不会颁布。",
   "cityHall.ordinance.4.article": "第五条（照片）",
   "cityHall.ordinance.4.text": "在这座城里展示的照片，应当只有植物。",
-  "cityHall.ordinance.4.commentary": "让人和宠物各自在自己的城里闪耀吧。这是一座植物之城。",
+  "cityHall.ordinance.4.commentary":
+    "让人和宠物各自在自己的城里闪耀吧。这是一座植物之城。",
   // 升级时附上的市长简短寄语。
   "cityHall.flavor.citizen": "你的定居业已如实受理。欢迎诸位市民。",
-  "cityHall.flavor.tenured": "咳咳。如今你已是城市的老朋友了。我已为你敞开了内厅。",
+  "cityHall.flavor.tenured":
+    "咳咳。如今你已是城市的老朋友了。我已为你敞开了内厅。",
   // CityHallBook 界面元素。
   "cityHall.mayorTitle": "{name} 市长",
   "cityHall.nav.aria": "翻页",

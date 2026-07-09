@@ -18,12 +18,14 @@ export const es: Partial<Record<MessageKey, string>> = {
   "nav.menu.close": "Cerrar menú",
   "nav.home.aria": "Inicio de Hanōba",
 
-  "footer.tagline": "Hanōba: una ciudad imaginaria de amantes de las plantas, cultivada entre todos.",
+  "footer.tagline":
+    "Hanōba: una ciudad imaginaria de amantes de las plantas, cultivada entre todos.",
 
   "scrollToTop.aria": "Volver arriba",
 
   "install.title": "Añadir a la pantalla de inicio",
-  "install.ios": "Toca {arrow} en el menú de compartir y elige «Añadir a pantalla de inicio» para abrirla como una app.",
+  "install.ios":
+    "Toca {arrow} en el menú de compartir y elige «Añadir a pantalla de inicio» para abrirla como una app.",
   "install.tagline": "Se abre como una app.",
   "install.add": "Añadir",
   "install.later": "Más tarde",
@@ -51,13 +53,15 @@ export const es: Partial<Record<MessageKey, string>> = {
   "feed.filter.clear": "Quitar filtro",
   "feed.tag.empty": "Aún no hay publicaciones para «#{tag}».",
   "discover.loading": "Buscando «{summary}»…",
-  "discover.empty": "No se encontraron publicaciones para «{summary}». Prueba con otra variedad.",
+  "discover.empty":
+    "No se encontraron publicaciones para «{summary}». Prueba con otra variedad.",
 
   "my.subject": "tú",
   "my.empty": "Todavía no has colocado ninguna planta.",
   "my.edit.aria": "Editar esta publicación",
   "my.delete.aria": "Eliminar esta publicación",
-  "my.edit.done": "Publicación editada (republicada como una nueva publicación).",
+  "my.edit.done":
+    "Publicación editada (republicada como una nueva publicación).",
   "my.delete.photoUnconfirmed":
     "Se eliminó la publicación, pero no pudimos confirmar que la foto se haya quitado (puede desaparecer en unos minutos).",
   "my.delete.failed": "No se pudo eliminar. Inténtalo de nuevo más tarde.",
@@ -72,44 +76,57 @@ export const es: Partial<Record<MessageKey, string>> = {
   "home.hero.title": "Cultívala. Muéstrala.",
   "home.hero.lead":
     "Un feed social para fotos de plantas. Más rápido y sencillo que Instagram: basta con añadir una palabra. Cultivos de campo, platyceriums, plántulas: todo en un solo lugar.",
-  "home.hero.sub": "Esta es la cronología de las plantas guardadas en Hanōba. Para ver las plantas de todo Nostr, visita {link}.",
+  "home.hero.sub":
+    "Esta es la cronología de las plantas guardadas en Hanōba. Para ver las plantas de todo Nostr, visita {link}.",
   "home.hero.sub.link": "Plantas de todos",
 
   "fab.compose.aria": "Publicar",
 
-  "site.description": "Un feed social para fotos de plantas. Más rápido y sencillo que Instagram: basta con añadir una palabra.",
+  "site.description":
+    "Un feed social para fotos de plantas. Más rápido y sencillo que Instagram: basta con añadir una palabra.",
 
   "meta.about.title": "Acerca de Hanōba: una ciudad imaginaria de plantas",
-  "meta.about.description": "Hanōba es un feed social para fotos de plantas: una ciudad imaginaria de amantes de las plantas que cultivamos entre todos.",
+  "meta.about.description":
+    "Hanōba es un feed social para fotos de plantas: una ciudad imaginaria de amantes de las plantas que cultivamos entre todos.",
   "meta.compose.title": "Publicar — Hanōba",
   "meta.discover.title": "Plantas de todos — Hanōba",
-  "meta.discover.description": "Explora las plantas de todo Nostr (#plantstr) junto con las publicaciones de Hanōba.",
+  "meta.discover.description":
+    "Explora las plantas de todo Nostr (#plantstr) junto con las publicaciones de Hanōba.",
   "meta.me.title": "Tus plantas — Hanōba",
-  "meta.me.description": "Las plantas que has colocado en Hanōba. Aquí puedes eliminar publicaciones (fotos incluidas).",
+  "meta.me.description":
+    "Las plantas que has colocado en Hanōba. Aquí puedes eliminar publicaciones (fotos incluidas).",
   "meta.ranking.title": "Rankings — Hanōba",
-  "meta.ranking.description": "Las variedades de moda ahora, contadas semanalmente a partir de las publicaciones de Hanōba, con la variación respecto a la semana anterior (↑↓, NEW, RE).",
+  "meta.ranking.description":
+    "Las variedades de moda ahora, contadas semanalmente a partir de las publicaciones de Hanōba, con la variación respecto a la semana anterior (↑↓, NEW, RE).",
   "meta.u.title": "Perfil de ciudadano — Hanōba",
-  "meta.u.description": "El perfil público de un ciudadano de Hanōba: las plantas que ha colocado y sus estadísticas de actividad (publicaciones, fotos, variedades cultivadas, días de residencia).",
+  "meta.u.description":
+    "El perfil público de un ciudadano de Hanōba: las plantas que ha colocado y sus estadísticas de actividad (publicaciones, fotos, variedades cultivadas, días de residencia).",
   "meta.vote.title": "Voto de los residentes — Ayuntamiento de Hanōba",
-  "meta.vote.description": "El voto de los residentes del Ayuntamiento de Hanōba. Orden de las variedades, peticiones de funciones e informes de errores: deja una nota en los tablones. El nombre es opcional.",
+  "meta.vote.description":
+    "El voto de los residentes del Ayuntamiento de Hanōba. Orden de las variedades, peticiones de funciones e informes de errores: deja una nota en los tablones. El nombre es opcional.",
 
-  "discover.lead": "Explora las plantas de todo Nostr (#plantstr) junto con las publicaciones de Hanōba.",
-  "me.lead": "Las que has colocado. Elimina una y la publicación y sus fotos se van juntas.",
+  "discover.lead":
+    "Explora las plantas de todo Nostr (#plantstr) junto con las publicaciones de Hanōba.",
+  "me.lead":
+    "Las que has colocado. Elimina una y la publicación y sus fotos se van juntas.",
   "ranking.lead":
     "Las variedades de moda ahora, contadas semanalmente a partir de las publicaciones de Hanōba, con la variación respecto a la semana anterior (↑↓, NEW, RE). Las publicaciones de todos mueven el gráfico.",
 
   "vote.h1": "Voto de los residentes",
   "vote.intro":
     "Ejem. Esta es la urna de los residentes. Ciudadanos con algo que decir sobre los asuntos de la ciudad: hablad con libertad. Un voto cuenta aunque no lleve firma. El Alcalde lee cada uno de ellos.",
-  "vote.note": "* Cada sección es un tablón de mensajes. Escribe con libertad (el nombre es opcional).",
+  "vote.note":
+    "* Cada sección es un tablón de mensajes. Escribe con libertad (el nombre es opcional).",
   "vote.board.aria": "Voto de los residentes — {title}",
   "vote.board.requests.title": "Peticiones de variedades",
   "vote.board.requests.intro":
     "Todo deseo sobre variedades va aquí: el orden, las variedades que faltan en el registro, lo que sea. No hace falta contenerse. El Alcalde las lee todas.",
   "vote.board.features.title": "Peticiones de funciones",
-  "vote.board.features.intro": "Solicita cualquier mecanismo que esta ciudad debería tener. El Alcalde se ocupará de ello (quizá).",
+  "vote.board.features.intro":
+    "Solicita cualquier mecanismo que esta ciudad debería tener. El Alcalde se ocupará de ello (quizá).",
   "vote.board.bugs.title": "Informes de errores",
-  "vote.board.bugs.intro": "¿Encontraste un fallo en la ciudad? Repórtalo aquí. La cuadrilla de reparación saldrá de inmediato.",
+  "vote.board.bugs.intro":
+    "¿Encontraste un fallo en la ciudad? Repórtalo aquí. La cuadrilla de reparación saldrá de inmediato.",
 
   "citizen.level.traveler": "Viajero",
   "citizen.level.citizen": "Ciudadano",
@@ -154,10 +171,12 @@ export const es: Partial<Record<MessageKey, string>> = {
   "profile.loading.sr": "Cargando las plantas de este ciudadano…",
   "profile.empty": "Este ciudadano todavía no tiene plantas.",
 
-  "compose.account.prompt": "Encantado de conocerte. ¿Cuál es tu nombre de usuario?",
+  "compose.account.prompt":
+    "Encantado de conocerte. ¿Cuál es tu nombre de usuario?",
   "compose.photos.heading": "Fotos",
   "compose.photos.count": "{count}/{max}",
-  "compose.photos.limitNotice": "Hasta 4 fotos. Se añadieron todas las que cupieron.",
+  "compose.photos.limitNotice":
+    "Hasta 4 fotos. Se añadieron todas las que cupieron.",
   "compose.photos.thumbAlt": "Foto {n}",
   "compose.reorder.left.aria": "Mover la foto seleccionada a la izquierda",
   "compose.reorder.left": "Izquierda",
@@ -165,7 +184,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "compose.reorder.right": "Derecha",
   "compose.reorder.counter": "Foto {index} / {total}",
   "compose.undo": "Deshacer",
-  "compose.undo.aria": "Deshacer la última edición de imagen (rotación, filtro, recorte, fecha de la foto)",
+  "compose.undo.aria":
+    "Deshacer la última edición de imagen (rotación, filtro, recorte, fecha de la foto)",
   "compose.filter.heading": "Filtros",
   "compose.shotDate.heading": "Fecha de captura",
   "compose.shotDate.auto": "Detectada automáticamente.",
@@ -182,7 +202,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "compose.submit.publishing": "Publicando…",
   "compose.submit": "Publicar",
   "compose.done": "Publicado. Yendo a Tus plantas…",
-  "compose.error.notConfirmed": "No se pudo confirmar la publicación. Inténtalo de nuevo con mejor conexión (tu borrador se conserva).",
+  "compose.error.notConfirmed":
+    "No se pudo confirmar la publicación. Inténtalo de nuevo con mejor conexión (tu borrador se conserva).",
   "compose.error.generic": "Falló la publicación.",
   "compose.error.imageLoad": "No se pudo cargar la imagen.",
 
@@ -198,7 +219,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "crop.dragHint": "Arrastra el marco para colocarlo.",
 
   "caption.label": "Una palabra",
-  "caption.placeholder": "Sobre tu planta. Una palabra, o más. Añade etiquetas como #agave también.",
+  "caption.placeholder":
+    "Sobre tu planta. Una palabra, o más. Añade etiquetas como #agave también.",
   "caption.suggest.aria": "Sugerencias de hashtags",
 
   "filter.strength.none": "Apagado",
@@ -211,7 +233,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "picker.shoot": "Cámara",
   "picker.album": "Álbum",
   "picker.hint": "Toma una foto de tu planta o elige una del álbum. Hasta 4.",
-  "picker.error.notImage": "Elige un archivo de imagen (no se pueden publicar vídeos).",
+  "picker.error.notImage":
+    "Elige un archivo de imagen (no se pueden publicar vídeos).",
   "picker.error.limit": "Hasta 4 fotos.",
   "picker.add.aria": "Añadir una foto",
   "picker.camera.aria": "Tomar con la cámara",
@@ -247,16 +270,19 @@ export const es: Partial<Record<MessageKey, string>> = {
   "account.name.import.label": "Continuar con una cuenta que ya tengas",
   "account.name.import.placeholder": "Pega nsec1…",
   "account.name.import.aria": "clave secreta nsec",
-  "account.name.import.error.invalid": "Ese nsec no es válido. Pega una clave «nsec1…».",
+  "account.name.import.error.invalid":
+    "Ese nsec no es válido. Pega una clave «nsec1…».",
   "account.name.import.help":
     "Puedes continuar con una cuenta que uses en mypace y otros sitios. Tu información se guarda solo en este dispositivo.",
   "account.name.import.cancel": "Cancelar",
   "account.name.import.submitting": "Comprobando…",
   "account.name.import.submit": "Continuar",
-  "account.name.edit.placeholder": "Nombre de usuario (puedes cambiarlo después)",
+  "account.name.edit.placeholder":
+    "Nombre de usuario (puedes cambiarlo después)",
   "account.name.edit.aria": "Nombre de usuario",
   "account.name.edit.save": "Guardar",
-  "account.name.edit.hint": "Define un nombre de usuario y podrás publicar, no solo explorar.",
+  "account.name.edit.hint":
+    "Define un nombre de usuario y podrás publicar, no solo explorar.",
   "account.name.edit.haveAccount": "¿Ya tienes una cuenta?",
   "account.name.set": "Definir un nombre de usuario",
   "account.name.change": "Cambiar el nombre de usuario",
@@ -269,11 +295,14 @@ export const es: Partial<Record<MessageKey, string>> = {
   "account.profile.icon.uploading": "Subiendo…",
   "account.profile.icon.pick": "Elegir una imagen",
   "account.profile.icon.remove": "Quitar",
-  "account.profile.icon.urlPlaceholder": "O pega la URL de una imagen (https://…)",
+  "account.profile.icon.urlPlaceholder":
+    "O pega la URL de una imagen (https://…)",
   "account.profile.icon.urlAria": "URL de la imagen del icono",
-  "account.profile.icon.uploadError": "No se pudo subir la imagen. Inténtalo de nuevo más tarde.",
+  "account.profile.icon.uploadError":
+    "No se pudo subir la imagen. Inténtalo de nuevo más tarde.",
   "account.profile.about.label": "Biografía",
-  "account.profile.about.placeholder": "Tus plantas, variedades favoritas, etc.",
+  "account.profile.about.placeholder":
+    "Tus plantas, variedades favoritas, etc.",
   "account.profile.sites.label": "Sitios y redes sociales",
   "account.profile.sites.hint":
     "Aparecen como iconos en la zona del autor de las fotos ampliadas. Cada persona puede guiar a los visitantes a su propio sitio.",
@@ -286,7 +315,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "account.profile.sites.add": "＋ Añadir un sitio",
   "account.profile.nameMissing": "Primero define un nombre de usuario arriba.",
   "account.profile.saved": "Guardado.",
-  "account.profile.saveError": "No se pudo guardar (está guardado en este dispositivo).",
+  "account.profile.saveError":
+    "No se pudo guardar (está guardado en este dispositivo).",
   "account.profile.saving": "Guardando…",
   "account.profile.save": "Guardar",
   "account.profile.nsec.label": "Clave secreta (copia de seguridad)",
@@ -301,7 +331,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "account.profile.nsec.copy": "Copiar",
   "account.profile.nsec.copied": "Copiada",
 
-  "account.favorites.hint": "Aparecen en tu perfil. Encuentra a otras personas a quienes les gustan las mismas variedades.",
+  "account.favorites.hint":
+    "Aparecen en tu perfil. Encuentra a otras personas a quienes les gustan las mismas variedades.",
   "account.favorites.removeAria": "Quitar {name} de las variedades favoritas",
   "account.favorites.search.aria": "Buscar variedades",
   "account.favorites.dict.empty": "—",
@@ -328,7 +359,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "comment.sort.old": "Más antiguos primero",
   "comment.sort.new": "Más nuevos primero",
   "comment.loading": "Cargando…",
-  "comment.error.submit": "No se pudo enviar tu comentario. Espera un momento e inténtalo de nuevo.",
+  "comment.error.submit":
+    "No se pudo enviar tu comentario. Espera un momento e inténtalo de nuevo.",
   "comment.error.remove": "No se pudo eliminar el comentario.",
   "comment.empty": "Todavía no hay comentarios",
   "comment.delete.aria": "Eliminar este comentario",
@@ -345,15 +377,18 @@ export const es: Partial<Record<MessageKey, string>> = {
   "edit.dialog.aria": "Editar publicación",
   "edit.heading": "Editar publicación",
   "edit.caption.label": "Texto",
-  "edit.caption.placeholder": "Una palabra (también puedes escribir #etiquetas en el texto)",
+  "edit.caption.placeholder":
+    "Una palabra (también puedes escribir #etiquetas en el texto)",
   "edit.error": "No se pudo editar. Espera un poco e inténtalo de nuevo.",
   "edit.confirm.lead": "Editar ",
   "edit.confirm.repost": "republica esto como una nueva publicación",
   "edit.confirm.mid": ", y ",
   "edit.confirm.has.prefix": "los ",
-  "edit.confirm.has.counts": "{likes} me gusta y {comments} comentarios de esta publicación",
+  "edit.confirm.has.counts":
+    "{likes} me gusta y {comments} comentarios de esta publicación",
   "edit.confirm.has.suffix": " no se conservarán.",
-  "edit.confirm.none": "Los me gusta y comentarios de la publicación original no se conservarán.",
+  "edit.confirm.none":
+    "Los me gusta y comentarios de la publicación original no se conservarán.",
   "edit.confirm.q": "¿Estás seguro?",
   "edit.back": "Atrás",
   "edit.confirm.submit": "Editar y republicar",
@@ -364,10 +399,13 @@ export const es: Partial<Record<MessageKey, string>> = {
   "ranking.board.loading": "Cargando…",
   "ranking.board.error": "No se pudieron cargar los rankings.",
   "ranking.board.reload": "Recargar",
-  "ranking.board.empty": "Todavía no hay suficientes publicaciones para mostrar un ranking.",
+  "ranking.board.empty":
+    "Todavía no hay suficientes publicaciones para mostrar un ranking.",
   "ranking.board.firstPost": "Publica la primera maceta",
-  "ranking.board.demo": "Vista previa de desarrollo (?demo): datos sintéticos, no publicaciones reales.",
-  "ranking.board.firstWeek": "Esta es la primera semana de conteo. La comparación con la semana anterior (↑↓) empieza la próxima semana.",
+  "ranking.board.demo":
+    "Vista previa de desarrollo (?demo): datos sintéticos, no publicaciones reales.",
+  "ranking.board.firstWeek":
+    "Esta es la primera semana de conteo. La comparación con la semana anterior (↑↓) empieza la próxima semana.",
   "ranking.board.count.unit": "",
   "ranking.board.chart.loading": "Cargando el gráfico…",
   "ranking.board.delta.new": "nueva entrada",
@@ -377,15 +415,19 @@ export const es: Partial<Record<MessageKey, string>> = {
   "ranking.board.delta.down": "baja {by}",
   "ranking.board.rowSummary": "n.º {rank} {sci} {count} publicaciones {delta}",
 
-  "ranking.chart.sparse": "El gráfico de tendencia aparece cuando se acumulan dos o más semanas.",
-  "ranking.chart.caption": "Progreso (movimiento): conteo semanal de publicaciones. Consulta la tabla de arriba para ver los rangos exactos.",
-  "ranking.chart.summary": "Un gráfico del conteo semanal de publicaciones de las variedades más populares ({names}). Consulta la tabla de arriba para más detalles.",
+  "ranking.chart.sparse":
+    "El gráfico de tendencia aparece cuando se acumulan dos o más semanas.",
+  "ranking.chart.caption":
+    "Progreso (movimiento): conteo semanal de publicaciones. Consulta la tabla de arriba para ver los rangos exactos.",
+  "ranking.chart.summary":
+    "Un gráfico del conteo semanal de publicaciones de las variedades más populares ({names}). Consulta la tabla de arriba para más detalles.",
 
   "dilution.stop.none": "Ninguno",
   "dilution.trigger.idle": "Ajustar cómo aparece {name}",
   "dilution.trigger.active": "Reduciendo {name} a 1/{n}",
   "dilution.heading": "Mostrar menos publicaciones de {name} en el feed",
-  "dilution.slider.aria": "Cuánto reducir las publicaciones de {name} en el feed",
+  "dilution.slider.aria":
+    "Cuánto reducir las publicaciones de {name} en el feed",
 
   "input.clear": "Borrar lo escrito",
   "input.resizeHandle.aria": "Ajustar la altura del campo de entrada",
@@ -402,59 +444,118 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.mayor.shortName": "Botanics",
   // P1 Bienvenida (el discurso de saludo del Alcalde).
   "cityHall.welcome.title": "Una invitación a establecerse",
-  "cityHall.welcome.0": "Ejem. Soy el Alcalde de Hanōba, Botanics von Hanōba. Bienvenido a la ciudad verde.",
-  "cityHall.welcome.1": "En mi ciudad no se paga alquiler por la tierra. Mientras cultives una planta, tu parcela es tuya, gratis y para siempre. Solo hay una cosa que hacer: planta una sola maceta tuya en una parcela cuadrada y añade una palabra. Con eso, tú también eres un ciudadano de pleno derecho. Solo fotografías de plantas (a las personas y mascotas, llévalas a otra ciudad).",
-  "cityHall.welcome.2": "La crónica de la ciudad, sus ordenanzas, sus exposiciones florales: todo puede consultarse desde este ayuntamiento. Vamos, ocúpate de los trámites para establecerte. Decide un nombre que te guste y el asunto queda zanjado. No se exige un nombre verdadero: basta con que seas tú mismo.",
-  "cityHall.welcome.3": "* Hanōba es una red social de fotos solo de plantas. Una foto cuadrada + una palabra, solo plantas. Registra un nombre para publicar.",
+  "cityHall.welcome.0":
+    "Ejem. Soy el Alcalde de Hanōba, Botanics von Hanōba. Bienvenido a la ciudad verde.",
+  "cityHall.welcome.1":
+    "En mi ciudad no se paga alquiler por la tierra. Mientras cultives una planta, tu parcela es tuya, gratis y para siempre. Solo hay una cosa que hacer: planta una sola maceta tuya en una parcela cuadrada y añade una palabra. Con eso, tú también eres un ciudadano de pleno derecho. Solo fotografías de plantas (a las personas y mascotas, llévalas a otra ciudad).",
+  "cityHall.welcome.2":
+    "La crónica de la ciudad, sus ordenanzas, sus exposiciones florales: todo puede consultarse desde este ayuntamiento. Vamos, ocúpate de los trámites para establecerte. Decide un nombre que te guste y el asunto queda zanjado. No se exige un nombre verdadero: basta con que seas tú mismo.",
+  "cityHall.welcome.3":
+    "* Hanōba es una red social de fotos solo de plantas. Una foto cuadrada + una palabra, solo plantas. Registra un nombre para publicar.",
   // P2 Mapa de la ciudad (la página-recompensa temprana del libro-catálogo; al pie, las ventanillas cívicas).
   "cityHall.map.title": "Mapa de la ciudad",
-  "cityHall.map.lead": "Ejem. He aquí el mapa de nuestra ciudad. Hanōba se extiende como una sola hoja, a lo largo del Río de las Venas.",
+  "cityHall.map.lead":
+    "Ejem. He aquí el mapa de nuestra ciudad. Hanōba se extiende como una sola hoja, a lo largo del Río de las Venas.",
   "cityHall.map.landmark.0.name": "El Río de las Venas",
-  "cityHall.map.landmark.0.text": "La columna vertebral de la ciudad. Cada parcela comparte el agua que mana de sus venas.",
+  "cityHall.map.landmark.0.text":
+    "La columna vertebral de la ciudad. Cada parcela comparte el agua que mana de sus venas.",
   "cityHall.map.landmark.1.name": "Las parcelas cuadradas",
-  "cityHall.map.landmark.1.text": "Una regla del primer alcalde. Todo jardín es igualmente cuadrado. Grande o pequeño, para esta ciudad todos son tesoros.",
+  "cityHall.map.landmark.1.text":
+    "Una regla del primer alcalde. Todo jardín es igualmente cuadrado. Grande o pequeño, para esta ciudad todos son tesoros.",
   "cityHall.map.landmark.2.name": "El Ayuntamiento",
-  "cityHall.map.landmark.2.text": "Donde os halláis ahora. Las ventanillas cívicas están justo debajo.",
-  "cityHall.map.note": "El escudo, los productos de la tierra... todo ello lo consignaré a su debido tiempo. El mapa aún está a medio trazar.",
+  "cityHall.map.landmark.2.text":
+    "Donde os halláis ahora. Las ventanillas cívicas están justo debajo.",
+  "cityHall.map.note":
+    "El escudo, los productos de la tierra... todo ello lo consignaré a su debido tiempo. El mapa aún está a medio trazar.",
   "cityHall.map.placeholder": "Mapa en preparación",
   "cityHall.map.civic.heading": "Ventanillas cívicas",
   "cityHall.map.civic.0.label": "Urna ciudadana",
   "cityHall.map.civic.1.label": "Exposición floral (Concurso)",
   "cityHall.map.civic.2.label": "Blog del Alcalde",
   "cityHall.map.comingSoon": "Próxima apertura",
+  "cityHall.districts.title": "Guía de distritos",
+  "cityHall.districts.lead":
+    "Ejem. Plantas distintas prefieren hogares distintos. Permitidme mostraros el barrio digno de vuestra maceta.",
+  "cityHall.districts.0.name": "Barrio de los invernaderos",
+  "cityHall.districts.0.text":
+    "Una ciudad de cristal, luz y humedad para plantas de interior y orquídeas.",
+  "cityHall.districts.1.name": "Distrito de los huertos",
+  "cityHall.districts.1.text":
+    "Parcelas cuadradas de verduras y hierbas comparten las aguas del Río de las Venas.",
+  "cityHall.districts.2.name": "Colina de los frutales",
+  "cityHall.districts.2.text":
+    "Cítricos y árboles frutales cambian de flores y aroma con cada estación.",
+  "cityHall.districts.3.name": "Callejón de los semilleros",
+  "cityHall.districts.3.text":
+    "Un callejón para amantes de semillas y brotes. La maceta más pequeña guarda el mayor futuro.",
+  "cityHall.districts.4.name": "Calle de los cuidados",
+  "cityHall.districts.4.text":
+    "Un vivero común donde se comparten saberes de trasplante, poda y riego.",
+  "cityHall.districts.note":
+    "La tierra es gratuita en todos los distritos. La voluntad de cultivar es el único alquiler.",
   // P3 Crónica. Abre con el preámbulo del Alcalde (toda página encabeza con la voz del Alcalde · #469 cambio B).
+  "cityHall.guide.vista": "Vista de la ciudad",
+  "cityHall.guide.landmarks": "Río de las Venas y lugares",
+  "cityHall.guide.crest": "Escudo cívico",
+  "cityHall.guide.crest.text": "Una hoja, el Río de las Venas ramificado y una parcela cuadrada en su centro: el escudo de Hanōba.",
+  "cityHall.guide.specialties": "Especialidades locales",
+  "cityHall.guide.specialties.text": "Follaje, cosechas, frutales, semillas y brotes, y herramientas de cuidado: el orgullo de cinco distritos.",
+  "cityHall.nav.jumpBack": "Retroceder 5 páginas",
+  "cityHall.nav.jumpForward": "Avanzar 5 páginas",
+  "cityHall.nav.first": "Primera página",
+  "cityHall.nav.last": "Última página",
+  "cityHall.nav.toc": "Índice",
   "cityHall.chronicle.title": "Crónica",
-  "cityHall.chronicle.lead": "Ejem. Permitidme contaros un poco de cómo llegó a ser nuestra ciudad.",
+  "cityHall.chronicle.lead":
+    "Ejem. Permitidme contaros un poco de cómo llegó a ser nuestra ciudad.",
   "cityHall.chronicle.entry.0.era": "Año Uno, Primavera",
-  "cityHall.chronicle.entry.0.text": "El primer alcalde, Botanics von Hanōba, planta la primera maceta sobre el páramo. El día en que aparece el brote se decreta como el nacimiento de la ciudad.",
+  "cityHall.chronicle.entry.0.text":
+    "El primer alcalde, Botanics von Hanōba, planta la primera maceta sobre el páramo. El día en que aparece el brote se decreta como el nacimiento de la ciudad.",
   "cityHall.chronicle.entry.1.era": "Año Uno, Verano",
-  "cityHall.chronicle.entry.1.text": "El Alcalde proclama: «No existe planta alguna llamada mala hierba». Se prohíbe para siempre dictar cualquier ordenanza que sitúe a una por encima de otra.",
+  "cityHall.chronicle.entry.1.text":
+    "El Alcalde proclama: «No existe planta alguna llamada mala hierba». Se prohíbe para siempre dictar cualquier ordenanza que sitúe a una por encima de otra.",
   "cityHall.chronicle.entry.2.era": "Año Uno, Otoño",
-  "cityHall.chronicle.entry.2.text": "Las aguas del río Nervadura nutren por primera vez el barrio de los invernaderos.",
+  "cityHall.chronicle.entry.2.text":
+    "Las aguas del río Nervadura nutren por primera vez el barrio de los invernaderos.",
   "cityHall.chronicle.entry.3.era": "Año Dos",
-  "cityHall.chronicle.entry.3.text": "Se decreta que todas las parcelas sean cuadradas. El motivo queda registrado únicamente como «porque es hermoso».",
-  "cityHall.chronicle.note": "Cada vez que llega un ciudadano, esta crónica se sigue escribiendo.",
+  "cityHall.chronicle.entry.3.text":
+    "Se decreta que todas las parcelas sean cuadradas. El motivo queda registrado únicamente como «porque es hermoso».",
+  "cityHall.chronicle.note":
+    "Cada vez que llega un ciudadano, esta crónica se sigue escribiendo.",
   // P4 Ordenanzas de la ciudad (la Carta de Hanōba, cada artículo con el comentario del Alcalde). Abre con el preámbulo del Alcalde (#469 cambio B).
   "cityHall.ordinance.title": "Ordenanzas de la ciudad",
-  "cityHall.ordinance.lead": "Ejem. He aquí la carta de nuestra ciudad. Solemne, sí, pero cada artículo es una norma hecha para las plantas.",
+  "cityHall.ordinance.lead":
+    "Ejem. He aquí la carta de nuestra ciudad. Solemne, sí, pero cada artículo es una norma hecha para las plantas.",
   "cityHall.ordinance.0.article": "Artículo I (Tierra)",
-  "cityHall.ordinance.0.text": "El alquiler de la tierra en la Ciudad de Hanōba será gratuito, mientras se cultive una planta.",
-  "cityHall.ordinance.0.commentary": "Ejem. La voluntad de cultivar es en sí misma tu alquiler. Regar, contemplar una hoja: con eso ya has pagado por completo.",
+  "cityHall.ordinance.0.text":
+    "El alquiler de la tierra en la Ciudad de Hanōba será gratuito, mientras se cultive una planta.",
+  "cityHall.ordinance.0.commentary":
+    "Ejem. La voluntad de cultivar es en sí misma tu alquiler. Regar, contemplar una hoja: con eso ya has pagado por completo.",
   "cityHall.ordinance.1.article": "Artículo II (Parcela)",
-  "cityHall.ordinance.1.text": "A cada parcela se añadirá una fotografía cuadrada y una palabra.",
-  "cityHall.ordinance.1.commentary": "Las parcelas son cuadradas, y solo cuadradas. ¿Por qué? Porque son hermosas. Razón más que suficiente.",
+  "cityHall.ordinance.1.text":
+    "A cada parcela se añadirá una fotografía cuadrada y una palabra.",
+  "cityHall.ordinance.1.commentary":
+    "Las parcelas son cuadradas, y solo cuadradas. ¿Por qué? Porque son hermosas. Razón más que suficiente.",
   "cityHall.ordinance.2.article": "Artículo III (Residente)",
-  "cityHall.ordinance.2.text": "Quien haya dado un nombre será considerado ciudadano.",
-  "cityHall.ordinance.2.commentary": "Dar un nombre es presentar la solicitud de residencia. No tiene por qué ser tu nombre verdadero. Basta con que seas tú mismo.",
+  "cityHall.ordinance.2.text":
+    "Quien haya dado un nombre será considerado ciudadano.",
+  "cityHall.ordinance.2.commentary":
+    "Dar un nombre es presentar la solicitud de residencia. No tiene por qué ser tu nombre verdadero. Basta con que seas tú mismo.",
   "cityHall.ordinance.3.article": "Artículo IV (Igualdad)",
-  "cityHall.ordinance.3.text": "La ciudad ama a todas las plantas por igual. En esta ciudad no existe planta alguna con el nombre de mala hierba.",
-  "cityHall.ordinance.3.commentary": "El musgo en la sombra, la suculenta junto al alero: todos son tesoros de la ciudad. Jamás se promulgará una ordenanza que las ordene por rango.",
+  "cityHall.ordinance.3.text":
+    "La ciudad ama a todas las plantas por igual. En esta ciudad no existe planta alguna con el nombre de mala hierba.",
+  "cityHall.ordinance.3.commentary":
+    "El musgo en la sombra, la suculenta junto al alero: todos son tesoros de la ciudad. Jamás se promulgará una ordenanza que las ordene por rango.",
   "cityHall.ordinance.4.article": "Artículo V (Fotografía)",
-  "cityHall.ordinance.4.text": "Las fotografías que se exhiban en esta ciudad serán únicamente de plantas.",
-  "cityHall.ordinance.4.commentary": "Que las personas y las mascotas brillen cada una en su propia ciudad. Esta es una ciudad de plantas.",
+  "cityHall.ordinance.4.text":
+    "Las fotografías que se exhiban en esta ciudad serán únicamente de plantas.",
+  "cityHall.ordinance.4.commentary":
+    "Que las personas y las mascotas brillen cada una en su propia ciudad. Esta es una ciudad de plantas.",
   // La breve palabra del Alcalde que se añade al subir de nivel.
-  "cityHall.flavor.citizen": "Tu residencia queda debidamente recibida. Bienvenidos, ciudadanos.",
-  "cityHall.flavor.tenured": "Ejem. Ahora eres un viejo amigo de la ciudad. He dejado abiertas las salas interiores para ti.",
+  "cityHall.flavor.citizen":
+    "Tu residencia queda debidamente recibida. Bienvenidos, ciudadanos.",
+  "cityHall.flavor.tenured":
+    "Ejem. Ahora eres un viejo amigo de la ciudad. He dejado abiertas las salas interiores para ti.",
   // Elementos de la interfaz de CityHallBook.
   "cityHall.mayorTitle": "Alcalde {name}",
   "cityHall.nav.aria": "Pasar la página",

@@ -1,68 +1,85 @@
-import { type TouchEvent as ReactTouchEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  type TouchEvent as ReactTouchEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Avatar from "../feed/Avatar.tsx";
 import Icon from "../ui/Icon.tsx";
-import { swipeDirection, swipeProgress, swipeToBlur } from "../../lib/feed/carousel.ts";
+import {
+  swipeDirection,
+  swipeProgress,
+  swipeToBlur,
+} from "../../lib/feed/carousel.ts";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { fetchMyPosts } from "../../lib/nostr/client.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
-import {
-  type CitizenLevel,
-  citizenLevel,
-  citizenLevelFull,
-  defaultPage,
-} from "../../lib/lore/citizen.ts";
+import { citizenLevelFull } from "../../lib/lore/citizen.ts";
 import {
   type BookPage,
   buildCityHallBook,
   civicHub,
   type HubLink,
-  levelFlavor,
   mayorShortName,
 } from "../../lib/lore/cityHall.ts";
-import { useT, useLocale, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
-import { BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC } from "../../lib/lore/cityHallAssets.ts";
+import {
+  useT,
+  useLocale,
+  LocaleProvider,
+  resolveClientLocale,
+  DEFAULT_LOCALE,
+  type Locale,
+} from "../../lib/i18n/index.ts";
+import {
+  BOOK_FRAME_SRC,
+  BOOK_PAGE_SRC,
+  MAYOR_AVATAR_SRC,
+} from "../../lib/lore/cityHallAssets.ts";
 
 // ハノーバ市民手帳（#163）。市長ボタニクス・フォン・ハノーバの声で語られる「本」。
 // = 図鑑（集めて埋める読み物・#469）。機能導線（discover/ranking/me/compose）は
 //   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアに割り切る。
 //
-// #510 方針B: レベル解禁ゲートを撤去し、全 4 ページを最初から閲覧可能にした。市民レベル（Nostr 由来
+// #137/#510: レベル解禁ゲートを撤去し、全20ページを最初から閲覧可能にした。市民レベル（Nostr 由来
 // ＝backendless）はページの閲覧可否を司らず、タイトルの進捗バッジ（Ln）としてだけ残る。
-// 既定表示ページは defaultPage(level)（L0→1p 移住案内 / それ以外→2p 街の地図＝ご褒美ページを先に見せる）だけを決める。
-// 「市政の窓口」（civicHub）は全ページ共通で手帳ページの下に常設する（解禁との偶然の結び付きを断つ）。
+// 初期ページは URL指定→保存位置→1p。「市政の窓口」（civicHub）は巻末p20に集約する。
 //
 // client:load。鍵・relay 取得はクライアントのみ（getDisplayName / getPublicKeyHex / fetchMyPosts）。
 // SSR では window/localStorage を触らない（keys.ts が SSR 安全・取得は useEffect 内）。
 
-// ページ数は locale 非依存（4 ページ固定）。既定 locale で 1 度組んで length を取る。
-const TOTAL_PAGES = buildCityHallBook(DEFAULT_LOCALE).length; // 4
+// ページ数は locale 非依存（20ページ固定）。既定 locale で1度組んで length を取る。
+const TOTAL_PAGES = buildCityHallBook(DEFAULT_LOCALE).length;
+export const BOOK_PAGE_STORAGE_KEY = "hanoba:citizen-handbook-page";
 
 // SSR では useLayoutEffect が警告を出す（サーバに layout フェーズが無い）。
 // クライアントでのみ layout（ペイント前）に走らせ、サーバでは no-op の effect に落とす。
-const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
  * 名前・投稿から市民レベルを判定する（クライアント専用）。
- * - `level`     味付け・既定ページ判定用の capped レベル（0|1|2|3・levelFlavor / defaultPage に使う。ページ閲覧可否は司らない＝全ページ開放・#510 方針B）。
- * - `levelFull` タイトル表記用の真レベル（非キャップ・L1〜L6＝CitizenStats と同じ・#469 変更A）。
+ * タイトル表記用の真レベル（非キャップ・L1〜L6＝CitizenStats と同じ）を返す。
  * 名前が無ければ即 L0。名前があれば投稿を引いて判定。
  * 投稿取得が失敗しても名前があれば L1（名乗った市民を締め出さない・resilient）。
  */
-async function deriveLevel(): Promise<{ level: CitizenLevel; levelFull: number }> {
+async function deriveLevel(): Promise<number> {
   const name = getDisplayName();
   const hasName = name !== null;
-  if (!hasName) return { level: 0, levelFull: 0 };
+  if (!hasName) return 0;
 
   const now = Math.floor(Date.now() / 1000);
   const resolve = (postCount: number, earliestCreatedAt: number | null) => {
     const input = { hasName, postCount, earliestCreatedAt, now };
-    return { level: citizenLevel(input), levelFull: citizenLevelFull(input) };
+    return citizenLevelFull(input);
   };
   try {
     const pubkey = await getPublicKeyHex();
     const posts = await fetchMyPosts(pubkey);
     const earliestCreatedAt =
-      posts.length > 0 ? posts.reduce((min, p) => Math.min(min, p.createdAt), Infinity) : null;
+      posts.length > 0
+        ? posts.reduce((min, p) => Math.min(min, p.createdAt), Infinity)
+        : null;
     return resolve(posts.length, earliestCreatedAt);
   } catch {
     // 取得失敗時は名乗りを尊重して市民扱い（締め出さない）。
@@ -74,7 +91,11 @@ async function deriveLevel(): Promise<{ level: CitizenLevel; levelFull: number }
 // この島は LocaleProvider のルート（about.astro 直下・他の Provider に包まれない）なので、
 // 自分で <LocaleProvider value={loc}> を張り、子（PageContent 等）は useLocale() で読む。
 // loc はマウント後に resolveClientLocale() で確定する（en を選んでいれば en で描き直す）。
-export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
+export default function CityHallBook({
+  lang = DEFAULT_LOCALE,
+}: {
+  lang?: Locale;
+}) {
   // lang は SSR/初期描画の種（既定言語＝go-live で en）。マウント後にクライアント解決値（ja を選んでいれば ja）へ寄せる。
   // 解決は下の useIsoLayoutEffect（ペイント前）で行う＝殻が既定言語で焼かれるため、非既定言語の
   // ユーザーで「一瞬 en → ja」のフラッシュが出るのを防ぐ（殻側の is:inline swap と同じ flash 回避方針）。
@@ -83,15 +104,13 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 本文（構造化データ）と味付け文言は locale で組み直す。
   const bookPages = buildCityHallBook(loc);
   const bookTitleText = t("cityHall.book.title");
-  const flavorMap = levelFlavor(loc);
 
   // 判定中は安全側＝L0（既定 1p 移住案内）で始める。名乗り済みなら下の useIsoLayoutEffect が
   // ペイント前に 2p へ寄せる（既定表示ページのフラッシュ防止）。全ページは最初から閲覧可能（#510 方針B）。
-  // level=味付け／既定ページ判定用（capped）／levelFull=タイトルの進捗バッジ用の真レベル（非キャップ・#469 変更A）。
-  const [level, setLevel] = useState<CitizenLevel>(0);
   const [levelFull, setLevelFull] = useState(0);
   const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
+  const panelRef = useRef<HTMLDivElement>(null);
   const aliveRef = useRef(true);
   // 本のスワイプ（#275）。←→ボタン・キーボード矢印と同じ goPrev/goNext を駆動する。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -107,22 +126,24 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     // 表示言語はクライアント解決（localStorage）。ペイント前（layout）に確定して
     // 「一瞬 en → ja」の言語フラッシュを消す（useEffect だと描画後に走り en が一瞬見える）。
     setLoc(resolveClientLocale());
+    const pages = buildCityHallBook(resolveClientLocale());
+    const requestedId = new URLSearchParams(window.location.search).get("page");
+    const savedId = window.localStorage.getItem(BOOK_PAGE_STORAGE_KEY);
+    const initial = pages.find((item) => item.id === requestedId) ?? pages.find((item) => item.id === savedId);
+    if (initial !== undefined) setPage(initial.page);
     if (getDisplayName() !== null) {
-      setLevel(1);
       setLevelFull(1); // 名乗り済みは最低 L1＝タイトルは即「… L1」。真レベルは下の deriveLevel が確定。
-      setPage(defaultPage(1)); // = 2p
     }
   }, []);
 
   useEffect(() => {
     aliveRef.current = true;
     void (async () => {
-      const { level: lv, levelFull: lvFull } = await deriveLevel();
+      const lvFull = await deriveLevel();
       if (!aliveRef.current) return;
       // 初期 page・最低レベルは useIsoLayoutEffect が同期確定済み。ここでは正確なレベルを
-      // 確定して味付け分岐用の level とタイトルの進捗バッジ（levelFull・真レベル）を更新するだけ＝
+      // タイトルの進捗バッジ（levelFull・真レベル）を更新するだけ＝
       // page は触らない（ユーザー操作を奪わない）。
-      setLevel(lv);
       setLevelFull(lvFull);
       setResolved(true);
     })();
@@ -146,12 +167,32 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   // 全ページ最初から閲覧可能（#510 方針B）＝最終ページまで前送りできる。ロック上限は無い。
   const canNext = page < TOTAL_PAGES;
 
+  function goTo(nextPage: number) {
+    const bounded = Math.max(1, Math.min(TOTAL_PAGES, nextPage));
+    setPage(bounded);
+    const id = bookPages.find((item) => item.page === bounded)?.id;
+    if (id !== undefined) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("page", id);
+      window.history.replaceState(null, "", url);
+    }
+    panelRef.current?.scrollIntoView({
+      block: "start",
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
+  }
+
   function goPrev() {
-    if (canPrev) setPage((p) => p - 1);
+    if (canPrev) goTo(page - 1);
   }
   function goNext() {
-    if (canNext) setPage((p) => p + 1);
+    if (canNext) goTo(page + 1);
   }
+
+  useEffect(() => {
+    const id = bookPages.find((item) => item.page === page)?.id;
+    if (id !== undefined) window.localStorage.setItem(BOOK_PAGE_STORAGE_KEY, id);
+  }, [page, bookPages]);
 
   // 本のスワイプでページめくり＋スワイプ量で中身をぼかす（#275・PostDetail と同じ作法）。
   // 写真カルーセルと純関数（swipeProgress/swipeToBlur/swipeDirection）を共有する。
@@ -200,139 +241,151 @@ export default function CityHallBook({ lang = DEFAULT_LOCALE }: { lang?: Locale 
       // フォーム入力中・編集可能要素の上では矢印を奪わない（テキスト移動を妨げない）。
       const t = e.target as HTMLElement | null;
       const tag = t?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable === true) {
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        t?.isContentEditable === true
+      ) {
         return;
       }
       if (e.key === "ArrowLeft" && canPrev) {
-        setPage((p) => p - 1);
+        goTo(page - 1);
         e.preventDefault();
         return;
       }
       if (e.key === "ArrowRight" && canNext) {
-        setPage((p) => p + 1);
+        goTo(page + 1);
         e.preventDefault();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canPrev, canNext]);
-
-  // レベル昇格の味付け（小さく）。判定確定後、その本の入口で一度だけ添える。
-  // - 市民歓迎: L1 が 2p（街の地図）を開いたときだけ。古参（L2 以上）には再掲しない
-  //   （長く居る市民に毎回「移住を受理した」と告げない）。
-  // - 古参歓迎: L2 以上が初めて奥（3p 沿革・古参の最初のページ）に達したときだけ。2p では出さない。
-  //   全ページ閲覧可（#510）でも、奥に達した古参へ古参歓迎を出す挙動は level（capped）で保つ（level >= 2）。
-  const flavor =
-    resolved && level === 1 && page === 2
-      ? flavorMap.citizen
-      : resolved && level >= 2 && page === 3
-        ? flavorMap.tenured
-        : null;
+  }, [canPrev, canNext, page]);
 
   return (
     <LocaleProvider value={loc}>
-    <section className="ha-rise flex flex-col gap-5" aria-label={bookTitleText}>
-      {/* 手帳の表題。L1+ は「ハノーバ市民手帳 L{n}」で進捗を一目で示す（#469 変更A）。
+      <section
+        className="ha-rise flex flex-col gap-5"
+        aria-label={bookTitleText}
+      >
+        {/* 手帳の表題。L1+ は「ハノーバ市民手帳 L{n}」で進捗を一目で示す（#469 変更A）。
           L0（旅人）はレベル番号を出さず素のタイトル＋副題「旅人」。L1+ は副題なし（下に MayorMark）。 */}
-      <header className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
-          {bookTitleText}
-          {/* レベル番号は真レベル確定後だけ付ける（#479-B）。{" "}＋ml で「L」の左に明確な間隔を空ける
+        <header className="flex flex-col gap-1">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
+            {bookTitleText}
+            {/* レベル番号は真レベル確定後だけ付ける（#479-B）。{" "}＋ml で「L」の左に明確な間隔を空ける
               （#479-C・h1 の tracking-tight に潰されない margin で稼ぐ。読み上げ名は半角スペース込みで維持）。 */}
-          {showLevel && (
-            <>
-              {" "}
-              <span className="ml-1.5">L{levelFull}</span>
-            </>
+            {showLevel && (
+              <>
+                {" "}
+                <span className="ml-1.5">L{levelFull}</span>
+              </>
+            )}
+          </h1>
+          {subtitleText !== null && (
+            <p className="text-sm text-ha-ink/55">{subtitleText}</p>
           )}
-        </h1>
-        {subtitleText !== null && <p className="text-sm text-ha-ink/55">{subtitleText}</p>}
-      </header>
+        </header>
 
-      {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。
+        {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。
           スワイプでページめくり（#275）＝左で次・右で前。ぼかしは中身（下の key={page}）だけにかけ、
           和綴じ枠（このパネルの border）は固定する＝枠ごとぼかす違和感を避ける。 */}
-      <div
-        className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          // 最初の AI 和綴じ枠（綴じ込み）。左（背）は綴じを見せるため厚い（slice 150）。
-          borderImageSource: `url('${BOOK_FRAME_SRC}')`,
-          borderImageSlice: "120 120 120 150",
-          borderImageRepeat: "stretch",
-          backgroundImage: `url('${BOOK_PAGE_SRC}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundColor: "#13161e",
-          // 地（台紙）の縁を全周ふんわりぼかす＝枠との境界を曖昧にし、各辺の事情の違い
-          //（左=綴じ／上下右=マット）で隙間の見え方が揃わない問題を目立たなくする（kako-jun 案）。
-          boxShadow: "inset 0 0 18px 5px #13161e",
-        }}
-      >
-        {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。
-            スワイプ中はこの中身だけぼかす（#275）。ドラッグ中は即追従（transition none）、
-            離したら 0.25s で戻す。swipeBlur は 1枚／reduced-motion では常に 0＝無効。 */}
         <div
-          key={page}
-          className="ha-rise flex flex-col gap-4"
-          aria-live="polite"
+          ref={panelRef}
+          className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
           style={{
-            filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
-            transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
+            // 最初の AI 和綴じ枠（綴じ込み）。左（背）は綴じを見せるため厚い（slice 150）。
+            borderImageSource: `url('${BOOK_FRAME_SRC}')`,
+            borderImageSlice: "120 120 120 150",
+            borderImageRepeat: "stretch",
+            backgroundImage: `url('${BOOK_PAGE_SRC}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundColor: "#13161e",
+            // 地（台紙）の縁を全周ふんわりぼかす＝枠との境界を曖昧にし、各辺の事情の違い
+            //（左=綴じ／上下右=マット）で隙間の見え方が揃わない問題を目立たなくする（kako-jun 案）。
+            boxShadow: "inset 0 0 18px 5px #13161e",
           }}
         >
-          <PageContent page={current} />
+          {/* aria-live でページ遷移を読み上げる。reduced-motion は CSS 側で ha-rise が無効。
+            スワイプ中はこの中身だけぼかす（#275）。ドラッグ中は即追従（transition none）、
+            離したら 0.25s で戻す。swipeBlur は 1枚／reduced-motion では常に 0＝無効。 */}
+          <div
+            key={page}
+            className="ha-rise flex flex-col gap-4"
+            aria-live="polite"
+            style={{
+              filter: swipeBlur > 0 ? `blur(${swipeBlur}px)` : undefined,
+              transition: swipeBlur > 0 ? "none" : "filter 0.25s ease",
+            }}
+          >
+            <PageContent page={current} />
+          </div>
+
+          {/* 市政の窓口は巻末P20だけに置く。 */}
+          {page === TOTAL_PAGES && <CivicWindows />}
+
+          <div className="grid grid-cols-4 gap-2">
+            <button type="button" onClick={() => goTo(1)} disabled={page === 1} aria-label={t("cityHall.nav.first")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">|←</button>
+            <button type="button" onClick={() => goTo(page - 5)} disabled={page === 1} aria-label={t("cityHall.nav.jumpBack")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">−5</button>
+            <button type="button" onClick={() => goTo(page + 5)} disabled={page === TOTAL_PAGES} aria-label={t("cityHall.nav.jumpForward")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">+5</button>
+            <button type="button" onClick={() => goTo(TOTAL_PAGES)} disabled={page === TOTAL_PAGES} aria-label={t("cityHall.nav.last")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">→|</button>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-ha-ink/60">
+            <span>{t("cityHall.nav.toc")}</span>
+            <select value={current.id} onChange={(event) => {
+              const selected = bookPages.find((item) => item.id === event.target.value);
+              if (selected !== undefined) goTo(selected.page);
+            }} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/10 px-2 py-2 text-ha-ink">
+              {bookPages.map((item) => <option key={item.id} value={item.id}>{item.page}. {item.title}</option>)}
+            </select>
+          </label>
+
+          <nav
+            className="flex items-center justify-between gap-3 pt-1"
+            aria-label={t("cityHall.nav.aria")}
+          >
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={!canPrev}
+              aria-label={t("cityHall.nav.prev")}
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            >
+              <Icon name="chevron" className="w-4 h-4 rotate-90" />
+              {t("cityHall.nav.prev.label")}
+            </button>
+
+            <span
+              className="text-sm text-ha-ink/60 tabular-nums"
+              aria-hidden="true"
+            >
+              {t("cityHall.nav.indicator", { page, total: TOTAL_PAGES })}
+            </span>
+
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canNext}
+              aria-label={t("cityHall.nav.next")}
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            >
+              {t("cityHall.nav.next.label")}
+              <Icon name="chevron" className="w-4 h-4 -rotate-90" />
+            </button>
+          </nav>
         </div>
-
-        {flavor !== null && (
-          <p className="text-sm text-ha-green/90 italic [word-break:auto-phrase]" role="status">
-            {flavor}
-          </p>
-        )}
-
-        {/* 市政の窓口（civic strip）は全ページ共通で手帳ページの下に常設する（#510 方針B）。
-            key={page} のぼかし容器の外に置くので、ページをめくっても常に同じ窓口が下に残る
-            （かつては街の地図 P2 末尾にだけ在り「解禁＝窓口」の偶然の結び付きがあった・#510 で解消）。 */}
-        <CivicWindows />
-
-        {/* めくり操作＋ページ表示。前=戻る／次=進む（全ページ閲覧可・#510 方針B）。 */}
-        <nav className="flex items-center justify-between gap-3 pt-1" aria-label={t("cityHall.nav.aria")}>
-          <button
-            type="button"
-            onClick={goPrev}
-            disabled={!canPrev}
-            aria-label={t("cityHall.nav.prev")}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-          >
-            <Icon name="chevron" className="w-4 h-4 rotate-90" />
-            {t("cityHall.nav.prev.label")}
-          </button>
-
-          <span className="text-sm text-ha-ink/60 tabular-nums" aria-hidden="true">
-            {t("cityHall.nav.indicator", { page, total: TOTAL_PAGES })}
-          </span>
-
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!canNext}
-            aria-label={t("cityHall.nav.next")}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-          >
-            {t("cityHall.nav.next.label")}
-            <Icon name="chevron" className="w-4 h-4 -rotate-90" />
-          </button>
-        </nav>
-      </div>
-    </section>
+      </section>
     </LocaleProvider>
   );
 }
 
 /**
- * 市政の窓口（civic strip）。**全ページ共通で手帳ページの下に常設する**導線（#510 方針B）。
+ * 市政の窓口（civic strip）。巻末P20に置く導線。
  * 住民投票（/vote・#160 開庁）はヘッダ/フッタに無く手帳が唯一の入口なので健在。品評会（#161）・
  * 市長ブログ（#164）は近日開庁のまま並ぶ。地図本体との間は「にじみ」（.ha-bleed）の柔らかい境界で
  * 区切る（#263 踏襲）。開庁＝リンク／近日開庁＝非リンク（HubLinkItem が出し分ける）。
@@ -366,7 +419,10 @@ function HubLinkItem({ link }: { link: HubLink }) {
           className="flex items-center justify-between gap-3 rounded-xl bg-white/5 hover:bg-ha-green/10 border border-white/10 px-4 py-3 text-ha-ink hover:text-ha-green-deep transition-colors"
         >
           <span className="font-medium">{link.label}</span>
-          <Icon name="chevron" className="w-4 h-4 -rotate-90 text-ha-green/70 shrink-0" />
+          <Icon
+            name="chevron"
+            className="w-4 h-4 -rotate-90 text-ha-green/70 shrink-0"
+          />
         </a>
       </li>
     );
@@ -393,8 +449,14 @@ function MayorMark() {
   const shortName = mayorShortName(locale);
   return (
     <div className="flex items-center gap-3">
-      <Avatar src={MAYOR_AVATAR_SRC} name={shortName} className="w-16 h-16 ring-1 ring-white/10" />
-      <span className="text-sm text-ha-ink/60">{t("cityHall.mayorTitle", { name: shortName })}</span>
+      <Avatar
+        src={MAYOR_AVATAR_SRC}
+        name={shortName}
+        className="w-16 h-16 ring-1 ring-white/10"
+      />
+      <span className="text-sm text-ha-ink/60">
+        {t("cityHall.mayorTitle", { name: shortName })}
+      </span>
     </div>
   );
 }
@@ -404,10 +466,25 @@ function PageContent({ page }: { page: BookPage }) {
   const locale = useLocale();
   const t = useT(locale);
   switch (page.kind) {
-    case "welcome":
+    case "guide":
       return (
         <article className="flex flex-col gap-4">
           <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <MayorMark />
+          {page.image !== undefined && (
+            <img src={page.image} alt={page.title} className="mx-auto w-full max-w-[280px] rounded-xl object-cover" />
+          )}
+          <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">{page.lead}</p>
+          {page.note !== undefined && <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>}
+        </article>
+      );
+
+    case "welcome":
+      return (
+        <article className="flex flex-col gap-4">
+          <h2 className="font-display text-xl font-bold text-ha-green-deep">
+            {page.title}
+          </h2>
           {/* 見出しの下に市長アイコン＋肩書き（語り手・#455 で全ページ共通化）。顔は秘密＝ジョウロ（#219①）。 */}
           <MayorMark />
           {page.blocks.map((b, i) => {
@@ -423,13 +500,19 @@ function PageContent({ page }: { page: BookPage }) {
             }
             if (b.kind === "note") {
               return (
-                <p key={i} className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
+                <p
+                  key={i}
+                  className="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]"
+                >
                   {b.text}
                 </p>
               );
             }
             return (
-              <p key={i} className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
+              <p
+                key={i}
+                className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]"
+              >
                 {b.text}
               </p>
             );
@@ -440,7 +523,9 @@ function PageContent({ page }: { page: BookPage }) {
     case "map":
       return (
         <article className="flex flex-col gap-4">
-          <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <h2 className="font-display text-xl font-bold text-ha-green-deep">
+            {page.title}
+          </h2>
           <MayorMark />
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
             {page.lead}
@@ -465,24 +550,32 @@ function PageContent({ page }: { page: BookPage }) {
           {/* 名所（ランドマーク）＝沿革（chronicle）風の体裁に寄せる。名を太字、説明を小さく添える。 */}
           <ul className="flex flex-col gap-3">
             {page.landmarks.map((lm) => (
-              <li key={lm.name} className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4">
-                <span className="text-sm font-semibold text-ha-green-deep">{lm.name}</span>
+              <li
+                key={lm.name}
+                className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4"
+              >
+                <span className="text-sm font-semibold text-ha-green-deep">
+                  {lm.name}
+                </span>
                 <span className="text-sm text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
                   {lm.text}
                 </span>
               </li>
             ))}
           </ul>
-          {/* 地図はまだ描きかけ、の注記（小さく添える）。市政の窓口（civic strip）は
-              全ページ共通の常設導線 CivicWindows へ移した（本体パネル側で描く・#510 方針B）。 */}
-          <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>
+          {/* 地図の注記。市政の窓口は巻末P20に置く。 */}
+          <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">
+            {page.note}
+          </p>
         </article>
       );
 
     case "chronicle":
       return (
         <article className="flex flex-col gap-4">
-          <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <h2 className="font-display text-xl font-bold text-ha-green-deep">
+            {page.title}
+          </h2>
           <MayorMark />
           {/* 市長の前口上（全ページ冒頭に市長の言葉を必須化・#469 変更B）。 */}
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">
@@ -490,22 +583,31 @@ function PageContent({ page }: { page: BookPage }) {
           </p>
           <ol className="flex flex-col gap-3">
             {page.entries.map((e) => (
-              <li key={e.era} className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4">
-                <span className="text-sm font-semibold text-ha-green-deep">{e.era}</span>
+              <li
+                key={e.era}
+                className="flex flex-col gap-0.5 border-l-2 border-ha-green/30 pl-4"
+              >
+                <span className="text-sm font-semibold text-ha-green-deep">
+                  {e.era}
+                </span>
                 <span className="text-sm text-ha-ink/80 leading-relaxed [word-break:auto-phrase]">
                   {e.text}
                 </span>
               </li>
             ))}
           </ol>
-          <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">{page.note}</p>
+          <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">
+            {page.note}
+          </p>
         </article>
       );
 
     case "ordinances":
       return (
         <article className="flex flex-col gap-5">
-          <h2 className="font-display text-xl font-bold text-ha-green-deep">{page.title}</h2>
+          <h2 className="font-display text-xl font-bold text-ha-green-deep">
+            {page.title}
+          </h2>
           <MayorMark />
           {/* 市長の前口上（全ページ冒頭に市長の言葉を必須化・#469 変更B）。 */}
           <p className="text-base text-ha-ink/85 leading-relaxed [word-break:auto-phrase]">

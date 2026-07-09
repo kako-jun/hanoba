@@ -10,7 +10,12 @@
 
 import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
-import { WELCOME_VISTA_SRC, MAP_IMAGE_SRC } from "./cityHallAssets.ts";
+import {
+  CREST_SPECIALTIES_IMAGE_SRC,
+  DISTRICTS_IMAGE_SRC,
+  WELCOME_VISTA_SRC,
+  MAP_IMAGE_SRC,
+} from "./cityHallAssets.ts";
 
 /** 本文の 1 段落。kind で見出し脇の実務注／段落間の挿絵などを区別する。 */
 export type Block =
@@ -33,6 +38,11 @@ export interface Landmark {
   text: string;
 }
 
+export interface District {
+  name: string;
+  text: string;
+}
+
 /** 沿革（年表）の 1 行。 */
 export interface ChronicleEntry {
   era: string;
@@ -46,11 +56,36 @@ export interface Ordinance {
   commentary: string; // 市長解説
 }
 
+const DISTRICT_KEYS = [
+  { name: "cityHall.districts.0.name", text: "cityHall.districts.0.text" },
+  { name: "cityHall.districts.1.name", text: "cityHall.districts.1.text" },
+  { name: "cityHall.districts.2.name", text: "cityHall.districts.2.text" },
+  { name: "cityHall.districts.3.name", text: "cityHall.districts.3.text" },
+  { name: "cityHall.districts.4.name", text: "cityHall.districts.4.text" },
+] as const;
+
+const CHRONICLE_KEYS = [
+  { era: "cityHall.chronicle.entry.0.era", text: "cityHall.chronicle.entry.0.text" },
+  { era: "cityHall.chronicle.entry.1.era", text: "cityHall.chronicle.entry.1.text" },
+  { era: "cityHall.chronicle.entry.2.era", text: "cityHall.chronicle.entry.2.text" },
+  { era: "cityHall.chronicle.entry.3.era", text: "cityHall.chronicle.entry.3.text" },
+] as const;
+
+const ORDINANCE_KEYS = [
+  { article: "cityHall.ordinance.0.article", text: "cityHall.ordinance.0.text", commentary: "cityHall.ordinance.0.commentary" },
+  { article: "cityHall.ordinance.1.article", text: "cityHall.ordinance.1.text", commentary: "cityHall.ordinance.1.commentary" },
+  { article: "cityHall.ordinance.2.article", text: "cityHall.ordinance.2.text", commentary: "cityHall.ordinance.2.commentary" },
+  { article: "cityHall.ordinance.3.article", text: "cityHall.ordinance.3.text", commentary: "cityHall.ordinance.3.commentary" },
+  { article: "cityHall.ordinance.4.article", text: "cityHall.ordinance.4.text", commentary: "cityHall.ordinance.4.commentary" },
+] as const;
+
 /** 本の 1 ページ。種類ごとに描画するデータ形を持つ。 */
 export type BookPage =
-  | { page: 1; kind: "welcome"; title: string; blocks: Block[] }
+  | { id: string; page: number; kind: "welcome"; title: string; blocks: Block[] }
+  | { id: string; page: number; kind: "guide"; title: string; lead: string; image?: string; note?: string }
   | {
-      page: 2;
+      id: string;
+      page: number;
       kind: "map";
       title: string;
       lead: string;
@@ -59,8 +94,23 @@ export type BookPage =
       landmarks: Landmark[];
       note: string;
     }
-  | { page: 3; kind: "chronicle"; title: string; lead: string; entries: ChronicleEntry[]; note: string }
-  | { page: 4; kind: "ordinances"; title: string; lead: string; ordinances: Ordinance[] };
+  | {
+      id: string;
+      page: number;
+      kind: "chronicle";
+      title: string;
+      lead: string;
+      entries: ChronicleEntry[];
+      note: string;
+    }
+  | {
+      id: string;
+      page: number;
+      kind: "ordinances";
+      title: string;
+      lead: string;
+      ordinances: Ordinance[];
+    };
 
 /** 本の在世タイトル（手帳の表題）を locale で引く。 */
 export function bookTitle(locale: Locale = DEFAULT_LOCALE): string {
@@ -81,23 +131,18 @@ export function mayorShortName(locale: Locale = DEFAULT_LOCALE): string {
 function page1(locale: Locale): BookPage {
   return {
     page: 1,
+    id: "welcome",
     kind: "welcome",
     title: t(locale, "cityHall.welcome.title"),
     blocks: [
       { kind: "para", text: t(locale, "cityHall.welcome.0") },
-      // 「ようこそ、緑の市へ」の直後に街の俯瞰ビスタを挟む（#504・挨拶→街を見せる→規約の順）。
-      { kind: "image", src: WELCOME_VISTA_SRC, alt: t(locale, "cityHall.welcome.image.alt") },
-      { kind: "para", text: t(locale, "cityHall.welcome.1") },
-      { kind: "para", text: t(locale, "cityHall.welcome.2") },
-      { kind: "note", text: t(locale, "cityHall.welcome.3") },
     ],
   };
 }
 
 /**
- * 市政の窓口（civic strip）。**全ページ共通で手帳ページの下に常設する窓口**（#510 方針B）。
- * かつては街の地図 P2 末尾にだけ添えていたが、レベル解禁ゲートの撤去に合わせて全ページ共通の
- * 導線として切り出した（「解禁＝窓口」の偶然の結び付きを断つ）。機能導線の本体（discover/ranking/me/compose）は
+ * 市政の窓口（civic strip）。巻末P20に置く窓口。
+ * 機能導線の本体（discover/ranking/me/compose）は
  * ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここには手帳が唯一の入口だった
  * 住民投票（/vote）と、近日開庁の品評会・市長ブログだけを並べる。実在ルートのみ機能、未開設は「近日開庁」。
  */
@@ -113,92 +158,96 @@ export function civicHub(locale: Locale = DEFAULT_LOCALE): HubLink[] {
 /**
  * P2 街の地図（図鑑の読み物ページ・#469）。ロア（名所＝ランドマーク）を読み物として見せる。
  * 機能導線の本体（discover/ranking/me/compose）はヘッダ/フッタ（SiteHeader/SiteFooter）が持つので
- * 手帳からは外す。「市政の窓口」strip は全ページ共通の常設導線（civicHub）へ移した（#510 方針B）。
+ * 手帳からは外す。「市政の窓口」strip は巻末P20に置く。
  */
-function page2(locale: Locale): BookPage {
+function mapPage(locale: Locale): BookPage {
   return {
-    page: 2,
+    id: "map",
+    page: 4,
     kind: "map",
     title: t(locale, "cityHall.map.title"),
     lead: t(locale, "cityHall.map.lead"),
     // 葉形の地図イラスト（#137/#504・kako-jun 制作）。
     image: MAP_IMAGE_SRC,
     landmarks: [
-      { name: t(locale, "cityHall.map.landmark.0.name"), text: t(locale, "cityHall.map.landmark.0.text") },
-      { name: t(locale, "cityHall.map.landmark.1.name"), text: t(locale, "cityHall.map.landmark.1.text") },
-      { name: t(locale, "cityHall.map.landmark.2.name"), text: t(locale, "cityHall.map.landmark.2.text") },
+      {
+        name: t(locale, "cityHall.map.landmark.0.name"),
+        text: t(locale, "cityHall.map.landmark.0.text"),
+      },
+      {
+        name: t(locale, "cityHall.map.landmark.1.name"),
+        text: t(locale, "cityHall.map.landmark.1.text"),
+      },
+      {
+        name: t(locale, "cityHall.map.landmark.2.name"),
+        text: t(locale, "cityHall.map.landmark.2.text"),
+      },
     ],
     note: t(locale, "cityHall.map.note"),
   };
 }
 
-/** P3 沿革（年表・遊び）。冒頭に市長の前口上（lead）を置く（全ページ共通＝市長の語り）。 */
-function page3(locale: Locale): BookPage {
+function chroniclePage(locale: Locale, page: number, entryIndexes: (0 | 1 | 2 | 3)[]): BookPage {
   return {
-    page: 3,
+    id: `chronicle-${page - 12}`,
+    page,
     kind: "chronicle",
     title: t(locale, "cityHall.chronicle.title"),
     lead: t(locale, "cityHall.chronicle.lead"),
-    entries: [
-      { era: t(locale, "cityHall.chronicle.entry.0.era"), text: t(locale, "cityHall.chronicle.entry.0.text") },
-      { era: t(locale, "cityHall.chronicle.entry.1.era"), text: t(locale, "cityHall.chronicle.entry.1.text") },
-      { era: t(locale, "cityHall.chronicle.entry.2.era"), text: t(locale, "cityHall.chronicle.entry.2.text") },
-      { era: t(locale, "cityHall.chronicle.entry.3.era"), text: t(locale, "cityHall.chronicle.entry.3.text") },
-    ],
+    entries: entryIndexes.map((index) => {
+      const keys = CHRONICLE_KEYS[index];
+      return { era: t(locale, keys.era), text: t(locale, keys.text) };
+    }),
     note: t(locale, "cityHall.chronicle.note"),
   };
 }
 
-/** P4 市の条文（ハノーバ市憲章・各条に市長解説）。冒頭に市長の前口上（lead）を置く（全ページ共通）。 */
-function page4(locale: Locale): BookPage {
+function ordinancePage(locale: Locale, page: number, index: 0 | 1 | 2 | 3 | 4): BookPage {
+  const keys = ORDINANCE_KEYS[index];
   return {
-    page: 4,
+    id: `ordinance-${index + 1}`,
+    page,
     kind: "ordinances",
     title: t(locale, "cityHall.ordinance.title"),
     lead: t(locale, "cityHall.ordinance.lead"),
-    ordinances: [
-      {
-        article: t(locale, "cityHall.ordinance.0.article"),
-        text: t(locale, "cityHall.ordinance.0.text"),
-        commentary: t(locale, "cityHall.ordinance.0.commentary"),
-      },
-      {
-        article: t(locale, "cityHall.ordinance.1.article"),
-        text: t(locale, "cityHall.ordinance.1.text"),
-        commentary: t(locale, "cityHall.ordinance.1.commentary"),
-      },
-      {
-        article: t(locale, "cityHall.ordinance.2.article"),
-        text: t(locale, "cityHall.ordinance.2.text"),
-        commentary: t(locale, "cityHall.ordinance.2.commentary"),
-      },
-      {
-        article: t(locale, "cityHall.ordinance.3.article"),
-        text: t(locale, "cityHall.ordinance.3.text"),
-        commentary: t(locale, "cityHall.ordinance.3.commentary"),
-      },
-      {
-        article: t(locale, "cityHall.ordinance.4.article"),
-        text: t(locale, "cityHall.ordinance.4.text"),
-        commentary: t(locale, "cityHall.ordinance.4.commentary"),
-      },
-    ],
+    ordinances: [{
+      article: t(locale, keys.article),
+      text: t(locale, keys.text),
+      commentary: t(locale, keys.commentary),
+    }],
   };
 }
 
-/** 全ページ（1〜4・順序固定）を locale で組み立てる。 */
+function guide(id: string, page: number, title: string, lead: string, image?: string, note?: string): BookPage {
+  return { id, page, kind: "guide", title, lead, image, note };
+}
+
+/** 全20ページ（順序固定・全開放）を locale で組み立てる。 */
 export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
-  return [page1(locale), page2(locale), page3(locale), page4(locale)];
-}
-
-/** レベル昇格時に小さく添える市長のひとこと（味付け）を locale で引く。 */
-export function levelFlavor(locale: Locale = DEFAULT_LOCALE): { citizen: string; tenured: string } {
-  return {
-    /** L1 で 2p 目（街の地図）を開いたとき。L2 以上では出さない（古参に移住受理を再掲しない）。 */
-    citizen: t(locale, "cityHall.flavor.citizen"),
-    /** L2 以上が初めて奥のページ（3p 沿革）に達したとき（#469 で L3 まで解放が伸びても古参歓迎は維持）。 */
-    tenured: t(locale, "cityHall.flavor.tenured"),
-  };
+  const districts = DISTRICT_KEYS.map((keys, index) =>
+    guide(
+      `district-${index + 1}`,
+      index + 6,
+      t(locale, keys.name),
+      t(locale, keys.text),
+      DISTRICTS_IMAGE_SRC,
+      t(locale, "cityHall.districts.note"),
+    ),
+  );
+  return [
+    page1(locale),
+    guide("settlement", 2, t(locale, "cityHall.welcome.title"), t(locale, "cityHall.welcome.1"), undefined, t(locale, "cityHall.welcome.3")),
+    guide("vista", 3, t(locale, "cityHall.guide.vista"), t(locale, "cityHall.welcome.2"), WELCOME_VISTA_SRC),
+    mapPage(locale),
+    guide("landmarks", 5, t(locale, "cityHall.guide.landmarks"), t(locale, "cityHall.map.landmark.0.text"), MAP_IMAGE_SRC, t(locale, "cityHall.map.landmark.1.text")),
+    ...districts,
+    guide("crest", 11, t(locale, "cityHall.guide.crest"), t(locale, "cityHall.guide.crest.text"), CREST_SPECIALTIES_IMAGE_SRC),
+    guide("specialties", 12, t(locale, "cityHall.guide.specialties"), t(locale, "cityHall.guide.specialties.text"), CREST_SPECIALTIES_IMAGE_SRC),
+    chroniclePage(locale, 13, [0, 1]),
+    chroniclePage(locale, 14, [2]),
+    chroniclePage(locale, 15, [3]),
+    ...ORDINANCE_KEYS.map((_, index) => ordinancePage(locale, index + 16, index as 0 | 1 | 2 | 3 | 4)),
+  ];
 }
 
 // --- 後方互換 export（DEFAULT_LOCALE で解決した定数）。既存の const 消費側・テストはこのまま動く。 ---
@@ -212,8 +261,5 @@ export const MAYOR_NAME = mayorName(DEFAULT_LOCALE);
 /** 親しみのある短い呼び名（ja 既定・#262）。 */
 export const MAYOR_SHORT_NAME = mayorShortName(DEFAULT_LOCALE);
 
-/** 全ページ（1〜4・順序固定・ja 既定）。 */
+/** 全20ページ（順序固定・ja 既定）。 */
 export const BOOK_PAGES: BookPage[] = buildCityHallBook(DEFAULT_LOCALE);
-
-/** レベル昇格時の市長のひとこと（ja 既定）。 */
-export const LEVEL_FLAVOR = levelFlavor(DEFAULT_LOCALE);
