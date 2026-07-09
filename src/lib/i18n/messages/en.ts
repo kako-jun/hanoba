@@ -487,7 +487,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.guide.vista": "City Vista",
   "cityHall.guide.landmarks": "Vein River and Landmarks",
   "cityHall.guide.crest": "Civic Crest",
-  "cityHall.guide.crest.text": "One leaf, the branching Vein River, and a square plot at its heart: the crest of Hanōba.",
+  "cityHall.guide.crest.text": "An ivory field, two green pillars, and one pink crossbar form the letter H: Hanōba's flag and civic emblem.",
   "cityHall.guide.specialties": "Local Specialties",
   "cityHall.guide.specialties.text": "Foliage, field produce, fruit trees, seeds and sprouts, and the tools of care: the pride of five districts.",
   "cityHall.nav.jumpBack": "Back 5 pages",

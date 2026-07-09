@@ -14,7 +14,7 @@ vi.mock("../../lib/nostr/keys.ts", () => ({
 
 import CityHallBook, { BOOK_PAGE_STORAGE_KEY } from "./CityHallBook.tsx";
 
-describe("CityHallBook 20ページナビ（#137）", () => {
+describe("CityHallBook 10ページナビ（#137）", () => {
   beforeEach(() => {
     fetchMyPosts.mockReset().mockResolvedValue([]);
     getDisplayName.mockReset().mockReturnValue(null);
@@ -30,54 +30,39 @@ describe("CityHallBook 20ページナビ（#137）", () => {
     vi.restoreAllMocks();
   });
 
-  it("全20ページを最初から開放し、1ページ目を表示する", async () => {
+  it("全10ページを最初から開放し、画像と説明を含む1ページ目を表示する", async () => {
     render(<CityHallBook />);
     expect(await screen.findByText(/ようこそ、緑の市へ/)).toBeInTheDocument();
-    expect(screen.getByText("1 / 20")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "緑に包まれたハノーバ市の俯瞰" })).toHaveAttribute("src", "/hanoba-welcome-vista.webp");
+    expect(screen.getByText(/植物専用の写真SNSです/)).toBeInTheDocument();
+    expect(screen.getByText("1 / 10")).toBeInTheDocument();
   });
 
   it("最後に開いた安定IDから再開する", async () => {
     localStorage.setItem(BOOK_PAGE_STORAGE_KEY, "crest");
     render(<CityHallBook />);
     expect(await screen.findByRole("heading", { level: 2, name: "市章" })).toBeInTheDocument();
-    expect(screen.getByText("11 / 20")).toBeInTheDocument();
+    expect(screen.getByText("8 / 10")).toBeInTheDocument();
   });
 
   it("URL指定を保存位置より優先する", async () => {
     localStorage.setItem(BOOK_PAGE_STORAGE_KEY, "crest");
-    history.replaceState(null, "", "/about?page=specialties");
+    history.replaceState(null, "", "/about?page=ordinances");
     render(<CityHallBook />);
-    expect(await screen.findByRole("heading", { level: 2, name: "特産物" })).toBeInTheDocument();
-    expect(screen.getByText("12 / 20")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "市の条文" })).toBeInTheDocument();
+    expect(screen.getByText("10 / 10")).toBeInTheDocument();
   });
 
-  it("5ページ進む・先頭・末尾へ一気に移動できる", async () => {
+  it("既存ページャーから末尾へ一気に移動できる", async () => {
     const user = userEvent.setup();
     render(<CityHallBook />);
-    await screen.findByText("1 / 20");
-    await user.click(screen.getByRole("button", { name: "5ページ進む" }));
-    expect(screen.getByText("6 / 20")).toBeInTheDocument();
+    await screen.findByText("1 / 10");
     await user.click(screen.getByRole("button", { name: "最後のページ" }));
-    expect(screen.getByText("20 / 20")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "最初のページ" }));
-    expect(screen.getByText("1 / 20")).toBeInTheDocument();
+    expect(screen.getByText("10 / 10")).toBeInTheDocument();
   });
 
-  it("目次から任意ページへ直接移動し位置を保存する", async () => {
-    const user = userEvent.setup();
+  it("市政の窓口は全ページ下部に表示する", async () => {
     render(<CityHallBook />);
-    const toc = screen.getByLabelText("目次");
-    await user.selectOptions(toc, "district-3");
-    expect(screen.getByRole("heading", { level: 2, name: "果樹の丘" })).toBeInTheDocument();
-    expect(localStorage.getItem(BOOK_PAGE_STORAGE_KEY)).toBe("district-3");
-    expect(new URLSearchParams(location.search).get("page")).toBe("district-3");
-  });
-
-  it("市政の窓口は巻末だけに表示する", async () => {
-    const user = userEvent.setup();
-    render(<CityHallBook />);
-    expect(screen.queryByRole("heading", { name: "市政の窓口" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "最後のページ" }));
     expect(screen.getByRole("heading", { name: "市政の窓口" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /住民投票/ })).toHaveAttribute("href", "/vote");
   });
@@ -86,14 +71,14 @@ describe("CityHallBook 20ページナビ（#137）", () => {
     const user = userEvent.setup();
     render(<CityHallBook />);
     await user.keyboard("{ArrowRight}");
-    expect(screen.getByText("2 / 20")).toBeInTheDocument();
-    expect(new URLSearchParams(location.search).get("page")).toBe("settlement");
+    expect(screen.getByText("2 / 10")).toBeInTheDocument();
+    expect(new URLSearchParams(location.search).get("page")).toBe("map");
 
     const content = document.querySelector('[aria-live="polite"]')!;
     const panel = content.parentElement!;
     fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 100 }] });
-    expect(screen.getByText("3 / 20")).toBeInTheDocument();
-    expect(localStorage.getItem(BOOK_PAGE_STORAGE_KEY)).toBe("vista");
+    expect(screen.getByText("3 / 10")).toBeInTheDocument();
+    expect(localStorage.getItem(BOOK_PAGE_STORAGE_KEY)).toBe("district-1");
   });
 });
