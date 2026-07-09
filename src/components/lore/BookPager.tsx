@@ -182,6 +182,11 @@ export default function BookPager<T extends BookPagerPage>({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [canPrev, canNext, page]);
 
+  // pages=[] の防御（#164）。呼び出し元のデータ組み立てミス等で空配列を渡されても、
+  // current（pages[0]!）が undefined になって renderPage が壊れる形でクラッシュしない
+  // よう、ここで安全に空描画へ落とす。全 hooks の呼び出し後（rules-of-hooks を守る）。
+  if (totalPages === 0) return null;
+
   return (
     <section className="ha-rise flex flex-col gap-5" aria-label={title}>
       <header>
