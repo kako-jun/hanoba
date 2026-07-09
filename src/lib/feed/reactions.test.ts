@@ -84,18 +84,32 @@ describe("countLikes", () => {
 
   it("同一 pubkey が like→dislike を出したら最後（dislike）を採用して数えない", () => {
     const reactions = [
-      makeReaction({ pubkey: "a", content: "+" }),
-      makeReaction({ pubkey: "a", content: "-" }),
+      makeReaction({ pubkey: "a", content: "+", created_at: 1000 }),
+      makeReaction({ pubkey: "a", content: "-", created_at: 1001 }),
     ];
     expect(countLikes(reactions)).toBe(0);
   });
 
   it("同一 pubkey が dislike→like を出したら最後（like）を採用して数える", () => {
     const reactions = [
-      makeReaction({ pubkey: "a", content: "-" }),
-      makeReaction({ pubkey: "a", content: "+" }),
+      makeReaction({ pubkey: "a", content: "-", created_at: 1000 }),
+      makeReaction({ pubkey: "a", content: "+", created_at: 1001 }),
     ];
     expect(countLikes(reactions)).toBe(1);
+  });
+
+  it("relay の返却順が逆でも created_at が最新の反応を採用する", () => {
+    const newer = makeReaction({ id: "newer", pubkey: "a", content: "-", created_at: 1001 });
+    const older = makeReaction({ id: "older", pubkey: "a", content: "+", created_at: 1000 });
+    expect(countLikes([newer, older])).toBe(0);
+    expect(countLikes([older, newer])).toBe(0);
+  });
+
+  it("created_at が同秒なら event id の辞書順で決定的に最新を選ぶ", () => {
+    const smaller = makeReaction({ id: "aaa", pubkey: "a", content: "+", created_at: 1000 });
+    const larger = makeReaction({ id: "zzz", pubkey: "a", content: "-", created_at: 1000 });
+    expect(countLikes([smaller, larger])).toBe(0);
+    expect(countLikes([larger, smaller])).toBe(0);
   });
 });
 

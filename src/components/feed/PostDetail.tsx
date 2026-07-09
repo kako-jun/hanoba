@@ -183,12 +183,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     setLikeError(false);
     try {
       const result = await publishReaction(post.id, post.pubkey);
-      if (result === "published") {
-        // post 切替後に旧投稿の送信が完了しても、新投稿の件数を変更しない。
-        if (reactionStateRef.current.postId !== post.id) return;
-        reactionStateRef.current.revision += 1;
-        setLikeCount((count) => (count === null ? 1 : count + 1));
-      }
+      // post 切替後に旧投稿の送信が完了しても、新投稿の件数を変更しない。
+      if (reactionStateRef.current.postId !== post.id) return;
+      reactionStateRef.current.revision += 1;
+      setLikeCount(result.count);
     } catch {
       if (reactionStateRef.current.postId === post.id) setLikeError(true);
     } finally {

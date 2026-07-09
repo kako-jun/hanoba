@@ -18,7 +18,7 @@ import {
 } from "../feed/parse.ts";
 import { countCommentsByEvent } from "../feed/comments.ts";
 import { rankHashtags, type RankedTag } from "../feed/popular.ts";
-import { countLikes, countLikesByEvent } from "../feed/reactions.ts";
+import { countLikes, countLikesByEvent, isLike, latestReaction } from "../feed/reactions.ts";
 import { GENERAL_RELAYS, RELAYS, SEARCH_RELAYS, TAG_HANOBA } from "./constants.ts";
 import {
   buildDeletionEvent,
@@ -276,7 +276,7 @@ export async function fetchRankingPosts(limit = 500): Promise<FeedPost[]> {
 
 /**
  * 投稿（kind:1）に対するいいね数を取得する。NIP-25 の kind:7 リアクションを
- * `#e` で対象投稿に絞って集計する（表示のみ・書き込みはこの Issue では作らない）。
+ * `#e` で対象投稿に絞って集計する。表示時と、いいね送信後の確定件数取得で共有する。
  *
  * - `{kinds:[7], "#e":[eventId]}` で対象投稿宛のリアクションを取得
  * - countLikes で dislike を除外し、同一 pubkey は 1 票に畳む（1 人 1 いいね）
@@ -284,20 +284,18 @@ export async function fetchRankingPosts(limit = 500): Promise<FeedPost[]> {
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
+async function queryReactionCount(eventId: string, limit = 500): Promise<number> {
+  const reactions = await getPool().querySync(
+    [...GENERAL_RELAYS],
+    { kinds: [7], "#e": [eventId], limit },
+    { maxWait: QUERY_MAXWAIT },
+  );
+  return countLikes(reactions);
+}
+
 export async function fetchReactionCount(eventId: string, limit = 500): Promise<number> {
   try {
-    // limit はリレーから取る kind:7 の上限。超人気投稿（リアクション > limit）では概数になる。
-    // kind:7 の #e フィルタは通常リレーで足りる（NIP-50 検索リレーは本文全文検索用＝不要）。
-    const reactions = await getPool().querySync(
-      [...GENERAL_RELAYS],
-      {
-        kinds: [7],
-        "#e": [eventId],
-        limit,
-      },
-      { maxWait: QUERY_MAXWAIT },
-    );
-    return countLikes(reactions);
+    return await queryReactionCount(eventId, limit);
   } catch {
     return 0;
   }
@@ -310,21 +308,24 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
 export async function publishReaction(
   targetEventId: string,
   targetPubkey: string,
-): Promise<"published" | "already-reacted"> {
+): Promise<{ status: "published" | "already-reacted"; count: number }> {
   const pubkey = await getPublicKeyHex();
   const ownReactions = await getPool().querySync(
     [...GENERAL_RELAYS],
     { kinds: [7], authors: [pubkey], "#e": [targetEventId], limit: 100 },
     { maxWait: QUERY_MAXWAIT },
   );
-  if (countLikes(ownReactions) > 0) return "already-reacted";
+  const latestOwnReaction = latestReaction(ownReactions);
+  if (latestOwnReaction !== undefined && isLike(latestOwnReaction)) {
+    return { status: "already-reacted", count: await queryReactionCount(targetEventId) };
+  }
 
   const signed = await signTemplate(buildReactionTemplate(targetEventId, targetPubkey));
   await publishEvent(signed);
   if (!(await confirmEventStored(signed.id))) {
     throw new Error("いいねを読み取りリレーで確認できませんでした");
   }
-  return "published";
+  return { status: "published", count: await queryReactionCount(targetEventId) };
 }
 
 // バッチ取得（タイムライン/discover のカード・#276）の kind:7/kind:1 上限。
