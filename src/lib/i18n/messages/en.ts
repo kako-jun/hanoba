@@ -16,6 +16,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "nav.compose": "Post",
   "nav.ranking": "Census",
   "nav.vote": "Town Vote",
+  "nav.gazette": "Municipal Gazette",
   "nav.menu.open": "Open menu",
   "nav.menu.close": "Close menu",
   "nav.home.aria": "Hanōba home",

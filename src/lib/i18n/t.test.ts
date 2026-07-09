@@ -93,12 +93,26 @@ describe("カタログ整合", () => {
   });
 });
 
-// #525 で新規追加/改称したキーは、ja へのグレースフル fallback に頼らず全 locale に実訳を持つことを
+// #525 / #164 で新規追加/改称したキーは、ja へのグレースフル fallback に頼らず全 locale に実訳を持つことを
 // 固定する（fallback で通ってしまうと、訳し忘れが気付かれず英語圏に日本語が漏れる・過去事故パターン）。
-describe("新規キーの多言語完備（#525）", () => {
+describe("新規キーの多言語完備（#525・#164）", () => {
   const CATALOGS: Record<string, Partial<Record<string, string>>> = { ja, en, es, zh };
 
-  it.each(["nav.vote", "account.profile.editHint", "cityHall.map.civic.3.label", "nav.ranking"])(
+  it.each([
+    "nav.vote",
+    "account.profile.editHint",
+    "cityHall.map.civic.3.label",
+    "nav.ranking",
+    "nav.gazette",
+    "cityHall.map.civic.2.label",
+    "meta.gazette.title",
+    "meta.gazette.description",
+    "gazette.book.title",
+    "gazette.articles.0.heading",
+    "gazette.articles.1.heading",
+    "gazette.articles.2.heading",
+    "gazette.articles.3.heading",
+  ])(
     "%s は ja/en/es/zh 全てに空でない値を持つ",
     (key) => {
       for (const [locale, catalog] of Object.entries(CATALOGS)) {

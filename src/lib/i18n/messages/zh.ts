@@ -15,6 +15,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "nav.compose": "发布",
   "nav.ranking": "市情普查",
   "nav.vote": "市民投票",
+  "nav.gazette": "市政通讯",
   "nav.menu.open": "打开菜单",
   "nav.menu.close": "关闭菜单",
   "nav.home.aria": "Hanōba 首页",

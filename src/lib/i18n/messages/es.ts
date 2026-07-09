@@ -15,6 +15,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "nav.compose": "Publicar",
   "nav.ranking": "Censo municipal",
   "nav.vote": "Urna ciudadana",
+  "nav.gazette": "Gaceta Municipal",
   "nav.menu.open": "Abrir menú",
   "nav.menu.close": "Cerrar menú",
   "nav.home.aria": "Inicio de Hanōba",

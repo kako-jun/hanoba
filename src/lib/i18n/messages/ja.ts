@@ -19,6 +19,8 @@ export const ja = {
   "nav.ranking": "市勢調査",
   // #525: 住民投票へのフッタ導線（窓口 cityHall.map.civic.0.label と同名）。
   "nav.vote": "住民投票",
+  // #164: 市政だよりへのフッタ導線（窓口 cityHall.map.civic.2.label と同名）。
+  "nav.gazette": "市政だより",
   "nav.menu.open": "メニューを開く",
   "nav.menu.close": "メニューを閉じる",
   "nav.home.aria": "葉の場 Hanoba トップへ",
