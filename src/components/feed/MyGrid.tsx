@@ -9,7 +9,7 @@ import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import { useBackToClose } from "./useBackToClose.ts";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
-import { getPublicKeyHex } from "../../lib/nostr/keys.ts";
+import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 
@@ -46,7 +46,10 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   // 表示名（AccountName からの onChange で反応的に追従・#525 追補）。ProfileEditor は自分の
   // マウント時 state しか見ないため、AccountName 側での新規登録/変更をここで受け取って両方へ配る。
-  const [accountName, setAccountName] = useState<string | null>(null);
+  // 種撒き（lazy initializer）は必須: null 初期化だと、既存の名前を持つユーザーの初回マウントで
+  // ProfileEditor の nameHint 同期エフェクトが render-1 時点の null を一瞬だけ見てしまい、
+  // 自分自身の正しい値を無駄に巻き戻す再レンダーが挟まる（#525 セルフレビュー S1）。
+  const [accountName, setAccountName] = useState<string | null>(() => getDisplayName());
 
   // アンマウント後 / 再取得中の古い応答での setState を防ぐ（stale-async ガード）。
   const aliveRef = useRef(true);
