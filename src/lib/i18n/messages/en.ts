@@ -287,6 +287,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "account.profile.heading": "Profile",
   "account.profile.sub": "Icon, bio, sites",
   "account.profile.edit": "Edit",
+  "account.profile.editHint": "Set a handle name first.",
   "account.profile.icon.label": "Icon",
   "account.profile.icon.uploading": "Uploading…",
   "account.profile.icon.pick": "Choose an image",

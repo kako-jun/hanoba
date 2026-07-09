@@ -81,13 +81,16 @@ describe("ProfileEditor (#35 Piece3)", () => {
     expect(await screen.findByText("保存しました。")).toBeInTheDocument();
   });
 
-  it("ユーザー名未設定なら保存できない（促しを出す）", async () => {
+  it("ユーザー名未設定なら「編集」トグル自体が無効化され、パネルを開けない（#525）", async () => {
     localStorage.removeItem("hanoba:name");
     const user = userEvent.setup();
     render(<ProfileEditor />);
-    await user.click(screen.getByRole("button", { name: /編集/ }));
-    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
-    expect(screen.getByText("先に上でハンドルネームを設定してください。")).toBeInTheDocument();
+    const editButton = screen.getByRole("button", { name: /編集/ });
+    expect(editButton).toBeDisabled();
+    expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+    // disabled ボタンはクリックしても開かない（アイコンアップロード等の操作面に到達できない）。
+    await user.click(editButton);
+    expect(screen.queryByLabelText("自己紹介")).not.toBeInTheDocument();
   });
 
   it("名前未設定ならヘッダに「ハンドルネーム 未設定」が出る（#92）", () => {

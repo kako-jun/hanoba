@@ -324,6 +324,8 @@ export const ja = {
   "account.profile.heading": "プロフィール",
   "account.profile.sub": "アイコン・自己紹介・サイト",
   "account.profile.edit": "編集",
+  // 名前未登録時はトグルを disabled にし、この案内を近くに出す（#525）。
+  "account.profile.editHint": "先にハンドルネームを登録してください。",
   "account.profile.icon.label": "アイコン",
   "account.profile.icon.uploading": "アップロード中…",
   "account.profile.icon.pick": "画像を選ぶ",

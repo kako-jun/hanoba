@@ -278,6 +278,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "account.profile.heading": "个人资料",
   "account.profile.sub": "头像、简介、网站",
   "account.profile.edit": "编辑",
+  "account.profile.editHint": "请先设置用户名。",
   "account.profile.icon.label": "头像",
   "account.profile.icon.uploading": "上传中…",
   "account.profile.icon.pick": "选择一张图片",
