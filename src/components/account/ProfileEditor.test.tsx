@@ -1,3 +1,4 @@
+import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -135,6 +136,25 @@ describe("ProfileEditor (#35 Piece3)", () => {
 
     await waitFor(() => expect(screen.getByRole("button", { name: /編集/ })).not.toBeDisabled());
     expect(screen.queryByText("先にハンドルネームを登録してください。")).not.toBeInTheDocument();
+  });
+
+  it("既存の名前でマウントすると、初回コミット時点で既に「編集」トグルが有効（name の種撒きで初期 disabled フラッシュが起きない・セルフレビュー should）", () => {
+    // React Profiler の onRender はコミット直後・ブラウザペイント前に同期発火する。mount effect
+    // （getDisplayName 読み直し）が走る前の「最初のコミット」時点で disabled を読めば、
+    // useState(null) の種撒き無し実装なら true（一瞬 disabled で描画されるフラッシュ）になるはず
+    // だった箇所を、種撒き（lazy initializer）実装が false のまま通すことを検証する。
+    let firstCommitDisabled: boolean | null = null;
+    const onRender: ProfilerOnRenderCallback = () => {
+      if (firstCommitDisabled === null) {
+        firstCommitDisabled = screen.getByRole("button", { name: /編集/ }).hasAttribute("disabled");
+      }
+    };
+    render(
+      <Profiler id="profile-editor-name-seed-probe" onRender={onRender}>
+        <ProfileEditor />
+      </Profiler>,
+    );
+    expect(firstCommitDisabled).toBe(false);
   });
 
   it.each([

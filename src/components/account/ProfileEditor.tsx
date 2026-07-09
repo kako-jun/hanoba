@@ -43,7 +43,12 @@ interface Props {
 export default function ProfileEditor({ bare = false, nameHint }: Props) {
   const t = useT(useLocale());
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState<string | null>(null);
+  // name も種撒き（lazy initializer）する: null 初期化のままだと、既存の名前を持つユーザーが
+  // /me を開くたびに初回ペイントで「編集」トグルが一瞬 disabled（nameMissing=true）として
+  // 描画されてから mount effect で有効化されるフラッシュが起きる（MyGrid.tsx の accountName に
+  // 施した #525 S1 と同じ修正パターン・セルフレビュー should）。nameHint が渡されていれば
+  // それ（親 AccountName の最新値）を優先し、未指定（undefined）なら従来どおり自力で読む。
+  const [name, setName] = useState<string | null>(() => (nameHint !== undefined ? nameHint : getDisplayName()));
   const [picture, setPicture] = useState<string | null>(null);
   const [about, setAbout] = useState("");
   // サイト行は安定 id で持つ（index key だと並べ替え/中間削除でフォーカス・IME が飛ぶ・レビュー S2）。
@@ -73,7 +78,9 @@ export default function ProfileEditor({ bare = false, nameHint }: Props) {
   useEffect(() => {
     const localName = getDisplayName();
     const extra = getProfileExtra();
-    setName(localName);
+    // name は useState の lazy initializer で種撒き済みなので、通常は localName と一致し
+    // 再代入は不要（不一致時のみ更新して、無駄な再レンダーを避ける）。
+    setName((cur) => (cur === localName ? cur : localName));
     setPicture(extra.picture);
     setAbout(extra.about ?? "");
     setSites(extra.websites.map((url) => ({ id: nextId(), url })));
