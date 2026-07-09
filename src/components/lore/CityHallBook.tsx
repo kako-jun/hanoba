@@ -241,17 +241,17 @@ export default function CityHallBook({
           <CivicWindows />
 
           <nav
-            className="flex items-center justify-between gap-3 pt-1"
+            className="flex items-center justify-between gap-1 pt-1"
             aria-label={t("cityHall.nav.aria")}
           >
             <div className="flex items-center">
-              <button type="button" onClick={() => goTo(1)} disabled={!canPrev} aria-label={t("cityHall.nav.first")} className="rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">|←</button>
+              <button type="button" onClick={() => goTo(1)} disabled={!canPrev} aria-label={t("cityHall.nav.first")} className="shrink-0 whitespace-nowrap rounded-full px-1 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors">|←</button>
               <button
                 type="button"
                 onClick={goPrev}
                 disabled={!canPrev}
                 aria-label={t("cityHall.nav.prev")}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                className="inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               >
                 <Icon name="chevron" className="w-4 h-4 rotate-90" />
                 {t("cityHall.nav.prev.label")}
@@ -259,7 +259,7 @@ export default function CityHallBook({
             </div>
 
             <span
-              className="text-sm text-ha-ink/60 tabular-nums"
+              className="shrink-0 text-sm text-ha-ink/60 tabular-nums"
               aria-hidden="true"
             >
               {t("cityHall.nav.indicator", { page, total: TOTAL_PAGES })}
@@ -271,7 +271,7 @@ export default function CityHallBook({
                 onClick={goNext}
                 disabled={!canNext}
                 aria-label={t("cityHall.nav.next")}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                className="inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               >
                 {t("cityHall.nav.next.label")}
                 <Icon name="chevron" className="w-4 h-4 -rotate-90" />
@@ -281,7 +281,7 @@ export default function CityHallBook({
                 onClick={() => goTo(TOTAL_PAGES)}
                 disabled={!canNext}
                 aria-label={t("cityHall.nav.last")}
-                className="rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                className="shrink-0 whitespace-nowrap rounded-full px-1 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               >
                 →|
               </button>
