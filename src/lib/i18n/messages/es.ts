@@ -44,6 +44,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "card.photos.count": "{n}",
   "card.author.profile": "Perfil de {name}",
   "card.author.profileWithId": "Perfil de {name} ({id})",
+  "author.unnamed": "Viajero",
   "card.readMore": "Leer más",
   "reaction.likes.aria": "{n} me gusta",
   "reaction.comments.aria": "{n} comentarios",

@@ -43,6 +43,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "card.photos.count": "{n}",
   "card.author.profile": "{name} 的主页",
   "card.author.profileWithId": "{name}（{id}）的主页",
+  "author.unnamed": "旅人",
   "card.readMore": "查看更多",
   "reaction.likes.aria": "{n} 个赞",
   "reaction.comments.aria": "{n} 条评论",

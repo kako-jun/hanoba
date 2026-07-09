@@ -146,11 +146,15 @@ describe("CommentSection", () => {
     await waitFor(() => expect(screen.getByLabelText("コメントを入力")).toHaveValue(""));
   });
 
-  it("プロフィールが無い著者は npub フォールバック名で表示する", () => {
+  it("プロフィールが無い著者は旅人表示で、npub を保持したプロフィールリンクになる", () => {
     useCommentsState.comments = [comment({ id: "c1", pubkey: "cc".repeat(32), content: "やあ" })];
     useCommentsState.loading = false;
     render(<CommentSection postId="p1" />);
     // profile が無くても内部 pubkey は維持し、可視名は「旅人」にする。
     expect(screen.getByText("旅人")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^旅人（npub1.*….*）のプロフィール$/ })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/u\?npub=npub1/),
+    );
   });
 });

@@ -55,6 +55,7 @@ export const ja = {
   "card.photos.count": "{n}枚",
   "card.author.profile": "{name} のプロフィール",
   "card.author.profileWithId": "{name}（{id}）のプロフィール",
+  "author.unnamed": "旅人",
   "card.readMore": "続きを読む",
   "reaction.likes.aria": "いいね {n}",
   "reaction.comments.aria": "コメント {n}",

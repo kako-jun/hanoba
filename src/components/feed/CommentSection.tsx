@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { relativeTime } from "../../lib/feed/parse.ts";
+import { authorHref, relativeTime, shortNpub } from "../../lib/feed/parse.ts";
+import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
 import { useComments } from "./useComments.ts";
 import { useProfiles } from "./useProfiles.ts";
@@ -100,15 +101,33 @@ export default function CommentSection({ postId }: Props) {
           {comments.map((c) => {
             const profile = profiles.get(c.pubkey);
             // 未名乗りの人も内部識別は pubkey のまま、可視名だけ各言語の「旅人」にする（#531）。
-            const name = profile?.name ?? t("citizen.level.traveler");
+            const hasName = normalizeAuthorName(profile?.name) !== null;
+            const name = authorDisplayName(profile?.name, t("author.unnamed"));
+            const href = authorHref(c.pubkey);
+            const profileLabel = hasName
+              ? t("card.author.profile", { name })
+              : t("card.author.profileWithId", { name, id: shortNpub(c.pubkey) });
             const isMine = myPubkey !== null && c.pubkey === myPubkey;
             const isRemoving = removingId === c.id;
             return (
               <li key={c.id} className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex min-w-0 items-center gap-2">
-                    <Avatar src={profile?.picture ?? null} name={name} className="h-6 w-6" />
-                    <span className="min-w-0 truncate text-xs font-medium text-ha-ink/80">{name}</span>
+                    {href === null ? (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Avatar src={profile?.picture ?? null} name={name} className="h-6 w-6" />
+                        <span className="min-w-0 truncate text-xs font-medium text-ha-ink/80">{name}</span>
+                      </span>
+                    ) : (
+                      <a
+                        href={href}
+                        aria-label={profileLabel}
+                        className="flex min-w-0 items-center gap-2 hover:text-ha-green-deep transition-colors"
+                      >
+                        <Avatar src={profile?.picture ?? null} name={name} className="h-6 w-6" />
+                        <span className="min-w-0 truncate text-xs font-medium text-ha-ink/80">{name}</span>
+                      </a>
+                    )}
                     <time className="shrink-0 text-[11px] text-ha-ink/45">
                       {relativeTime(c.createdAt, now)}
                     </time>

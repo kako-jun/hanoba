@@ -8,6 +8,7 @@ import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { formatShotDate } from "../../lib/feed/shotDate.ts";
+import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import { useLocale, useT } from "../../lib/i18n/index.ts";
 import {
   nextPhotoIndex,
@@ -67,10 +68,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   // npub はプロフィール URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
-  const hasAuthorName = profile?.name != null;
+  const hasAuthorName = normalizeAuthorName(profile?.name) !== null;
   const locale = useLocale();
   const t = useT(locale);
-  const authorName = profile?.name ?? t("citizen.level.traveler");
+  const authorName = authorDisplayName(profile?.name, t("author.unnamed"));
   const authorProfileLabel = hasAuthorName
     ? t("card.author.profile", { name: authorName })
     : t("card.author.profileWithId", { name: authorName, id: shortNpub(post.pubkey) });

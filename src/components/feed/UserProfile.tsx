@@ -3,6 +3,7 @@ import { nip19 } from "nostr-tools";
 import { fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
+import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { getDisplayName } from "../../lib/nostr/keys.ts";
 import Icon from "../ui/Icon.tsx";
@@ -90,15 +91,22 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
   }, [pubkey]);
 
   // npub は URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
-  const subjectName = profile?.name ?? (typeof pubkey === "string" ? t("citizen.level.traveler") : t("profile.subject.default"));
+  const normalizedProfileName = normalizeAuthorName(profile?.name);
+  const subjectName =
+    typeof pubkey === "string"
+      ? authorDisplayName(profile?.name, t("author.unnamed"))
+      : (normalizedProfileName ?? t("profile.subject.default"));
   const subjectLabel =
-    profile?.name == null && typeof pubkey === "string"
+    normalizedProfileName === null && typeof pubkey === "string"
       ? t("profile.subject.withId", { name: subjectName, id: shortNpub(pubkey) })
       : undefined;
   // 自分のページかどうか（ローカルに名乗り済みの名と一致するか）。鍵生成の副作用（getPublicKeyHex は
   // 鍵が無いと生成してしまう）を避け、getDisplayName（localStorage のみ）と表示名の一致で緩く判定する。
   // 表示名の衝突で別人を「あなた」と誤認しうるが、用途は /me への戻り導線だけ＝実害が無い範囲。
-  const isLikelyMe = status === "loaded" && profile?.name != null && getDisplayName() === profile.name;
+  const isLikelyMe =
+    status === "loaded" &&
+    normalizedProfileName !== null &&
+    normalizeAuthorName(getDisplayName()) === normalizedProfileName;
 
   // ロード後にタブのタイトルを相手の名前で補完する（静的タイトルは汎用なので）。
   useEffect(() => {
@@ -184,7 +192,7 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
 
       {/* 活動スタッツ（#272）。/me と同じ CitizenStats。hasName は相手のプロフィール名の有無。 */}
       {status === "loaded" && (
-        <CitizenStats posts={posts} hasName={profile?.name !== null && profile?.name !== undefined} subjectName={subjectName} />
+        <CitizenStats posts={posts} hasName={normalizedProfileName !== null} subjectName={subjectName} />
       )}
 
       {status === "loading" && (

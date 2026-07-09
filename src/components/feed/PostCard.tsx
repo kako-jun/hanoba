@@ -4,6 +4,7 @@ import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
 import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
 import { shotDateRange, SHOT_DATE_RANGE_SEP } from "../../lib/feed/shotDate.ts";
+import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import {
   nextPhotoIndex,
   prevPhotoIndex,
@@ -77,8 +78,8 @@ export default function PostCard({
   // ＝「1つの被写体の1ヶ月を振り返る」投稿が一目で分かる。無ければ null（出さない）。全言語 ISO 固定（#347）。
   const dateRange = shotDateRange(post.photoShotDates ?? []);
   // npub はプロフィール URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
-  const hasAuthorName = profile?.name != null;
-  const authorName = profile?.name ?? t("citizen.level.traveler");
+  const hasAuthorName = normalizeAuthorName(profile?.name) !== null;
+  const authorName = authorDisplayName(profile?.name, t("author.unnamed"));
   const authorProfileLabel = hasAuthorName
     ? t("card.author.profile", { name: authorName })
     : t("card.author.profileWithId", { name: authorName, id: shortNpub(post.pubkey) });
