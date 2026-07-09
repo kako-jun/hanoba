@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { t } from "../lib/i18n/t.ts";
+import { civicHub } from "../lib/lore/cityHall.ts";
 
 // #484: フッタ街並みマスク画像を footer-skyline.png（PNG）→ footer-skyline.webp（lossless）へ
 // 差し替え。旧ファイル名の残存・mask-image / -webkit-mask-image 片方だけの直し忘れ・
@@ -10,6 +11,11 @@ import { t } from "../lib/i18n/t.ts";
 const footerSrc = readFileSync(join(import.meta.dirname, "SiteFooter.astro"), "utf8");
 const publicDir = join(import.meta.dirname, "..", "..", "public");
 const layoutSrc = readFileSync(join(import.meta.dirname, "..", "layouts", "MainLayout.astro"), "utf8");
+const internalNavSrc = footerSrc.slice(footerSrc.indexOf("<nav"), footerSrc.indexOf("</nav>") + "</nav>".length);
+const internalHrefs = [...internalNavSrc.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+const externalArraySrc = footerSrc.slice(footerSrc.indexOf("const external = ["), footerSrc.indexOf("];", footerSrc.indexOf("const external = [")));
+const externalHrefs = [...externalArraySrc.matchAll(/href: "([^"]+)"/g)].map((match) => match[1]);
+const shellKeysSrc = layoutSrc.slice(layoutSrc.indexOf("const shellKeys"), layoutSrc.indexOf("];", layoutSrc.indexOf("const shellKeys")));
 
 describe("SiteFooter の背景マスク画像差し替え（#484）", () => {
   it("footer-skyline.png への参照が残っていない（旧ファイル名の事故防止）", () => {
@@ -65,5 +71,57 @@ describe("フッタ・窓口ナビの統合（#164）", () => {
     const end = layoutSrc.indexOf("];", start);
     const shellKeysBlock = layoutSrc.slice(start, end);
     expect(shellKeysBlock).toContain('"nav.gazette"');
+  });
+});
+
+describe("フッタ導線順（#532）", () => {
+  it("内部ナビ href は指定した DOM 順で並ぶ", () => {
+    expect(internalHrefs).toEqual(["/about", "/gazette", "/ranking", "/vote", "/discover", "/me", "/compose"]);
+  });
+
+  it("みんなの植物とあなたの植物は隣接する", () => {
+    expect(internalHrefs.indexOf("/me") - internalHrefs.indexOf("/discover")).toBe(1);
+  });
+
+  it("内部ナビ href は重複しない", () => {
+    expect(new Set(internalHrefs).size).toBe(internalHrefs.length);
+  });
+
+  it("外部リンクは mypace、GitHub の順を維持する", () => {
+    expect(externalHrefs).toEqual(["https://mypace.llll-ll.com", "https://github.com/kako-jun/hanoba"]);
+  });
+
+  it("mypace と GitHub は内部 nav の外に置く", () => {
+    expect(internalNavSrc).not.toMatch(/mypace\.llll-ll\.com|github\.com/);
+  });
+
+  it("フッタの実在窓口3件は civicHub と同じ順になる", () => {
+    const footerCivicRoutes = internalHrefs.filter((href) => ["/gazette", "/ranking", "/vote"].includes(href!));
+    expect(footerCivicRoutes).toEqual(civicHub("ja").slice(0, 3).map((link) => link.route));
+  });
+
+  it("mobile/desktop は単一 nav の同じ DOM 順を使い、CSS order で並べ替えない", () => {
+    expect(footerSrc.match(/<nav\b/g)).toHaveLength(1);
+    expect(internalNavSrc).not.toMatch(/(?:^|\s)(?:sm:|md:|lg:)?order-/);
+  });
+});
+
+describe("フッタナビの aria（#532）", () => {
+  it.each([
+    ["ja", "フッターナビゲーション"],
+    ["en", "Footer navigation"],
+    ["es", "Navegación del pie de página"],
+    ["zh", "页脚导航"],
+  ] as const)("%s は footer.nav.aria の専用訳を持つ", (locale, expected) => {
+    expect(t(locale, "footer.nav.aria")).toBe(expected);
+  });
+
+  it("nav は初期 aria-label と言語差し替え属性を持つ", () => {
+    expect(internalNavSrc).toContain('aria-label={t(locale, "footer.nav.aria")}');
+    expect(internalNavSrc).toContain('data-i18n-aria="footer.nav.aria"');
+  });
+
+  it("MainLayout shellKeys は footer.nav.aria を含む", () => {
+    expect(shellKeysSrc).toContain('"footer.nav.aria"');
   });
 });
