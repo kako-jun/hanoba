@@ -388,6 +388,8 @@ export const ja = {
   "detail.translate.busy": "翻訳中…",
   // いいね aria は「いいね {n}」を reaction.likes.aria と共有。取得中はこの語を {n} に差す。
   "detail.likes.loading": "取得中",
+  "detail.likes.sending": "いいねを送信中",
+  "detail.likes.error": "いいねを送信できませんでした。もう一度お試しください。",
   "detail.share.aria": "X でシェア",
   "detail.share.split.aria": "X でシェア（分割）",
   "detail.share.whole": "全文",

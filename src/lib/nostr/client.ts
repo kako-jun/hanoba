@@ -24,6 +24,7 @@ import {
   buildDeletionEvent,
   buildNoteTemplate,
   buildProfileEvent,
+  buildReactionTemplate,
   buildReplyTemplate,
   type ProfileFields,
 } from "./events.ts";
@@ -300,6 +301,27 @@ export async function fetchReactionCount(eventId: string, limit = 500): Promise<
   } catch {
     return 0;
   }
+}
+
+/**
+ * 投稿へ標準 NIP-25 のいいねを publish する。
+ * 先に自分の既存反応を確認し、同じユーザーによる重複加算を防ぐ。
+ */
+export async function publishReaction(
+  targetEventId: string,
+  targetPubkey: string,
+): Promise<"published" | "already-reacted"> {
+  const pubkey = await getPublicKeyHex();
+  const ownReactions = await getPool().querySync(
+    [...GENERAL_RELAYS],
+    { kinds: [7], authors: [pubkey], "#e": [targetEventId], limit: 100 },
+    { maxWait: QUERY_MAXWAIT },
+  );
+  if (countLikes(ownReactions) > 0) return "already-reacted";
+
+  const signed = await signTemplate(buildReactionTemplate(targetEventId, targetPubkey));
+  await publishEvent(signed);
+  return "published";
 }
 
 // バッチ取得（タイムライン/discover のカード・#276）の kind:7/kind:1 上限。
