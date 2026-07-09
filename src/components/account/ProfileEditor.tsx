@@ -31,9 +31,16 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 interface Props {
   /** 外側のガラスカードを描かない（/me で名前と同じプロフィールカードに内包するとき・#104）。 */
   bare?: boolean;
+  /**
+   * 親（/me の MyGrid）が把握している最新の表示名（AccountName の onChange 経由・#525 追補）。
+   * 渡されたときだけ内部 name state をこれに同期させ、名前を新規登録/変更した直後に
+   * nameMissing ガード（編集トグルの disabled）が再読み込みなしで解ける。
+   * 未指定（undefined）なら従来どおり自力で getDisplayName()/relay から読む（後方互換）。
+   */
+  nameHint?: string | null;
 }
 
-export default function ProfileEditor({ bare = false }: Props) {
+export default function ProfileEditor({ bare = false, nameHint }: Props) {
   const t = useT(useLocale());
   const [open, setOpen] = useState(false);
   const [name, setName] = useState<string | null>(null);
@@ -100,6 +107,15 @@ export default function ProfileEditor({ bare = false }: Props) {
       }
     })();
   }, []);
+
+  // nameHint（親 AccountName の最新値）が自分の name state と食い違ったら追従する（#525 追補）。
+  // AccountName で名前を新規登録/変更しても、自分はマウント時の getDisplayName() しか見ないため
+  // nameMissing ガードが固定されたままになる袋小路を解消する。nameHint 未指定（undefined）なら
+  // このコンポーネントは従来どおり自力で読んだ値のまま（何もしない＝後方互換）。
+  useEffect(() => {
+    if (nameHint === undefined) return;
+    setName((cur) => (cur === nameHint ? cur : nameHint));
+  }, [nameHint]);
 
   // 編集したら「保存しました/失敗」表示を消す。
   function touch() {
