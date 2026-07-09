@@ -30,7 +30,7 @@ describe("10ページの市民手帳（#137）", () => {
     if (ordinances?.kind === "ordinances") expect(ordinances.ordinances).toHaveLength(5);
   });
 
-  it("市政の窓口は実在routeと近日開庁を維持する", () => {
-    expect(civicHub("ja").map((link) => link.route)).toEqual(["/vote", null, null]);
+  it("市政の窓口は実在routeと近日開庁を維持する（#525で市勢調査/ranking を追加）", () => {
+    expect(civicHub("ja").map((link) => link.route)).toEqual(["/vote", "/ranking", null, null]);
   });
 });

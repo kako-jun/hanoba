@@ -15,7 +15,10 @@ export const ja = {
   "nav.discover": "みんなの植物",
   "nav.me": "あなたの植物",
   "nav.compose": "投稿する",
-  "nav.ranking": "人気ランキング",
+  // #525: 窓口（cityHall.map.civic.3.label）と命名統一。「人気ランキング」から改称。
+  "nav.ranking": "市勢調査",
+  // #525: 住民投票へのフッタ導線（窓口 cityHall.map.civic.0.label と同名）。
+  "nav.vote": "住民投票",
   "nav.menu.open": "メニューを開く",
   "nav.menu.close": "メニューを閉じる",
   "nav.home.aria": "葉の場 Hanoba トップへ",
@@ -108,7 +111,8 @@ export const ja = {
   "meta.me.title": "あなたの植物 — Hanōba",
   "meta.me.description":
     "あなたが Hanōba に置いた植物の一覧。ここから投稿を削除できます（写真ごと）。",
-  "meta.ranking.title": "人気ランキング — Hanōba",
+  // #525: nav.ranking の見出しと命名統一（フッタ・窓口と同じ「市勢調査」）。
+  "meta.ranking.title": "市勢調査 — Hanōba",
   "meta.ranking.description":
     "Hanōba の投稿から、いま人気の品種を週次で集計。先週比（↑↓・NEW・RE）つき。",
   "meta.u.title": "市民のプロフィール — Hanōba",
@@ -512,6 +516,8 @@ export const ja = {
   "cityHall.map.civic.0.label": "住民投票",
   "cityHall.map.civic.1.label": "品評会（コンテスト）",
   "cityHall.map.civic.2.label": "市長ブログ",
+  // 市勢調査（ランキング機能・#162）の窓口項目（#525・フッタ nav.ranking と命名統一）。
+  "cityHall.map.civic.3.label": "市勢調査",
   "cityHall.map.comingSoon": "近日開庁",
   "cityHall.districts.title": "地区案内",
   "cityHall.districts.lead":

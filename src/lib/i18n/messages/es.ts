@@ -13,7 +13,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "nav.discover": "Plantas de todos",
   "nav.me": "Tus plantas",
   "nav.compose": "Publicar",
-  "nav.ranking": "Rankings",
+  "nav.ranking": "Censo municipal",
+  "nav.vote": "Urna ciudadana",
   "nav.menu.open": "Abrir menú",
   "nav.menu.close": "Cerrar menú",
   "nav.home.aria": "Inicio de Hanōba",
@@ -95,7 +96,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "meta.me.title": "Tus plantas — Hanōba",
   "meta.me.description":
     "Las plantas que has colocado en Hanōba. Aquí puedes eliminar publicaciones (fotos incluidas).",
-  "meta.ranking.title": "Rankings — Hanōba",
+  "meta.ranking.title": "Censo municipal — Hanōba",
   "meta.ranking.description":
     "Las variedades de moda ahora, contadas semanalmente a partir de las publicaciones de Hanōba, con la variación respecto a la semana anterior (↑↓, NEW, RE).",
   "meta.u.title": "Perfil de ciudadano — Hanōba",
@@ -472,6 +473,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.0.label": "Urna ciudadana",
   "cityHall.map.civic.1.label": "Exposición floral (Concurso)",
   "cityHall.map.civic.2.label": "Blog del Alcalde",
+  "cityHall.map.civic.3.label": "Censo municipal",
   "cityHall.map.comingSoon": "Próxima apertura",
   "cityHall.districts.title": "Guía de distritos",
   "cityHall.districts.lead":

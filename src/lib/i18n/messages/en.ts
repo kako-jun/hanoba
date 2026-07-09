@@ -14,7 +14,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "nav.discover": "Everyone's Plants",
   "nav.me": "Your Plants",
   "nav.compose": "Post",
-  "nav.ranking": "Rankings",
+  "nav.ranking": "Census",
+  "nav.vote": "Town Vote",
   "nav.menu.open": "Open menu",
   "nav.menu.close": "Close menu",
   "nav.home.aria": "Hanōba home",
@@ -94,7 +95,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "meta.me.title": "Your Plants — Hanōba",
   "meta.me.description":
     "The plants you've placed in Hanōba. You can delete posts here (photos and all).",
-  "meta.ranking.title": "Rankings — Hanōba",
+  "meta.ranking.title": "Census — Hanōba",
   "meta.ranking.description":
     "The varieties trending now, tallied weekly from Hanōba's posts — with week-over-week change (↑↓, NEW, RE).",
   "meta.u.title": "Citizen profile — Hanōba",
@@ -462,6 +463,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.0.label": "Town Vote",
   "cityHall.map.civic.1.label": "Exhibition (Contest)",
   "cityHall.map.civic.2.label": "Mayor's Blog",
+  "cityHall.map.civic.3.label": "Census",
   "cityHall.map.comingSoon": "Opening soon",
   "cityHall.districts.title": "District Guide",
   "cityHall.districts.lead":

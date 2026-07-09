@@ -13,7 +13,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "nav.discover": "大家的植物",
   "nav.me": "你的植物",
   "nav.compose": "发布",
-  "nav.ranking": "排行榜",
+  "nav.ranking": "市情普查",
+  "nav.vote": "市民投票",
   "nav.menu.open": "打开菜单",
   "nav.menu.close": "关闭菜单",
   "nav.home.aria": "Hanōba 首页",
@@ -92,7 +93,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "meta.me.title": "你的植物 — Hanōba",
   "meta.me.description":
     "你在 Hanōba 放下的植物。你可以在这里删除帖子（连同照片）。",
-  "meta.ranking.title": "排行榜 — Hanōba",
+  "meta.ranking.title": "市情普查 — Hanōba",
   "meta.ranking.description":
     "当下正流行的品种，每周从 Hanōba 的帖子中统计——并附上较上周的变化（↑↓、NEW、RE）。",
   "meta.u.title": "市民主页 — Hanōba",
@@ -443,6 +444,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.0.label": "市民投票",
   "cityHall.map.civic.1.label": "花展（比赛）",
   "cityHall.map.civic.2.label": "市长博客",
+  "cityHall.map.civic.3.label": "市情普查",
   "cityHall.map.comingSoon": "即将开放",
   "cityHall.districts.title": "街区指南",
   "cityHall.districts.lead":
