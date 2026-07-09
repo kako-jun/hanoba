@@ -110,7 +110,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "me.lead":
     "The ones you've placed. Delete one and the post and its photos go together.",
   "ranking.lead":
-    "The varieties trending now, tallied weekly from Hanōba's posts — with week-over-week change (↑↓, NEW, RE). Everyone's posts move the chart.",
+    "Ahem. This is the census office. The varieties trending now are tallied weekly from citizens' posts — with week-over-week change (↑↓, NEW, RE) noted alongside. Every citizen's post moves this very chart.",
 
   "vote.h1": "Residents' Vote",
   "vote.intro":
@@ -525,7 +525,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.ordinance.0.text":
     "The rent for land in the City of Hanōba shall be free, so long as a plant is grown.",
   "cityHall.ordinance.0.commentary":
-    "Ahem. The will to grow is itself your rent. To water, to gaze upon a leaf—with that, you have paid in full.",
+    "The will to grow is itself your rent. To water, to gaze upon a leaf—with that, you have paid in full.",
   "cityHall.ordinance.1.article": "Article II (Plot)",
   "cityHall.ordinance.1.text":
     "To a single plot shall be added one square photograph, and a word.",

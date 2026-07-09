@@ -106,7 +106,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "discover.lead": "和 Hanōba 的帖子一起，浏览整个 Nostr（#plantstr）的植物。",
   "me.lead": "你放下的那些。删除一篇，帖子和它的照片会一同消失。",
   "ranking.lead":
-    "当下正流行的品种，每周从 Hanōba 的帖子中统计——并附上较上周的变化（↑↓、NEW、RE）。大家的帖子都在推动这张图表。",
+    "咳咳。这里是市情普查处。当下正流行的品种，每周从市民们的帖子中统计——并附上较上周的变化（↑↓、NEW、RE）。每一位市民的帖子，都在推动这张图表。",
 
   "vote.h1": "居民投票",
   "vote.intro":
@@ -500,7 +500,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.ordinance.0.text":
     "Hanōba 市的土地租金应当免费，只要其上种着一株植物。",
   "cityHall.ordinance.0.commentary":
-    "咳咳。栽培的意愿本身就是你的租金。浇水、凝视一片叶子——如此，你便已付清了全款。",
+    "栽培的意愿本身就是你的租金。浇水、凝视一片叶子——如此，你便已付清了全款。",
   "cityHall.ordinance.1.article": "第二条（地块）",
   "cityHall.ordinance.1.text": "每一块地都应附上一张方形照片，和一个词。",
   "cityHall.ordinance.1.commentary":
