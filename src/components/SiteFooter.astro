@@ -38,13 +38,13 @@ const external = [
             {...citizenSwapAttrs}
           >{aboutLabelVisitor(locale)}</span>
         </a>
-        <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.discover">{t(locale, "nav.discover")}</a>
-        <a href="/ranking" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.ranking">{t(locale, "nav.ranking")}</a>
-        {/* 住民投票（/vote）。かつては手帳（市政の窓口）だけが入口だったが、#525 で窓口と命名・導線を
-            統一しフッタにも常設する（住民投票を手帳の孤立導線にしない）。 */}
-        <a href="/vote" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.vote">{t(locale, "nav.vote")}</a>
-        {/* 市政だより（/gazette）。#525 と同じ方針で、手帳（市政の窓口）と命名・導線を統一しフッタにも常設する（#164）。 */}
+        {/* 市政の窓口は civicHub と同じ実在順（市政だより→市勢調査→住民投票）。DOM順が
+            デスクトップの左→右／モバイル折返しの上→下を兼ねる（#532）。 */}
         <a href="/gazette" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.gazette">{t(locale, "nav.gazette")}</a>
+        <a href="/ranking" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.ranking">{t(locale, "nav.ranking")}</a>
+        <a href="/vote" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.vote">{t(locale, "nav.vote")}</a>
+        {/* 対になる植物一覧は隣接させる（みんな→あなた）。 */}
+        <a href="/discover" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.discover">{t(locale, "nav.discover")}</a>
         <a href="/me" class="text-ha-ink/80 hover:text-ha-green transition-colors" data-i18n="nav.me">{t(locale, "nav.me")}</a>
         <a href="/compose" class="inline-flex items-center gap-[5px] leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
           <Icon name="sprout" className="w-4 h-4 shrink-0" /><span data-i18n="nav.compose">{t(locale, "nav.compose")}</span>
