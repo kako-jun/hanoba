@@ -321,6 +321,9 @@ export async function publishReaction(
 
   const signed = await signTemplate(buildReactionTemplate(targetEventId, targetPubkey));
   await publishEvent(signed);
+  if (!(await confirmEventStored(signed.id))) {
+    throw new Error("いいねを読み取りリレーで確認できませんでした");
+  }
   return "published";
 }
 

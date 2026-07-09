@@ -73,6 +73,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [liking, setLiking] = useState(false);
   const [likeError, setLikeError] = useState(false);
+  // 初期件数取得と送信の競合、および同一コンポーネントでの投稿切替を識別する。
+  // revision > 0 は現在の投稿で送信成功済み＝それ以前に開始した初期取得結果を捨てる。
+  const reactionStateRef = useRef({ postId: post.id, revision: 0 });
   const [photoIndex, setPhotoIndex] = useState(() => clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
   const locale = useLocale();
   const t = useT(locale);
@@ -158,11 +161,16 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // アンマウント後・post 切替後の setState を alive フラグで防ぐ。
   useEffect(() => {
     let alive = true;
+    reactionStateRef.current = { postId: post.id, revision: 0 };
+    const revision = reactionStateRef.current.revision;
     setLikeCount(null);
     setLiking(false);
     setLikeError(false);
     fetchReactionCount(post.id).then((count) => {
-      if (alive) setLikeCount(count);
+      const current = reactionStateRef.current;
+      if (alive && current.postId === post.id && current.revision === revision) {
+        setLikeCount(count);
+      }
     });
     return () => {
       alive = false;
@@ -176,12 +184,15 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     try {
       const result = await publishReaction(post.id, post.pubkey);
       if (result === "published") {
+        // post 切替後に旧投稿の送信が完了しても、新投稿の件数を変更しない。
+        if (reactionStateRef.current.postId !== post.id) return;
+        reactionStateRef.current.revision += 1;
         setLikeCount((count) => (count === null ? 1 : count + 1));
       }
     } catch {
-      setLikeError(true);
+      if (reactionStateRef.current.postId === post.id) setLikeError(true);
     } finally {
-      setLiking(false);
+      if (reactionStateRef.current.postId === post.id) setLiking(false);
     }
   }
 
@@ -431,7 +442,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   </a>
                 );
               })()}
-              <span className="flex shrink-0 items-center gap-3">
+              <span className="flex shrink-0 items-center gap-1">
                 {/* いいね（#529）。標準 NIP-25 を1ユーザー1件送る。黄色い花アイコン（#116）。 */}
                 <button
                   type="button"
@@ -445,7 +456,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                         })
                   }
                   aria-describedby={likeError ? "post-like-error" : undefined}
-                  className="inline-flex min-w-7 min-h-7 items-center justify-center gap-[5px] rounded-full px-1 text-ha-ink/70 hover:bg-ha-ink/5 hover:text-ha-yellow transition-colors disabled:cursor-wait disabled:opacity-60"
+                  className="inline-flex min-w-11 min-h-11 items-center justify-center gap-[5px] rounded-full px-2 text-ha-ink/70 hover:bg-ha-ink/5 hover:text-ha-yellow transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
                   <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
                   <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
@@ -467,7 +478,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                         openXShare(shareParts[0] ?? "");
                       }
                     }}
-                    className="grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-ha-ink/5 transition-colors"
+                    className="grid place-items-center w-11 h-11 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-ha-ink/5 transition-colors"
                   >
                     <Icon name="x" className="w-4 h-4" />
                   </button>
