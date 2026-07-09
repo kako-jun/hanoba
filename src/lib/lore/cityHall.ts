@@ -11,8 +11,8 @@
 import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import {
-  CREST_SPECIALTIES_IMAGE_SRC,
-  DISTRICTS_IMAGE_SRC,
+  CITY_CREST_SRC,
+  DISTRICT_IMAGE_SRCS,
   WELCOME_VISTA_SRC,
   MAP_IMAGE_SRC,
 } from "./cityHallAssets.ts";
@@ -136,12 +136,16 @@ function page1(locale: Locale): BookPage {
     title: t(locale, "cityHall.welcome.title"),
     blocks: [
       { kind: "para", text: t(locale, "cityHall.welcome.0") },
+      { kind: "image", src: WELCOME_VISTA_SRC, alt: t(locale, "cityHall.welcome.image.alt") },
+      { kind: "para", text: t(locale, "cityHall.welcome.1") },
+      { kind: "para", text: t(locale, "cityHall.welcome.2") },
+      { kind: "note", text: t(locale, "cityHall.welcome.3") },
     ],
   };
 }
 
 /**
- * 市政の窓口（civic strip）。巻末P20に置く窓口。
+ * 市政の窓口（civic strip）。全ページ下部に共通表示する窓口。
  * 機能導線の本体（discover/ranking/me/compose）は
  * ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここには手帳が唯一の入口だった
  * 住民投票（/vote）と、近日開庁の品評会・市長ブログだけを並べる。実在ルートのみ機能、未開設は「近日開庁」。
@@ -158,12 +162,12 @@ export function civicHub(locale: Locale = DEFAULT_LOCALE): HubLink[] {
 /**
  * P2 街の地図（図鑑の読み物ページ・#469）。ロア（名所＝ランドマーク）を読み物として見せる。
  * 機能導線の本体（discover/ranking/me/compose）はヘッダ/フッタ（SiteHeader/SiteFooter）が持つので
- * 手帳からは外す。「市政の窓口」strip は巻末P20に置く。
+ * 手帳からは外す。「市政の窓口」strip は全ページ下部に共通表示する。
  */
 function mapPage(locale: Locale): BookPage {
   return {
     id: "map",
-    page: 4,
+    page: 2,
     kind: "map",
     title: t(locale, "cityHall.map.title"),
     lead: t(locale, "cityHall.map.lead"),
@@ -187,34 +191,32 @@ function mapPage(locale: Locale): BookPage {
   };
 }
 
-function chroniclePage(locale: Locale, page: number, entryIndexes: (0 | 1 | 2 | 3)[]): BookPage {
+function chroniclePage(locale: Locale): BookPage {
   return {
-    id: `chronicle-${page - 12}`,
-    page,
+    id: "chronicle",
+    page: 9,
     kind: "chronicle",
     title: t(locale, "cityHall.chronicle.title"),
     lead: t(locale, "cityHall.chronicle.lead"),
-    entries: entryIndexes.map((index) => {
-      const keys = CHRONICLE_KEYS[index];
+    entries: CHRONICLE_KEYS.map((keys) => {
       return { era: t(locale, keys.era), text: t(locale, keys.text) };
     }),
     note: t(locale, "cityHall.chronicle.note"),
   };
 }
 
-function ordinancePage(locale: Locale, page: number, index: 0 | 1 | 2 | 3 | 4): BookPage {
-  const keys = ORDINANCE_KEYS[index];
+function ordinancePage(locale: Locale): BookPage {
   return {
-    id: `ordinance-${index + 1}`,
-    page,
+    id: "ordinances",
+    page: 10,
     kind: "ordinances",
     title: t(locale, "cityHall.ordinance.title"),
     lead: t(locale, "cityHall.ordinance.lead"),
-    ordinances: [{
+    ordinances: ORDINANCE_KEYS.map((keys) => ({
       article: t(locale, keys.article),
       text: t(locale, keys.text),
       commentary: t(locale, keys.commentary),
-    }],
+    })),
   };
 }
 
@@ -222,31 +224,25 @@ function guide(id: string, page: number, title: string, lead: string, image?: st
   return { id, page, kind: "guide", title, lead, image, note };
 }
 
-/** 全20ページ（順序固定・全開放）を locale で組み立てる。 */
+/** 全10ページ（順序固定・全開放）を locale で組み立てる。 */
 export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
   const districts = DISTRICT_KEYS.map((keys, index) =>
     guide(
       `district-${index + 1}`,
-      index + 6,
+      index + 3,
       t(locale, keys.name),
       t(locale, keys.text),
-      DISTRICTS_IMAGE_SRC,
+      DISTRICT_IMAGE_SRCS[index],
       t(locale, "cityHall.districts.note"),
     ),
   );
   return [
     page1(locale),
-    guide("settlement", 2, t(locale, "cityHall.welcome.title"), t(locale, "cityHall.welcome.1"), undefined, t(locale, "cityHall.welcome.3")),
-    guide("vista", 3, t(locale, "cityHall.guide.vista"), t(locale, "cityHall.welcome.2"), WELCOME_VISTA_SRC),
     mapPage(locale),
-    guide("landmarks", 5, t(locale, "cityHall.guide.landmarks"), t(locale, "cityHall.map.landmark.0.text"), MAP_IMAGE_SRC, t(locale, "cityHall.map.landmark.1.text")),
     ...districts,
-    guide("crest", 11, t(locale, "cityHall.guide.crest"), t(locale, "cityHall.guide.crest.text"), CREST_SPECIALTIES_IMAGE_SRC),
-    guide("specialties", 12, t(locale, "cityHall.guide.specialties"), t(locale, "cityHall.guide.specialties.text"), CREST_SPECIALTIES_IMAGE_SRC),
-    chroniclePage(locale, 13, [0, 1]),
-    chroniclePage(locale, 14, [2]),
-    chroniclePage(locale, 15, [3]),
-    ...ORDINANCE_KEYS.map((_, index) => ordinancePage(locale, index + 16, index as 0 | 1 | 2 | 3 | 4)),
+    guide("crest", 8, t(locale, "cityHall.guide.crest"), t(locale, "cityHall.guide.crest.text"), CITY_CREST_SRC, t(locale, "cityHall.guide.specialties.text")),
+    chroniclePage(locale),
+    ordinancePage(locale),
   ];
 }
 
@@ -261,5 +257,5 @@ export const MAYOR_NAME = mayorName(DEFAULT_LOCALE);
 /** 親しみのある短い呼び名（ja 既定・#262）。 */
 export const MAYOR_SHORT_NAME = mayorShortName(DEFAULT_LOCALE);
 
-/** 全20ページ（順序固定・ja 既定）。 */
+/** 全10ページ（順序固定・ja 既定）。 */
 export const BOOK_PAGES: BookPage[] = buildCityHallBook(DEFAULT_LOCALE);

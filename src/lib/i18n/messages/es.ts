@@ -497,7 +497,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.guide.vista": "Vista de la ciudad",
   "cityHall.guide.landmarks": "Río de las Venas y lugares",
   "cityHall.guide.crest": "Escudo cívico",
-  "cityHall.guide.crest.text": "Una hoja, el Río de las Venas ramificado y una parcela cuadrada en su centro: el escudo de Hanōba.",
+  "cityHall.guide.crest.text": "Un fondo marfil, dos pilares verdes y una barra rosa forman la letra H: la bandera y emblema cívico de Hanōba.",
   "cityHall.guide.specialties": "Especialidades locales",
   "cityHall.guide.specialties.text": "Follaje, cosechas, frutales, semillas y brotes, y herramientas de cuidado: el orgullo de cinco distritos.",
   "cityHall.nav.jumpBack": "Retroceder 5 páginas",

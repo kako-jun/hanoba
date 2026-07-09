@@ -536,7 +536,7 @@ export const ja = {
   "cityHall.guide.vista": "街の全景",
   "cityHall.guide.landmarks": "葉脈川と名所",
   "cityHall.guide.crest": "市章",
-  "cityHall.guide.crest.text": "一枚の葉、枝分かれする葉脈川、その中心の正方形区画。これがハノーバ市章である。",
+  "cityHall.guide.crest.text": "生成りの地、二本の緑の柱、一本のピンクの横棒。市名の頭文字 H を図案化した、ハノーバの市旗であり市章である。",
   "cityHall.guide.specialties": "特産物",
   "cityHall.guide.specialties.text": "観葉植物、畑の実り、果樹、種と芽、そして世話の道具。五地区の誇りをここに記す。",
   "cityHall.nav.jumpBack": "5ページ戻る",

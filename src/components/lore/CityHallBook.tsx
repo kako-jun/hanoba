@@ -41,14 +41,14 @@ import {
 // = 図鑑（集めて埋める読み物・#469）。機能導線（discover/ranking/me/compose）は
 //   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアに割り切る。
 //
-// #137/#510: レベル解禁ゲートを撤去し、全20ページを最初から閲覧可能にした。市民レベル（Nostr 由来
+// #137/#510: レベル解禁ゲートを撤去し、全10ページを最初から閲覧可能にした。市民レベル（Nostr 由来
 // ＝backendless）はページの閲覧可否を司らず、タイトルの進捗バッジ（Ln）としてだけ残る。
-// 初期ページは URL指定→保存位置→1p。「市政の窓口」（civicHub）は巻末p20に集約する。
+// 初期ページは URL指定→保存位置→1p。「市政の窓口」（civicHub）は全ページ下部に共通表示する。
 //
 // client:load。鍵・relay 取得はクライアントのみ（getDisplayName / getPublicKeyHex / fetchMyPosts）。
 // SSR では window/localStorage を触らない（keys.ts が SSR 安全・取得は useEffect 内）。
 
-// ページ数は locale 非依存（20ページ固定）。既定 locale で1度組んで length を取る。
+// ページ数は locale 非依存（10ページ固定）。既定 locale で1度組んで length を取る。
 const TOTAL_PAGES = buildCityHallBook(DEFAULT_LOCALE).length;
 export const BOOK_PAGE_STORAGE_KEY = "hanoba:citizen-handbook-page";
 
@@ -326,24 +326,8 @@ export default function CityHallBook({
             <PageContent page={current} />
           </div>
 
-          {/* 市政の窓口は巻末P20だけに置く。 */}
-          {page === TOTAL_PAGES && <CivicWindows />}
-
-          <div className="grid grid-cols-4 gap-2">
-            <button type="button" onClick={() => goTo(1)} disabled={page === 1} aria-label={t("cityHall.nav.first")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">|←</button>
-            <button type="button" onClick={() => goTo(page - 5)} disabled={page === 1} aria-label={t("cityHall.nav.jumpBack")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">−5</button>
-            <button type="button" onClick={() => goTo(page + 5)} disabled={page === TOTAL_PAGES} aria-label={t("cityHall.nav.jumpForward")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">+5</button>
-            <button type="button" onClick={() => goTo(TOTAL_PAGES)} disabled={page === TOTAL_PAGES} aria-label={t("cityHall.nav.last")} className="rounded-full px-2 py-2 text-xs text-ha-green-deep disabled:opacity-30">→|</button>
-          </div>
-          <label className="flex items-center gap-2 text-xs text-ha-ink/60">
-            <span>{t("cityHall.nav.toc")}</span>
-            <select value={current.id} onChange={(event) => {
-              const selected = bookPages.find((item) => item.id === event.target.value);
-              if (selected !== undefined) goTo(selected.page);
-            }} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/10 px-2 py-2 text-ha-ink">
-              {bookPages.map((item) => <option key={item.id} value={item.id}>{item.page}. {item.title}</option>)}
-            </select>
-          </label>
+          {/* 市政の窓口は全ページ下部に常設する。 */}
+          <CivicWindows />
 
           <nav
             className="flex items-center justify-between gap-3 pt-1"
@@ -367,16 +351,27 @@ export default function CityHallBook({
               {t("cityHall.nav.indicator", { page, total: TOTAL_PAGES })}
             </span>
 
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={!canNext}
-              aria-label={t("cityHall.nav.next")}
-              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              {t("cityHall.nav.next.label")}
-              <Icon name="chevron" className="w-4 h-4 -rotate-90" />
-            </button>
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canNext}
+                aria-label={t("cityHall.nav.next")}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                {t("cityHall.nav.next.label")}
+                <Icon name="chevron" className="w-4 h-4 -rotate-90" />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTo(TOTAL_PAGES)}
+                disabled={!canNext}
+                aria-label={t("cityHall.nav.last")}
+                className="rounded-full px-3 py-2 text-sm font-medium text-ha-green-deep hover:bg-ha-green/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                →|
+              </button>
+            </div>
           </nav>
         </div>
       </section>
@@ -385,7 +380,7 @@ export default function CityHallBook({
 }
 
 /**
- * 市政の窓口（civic strip）。巻末P20に置く導線。
+ * 市政の窓口（civic strip）。全ページ下部に置く導線。
  * 住民投票（/vote・#160 開庁）はヘッダ/フッタに無く手帳が唯一の入口なので健在。品評会（#161）・
  * 市長ブログ（#164）は近日開庁のまま並ぶ。地図本体との間は「にじみ」（.ha-bleed）の柔らかい境界で
  * 区切る（#263 踏襲）。開庁＝リンク／近日開庁＝非リンク（HubLinkItem が出し分ける）。
@@ -494,7 +489,7 @@ function PageContent({ page }: { page: BookPage }) {
                   key={i}
                   src={b.src}
                   alt={b.alt}
-                  className="mx-auto w-full max-w-[170px] rounded-xl object-cover"
+                  className="mx-auto w-full max-w-[280px] rounded-xl object-cover"
                 />
               );
             }
@@ -536,7 +531,7 @@ function PageContent({ page }: { page: BookPage }) {
             <img
               src={page.image}
               alt={page.title}
-              className="mx-auto w-full max-w-[170px] rounded-xl object-cover"
+              className="mx-auto w-full max-w-[280px] rounded-xl object-cover"
             />
           ) : (
             // 仮置きフレーム＝「絵は近日」の軽い未完感（ロック頁の veil ほど沈めない）。
@@ -563,7 +558,7 @@ function PageContent({ page }: { page: BookPage }) {
               </li>
             ))}
           </ul>
-          {/* 地図の注記。市政の窓口は巻末P20に置く。 */}
+          {/* 地図の注記。市政の窓口はページ共通領域に置く。 */}
           <p className="text-xs text-ha-ink/50 [word-break:auto-phrase]">
             {page.note}
           </p>

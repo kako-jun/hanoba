@@ -464,7 +464,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.guide.vista": "城市全景",
   "cityHall.guide.landmarks": "叶脉河与名胜",
   "cityHall.guide.crest": "市徽",
-  "cityHall.guide.crest.text": "一片叶、分叉的叶脉河，以及中心的方形地块——这便是 Hanōba 市徽。",
+  "cityHall.guide.crest.text": "米色底面、两根绿色立柱与一条粉色横杠组成字母 H——这就是 Hanōba 的市旗与市徽。",
   "cityHall.guide.specialties": "特产",
   "cityHall.guide.specialties.text": "观叶植物、田园收成、果树、种子嫩芽与养护工具，是五个街区的骄傲。",
   "cityHall.nav.jumpBack": "后退5页",
