@@ -497,8 +497,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "cityHall.guide.specialties.text": "Foliage, field produce, fruit trees, seeds and sprouts, and the tools of care: the pride of five districts.",
   "cityHall.nav.jumpBack": "Back 5 pages",
   "cityHall.nav.jumpForward": "Forward 5 pages",
-  "cityHall.nav.first": "First page",
-  "cityHall.nav.last": "Last page",
+  "book.nav.first": "First page",
+  "book.nav.last": "Last page",
   "cityHall.nav.toc": "Contents",
   "cityHall.chronicle.title": "Chronicle",
   "cityHall.chronicle.lead":
@@ -553,10 +553,10 @@ export const en: Partial<Record<MessageKey, string>> = {
     "Ahem. You are now an old friend of the city. I have left the inner rooms open for you.",
   // CityHallBook UI chrome.
   "cityHall.mayorTitle": "Mayor {name}",
-  "cityHall.nav.aria": "Turn the page",
-  "cityHall.nav.prev": "Previous page",
-  "cityHall.nav.prev.label": "Back",
-  "cityHall.nav.next": "Next page",
-  "cityHall.nav.next.label": "Next",
-  "cityHall.nav.indicator": "{page} / {total}",
+  "book.nav.aria": "Turn the page",
+  "book.nav.prev": "Previous page",
+  "book.nav.prev.label": "Back",
+  "book.nav.next": "Next page",
+  "book.nav.next.label": "Next",
+  "book.nav.indicator": "{page} / {total}",
 };

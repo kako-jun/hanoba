@@ -551,8 +551,8 @@ export const ja = {
   "cityHall.guide.specialties.text": "観葉植物、畑の実り、果樹、種と芽、そして世話の道具。五地区の誇りをここに記す。",
   "cityHall.nav.jumpBack": "5ページ戻る",
   "cityHall.nav.jumpForward": "5ページ進む",
-  "cityHall.nav.first": "最初のページ",
-  "cityHall.nav.last": "最後のページ",
+  "book.nav.first": "最初のページ",
+  "book.nav.last": "最後のページ",
   "cityHall.nav.toc": "目次",
   "cityHall.chronicle.title": "沿革",
   "cityHall.chronicle.lead":
@@ -603,12 +603,12 @@ export const ja = {
     "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
   // CityHallBook の UI クローム（肖像脇の呼び名・めくり操作・ページ表示）。
   "cityHall.mayorTitle": "{name}市長",
-  "cityHall.nav.aria": "ページめくり",
-  "cityHall.nav.prev": "前のページ",
-  "cityHall.nav.prev.label": "前",
-  "cityHall.nav.next": "次のページ",
-  "cityHall.nav.next.label": "次",
-  "cityHall.nav.indicator": "{page} / {total}",
+  "book.nav.aria": "ページめくり",
+  "book.nav.prev": "前のページ",
+  "book.nav.prev.label": "前",
+  "book.nav.next": "次のページ",
+  "book.nav.next.label": "次",
+  "book.nav.indicator": "{page} / {total}",
 } as const;
 
 /** 全文言キーの union（ja を単一ソースに型を導出する）。 */

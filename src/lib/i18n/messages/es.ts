@@ -507,8 +507,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.guide.specialties.text": "Follaje, cosechas, frutales, semillas y brotes, y herramientas de cuidado: el orgullo de cinco distritos.",
   "cityHall.nav.jumpBack": "Retroceder 5 páginas",
   "cityHall.nav.jumpForward": "Avanzar 5 páginas",
-  "cityHall.nav.first": "Primera página",
-  "cityHall.nav.last": "Última página",
+  "book.nav.first": "Primera página",
+  "book.nav.last": "Última página",
   "cityHall.nav.toc": "Índice",
   "cityHall.chronicle.title": "Crónica",
   "cityHall.chronicle.lead":
@@ -563,10 +563,10 @@ export const es: Partial<Record<MessageKey, string>> = {
     "Ejem. Ahora eres un viejo amigo de la ciudad. He dejado abiertas las salas interiores para ti.",
   // Elementos de la interfaz de CityHallBook.
   "cityHall.mayorTitle": "Alcalde {name}",
-  "cityHall.nav.aria": "Pasar la página",
-  "cityHall.nav.prev": "Página anterior",
-  "cityHall.nav.prev.label": "Atrás",
-  "cityHall.nav.next": "Página siguiente",
-  "cityHall.nav.next.label": "Siguiente",
-  "cityHall.nav.indicator": "{page} / {total}",
+  "book.nav.aria": "Pasar la página",
+  "book.nav.prev": "Página anterior",
+  "book.nav.prev.label": "Atrás",
+  "book.nav.next": "Página siguiente",
+  "book.nav.next.label": "Siguiente",
+  "book.nav.indicator": "{page} / {total}",
 };
