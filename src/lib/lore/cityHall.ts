@@ -56,6 +56,29 @@ export interface Ordinance {
   commentary: string; // 市長解説
 }
 
+const DISTRICT_KEYS = [
+  { name: "cityHall.districts.0.name", text: "cityHall.districts.0.text" },
+  { name: "cityHall.districts.1.name", text: "cityHall.districts.1.text" },
+  { name: "cityHall.districts.2.name", text: "cityHall.districts.2.text" },
+  { name: "cityHall.districts.3.name", text: "cityHall.districts.3.text" },
+  { name: "cityHall.districts.4.name", text: "cityHall.districts.4.text" },
+] as const;
+
+const CHRONICLE_KEYS = [
+  { era: "cityHall.chronicle.entry.0.era", text: "cityHall.chronicle.entry.0.text" },
+  { era: "cityHall.chronicle.entry.1.era", text: "cityHall.chronicle.entry.1.text" },
+  { era: "cityHall.chronicle.entry.2.era", text: "cityHall.chronicle.entry.2.text" },
+  { era: "cityHall.chronicle.entry.3.era", text: "cityHall.chronicle.entry.3.text" },
+] as const;
+
+const ORDINANCE_KEYS = [
+  { article: "cityHall.ordinance.0.article", text: "cityHall.ordinance.0.text", commentary: "cityHall.ordinance.0.commentary" },
+  { article: "cityHall.ordinance.1.article", text: "cityHall.ordinance.1.text", commentary: "cityHall.ordinance.1.commentary" },
+  { article: "cityHall.ordinance.2.article", text: "cityHall.ordinance.2.text", commentary: "cityHall.ordinance.2.commentary" },
+  { article: "cityHall.ordinance.3.article", text: "cityHall.ordinance.3.text", commentary: "cityHall.ordinance.3.commentary" },
+  { article: "cityHall.ordinance.4.article", text: "cityHall.ordinance.4.text", commentary: "cityHall.ordinance.4.commentary" },
+] as const;
+
 /** 本の 1 ページ。種類ごとに描画するデータ形を持つ。 */
 export type BookPage =
   | { id: string; page: number; kind: "welcome"; title: string; blocks: Block[] }
@@ -164,22 +187,23 @@ function mapPage(locale: Locale): BookPage {
   };
 }
 
-function chroniclePage(locale: Locale, page: number, entryIndexes: number[]): BookPage {
+function chroniclePage(locale: Locale, page: number, entryIndexes: (0 | 1 | 2 | 3)[]): BookPage {
   return {
     id: `chronicle-${page - 12}`,
     page,
     kind: "chronicle",
     title: t(locale, "cityHall.chronicle.title"),
     lead: t(locale, "cityHall.chronicle.lead"),
-    entries: entryIndexes.map((index) => ({
-      era: t(locale, `cityHall.chronicle.entry.${index}.era`),
-      text: t(locale, `cityHall.chronicle.entry.${index}.text`),
-    })),
+    entries: entryIndexes.map((index) => {
+      const keys = CHRONICLE_KEYS[index];
+      return { era: t(locale, keys.era), text: t(locale, keys.text) };
+    }),
     note: t(locale, "cityHall.chronicle.note"),
   };
 }
 
-function ordinancePage(locale: Locale, page: number, index: number): BookPage {
+function ordinancePage(locale: Locale, page: number, index: 0 | 1 | 2 | 3 | 4): BookPage {
+  const keys = ORDINANCE_KEYS[index];
   return {
     id: `ordinance-${index + 1}`,
     page,
@@ -187,9 +211,9 @@ function ordinancePage(locale: Locale, page: number, index: number): BookPage {
     title: t(locale, "cityHall.ordinance.title"),
     lead: t(locale, "cityHall.ordinance.lead"),
     ordinances: [{
-      article: t(locale, `cityHall.ordinance.${index}.article`),
-      text: t(locale, `cityHall.ordinance.${index}.text`),
-      commentary: t(locale, `cityHall.ordinance.${index}.commentary`),
+      article: t(locale, keys.article),
+      text: t(locale, keys.text),
+      commentary: t(locale, keys.commentary),
     }],
   };
 }
@@ -200,12 +224,12 @@ function guide(id: string, page: number, title: string, lead: string, image?: st
 
 /** 全20ページ（順序固定・全開放）を locale で組み立てる。 */
 export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
-  const districts = Array.from({ length: 5 }, (_, index) =>
+  const districts = DISTRICT_KEYS.map((keys, index) =>
     guide(
       `district-${index + 1}`,
       index + 6,
-      t(locale, `cityHall.districts.${index}.name`),
-      t(locale, `cityHall.districts.${index}.text`),
+      t(locale, keys.name),
+      t(locale, keys.text),
       DISTRICTS_IMAGE_SRC,
       t(locale, "cityHall.districts.note"),
     ),
@@ -222,7 +246,7 @@ export function buildCityHallBook(locale: Locale = DEFAULT_LOCALE): BookPage[] {
     chroniclePage(locale, 13, [0, 1]),
     chroniclePage(locale, 14, [2]),
     chroniclePage(locale, 15, [3]),
-    ...Array.from({ length: 5 }, (_, index) => ordinancePage(locale, index + 16, index)),
+    ...ORDINANCE_KEYS.map((_, index) => ordinancePage(locale, index + 16, index as 0 | 1 | 2 | 3 | 4)),
   ];
 }
 
