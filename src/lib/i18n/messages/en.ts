@@ -21,6 +21,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "nav.menu.close": "Close menu",
   "nav.home.aria": "Hanōba home",
 
+  "footer.nav.aria": "Footer navigation",
   "footer.tagline":
     "Hanōba — an imaginary city of plant lovers — grown by all of us.",
 

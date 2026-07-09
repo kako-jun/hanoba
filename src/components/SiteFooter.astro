@@ -28,7 +28,11 @@ const external = [
   <div class="hanoba-skyline" aria-hidden="true"></div>
   <div class="mx-auto max-w-3xl px-5 py-7 flex flex-col gap-5 text-sm">
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <nav class="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <nav
+        aria-label={t(locale, "footer.nav.aria")}
+        data-i18n-aria="footer.nav.aria"
+        class="flex flex-wrap items-center gap-x-5 gap-y-2"
+      >
         <a href="/about" class="inline-flex items-center gap-[5px] leading-none text-ha-ink/80 hover:text-ha-green transition-colors">
           <Icon name="info" className="w-4 h-4 shrink-0" />{/* about ラベルは (言語)×(訪問者/市民) の 2 軸（#390）。訪問者＝言語 swap（#147）／市民＝名乗り swap（#262）が言語追従。 */}
           <span
