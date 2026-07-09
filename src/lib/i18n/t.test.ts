@@ -92,3 +92,20 @@ describe("カタログ整合", () => {
     }
   });
 });
+
+// #525 で新規追加/改称したキーは、ja へのグレースフル fallback に頼らず全 locale に実訳を持つことを
+// 固定する（fallback で通ってしまうと、訳し忘れが気付かれず英語圏に日本語が漏れる・過去事故パターン）。
+describe("新規キーの多言語完備（#525）", () => {
+  const CATALOGS: Record<string, Partial<Record<string, string>>> = { ja, en, es, zh };
+
+  it.each(["nav.vote", "account.profile.editHint", "cityHall.map.civic.3.label", "nav.ranking"])(
+    "%s は ja/en/es/zh 全てに空でない値を持つ",
+    (key) => {
+      for (const [locale, catalog] of Object.entries(CATALOGS)) {
+        const value = catalog[key];
+        expect(value, `${locale}.${key} が欠落している`).toBeTypeOf("string");
+        expect(value!.length, `${locale}.${key} が空文字`).toBeGreaterThan(0);
+      }
+    },
+  );
+});

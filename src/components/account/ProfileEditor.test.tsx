@@ -18,6 +18,10 @@ vi.mock("../../lib/nostr/upload.ts", () => ({
 }));
 
 import ProfileEditor from "./ProfileEditor.tsx";
+// keys.ts はモックしない（実装のまま使う）。getDisplayName の明示的な null 化（空文字→null）を
+// 直接 assert するために、実装をそのまま import する（#525）。
+import { getDisplayName } from "../../lib/nostr/keys.ts";
+import { LocaleProvider } from "../../lib/i18n/index.ts";
 
 describe("ProfileEditor (#35 Piece3)", () => {
   beforeEach(() => {
@@ -97,6 +101,54 @@ describe("ProfileEditor (#35 Piece3)", () => {
     localStorage.removeItem("hanoba:name");
     render(<ProfileEditor />);
     expect(screen.getByText("ハンドルネーム 未設定")).toBeInTheDocument();
+  });
+
+  it("名前が空文字なら getDisplayName の明示的な null 化と一致して disabled になる（#525）", () => {
+    localStorage.setItem("hanoba:name", "");
+    // ProfileEditor の nameMissing 判定が経由する getDisplayName() 自体も null を返すことを固定する。
+    expect(getDisplayName()).toBeNull();
+    render(<ProfileEditor />);
+    const editButton = screen.getByRole("button", { name: /編集/ });
+    expect(editButton).toBeDisabled();
+    expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+  });
+
+  it.each(["   ", "　　"])(
+    "名前が空白のみ（%j）なら .trim() 判定で disabled になる（#525）",
+    (whitespaceOnly) => {
+      localStorage.setItem("hanoba:name", whitespaceOnly);
+      render(<ProfileEditor />);
+      const editButton = screen.getByRole("button", { name: /編集/ });
+      expect(editButton).toBeDisabled();
+      expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+    },
+  );
+
+  it("nameHint が null→非null に変わると編集トグルが再読み込みなしで自動有効化される（#525 追補・状態遷移の核心）", async () => {
+    localStorage.removeItem("hanoba:name");
+    const { rerender } = render(<ProfileEditor nameHint={null} />);
+    expect(screen.getByRole("button", { name: /編集/ })).toBeDisabled();
+    expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+
+    // AccountName で名前を新規登録した直後を模す（MyGrid の accountName state 更新に相当）。
+    rerender(<ProfileEditor nameHint="新参の栽培家" />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /編集/ })).not.toBeDisabled());
+    expect(screen.queryByText("先にハンドルネームを登録してください。")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["en", "Set a handle name first."],
+    ["es", "Primero define un nombre de usuario."],
+    ["zh", "请先设置用户名。"],
+  ] as const)("%s ロケールでも editHint（名前未登録の案内）が表示される（#525）", (locale, expected) => {
+    localStorage.removeItem("hanoba:name");
+    render(
+      <LocaleProvider value={locale}>
+        <ProfileEditor />
+      </LocaleProvider>,
+    );
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   // #93: nsec 取り込み直後は控えが空（websites:[]）になりうる。relay から websites を

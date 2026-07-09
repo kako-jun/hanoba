@@ -87,6 +87,49 @@ describe("CitizenStats（活動スタッツ表示・#272）", () => {
     expect(within(section).getByText("品種").parentElement).toHaveTextContent("2種");
   });
 
+  it("投稿5件・最古投稿14日前・hasName=true でも表示は厳密に「市民」（市民L2 を含まない・#525 核心）", () => {
+    const now = Math.floor(Date.now() / 1000);
+    // postCount=5・最古投稿=14日前は citizenLevelFull 内部では L2 相当だが、表示は二値化されて
+    // 「市民」のまま出る（citizenLevelLabel が旅人/市民に畳む・#525）。
+    const posts = [
+      makePost({ id: "0", createdAt: now - 14 * NOW_DAY }),
+      makePost({ id: "1", createdAt: now }),
+      makePost({ id: "2", createdAt: now }),
+      makePost({ id: "3", createdAt: now }),
+      makePost({ id: "4", createdAt: now }),
+    ];
+    render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
+    const section = screen.getByRole("region", { name: "あなたの活動" });
+    expect(within(section).getByText("市民")).toBeInTheDocument();
+    // 負のアサーション: 内部段階が L2 でも「市民L2」等の数字付き表記は一切出ない。
+    expect(within(section).queryByText(/市民\s*L\d/)).not.toBeInTheDocument();
+    expect(within(section).queryByText(/L2/)).not.toBeInTheDocument();
+  });
+
+  it("投稿200件・最古投稿500日前という極端な古参値でも「市民」のまま（回帰防止・#525）", () => {
+    const now = Math.floor(Date.now() / 1000);
+    const posts = [
+      makePost({ id: "oldest", createdAt: now - 500 * NOW_DAY }),
+      ...Array.from({ length: 199 }, (_, i) => makePost({ id: `p${i}`, createdAt: now })),
+    ];
+    render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
+    const section = screen.getByRole("region", { name: "あなたの活動" });
+    expect(within(section).getByText("市民")).toBeInTheDocument();
+    expect(within(section).queryByText(/L\d+/)).not.toBeInTheDocument();
+  });
+
+  it("DOM全体に数字付きレベル表記（L2/L3等）が一切出現しない（包括回帰防止・#525）", () => {
+    const now = Math.floor(Date.now() / 1000);
+    const posts = [
+      makePost({ id: "0", createdAt: now - 40 * NOW_DAY, hashtags: ["パキポディウム", "グラキリス"] }),
+    ];
+    const { container } = render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
+    // 見出し・レベルラベル・スタッツ・凡例すべてを含む DOM 全体を対象に、旅人/市民以外の
+    // 数字付きレベル表記（市民L2・市民L3 等）が一切紛れ込んでいないことを包括確認する。
+    expect(container.textContent).not.toMatch(/市民\s*L\d/);
+    expect(container.textContent).not.toMatch(/旅人\s*L\d/);
+  });
+
   it("育てた品種のチップはその品種の discover 絞り込みリンク（#kako-jun）", async () => {
     const posts = [makePost({ id: "1", hashtags: ["パキポディウム", "グラキリス"] })];
     render(<CitizenStats posts={posts} hasName subjectName="あなた" />);
