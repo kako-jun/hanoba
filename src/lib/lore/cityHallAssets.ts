@@ -18,6 +18,15 @@ export const MAYOR_AVATAR_SRC = "/mayor-botanics-watering-can.webp";
 /** P2 街の地図の挿絵（葉形・葉脈川入り・#137/#504）。 */
 export const MAP_IMAGE_SRC = "/hanoba-map.webp";
 
+/** P3 地区案内の挿絵（温室・区画・畑の鳥瞰・#137）。 */
+export const GARDEN_DISTRICT_IMAGE_SRC = "/hanoba-garden-district.webp";
+
+/** P6〜P10 地区案内の新版全景（imagegen・#137）。 */
+export const DISTRICTS_IMAGE_SRC = "/hanoba-districts.webp";
+
+/** P11/P12 市章・特産物の図版（imagegen・#137）。 */
+export const CREST_SPECIALTIES_IMAGE_SRC = "/hanoba-crest-specialties.webp";
+
 /** P1 移住案内の挿絵（街の俯瞰ビスタ・段落間に挟む・#504）。 */
 export const WELCOME_VISTA_SRC = "/hanoba-welcome-vista.webp";
 
