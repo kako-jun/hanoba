@@ -30,13 +30,14 @@ describe("10ページの市民手帳（#137）", () => {
     if (ordinances?.kind === "ordinances") expect(ordinances.ordinances).toHaveLength(5);
   });
 
-  it("市政の窓口は実在routeと近日開庁を維持する（#525で市勢調査/ranking を追加）", () => {
-    expect(civicHub("ja").map((link) => link.route)).toEqual(["/vote", "/ranking", null, null]);
+  it("市政の窓口は実在routeと近日開庁を維持する（#164で市政だより/gazette を追加）", () => {
+    expect(civicHub("ja").map((link) => link.route)).toEqual(["/vote", "/ranking", null, "/gazette"]);
   });
 
-  it("住民投票・市勢調査の label が route とセットでフッタと同名になる（#525 命名統一）", () => {
+  it("住民投票・市勢調査・市政だよりの label が route とセットでフッタと同名になる（#525・#164 命名統一）", () => {
     const hub = civicHub("ja");
     expect(hub[0]).toMatchObject({ label: "住民投票", route: "/vote" });
     expect(hub[1]).toMatchObject({ label: "市勢調査", route: "/ranking" });
+    expect(hub[3]).toMatchObject({ label: "市政だより", route: "/gazette" });
   });
 });

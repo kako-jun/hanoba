@@ -76,16 +76,21 @@ describe("CityHallBook 10ページナビ（#137）", () => {
     expect(screen.getByRole("link", { name: /市勢調査/ })).toHaveAttribute("href", "/ranking");
   });
 
-  it("品評会・市長ブログは非リンク（aria-disabled）のまま近日開庁バッジを持つ（開庁済みと混同しない）", async () => {
+  it("窓口の市政だよりは /gazette へのリンクとして開庁している（#164）", async () => {
+    render(<CityHallBook />);
+    expect(screen.getByRole("link", { name: /市政だより/ })).toHaveAttribute("href", "/gazette");
+  });
+
+  it("品評会は非リンク（aria-disabled）のまま近日開庁バッジを持つ（開庁済みと混同しない）", async () => {
     render(<CityHallBook />);
     const exhibition = screen.getByText("品評会（コンテスト）").closest("li");
     expect(exhibition).toHaveAttribute("aria-disabled", "true");
     expect(exhibition).toHaveTextContent("近日開庁");
-    const mayorBlog = screen.getByText("市長ブログ").closest("li");
-    expect(mayorBlog).toHaveAttribute("aria-disabled", "true");
-    expect(mayorBlog).toHaveTextContent("近日開庁");
-    // 対照: 開庁済みの住民投票は aria-disabled を持たない。
+    // 対照: 開庁済みの住民投票・市政だよりは aria-disabled を持たない。
     expect(screen.getByRole("link", { name: /住民投票/ }).closest("li")).not.toHaveAttribute(
+      "aria-disabled",
+    );
+    expect(screen.getByRole("link", { name: /市政だより/ }).closest("li")).not.toHaveAttribute(
       "aria-disabled",
     );
   });

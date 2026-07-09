@@ -19,6 +19,8 @@ export const ja = {
   "nav.ranking": "市勢調査",
   // #525: 住民投票へのフッタ導線（窓口 cityHall.map.civic.0.label と同名）。
   "nav.vote": "住民投票",
+  // #164: 市政だよりへのフッタ導線（窓口 cityHall.map.civic.2.label と同名）。
+  "nav.gazette": "市政だより",
   "nav.menu.open": "メニューを開く",
   "nav.menu.close": "メニューを閉じる",
   "nav.home.aria": "葉の場 Hanoba トップへ",
@@ -121,6 +123,9 @@ export const ja = {
   "meta.vote.title": "住民投票 — ハノーバ市役所",
   "meta.vote.description":
     "ハノーバ市役所の住民投票所。品種の並び順・欲しい機能・バグ報告を、掲示板で気軽に。名前は任意。",
+  "meta.gazette.title": "市政だより — Hanōba",
+  "meta.gazette.description":
+    "市長ボタニクス・フォン・ハノーバが記す、市の更新のお知らせ。新しい窓口や機能、表示の改善を市政だよりとしてお届けします。",
 
   // 各ページ本体のリード文（h1 は既存ナビキーを再利用）。
   "discover.lead":
@@ -517,7 +522,7 @@ export const ja = {
   "cityHall.map.civic.heading": "市政の窓口",
   "cityHall.map.civic.0.label": "住民投票",
   "cityHall.map.civic.1.label": "品評会（コンテスト）",
-  "cityHall.map.civic.2.label": "市長ブログ",
+  "cityHall.map.civic.2.label": "市政だより",
   // 市勢調査（ランキング機能・#162）の窓口項目（#525・フッタ nav.ranking と命名統一）。
   "cityHall.map.civic.3.label": "市勢調査",
   "cityHall.map.comingSoon": "近日開庁",
@@ -553,8 +558,8 @@ export const ja = {
   "cityHall.guide.specialties.text": "観葉植物、畑の実り、果樹、種と芽、そして世話の道具。五地区の誇りをここに記す。",
   "cityHall.nav.jumpBack": "5ページ戻る",
   "cityHall.nav.jumpForward": "5ページ進む",
-  "cityHall.nav.first": "最初のページ",
-  "cityHall.nav.last": "最後のページ",
+  "book.nav.first": "最初のページ",
+  "book.nav.last": "最後のページ",
   "cityHall.nav.toc": "目次",
   "cityHall.chronicle.title": "沿革",
   "cityHall.chronicle.lead":
@@ -605,12 +610,49 @@ export const ja = {
     "おっほん。諸君はもう、市の古い友人だ。奥の間を開けておいた。",
   // CityHallBook の UI クローム（肖像脇の呼び名・めくり操作・ページ表示）。
   "cityHall.mayorTitle": "{name}市長",
-  "cityHall.nav.aria": "ページめくり",
-  "cityHall.nav.prev": "前のページ",
-  "cityHall.nav.prev.label": "前",
-  "cityHall.nav.next": "次のページ",
-  "cityHall.nav.next.label": "次",
-  "cityHall.nav.indicator": "{page} / {total}",
+  "book.nav.aria": "ページめくり",
+  "book.nav.prev": "前のページ",
+  "book.nav.prev.label": "前",
+  "book.nav.next": "次のページ",
+  "book.nav.next.label": "次",
+  "book.nav.indicator": "{page} / {total}",
+
+  // 市政だより（gazette.ts / GazetteBook・#164）。市長ボタニクス・フォン・ハノーバが執筆した体裁の
+  // 静的な更新履歴（リリースノート）。市民手帳と同じ本ページャー（BookPager）を使う。
+  // 最新記事が1ページ目、「次へ」で過去の記事へ辿る（手帳と逆順）。
+  "gazette.book.title": "ハノーバ市政だより",
+  // 記事0（最新）: 市民手帳の全面改訂（#137）。
+  "gazette.articles.0.heading": "市民手帳、全面改訂",
+  "gazette.articles.0.body.0":
+    "おっほん。市民手帳を全面改訂した。地区ごとの案内、街の沿革、市の条文——旅の途中で諸君が知りたくなるものを、すべて一冊にまとめ直したのだ。",
+  "gazette.articles.0.body.1":
+    "手にとってめくれば、ハノーバの成り立ちも決まりごとも一目でわかる。もう迷うことはない。",
+  "gazette.articles.0.closing": "旅の道連れとして、どうかこの一冊を携えてくれたまえ。",
+  "gazette.articles.0.link.0.label": "市民手帳を開く",
+  // 記事1: 表示言語の多言語対応（#147）。
+  "gazette.articles.1.heading": "表示言語、世界へ開く",
+  "gazette.articles.1.body.0":
+    "おっほん。ハノーバの表示言語を英語既定に切り替え、多言語対応を本格的に始動した。切替はどのページからでもできる。",
+  "gazette.articles.1.body.1":
+    "言葉が違えど、育てる心はひとつ。世界中の植物好きを迎えるのが、我が市の器量というものだ。",
+  "gazette.articles.1.closing": "遠くから来た友も、諸君同様に歓迎する。",
+  // 記事2: 住民投票・市勢調査の開庁（#160・#162）。
+  "gazette.articles.2.heading": "市政の窓口、ふたつ開庁",
+  "gazette.articles.2.body.0":
+    "おっほん。住民投票所と、品種の勢いを見る窓口を開いた。前者では諸君の声を、後者ではこの街で今どの品種が伸びているかを確かめられる。",
+  "gazette.articles.2.body.1":
+    "市民の声と品種の動向、双方を市政に映す仕組みが、これでようやく整った。",
+  "gazette.articles.2.closing": "諸君の一票も、育ての勢いも、余さず見ておるぞ。",
+  "gazette.articles.2.link.0.label": "住民投票へ",
+  "gazette.articles.2.link.1.label": "市勢調査へ",
+  // 記事3（最古）: 「あなたの植物」画面の名前+プロフィール統合（#104）。
+  "gazette.articles.3.heading": "「あなたの植物」を一枚の札に",
+  "gazette.articles.3.body.0":
+    "おっほん。「あなたの植物」の画面を改め、名前とプロフィールを一枚の札にまとめた。",
+  "gazette.articles.3.body.1":
+    "自分がどんな市民であるか、この一枚を見るだけでわかるようにしたのだ。",
+  "gazette.articles.3.closing": "諸君の札も、きっと誇らしい一枚になっておろう。",
+  "gazette.articles.3.link.0.label": "あなたの植物を見る",
 } as const;
 
 /** 全文言キーの union（ja を単一ソースに型を導出する）。 */

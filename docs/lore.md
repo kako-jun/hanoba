@@ -7,7 +7,7 @@
 
 関連 Issue: #163（本・市民レベル）、#469（図鑑化・街の地図を早期ご褒美ページに）、
 #510（進行モデル是正・全ページ開放＋市政の窓口を全ページ常設・手帳のレベル表記を撤去）。
-市長ブログ等の運用は #164、地図の対話版は #137、言語別は #147。
+市政だより（静的な更新履歴）は #164、地図の対話版は #137、言語別は #147。
 
 ---
 
@@ -104,9 +104,31 @@ discover/me/compose はヘッダ/フッタに移ったので手帳からは外�
 | 住民投票             | `/vote`    | 実在（#160・最初に開いた役所。Nostalgic BBS 3 板の投票所・全員に開放） |
 | 市勢調査             | `/ranking` | 実在（#162・フッタ「市勢調査」と同名。期間内の投稿数が多い品種を表示） |
 | 品評会（コンテスト） | —          | 近日開庁（#161 未実装）                                                |
-| 市長ブログ           | —          | 近日開庁（#164 未実装）                                                |
+| 市政だより           | `/gazette` | 実在（#164・市長執筆の体裁の静的更新履歴。フッタ「市政だより」と同名） |
 
 ※ 旧「街の地図」リンク（近日開庁・#137）は廃止し、地図は p2 の独立ページにした。対話的な地図は将来の上乗せ。
+
+---
+
+## 市政だより（静的な更新履歴）
+
+「市長ブログ」という名称・NPC の手動運用は使わない。かわりに、市長ボタニクス・フォン・ハノーバが
+執筆した体裁を持つ**静的な更新履歴（リリースノート）**として「市政だより」を置く（#164）。
+Nostr 投稿・専用鍵・バックエンド・自動投稿は一切持たない＝リポジトリ内の静的データ
+（`src/lib/lore/gazette.ts`）をビルド時に静的ページへ反映するだけ。
+
+- **役割**: 品評会の開設・新機能・表示改善などを、市が布告する体裁で市民に伝える。長い開発日誌には
+  しない＝各記事は「公開日・短い見出し・追加/変更した内容とその趣旨・関連ページへの導線（任意）・
+  市長らしい短い結び」の型に収める。
+- **文体**: このファイル冒頭「市長キャラ・バイブル」に完全に従う。批判ではなく、追加した内容への
+  **全肯定**で書く（優劣をつけない・煽らない・淡々とした変更ログ調にしない）。「おっほん」の
+  咳払い・「諸君」・大仰で気取った物言いは手帳（cityHall.ts）の記事と地続きにする。
+- **紙面**: 市民手帳と同じ紙面・枠・ページャーを使う（本ページャー `BookPager`・§実装メモ参照）。
+  1 記事＝1 ページ、**最新記事が1ページ目**。手帳は 1p から順に進む設計だが、市政だよりは
+  「次へ」が過去の記事へ向かう**逆順**である点に注意（データの並び順で表現し、ページャー自体に
+  特例分岐は持たせない）。
+- **窓口**: `civicHub()`（cityHall.ts）の市政だより項目（旧「市長ブログ」）は `/gazette` で開庁済み。
+  フッタにも同名で常設する（住民投票・市勢調査と同じ #525 の方針）。
 
 ---
 
@@ -131,8 +153,16 @@ osaka-kenpo 作法（条文＋市長解説）に倣う。各条は短い条文�
 ## 実装メモ
 
 - 表示テキストの単一ソース: `src/lib/lore/cityHall.ts`（このファイルは doctrine 正本）。
+  市政だよりの表示テキストは `src/lib/lore/gazette.ts`（`buildGazette(locale)`）。
 - 市民レベルの純ロジック: `src/lib/lore/citizen.ts`（fixture テスト `citizen.test.ts`）。
-- UI: `src/components/lore/CityHallBook.tsx`（`about.astro` に `client:only="react"` でマウント）。
+- 本の共通 UI（枠/紙面の border-image・ページャー操作・キーボード矢印・スワイプ＋ぼかし遷移・
+  URL同期(`?page=<安定ID>`)+localStorage永続化）は `src/components/lore/BookPager.tsx` に集約し
+  （#164 で市民手帳から抽出）、市民手帳（`CityHallBook.tsx`）と市政だより（`GazetteBook.tsx`）が
+  共有する。永続化キーは本ごとに別（手帳=`hanoba:citizen-handbook-page`／
+  市政だより=`hanoba:gazette-page`）。語り手マーク（`MayorMark`）も共通部品
+  `src/components/lore/MayorMark.tsx` として両者が使う。
+- UI: `src/components/lore/CityHallBook.tsx`（`about.astro` に `client:only="react"` でマウント）、
+  `src/components/lore/GazetteBook.tsx`（`gazette.astro` に同様にマウント）。
   `client:only` なのは en→ja 言語フラッシュを断つため（#479）。`client:load` だと殻が既定言語 en で
   SSR され、その英語 HTML が hydrate 前に先に描画される＝`useLayoutEffect` では消せない。島を
   サーバで焼かないことで最初のペイントが閲覧言語になり、マウント時に `.ha-rise` でじわーっと出る。
@@ -143,5 +173,6 @@ osaka-kenpo 作法（条文＋市長解説）に倣う。各条は短い条文�
   言語 swap は実効言語を `document.documentElement.lang` に反映し、**後段の市民ラベル swap はそれを読む**（localStorage
   を再読みせず解決を一本化＝市民手帳ラベルだけ言語が割れるのを防ぐ）。検出値は localStorage に書かない（Twitter
   モデル維持＝保存は `setClientLocale` のユーザー操作だけ）。
-- relay 呼び出しは `src/lib/nostr/client.ts` のみ（`fetchMyPosts` を再利用）。
-- 言語別（JA/EN）は #147 前提で defer（まず JA）。市長 NPC の手動運用は #164。
+- relay 呼び出しは `src/lib/nostr/client.ts` のみ（`fetchMyPosts` を再利用）。市政だよりは
+  静的データのみで完結し、relay 呼び出しを一切持たない（#164）。
+- 言語別（JA/EN/ZH/ES）は #147 で go-live 済み。
