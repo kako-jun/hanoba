@@ -28,7 +28,8 @@ export interface CitizenStats {
   tenureDays: number;
   /** 最古投稿の created_at（unix 秒・投稿が無ければ null）。 */
   earliestCreatedAt: number | null;
-  /** 市民レベル Ln（旅人=0 / 市民=1 / 市民L2=2 / 市民L3…・非キャップ・citizenLevelLabel で表示）。 */
+  /** 市民レベル Ln（非キャップの内部段階＝citizenLevelFull）。表示は citizenLevelLabel が
+   * 旅人/市民の二値に畳むので、この数値自体は画面に出さない（#525）。 */
   level: number;
 }
 

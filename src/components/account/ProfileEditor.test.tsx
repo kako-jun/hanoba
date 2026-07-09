@@ -1,3 +1,4 @@
+import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +19,10 @@ vi.mock("../../lib/nostr/upload.ts", () => ({
 }));
 
 import ProfileEditor from "./ProfileEditor.tsx";
+// keys.ts はモックしない（実装のまま使う）。getDisplayName の明示的な null 化（空文字→null）を
+// 直接 assert するために、実装をそのまま import する（#525）。
+import { getDisplayName } from "../../lib/nostr/keys.ts";
+import { LocaleProvider } from "../../lib/i18n/index.ts";
 
 describe("ProfileEditor (#35 Piece3)", () => {
   beforeEach(() => {
@@ -81,19 +86,89 @@ describe("ProfileEditor (#35 Piece3)", () => {
     expect(await screen.findByText("保存しました。")).toBeInTheDocument();
   });
 
-  it("ユーザー名未設定なら保存できない（促しを出す）", async () => {
+  it("ユーザー名未設定なら「編集」トグル自体が無効化され、パネルを開けない（#525）", async () => {
     localStorage.removeItem("hanoba:name");
     const user = userEvent.setup();
     render(<ProfileEditor />);
-    await user.click(screen.getByRole("button", { name: /編集/ }));
-    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
-    expect(screen.getByText("先に上でハンドルネームを設定してください。")).toBeInTheDocument();
+    const editButton = screen.getByRole("button", { name: /編集/ });
+    expect(editButton).toBeDisabled();
+    expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+    // disabled ボタンはクリックしても開かない（アイコンアップロード等の操作面に到達できない）。
+    await user.click(editButton);
+    expect(screen.queryByLabelText("自己紹介")).not.toBeInTheDocument();
   });
 
   it("名前未設定ならヘッダに「ハンドルネーム 未設定」が出る（#92）", () => {
     localStorage.removeItem("hanoba:name");
     render(<ProfileEditor />);
     expect(screen.getByText("ハンドルネーム 未設定")).toBeInTheDocument();
+  });
+
+  it("名前が空文字なら getDisplayName の明示的な null 化と一致して disabled になる（#525）", () => {
+    localStorage.setItem("hanoba:name", "");
+    // ProfileEditor の nameMissing 判定が経由する getDisplayName() 自体も null を返すことを固定する。
+    expect(getDisplayName()).toBeNull();
+    render(<ProfileEditor />);
+    const editButton = screen.getByRole("button", { name: /編集/ });
+    expect(editButton).toBeDisabled();
+    expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+  });
+
+  it.each(["   ", "　　"])(
+    "名前が空白のみ（%j）なら .trim() 判定で disabled になる（#525）",
+    (whitespaceOnly) => {
+      localStorage.setItem("hanoba:name", whitespaceOnly);
+      render(<ProfileEditor />);
+      const editButton = screen.getByRole("button", { name: /編集/ });
+      expect(editButton).toBeDisabled();
+      expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+    },
+  );
+
+  it("nameHint が null→非null に変わると編集トグルが再読み込みなしで自動有効化される（#525 追補・状態遷移の核心）", async () => {
+    localStorage.removeItem("hanoba:name");
+    const { rerender } = render(<ProfileEditor nameHint={null} />);
+    expect(screen.getByRole("button", { name: /編集/ })).toBeDisabled();
+    expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
+
+    // AccountName で名前を新規登録した直後を模す（MyGrid の accountName state 更新に相当）。
+    rerender(<ProfileEditor nameHint="新参の栽培家" />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /編集/ })).not.toBeDisabled());
+    expect(screen.queryByText("先にハンドルネームを登録してください。")).not.toBeInTheDocument();
+  });
+
+  it("既存の名前でマウントすると、初回コミット時点で既に「編集」トグルが有効（name の種撒きで初期 disabled フラッシュが起きない・セルフレビュー should）", () => {
+    // React Profiler の onRender はコミット直後・ブラウザペイント前に同期発火する。mount effect
+    // （getDisplayName 読み直し）が走る前の「最初のコミット」時点で disabled を読めば、
+    // useState(null) の種撒き無し実装なら true（一瞬 disabled で描画されるフラッシュ）になるはず
+    // だった箇所を、種撒き（lazy initializer）実装が false のまま通すことを検証する。
+    let firstCommitDisabled: boolean | null = null;
+    const onRender: ProfilerOnRenderCallback = () => {
+      if (firstCommitDisabled === null) {
+        firstCommitDisabled = screen.getByRole("button", { name: /編集/ }).hasAttribute("disabled");
+      }
+    };
+    render(
+      <Profiler id="profile-editor-name-seed-probe" onRender={onRender}>
+        <ProfileEditor />
+      </Profiler>,
+    );
+    expect(firstCommitDisabled).toBe(false);
+  });
+
+  it.each([
+    ["en", "Set a handle name first."],
+    ["es", "Primero define un nombre de usuario."],
+    ["zh", "请先设置用户名。"],
+  ] as const)("%s ロケールでも editHint（名前未登録の案内）が表示される（#525）", (locale, expected) => {
+    localStorage.removeItem("hanoba:name");
+    render(
+      <LocaleProvider value={locale}>
+        <ProfileEditor />
+      </LocaleProvider>,
+    );
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   // #93: nsec 取り込み直後は控えが空（websites:[]）になりうる。relay から websites を

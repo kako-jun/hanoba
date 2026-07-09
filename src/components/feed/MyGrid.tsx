@@ -44,6 +44,12 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   useBackToClose(selectedId !== null, () => setSelectedId(null));
   // 自分の投稿なので著者は全部自分。モーダルの著者ヘッダ用に自分の kind:0 を1回引く。
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
+  // 表示名（AccountName からの onChange で反応的に追従・#525 追補）。ProfileEditor は自分の
+  // マウント時 state しか見ないため、AccountName 側での新規登録/変更をここで受け取って両方へ配る。
+  // 種撒き（lazy initializer）は必須: null 初期化だと、既存の名前を持つユーザーの初回マウントで
+  // ProfileEditor の nameHint 同期エフェクトが render-1 時点の null を一瞬だけ見てしまい、
+  // 自分自身の正しい値を無駄に巻き戻す再レンダーが挟まる（#525 セルフレビュー S1）。
+  const [accountName, setAccountName] = useState<string | null>(() => getDisplayName());
 
   // アンマウント後 / 再取得中の古い応答での setState を防ぐ（stale-async ガード）。
   const aliveRef = useRef(true);
@@ -103,10 +109,12 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
           プロフィール内に収まり、操作ボタンは名前の下段に並ぶ。両者を bare で内包する。
           AccountName は compose（投稿ゲート）と同一の共通コンポーネント。 */}
       <div className="glass rounded-2xl p-5 flex flex-col gap-4">
-        <AccountName bare />
+        <AccountName bare onChange={setAccountName} />
         <div className="border-t border-white/10" />
-        {/* プロフィール編集（アイコン・自己紹介・複数サイト・#35 Piece3）。著者ヘッダに反映される。 */}
-        <ProfileEditor bare />
+        {/* プロフィール編集（アイコン・自己紹介・複数サイト・#35 Piece3）。著者ヘッダに反映される。
+            nameHint で AccountName の最新値を渡し、名前を新規登録した直後も編集トグルが
+            即座に有効化されるようにする（#525 追補・再読み込み不要）。 */}
+        <ProfileEditor bare nameHint={accountName} />
       </div>
 
       {notice !== null && (
@@ -121,9 +129,9 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       )}
 
       {/* 活動スタッツ（#272・段階1）。自分の t:hanoba 投稿からクライアント集計（投稿数/写真数/品種/在籍）。
-          名乗り有無で市民レベル（旅人/市民/市民Ln）を出す。取得済み（loaded）のときだけ。 */}
+          名乗り有無で市民レベル（旅人/市民の二値・#525）を出す。取得済み（loaded）のときだけ。 */}
       {status === "loaded" && (
-        <CitizenStats posts={posts} hasName={getDisplayName() !== null} subjectName={t("my.subject")} />
+        <CitizenStats posts={posts} hasName={accountName !== null} subjectName={t("my.subject")} />
       )}
 
       {status === "loading" && (

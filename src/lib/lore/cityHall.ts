@@ -146,14 +146,16 @@ function page1(locale: Locale): BookPage {
 
 /**
  * 市政の窓口（civic strip）。全ページ下部に共通表示する窓口。
- * 機能導線の本体（discover/ranking/me/compose）は
- * ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここには手帳が唯一の入口だった
- * 住民投票（/vote）と、近日開庁の品評会・市長ブログだけを並べる。実在ルートのみ機能、未開設は「近日開庁」。
+ * discover/me/compose の導線本体はヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外す。
+ * 住民投票（/vote）・市勢調査（/ranking）はフッタとも重複表示する（#525・命名統一＝フッタと窓口の
+ * 命名・導線を揃え、手帳を唯一の入口にしない）。品評会・市長ブログは近日開庁のまま並ぶ。
+ * 実在ルートのみ機能、未開設は「近日開庁」。
  */
 export function civicHub(locale: Locale = DEFAULT_LOCALE): HubLink[] {
   const comingSoon = t(locale, "cityHall.map.comingSoon");
   return [
     { label: t(locale, "cityHall.map.civic.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
+    { label: t(locale, "cityHall.map.civic.3.label"), route: "/ranking" }, // #162 開庁（市勢調査＝ランキング・#525 でフッタ「市勢調査」と命名統一）。
     { label: t(locale, "cityHall.map.civic.1.label"), route: null, comingSoon }, // 品評会（#161 未実装）。
     { label: t(locale, "cityHall.map.civic.2.label"), route: null, comingSoon }, // 市長ブログ（#164 未実装）。
   ];

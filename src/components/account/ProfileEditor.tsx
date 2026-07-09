@@ -31,12 +31,24 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 interface Props {
   /** 外側のガラスカードを描かない（/me で名前と同じプロフィールカードに内包するとき・#104）。 */
   bare?: boolean;
+  /**
+   * 親（/me の MyGrid）が把握している最新の表示名（AccountName の onChange 経由・#525 追補）。
+   * 渡されたときだけ内部 name state をこれに同期させ、名前を新規登録/変更した直後に
+   * nameMissing ガード（編集トグルの disabled）が再読み込みなしで解ける。
+   * 未指定（undefined）なら従来どおり自力で getDisplayName()/relay から読む（後方互換）。
+   */
+  nameHint?: string | null;
 }
 
-export default function ProfileEditor({ bare = false }: Props) {
+export default function ProfileEditor({ bare = false, nameHint }: Props) {
   const t = useT(useLocale());
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState<string | null>(null);
+  // name も種撒き（lazy initializer）する: null 初期化のままだと、既存の名前を持つユーザーが
+  // /me を開くたびに初回ペイントで「編集」トグルが一瞬 disabled（nameMissing=true）として
+  // 描画されてから mount effect で有効化されるフラッシュが起きる（MyGrid.tsx の accountName に
+  // 施した #525 S1 と同じ修正パターン・セルフレビュー should）。nameHint が渡されていれば
+  // それ（親 AccountName の最新値）を優先し、未指定（undefined）なら従来どおり自力で読む。
+  const [name, setName] = useState<string | null>(() => (nameHint !== undefined ? nameHint : getDisplayName()));
   const [picture, setPicture] = useState<string | null>(null);
   const [about, setAbout] = useState("");
   // サイト行は安定 id で持つ（index key だと並べ替え/中間削除でフォーカス・IME が飛ぶ・レビュー S2）。
@@ -66,7 +78,9 @@ export default function ProfileEditor({ bare = false }: Props) {
   useEffect(() => {
     const localName = getDisplayName();
     const extra = getProfileExtra();
-    setName(localName);
+    // name は useState の lazy initializer で種撒き済みなので、通常は localName と一致し
+    // 再代入は不要（不一致時のみ更新して、無駄な再レンダーを避ける）。
+    setName((cur) => (cur === localName ? cur : localName));
     setPicture(extra.picture);
     setAbout(extra.about ?? "");
     setSites(extra.websites.map((url) => ({ id: nextId(), url })));
@@ -100,6 +114,15 @@ export default function ProfileEditor({ bare = false }: Props) {
       }
     })();
   }, []);
+
+  // nameHint（親 AccountName の最新値）が自分の name state と食い違ったら追従する（#525 追補）。
+  // AccountName で名前を新規登録/変更しても、自分はマウント時の getDisplayName() しか見ないため
+  // nameMissing ガードが固定されたままになる袋小路を解消する。nameHint 未指定（undefined）なら
+  // このコンポーネントは従来どおり自力で読んだ値のまま（何もしない＝後方互換）。
+  useEffect(() => {
+    if (nameHint === undefined) return;
+    setName((cur) => (cur === nameHint ? cur : nameHint));
+  }, [nameHint]);
 
   // 編集したら「保存しました/失敗」表示を消す。
   function touch() {
@@ -190,15 +213,23 @@ export default function ProfileEditor({ bare = false }: Props) {
             <span className="text-xs text-ha-ink/50">{t("account.profile.sub")}</span>
           </span>
         </span>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className="shrink-0 inline-flex items-center gap-1 text-sm text-ha-green hover:text-ha-green-deep transition-colors"
-        >
-          {open ? t("common.close") : t("account.profile.edit")}
-          <Icon name="chevron" className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
-        </button>
+        <span className="shrink-0 flex flex-col items-end gap-0.5">
+          {/* 名前未登録時はトグル自体を無効化する（#525）。保存は既存どおり nameMissing で弾くが、
+              トグルを開けてしまうとアイコンアップロード（nostr.build への実送信）等が名乗り前に
+              できてしまうため、パネルを開く前段でガードする。名前は AccountName 側（このカードの
+              上段）で設定するので、鶏卵問題にはならない。 */}
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            disabled={nameMissing}
+            className="inline-flex items-center gap-1 text-sm text-ha-green hover:text-ha-green-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-ha-green"
+          >
+            {open ? t("common.close") : t("account.profile.edit")}
+            <Icon name="chevron" className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+          {nameMissing && <span className="text-[11px] text-ha-ink/50">{t("account.profile.editHint")}</span>}
+        </span>
       </div>
 
       {open && (

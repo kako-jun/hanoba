@@ -168,7 +168,7 @@ describe("defaultPage（初期表示ページ・ページ解禁とは無関係�
   });
 });
 
-describe("citizenLevelLabel（旅人/市民/市民Ln・#272）", () => {
+describe("citizenLevelLabel（旅人/市民の二値表示・#525＝#272 から方針転換）", () => {
   it("0 以下は旅人（まだ名乗っていない＝市民でない）", () => {
     expect(citizenLevelLabel(0, "ja")).toBe("旅人");
     expect(citizenLevelLabel(-1, "ja")).toBe("旅人");
@@ -176,9 +176,28 @@ describe("citizenLevelLabel（旅人/市民/市民Ln・#272）", () => {
   it("1 は市民", () => {
     expect(citizenLevelLabel(1, "ja")).toBe("市民");
   });
-  it("2 以上は市民Ln（古参という別語は使わない）", () => {
-    expect(citizenLevelLabel(2, "ja")).toBe("市民L2");
-    expect(citizenLevelLabel(3, "ja")).toBe("市民L3");
-    expect(citizenLevelLabel(10, "ja")).toBe("市民L10");
+  it("2 以上も数字を出さず市民のまま（Ln 表記は一切出さない）", () => {
+    expect(citizenLevelLabel(2, "ja")).toBe("市民");
+    expect(citizenLevelLabel(3, "ja")).toBe("市民");
+    expect(citizenLevelLabel(10, "ja")).toBe("市民");
   });
+
+  it("境界: level=2 は「市民L2」を含まない（負のアサーションで直接固定）", () => {
+    const label = citizenLevelLabel(2, "ja");
+    expect(label).not.toBe("市民L2");
+    expect(label).not.toContain("L2");
+  });
+
+  it("極端値: level=999 でも「市民」のまま（Ln のキャップ超えでも二値を維持）", () => {
+    expect(citizenLevelLabel(999, "ja")).toBe("市民");
+  });
+
+  it.each(["en", "es", "zh"] as const)(
+    "%s ロケールでも citizenN 相当の数字付き文字列は混入しない",
+    (locale) => {
+      // 高い level を渡しても、二値表示（citizen.level.citizen）には数字が一切現れない。
+      expect(citizenLevelLabel(5, locale)).not.toMatch(/\d/);
+      expect(citizenLevelLabel(999, locale)).not.toMatch(/\d/);
+    },
+  );
 });

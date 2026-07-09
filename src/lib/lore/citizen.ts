@@ -1,10 +1,12 @@
-// 市民レベル（#163）。ハノーバ市民手帳の進捗バッジ（Ln）を司る純粋ロジック。
+// 市民レベル（#163）。市民の在籍段階を判定する純粋ロジック。
 //
 // すべて Nostr 由来＝backendless。サーバに会員ランクを持たず、その場の手がかり
 // （表示名の登録／投稿数／最古投稿の経過日数）だけからレベルを決める。
 //
-// #510 方針B でレベル解禁ゲートは撤去し、手帳は全ページ開放になった。レベルは
-// 手帳タイトルの進捗バッジ（Ln）としてだけ残る（ページの閲覧可否には効かない）。
+// #510 方針B でレベル解禁ゲートは撤去し、手帳は全ページ開放になった。#525 で表示ラベルも
+// 「旅人/市民」の二値に統一し、数字付きの Ln 表記はどこにも出さない方針へ転換した（#272 から転換）。
+// 内部の段階判定（citizenLevelFull / CITIZEN_TIERS）自体は残し、昇格の味付け分岐（levelFlavor）と
+// 初期表示ページ（defaultPage）にだけ使う。
 //
 // 純関数: Date.now を内部で呼ばない（now は秒で渡す）。テストは固定値で網羅する。
 
@@ -12,11 +14,11 @@ import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 
 /**
- * 市民レベル。L0 旅人 / L1 市民 / L2 市民L2 / L3 市民L3（… 以降は市民Ln・#272）。
- * かつては 1 レベル=1 ページのページ解禁に使っていたが、#510 方針B で解禁ゲートを撤去し
- * 全ページ開放にした。この capped 型（0|1|2|3）は昇格の味付け分岐（levelFlavor）と初期表示ページ
- * （defaultPage）に残るだけで、ページの閲覧可否は司らない。
- * 表示ラベルの Ln（citizenLevelLabel）は capped 対象外で L4 以降も伸びる。
+ * 市民レベル（capped 0|1|2|3）。かつては 1 レベル=1 ページのページ解禁に使っていたが、
+ * #510 方針B で解禁ゲートを撤去し全ページ開放にした。この capped 型は昇格の味付け分岐
+ * （levelFlavor）と初期表示ページ（defaultPage）に残るだけで、ページの閲覧可否は司らない。
+ * 表示ラベル（citizenLevelLabel）は #525 で「旅人/市民」の二値に統一済み＝この型の内部段階
+ * （2 以上）は表示に出ない。
  */
 export type CitizenLevel = 0 | 1 | 2 | 3;
 
@@ -50,17 +52,15 @@ export const CITIZEN_TIERS: CitizenTier[] = [
 ];
 
 /**
- * 市民レベルの表示名（#272・kako-jun「L0は旅人、L1が市民、L2が市民L2、ずっと市民Ln」）。
- * 古参/訪問者という別語は使わず、**名乗ったら市民・以降は市民のままレベルが上がる**進行にする。
- * - 0 以下 → 「旅人」（まだ名乗っていない＝市民でない）。
- * - 1     → 「市民」。
- * - 2 以上 → 「市民L2」「市民L3」…（活動で手帳レベルが進む）。
- * 引数は number で受ける（将来 stats が L3+ を出すため・CitizenLevel に閉じない）。
+ * 市民レベルの表示名（#525・kako-jun 承認により #272 の Ln 表記から方針転換）。
+ * 表示は常に「旅人」（未登録）か「市民」（登録済み）の二値のみで、数字付きの「市民Ln」は
+ * 一切出さない。内部の段階判定（citizenLevelFull / CITIZEN_TIERS）は defaultPage 等が引き続き
+ * 使うのでそのまま残し、この表示ラベル関数だけを二値化する。
+ * 引数は number で受ける（内部段階（citizenLevelFull）をそのまま渡せるように・CitizenLevel に閉じない）。
  */
 export function citizenLevelLabel(level: number, locale: Locale = DEFAULT_LOCALE): string {
   if (level <= 0) return t(locale, "citizen.level.traveler");
-  if (level === 1) return t(locale, "citizen.level.citizen");
-  return t(locale, "citizen.level.citizenN", { n: level });
+  return t(locale, "citizen.level.citizen");
 }
 
 /** 1 日の秒数。 */
@@ -79,7 +79,8 @@ function tenureDaysOf(earliestCreatedAt: number | null, now: number): number {
  * - L1 市民: 表示名が登録済み（= 名乗り完了・どの tier も未達）。
  * - L2..Ln: CITIZEN_TIERS のうち「投稿数 >= minPosts かつ 居住日数 >= minDays」を満たす最上位 tier の level。
  *
- * 活動スタッツ（CitizenStats）が市民Ln を出すために使う。CityHallBook のページ解放は citizenLevel（0|1|2|3 capped）。
+ * 活動スタッツ（CitizenStats）が内部段階として使う（表示は citizenLevelLabel が旅人/市民の二値に畳む・#525）。
+ * CityHallBook のページ解放は citizenLevel（0|1|2|3 capped）。
  *
  * @param input.hasName       登録済みの表示名が存在するか
  * @param input.postCount     t:hanoba の投稿数

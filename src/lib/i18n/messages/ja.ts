@@ -15,7 +15,10 @@ export const ja = {
   "nav.discover": "みんなの植物",
   "nav.me": "あなたの植物",
   "nav.compose": "投稿する",
-  "nav.ranking": "人気ランキング",
+  // #525: 窓口（cityHall.map.civic.3.label）と命名統一。「人気ランキング」から改称。
+  "nav.ranking": "市勢調査",
+  // #525: 住民投票へのフッタ導線（窓口 cityHall.map.civic.0.label と同名）。
+  "nav.vote": "住民投票",
   "nav.menu.open": "メニューを開く",
   "nav.menu.close": "メニューを閉じる",
   "nav.home.aria": "葉の場 Hanoba トップへ",
@@ -108,7 +111,8 @@ export const ja = {
   "meta.me.title": "あなたの植物 — Hanōba",
   "meta.me.description":
     "あなたが Hanōba に置いた植物の一覧。ここから投稿を削除できます（写真ごと）。",
-  "meta.ranking.title": "人気ランキング — Hanōba",
+  // #525: nav.ranking の見出しと命名統一（フッタ・窓口と同じ「市勢調査」）。
+  "meta.ranking.title": "市勢調査 — Hanōba",
   "meta.ranking.description":
     "Hanōba の投稿から、いま人気の品種を週次で集計。先週比（↑↓・NEW・RE）つき。",
   "meta.u.title": "市民のプロフィール — Hanōba",
@@ -143,10 +147,9 @@ export const ja = {
   "vote.board.bugs.intro":
     "市の不具合を見つけたら、ここへ。直ちに修繕隊を送る。",
 
-  // 市民レベルの表示名（citizen.ts・#272）。Ln は {n} 補間。
+  // 市民レベルの表示名（citizen.ts）。#525 で「旅人/市民」の二値表示に統一（数字付き Ln は表示しない）。
   "citizen.level.traveler": "旅人",
   "citizen.level.citizen": "市民",
-  "citizen.level.citizenN": "市民L{n}",
 
   // 活動スタッツ節（CitizenStats・#272）。見出しの主語 {subject} は自分=あなた/他人=表示名。
   "stats.subject.default": "この市民",
@@ -324,6 +327,8 @@ export const ja = {
   "account.profile.heading": "プロフィール",
   "account.profile.sub": "アイコン・自己紹介・サイト",
   "account.profile.edit": "編集",
+  // 名前未登録時はトグルを disabled にし、この案内を近くに出す（#525）。
+  "account.profile.editHint": "先にハンドルネームを登録してください。",
   "account.profile.icon.label": "アイコン",
   "account.profile.icon.uploading": "アップロード中…",
   "account.profile.icon.pick": "画像を選ぶ",
@@ -511,6 +516,8 @@ export const ja = {
   "cityHall.map.civic.0.label": "住民投票",
   "cityHall.map.civic.1.label": "品評会（コンテスト）",
   "cityHall.map.civic.2.label": "市長ブログ",
+  // 市勢調査（ランキング機能・#162）の窓口項目（#525・フッタ nav.ranking と命名統一）。
+  "cityHall.map.civic.3.label": "市勢調査",
   "cityHall.map.comingSoon": "近日開庁",
   "cityHall.districts.title": "地区案内",
   "cityHall.districts.lead":

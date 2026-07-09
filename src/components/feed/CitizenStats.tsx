@@ -22,8 +22,9 @@ interface Props {
  * すべて t:hanoba 投稿からのクライアント集計＝backendless・新たな身バレ無し（公開投稿を数えるだけ）。
  *
  * 品種カタログは初期バンドルに載せず動的 import（PostGrid と同型）。catalog 未ロード中は品種数を伏せ、
- * ロード後にふっと出る（グレースフル）。市民レベルは旅人/市民/市民Ln（古参・訪問者という語は使わない）で、
- * Ln（L3+）は複合（居住×投稿）で進む（citizen.ts）。**称号/実績バッジは脱ゲーム化で撤去**（市長は
+ * ロード後にふっと出る（グレースフル）。市民レベルの表示は旅人/市民の二値のみ（#525・古参・訪問者と
+ * いう別語も数字付き Ln も使わない）。内部の段階判定（citizen.ts）は defaultPage 等に残るが、
+ * ここには出さない。**称号/実績バッジは脱ゲーム化で撤去**（市長は
  * 王様でなく授ける権限はない・??? が面積を取って煽るのは hanoba の静けさに合わない・#272）。
  * 残すのは**事実のスタッツだけ**（投稿/写真/品種/居住＋育てた品種一覧）。レベルは塗りピルでなく
  * 静かなステータスラベルで出す。称号の置換＝「緑の総面積」（#310・街に足した緑）は別途。
@@ -63,7 +64,7 @@ export default function CitizenStats({ posts, hasName, subjectName }: Props) {
     <section className="glass rounded-2xl p-5 flex flex-col gap-4" aria-label={t("stats.activity.heading", { subject })}>
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="font-display text-lg font-bold text-ha-green-deep">{t("stats.activity.heading", { subject })}</h2>
-        {/* 市民レベル（旅人/市民/市民Ln）。名乗り前は旅人＝まだ市民でない。脱ゲーム化（#272）で
+        {/* 市民レベル（旅人/市民の二値表示・#525）。名乗り前は旅人＝まだ市民でない。脱ゲーム化（#272）で
             塗りピル（CTA 見え）でなく、うっすい囲みの静かなステータスラベルにする。 */}
         <span className="rounded-full border border-ha-green/30 px-2.5 py-0.5 text-xs font-medium text-ha-green-deep/70">
           {levelLabel}
