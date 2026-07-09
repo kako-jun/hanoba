@@ -13,9 +13,6 @@ import {
   swipeToBlur,
 } from "../../lib/feed/carousel.ts";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
-import { fetchMyPosts } from "../../lib/nostr/client.ts";
-import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
-import { citizenLevelFull } from "../../lib/lore/citizen.ts";
 import {
   type BookPage,
   buildCityHallBook,
@@ -41,12 +38,8 @@ import {
 // = 図鑑（集めて埋める読み物・#469）。機能導線（discover/ranking/me/compose）は
 //   ヘッダ/フッタ（SiteHeader/SiteFooter）が持つので手帳からは外し、ここはロアに割り切る。
 //
-// #137/#510: レベル解禁ゲートを撤去し、全10ページを最初から閲覧可能にした。市民レベル（Nostr 由来
-// ＝backendless）はページの閲覧可否を司らず、タイトルの進捗バッジ（Ln）としてだけ残る。
+// #137/#510: レベル解禁ゲートを撤去し、全10ページを最初から閲覧可能にした。
 // 初期ページは URL指定→保存位置→1p。「市政の窓口」（civicHub）は全ページ下部に共通表示する。
-//
-// client:load。鍵・relay 取得はクライアントのみ（getDisplayName / getPublicKeyHex / fetchMyPosts）。
-// SSR では window/localStorage を触らない（keys.ts が SSR 安全・取得は useEffect 内）。
 
 // ページ数は locale 非依存（10ページ固定）。既定 locale で1度組んで length を取る。
 const TOTAL_PAGES = buildCityHallBook(DEFAULT_LOCALE).length;
@@ -56,36 +49,6 @@ export const BOOK_PAGE_STORAGE_KEY = "hanoba:citizen-handbook-page";
 // クライアントでのみ layout（ペイント前）に走らせ、サーバでは no-op の effect に落とす。
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-/**
- * 名前・投稿から市民レベルを判定する（クライアント専用）。
- * タイトル表記用の真レベル（非キャップ・L1〜L6＝CitizenStats と同じ）を返す。
- * 名前が無ければ即 L0。名前があれば投稿を引いて判定。
- * 投稿取得が失敗しても名前があれば L1（名乗った市民を締め出さない・resilient）。
- */
-async function deriveLevel(): Promise<number> {
-  const name = getDisplayName();
-  const hasName = name !== null;
-  if (!hasName) return 0;
-
-  const now = Math.floor(Date.now() / 1000);
-  const resolve = (postCount: number, earliestCreatedAt: number | null) => {
-    const input = { hasName, postCount, earliestCreatedAt, now };
-    return citizenLevelFull(input);
-  };
-  try {
-    const pubkey = await getPublicKeyHex();
-    const posts = await fetchMyPosts(pubkey);
-    const earliestCreatedAt =
-      posts.length > 0
-        ? posts.reduce((min, p) => Math.min(min, p.createdAt), Infinity)
-        : null;
-    return resolve(posts.length, earliestCreatedAt);
-  } catch {
-    // 取得失敗時は名乗りを尊重して市民扱い（締め出さない）。
-    return resolve(0, null);
-  }
-}
 
 // lang は about.astro がページの locale を流す（#147）＝SSR/初期描画の種（ja）。
 // この島は LocaleProvider のルート（about.astro 直下・他の Provider に包まれない）なので、
@@ -105,23 +68,13 @@ export default function CityHallBook({
   const bookPages = buildCityHallBook(loc);
   const bookTitleText = t("cityHall.book.title");
 
-  // 判定中は安全側＝L0（既定 1p 移住案内）で始める。名乗り済みなら下の useIsoLayoutEffect が
-  // ペイント前に 2p へ寄せる（既定表示ページのフラッシュ防止）。全ページは最初から閲覧可能（#510 方針B）。
-  const [levelFull, setLevelFull] = useState(0);
-  const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
   const panelRef = useRef<HTMLDivElement>(null);
-  const aliveRef = useRef(true);
   // 本のスワイプ（#275）。←→ボタン・キーボード矢印と同じ goPrev/goNext を駆動する。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   // スワイプ中のページ内容ぼかし（px・#275）。0＝ぼかし無し。reduced-motion ではかからない。
   const [swipeBlur, setSwipeBlur] = useState(0);
 
-  // 名乗り済みユーザーの「一瞬1ページ目→2ページ目」フラッシュを消す。
-  // deriveLevel はネットワーク（fetchMyPosts）を待つので、それで page を寄せると 1p が一瞬見える。
-  // getDisplayName は同期（localStorage）で読めるので、ペイント前（layout）に初期ページと
-  // 最低レベルを確定する。名乗り済みは既定表示ページ 2p（街の地図）から始める。
-  // 正確な L1/L2 は下の deriveLevel が後から確定してタイトルの進捗バッジを更新する。
   useIsoLayoutEffect(() => {
     // 表示言語はクライアント解決（localStorage）。ペイント前（layout）に確定して
     // 「一瞬 en → ja」の言語フラッシュを消す（useEffect だと描画後に走り en が一瞬見える）。
@@ -131,36 +84,7 @@ export default function CityHallBook({
     const savedId = window.localStorage.getItem(BOOK_PAGE_STORAGE_KEY);
     const initial = pages.find((item) => item.id === requestedId) ?? pages.find((item) => item.id === savedId);
     if (initial !== undefined) setPage(initial.page);
-    if (getDisplayName() !== null) {
-      setLevelFull(1); // 名乗り済みは最低 L1＝タイトルは即「… L1」。真レベルは下の deriveLevel が確定。
-    }
   }, []);
-
-  useEffect(() => {
-    aliveRef.current = true;
-    void (async () => {
-      const lvFull = await deriveLevel();
-      if (!aliveRef.current) return;
-      // 初期 page・最低レベルは useIsoLayoutEffect が同期確定済み。ここでは正確なレベルを
-      // タイトルの進捗バッジ（levelFull・真レベル）を更新するだけ＝
-      // page は触らない（ユーザー操作を奪わない）。
-      setLevelFull(lvFull);
-      setResolved(true);
-    })();
-    return () => {
-      aliveRef.current = false;
-    };
-  }, []);
-
-  // 手帳タイトルは進捗を一目で示すレベル番号表記（#469 変更A・kako-jun 確定）。
-  // L0（旅人・未名乗り）はレベル番号を出さず素のタイトル＋副題「旅人」、L1+ は「… L{n}」で副題なし。
-  // n は真レベル（levelFull・非キャップ）＝CitizenStats と同じ表記（ページの閲覧可否とは無関係の進捗バッジ）。
-  // レベル番号は deriveLevel が真レベルを確定してから（resolved）だけ出す。名乗り済みは
-  // useIsoLayoutEffect が暫定 levelFull=1 を置くが、それを番号として見せると実 L2 の人が
-  // 「一瞬 L1 → L2」のフラッシュを踏む（#479-B）。番号は resolved まで伏せ、確定後に付くだけにする。
-  // 暫定 levelFull=1 は副題「旅人」の抑止だけに使う（名乗り済みに旅人を出さない）。
-  const showLevel = resolved && levelFull > 0;
-  const subtitleText = levelFull === 0 ? t("citizen.level.traveler") : null;
   const current = bookPages.find((p) => p.page === page) ?? bookPages[0]!;
 
   const canPrev = page > 1;
@@ -269,23 +193,10 @@ export default function CityHallBook({
         className="ha-rise flex flex-col gap-5"
         aria-label={bookTitleText}
       >
-        {/* 手帳の表題。L1+ は「ハノーバ市民手帳 L{n}」で進捗を一目で示す（#469 変更A）。
-          L0（旅人）はレベル番号を出さず素のタイトル＋副題「旅人」。L1+ は副題なし（下に MayorMark）。 */}
-        <header className="flex flex-col gap-1">
+        <header>
           <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ha-green-deep">
             {bookTitleText}
-            {/* レベル番号は真レベル確定後だけ付ける（#479-B）。{" "}＋ml で「L」の左に明確な間隔を空ける
-              （#479-C・h1 の tracking-tight に潰されない margin で稼ぐ。読み上げ名は半角スペース込みで維持）。 */}
-            {showLevel && (
-              <>
-                {" "}
-                <span className="ml-1.5">L{levelFull}</span>
-              </>
-            )}
           </h1>
-          {subtitleText !== null && (
-            <p className="text-sm text-ha-ink/55">{subtitleText}</p>
-          )}
         </header>
 
         {/* 本体パネル（暗色グラス）。ページが切り替わるたび key で穏やかに描き直す。

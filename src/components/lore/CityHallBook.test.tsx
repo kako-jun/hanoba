@@ -32,6 +32,8 @@ describe("CityHallBook 10ページナビ（#137）", () => {
 
   it("全10ページを最初から開放し、画像と説明を含む1ページ目を表示する", async () => {
     render(<CityHallBook />);
+    expect(screen.getByRole("heading", { level: 1, name: "ハノーバ市民手帳" })).toBeInTheDocument();
+    expect(screen.queryByText(/L1/)).not.toBeInTheDocument();
     expect(await screen.findByText(/ようこそ、緑の市へ/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "緑に包まれたハノーバ市の俯瞰" })).toHaveAttribute("src", "/hanoba-welcome-vista.webp");
     expect(screen.getByText(/植物専用の写真SNSです/)).toBeInTheDocument();
