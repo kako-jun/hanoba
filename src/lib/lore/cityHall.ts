@@ -157,7 +157,7 @@ export function civicHub(locale: Locale = DEFAULT_LOCALE): HubLink[] {
     { label: t(locale, "cityHall.map.civic.0.label"), route: "/vote" }, // #160 開庁（最初に開いた役所・Nostalgic BBS 3 板）。
     { label: t(locale, "cityHall.map.civic.3.label"), route: "/ranking" }, // #162 開庁（市勢調査＝ランキング・#525 でフッタ「市勢調査」と命名統一）。
     { label: t(locale, "cityHall.map.civic.1.label"), route: null, comingSoon }, // 品評会（#161 未実装）。
-    { label: t(locale, "cityHall.map.civic.2.label"), route: null, comingSoon }, // 市長ブログ（#164 未実装）。
+    { label: t(locale, "cityHall.map.civic.2.label"), route: "/gazette" }, // #164 開庁（市政だより＝市長執筆の体裁の静的更新履歴。「市長ブログ」の名称は使わない）。
   ];
 }
 

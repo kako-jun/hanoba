@@ -475,7 +475,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.heading": "Ventanillas cívicas",
   "cityHall.map.civic.0.label": "Urna ciudadana",
   "cityHall.map.civic.1.label": "Exposición floral (Concurso)",
-  "cityHall.map.civic.2.label": "Blog del Alcalde",
+  "cityHall.map.civic.2.label": "Gaceta Municipal",
   "cityHall.map.civic.3.label": "Censo municipal",
   "cityHall.map.comingSoon": "Próxima apertura",
   "cityHall.districts.title": "Guía de distritos",

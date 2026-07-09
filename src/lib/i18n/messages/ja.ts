@@ -518,7 +518,7 @@ export const ja = {
   "cityHall.map.civic.heading": "市政の窓口",
   "cityHall.map.civic.0.label": "住民投票",
   "cityHall.map.civic.1.label": "品評会（コンテスト）",
-  "cityHall.map.civic.2.label": "市長ブログ",
+  "cityHall.map.civic.2.label": "市政だより",
   // 市勢調査（ランキング機能・#162）の窓口項目（#525・フッタ nav.ranking と命名統一）。
   "cityHall.map.civic.3.label": "市勢調査",
   "cityHall.map.comingSoon": "近日開庁",

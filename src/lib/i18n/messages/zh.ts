@@ -446,7 +446,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "cityHall.map.civic.heading": "市政窗口",
   "cityHall.map.civic.0.label": "市民投票",
   "cityHall.map.civic.1.label": "花展（比赛）",
-  "cityHall.map.civic.2.label": "市长博客",
+  "cityHall.map.civic.2.label": "市政通讯",
   "cityHall.map.civic.3.label": "市情普查",
   "cityHall.map.comingSoon": "即将开放",
   "cityHall.districts.title": "街区指南",
