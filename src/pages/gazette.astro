@@ -1,0 +1,29 @@
+---
+import SiteHeader from "../components/SiteHeader.astro";
+import MainLayout from "../layouts/MainLayout.astro";
+// 市政だより（#164）。市長ボタニクス・フォン・ハノーバが執筆した体裁の静的リリースノート。
+// 市民手帳（about.astro/CityHallBook）と同じ本ページャー（BookPager）を GazetteBook 経由で使う。
+// client:only の理由・preload の理由は about.astro と同じ（#479-A・#484）＝ここでも踏襲する。
+import GazetteBook from "../components/lore/GazetteBook.tsx";
+import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
+import { BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC } from "../lib/lore/cityHallAssets.ts";
+
+// 表示言語（#147）。今は既定（en）固定＝挙動不変。段階2 go-live で URL/クライアントから決める。
+const locale: Locale = DEFAULT_LOCALE;
+---
+
+<MainLayout title={t(locale, "meta.gazette.title")} description={t(locale, "meta.gazette.description")}>
+  {/* GazetteBook も CityHallBook と同じく client:only（#479-A）＝サーバーは HTML を焼かず、
+      背景画像は JS 実行後の inline style url(...) セットで初めてブラウザが発見する。
+      preload ヒントでこの3枚だけ HTML 解析と並行して先取りする（#484 と同じ理由・同じ3枚）。 */}
+  <Fragment slot="head">
+    <link rel="preload" as="image" href={BOOK_FRAME_SRC} />
+    <link rel="preload" as="image" href={BOOK_PAGE_SRC} />
+    <link rel="preload" as="image" href={MAYOR_AVATAR_SRC} />
+  </Fragment>
+  <SiteHeader wide />
+
+  <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
+    <GazetteBook client:only="react" lang={locale} />
+  </main>
+</MainLayout>
