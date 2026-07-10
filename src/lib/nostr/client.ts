@@ -303,20 +303,31 @@ async function queryReactionCount(eventId: string, limit = 500): Promise<number>
  * - 自分の反応: 自分の pubkey の反応のうち最新（latestReaction）が isLike なら、その event id を
  *   myReactionId とする（dislike／取り消し済みで最新が無ければ undefined＝未いいね扱い）
  * - 失敗（オフライン等）は throw せず `{ count: 0, myReactionId: undefined }` にフォールバックする
+ * - `opts.excludeReactionId`: 直前に自分が削除確定させた kind:7 の id（#537 フォローアップ）。
+ *   `deleteReaction` の `confirmEventStored` は kind:5 削除イベント自体が read relay に保存された
+ *   ことしか確認しておらず、relay が NIP-09 を適用して対象 kind:7 を検索結果から除外するのは
+ *   非同期な実装もある。削除直後の再取得でまだ古い kind:7 が返っても、この id を計算前に除外して
+ *   「存在しない」ものとして扱う（count・自分の反応判定の両方から外す）。未指定時は現状と同じ挙動。
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
 export async function fetchReactionState(
   eventId: string,
-  limit = 500,
+  opts?: { limit?: number; excludeReactionId?: string },
 ): Promise<{ count: number; myReactionId: string | undefined }> {
+  const limit = opts?.limit ?? 500;
+  const excludeReactionId = opts?.excludeReactionId;
   try {
     const myPubkey = await getPublicKeyHex();
-    const reactions = await getPool().querySync(
+    const rawReactions = await getPool().querySync(
       [...GENERAL_RELAYS],
       { kinds: [7], "#e": [eventId], limit },
       { maxWait: QUERY_MAXWAIT },
     );
+    const reactions =
+      excludeReactionId === undefined
+        ? rawReactions
+        : rawReactions.filter((e) => e.id !== excludeReactionId);
     const count = countLikes(reactions);
     const myLatest = latestReaction(reactions.filter((e) => e.pubkey === myPubkey));
     const myReactionId = myLatest !== undefined && isLike(myLatest) ? myLatest.id : undefined;

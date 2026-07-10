@@ -200,16 +200,25 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     setLiking(true);
     setLikeError(false);
     try {
+      let deletedReactionId: string | undefined;
       if (isLikedByMe) {
         // 自分の反応が見つからない場合は何もしない（防御的ガード。表示と実体がずれていても壊さない）。
         if (myReactionId === undefined) return;
-        await deleteReaction(myReactionId);
+        // state 経由の myReactionId は次の setState で上書きされ得るため、削除対象 id を退避する。
+        deletedReactionId = myReactionId;
+        await deleteReaction(deletedReactionId);
       } else {
         await publishReaction(post.id, post.pubkey);
       }
       // post 切替後に旧投稿の送信/削除が完了しても、新投稿の状態を変更しない。
       if (reactionStateRef.current.postId !== post.id) return;
-      const state = await fetchReactionState(post.id);
+      // 削除直後は relay の NIP-09 適用が非同期な場合があるため、削除確定させた id を計算から除外する
+      // （relay がまだ返しても「存在しない」ものとして扱う）。publish 側は同一イベントの伝播待ちが
+      // 不要なため対象外。
+      const state = await fetchReactionState(
+        post.id,
+        deletedReactionId === undefined ? undefined : { excludeReactionId: deletedReactionId },
+      );
       if (reactionStateRef.current.postId !== post.id) return;
       reactionStateRef.current.revision += 1;
       setLikeCount(state.count);
