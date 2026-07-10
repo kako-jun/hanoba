@@ -88,7 +88,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
     expect(within(section).getByText("写真").parentElement).toHaveTextContent("3枚");
   });
 
-  it("プロフィール名が無い人は npub 短縮を見出しにし、活動は旅人（未名乗り）", async () => {
+  it("プロフィール名が無い人は旅人を見出しにし、aria-label に npub の識別補助を残す", async () => {
     fetchMyPosts.mockResolvedValue([makePost({ id: "1" })]);
     fetchMyProfileResilient.mockResolvedValue(null);
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
@@ -96,10 +96,65 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
 
     await waitFor(() => expect(fetchMyPosts).toHaveBeenCalledWith(PUBKEY));
     const h1 = await screen.findByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/^npub1/);
+    expect(h1).toHaveTextContent("旅人");
+    expect(h1.getAttribute("aria-label")).toMatch(/^旅人（npub1.*….*）$/);
     // hasName=false → 旅人。
     const section = await screen.findByRole("region", { name: /の活動$/ });
     expect(within(section).getByText("旅人")).toBeInTheDocument();
+  });
+
+  it("空白だけのプロフィール名も旅人として扱う", async () => {
+    fetchMyPosts.mockResolvedValue([]);
+    fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " \t " }));
+    window.history.replaceState(null, "", "/u?npub=" + NPUB);
+    render(<UserProfile />);
+
+    const h1 = await screen.findByRole("heading", { level: 1, name: /^旅人（npub1.*….*）$/ });
+    expect(h1).toHaveTextContent("旅人");
+    expect(h1).not.toHaveTextContent("npub");
+    const section = await screen.findByRole("region", { name: "旅人の活動" });
+    expect(within(section).getByText("旅人")).toBeInTheDocument();
+  });
+
+  it("プロフィール遅延取得で旅人から trim 済み表示名へ遷移する", async () => {
+    let resolveProfile!: (profile: Profile) => void;
+    fetchMyPosts.mockResolvedValue([]);
+    fetchMyProfileResilient.mockReturnValue(
+      new Promise<Profile>((resolve) => {
+        resolveProfile = resolve;
+      }),
+    );
+    window.history.replaceState(null, "", "/u?npub=" + NPUB);
+    render(<UserProfile />);
+
+    expect(await screen.findByRole("heading", { level: 1, name: /^旅人（npub1.*….*）$/ })).toBeInTheDocument();
+    resolveProfile(makeProfile({ name: "  葉子  " }));
+    expect(await screen.findByRole("heading", { level: 1, name: "葉子" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1, name: /旅人/ })).not.toBeInTheDocument();
+  });
+
+  it("isLikelyMe はローカル名とプロフィール名を trim 後に比較する", async () => {
+    localStorage.setItem("hanoba:name", "  葉子 ");
+    fetchMyPosts.mockResolvedValue([]);
+    fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " 葉子  " }));
+    window.history.replaceState(null, "", "/u?npub=" + NPUB);
+    render(<UserProfile />);
+
+    expect(await screen.findByRole("link", { name: /これはあなたの公開プロフィールです/ })).toHaveAttribute(
+      "href",
+      "/me",
+    );
+  });
+
+  it("未名乗りプロフィールと空白ローカル名は isLikelyMe にしない", async () => {
+    localStorage.setItem("hanoba:name", "   ");
+    fetchMyPosts.mockResolvedValue([]);
+    fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " " }));
+    window.history.replaceState(null, "", "/u?npub=" + NPUB);
+    render(<UserProfile />);
+
+    await screen.findByRole("heading", { level: 1, name: /^旅人（npub1.*….*）$/ });
+    expect(screen.queryByRole("link", { name: /これはあなたの公開プロフィールです/ })).not.toBeInTheDocument();
   });
 
   it("取得失敗は error 状態（再試行ボタンを出す）", async () => {

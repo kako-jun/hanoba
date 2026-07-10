@@ -44,6 +44,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "card.photo.zoom": "Ampliar foto",
   "card.photos.count": "{n}",
   "card.author.profile": "Perfil de {name}",
+  "card.author.profileWithId": "Perfil de {name} ({id})",
+  "author.unnamed": "Viajero",
   "card.readMore": "Leer más",
   "reaction.likes.aria": "{n} me gusta",
   "reaction.comments.aria": "{n} comentarios",
@@ -169,6 +171,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "activity.legend.high": "Alto",
 
   "profile.subject.default": "Ciudadano",
+  "profile.subject.withId": "{name} ({id})",
   "profile.notFound": "No se pudo encontrar el perfil de este ciudadano.",
   "profile.toDiscover": "A Plantas de todos",
   "profile.isMe": "Este es tu perfil público (a Tus plantas)",

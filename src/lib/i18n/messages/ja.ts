@@ -55,6 +55,8 @@ export const ja = {
   "card.photo.zoom": "写真を拡大",
   "card.photos.count": "{n}枚",
   "card.author.profile": "{name} のプロフィール",
+  "card.author.profileWithId": "{name}（{id}）のプロフィール",
+  "author.unnamed": "旅人",
   "card.readMore": "続きを読む",
   "reaction.likes.aria": "いいね {n}",
   "reaction.comments.aria": "コメント {n}",
@@ -193,6 +195,7 @@ export const ja = {
 
   // 他人の公開プロフィール島（UserProfile・#272）。
   "profile.subject.default": "市民",
+  "profile.subject.withId": "{name}（{id}）",
   "profile.notFound": "この市民のプロフィールが見つかりませんでした。",
   "profile.toDiscover": "みんなの植物へ",
   "profile.isMe": "これはあなたの公開プロフィールです（あなたの植物へ）",

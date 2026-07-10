@@ -6,6 +6,7 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
 import { buildVarietyIndex } from "../../lib/plants/fuda.ts";
 import { LocaleProvider } from "../../lib/i18n/index.ts";
+import { nip19 } from "nostr-tools";
 
 // 植物札テスト用の最小カタログ（パキポディウム属＋品種グラキリス／フィカス属＋複数語品種）。
 // #460: カテゴリ・pickable 属に loc を付け、ハッシュタグ表示ローカライズ（カテゴリ/属→閲覧言語）を検証する。
@@ -641,7 +642,7 @@ describe("PostCard", () => {
     }
   });
 
-  it("profile 未取得なら npub 短縮にフォールバック（#35）", () => {
+  it("profile 未取得なら旅人にフォールバックし、リンクの識別補助には npub を残す（#531）", () => {
     const restore = mockSizes(0, 0);
     try {
       render(
@@ -654,7 +655,55 @@ describe("PostCard", () => {
           profile={null}
         />,
       );
-      expect(screen.getByText(/^npub1.*…/)).toBeInTheDocument();
+      const npub = nip19.npubEncode("a".repeat(64));
+      const link = screen.getByRole("link", { name: /^旅人（npub1.*….*）のプロフィール$/ });
+      expect(link).toHaveAttribute("href", `/u?npub=${npub}`);
+      expect(link).toHaveTextContent("旅人");
+      expect(link).not.toHaveTextContent("npub");
+    } finally {
+      restore();
+    }
+  });
+
+  it("空白だけのプロフィール名も英語では Traveler と表示する", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      render(
+        <LocaleProvider value="en">
+          <PostCard
+            post={makePost({ pubkey: "b".repeat(64) })}
+            index={0}
+            now={2000}
+            onOpen={noop}
+            onSelectHashtag={noop}
+            profile={{ name: " \t ", picture: null, about: null, websites: [], favoriteVarieties: [] }}
+          />
+        </LocaleProvider>,
+      );
+      const link = screen.getByRole("link", { name: /^Traveler's profile \(npub1.*….*\)$/ });
+      expect(link).toHaveTextContent("Traveler");
+      expect(link).not.toHaveTextContent("npub");
+    } finally {
+      restore();
+    }
+  });
+
+  it("プロフィール遅延取得で旅人から trim 済み表示名へ遷移する", () => {
+    const restore = mockSizes(0, 0);
+    try {
+      const post = makePost({ pubkey: "c".repeat(64) });
+      const props = { post, index: 0, now: 2000, onOpen: noop, onSelectHashtag: noop };
+      const { rerender } = render(<PostCard {...props} profile={null} />);
+      expect(screen.getByText("旅人")).toBeInTheDocument();
+
+      rerender(
+        <PostCard
+          {...props}
+          profile={{ name: "  花子  ", picture: null, about: null, websites: [], favoriteVarieties: [] }}
+        />,
+      );
+      expect(screen.queryByText("旅人")).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "花子 のプロフィール" })).toHaveTextContent("花子");
     } finally {
       restore();
     }

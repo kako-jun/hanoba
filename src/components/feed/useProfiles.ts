@@ -11,7 +11,7 @@ const EMPTY: Profile = { name: null, picture: null, about: null, websites: [], f
 // 著者プロフィールの bounded retry（#103 デグレ修正）。
 // 単発の fetchProfiles は、接続直後やモバイル回線で lagging relay が EOSE 前に
 // 取りこぼすことがある。以前は取りこぼした著者を即 EMPTY で恒久キャッシュしていたため、
-// 一度ミスると名前/アイコンが永久に出ず npub フォールバック表示で固定されていた。
+// 一度ミスると名前/アイコンが永久に出ず、可視名が author.unnamed のまま固定されていた。
 // 取りこぼしは即確定せず、最大 RETRY_LIMIT 回まで RETRY_DELAY_MS 間隔で引き直す
 // （#93 の fetchMyProfileResilient と同じ思想を著者ヘッダ経路にも適用）。
 const RETRY_LIMIT = 3;
@@ -21,7 +21,8 @@ const RETRY_DELAY_MS = 700;
  * 著者プロフィール（kind:0）を一括取得して pubkey→Profile の Map を返す（#35・#103）。
  * 未取得の pubkey だけまとめて fetchProfiles し、結果をキャッシュ。取りこぼした著者は
  * bounded retry（最大 RETRY_LIMIT 回・RETRY_DELAY_MS 間隔）で引き直し、予算を使い切るまで
- * EMPTY 確定しない。取得前は Map に入らない＝呼び出し側は npub フォールバック表示にする。
+ * EMPTY 確定しない。取得前は Map に入らない＝呼び出し側の可視名は author.unnamed とし、
+ * npub はプロフィールリンクと aria の識別補助にだけ使う。
  */
 export function useProfiles(pubkeys: string[]): Map<string, Profile> {
   const [, bump] = useState(0);

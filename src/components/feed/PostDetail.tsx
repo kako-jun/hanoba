@@ -8,6 +8,7 @@ import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { focusTrapTarget, getFocusableElements } from "../../lib/a11y/focus-trap.ts";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { formatShotDate } from "../../lib/feed/shotDate.ts";
+import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import { useLocale, useT } from "../../lib/i18n/index.ts";
 import {
   nextPhotoIndex,
@@ -54,7 +55,8 @@ function clampPhotoIndex(i: number | undefined, len: number): number {
  * ＝静的サイト（CF Pages・SSR なし）を維持する。
  *
  * 内容: 1:1 画像 ＋ 一言（caption）＋ ハッシュタグ（クリックで絞り込み）
- *       ＋ 投稿者（npub 短縮）＋ 相対時刻 ＋ いいねボタン（花 N）。
+ *       ＋ 投稿者（名前、未名乗りは author.unnamed。npub はリンク/aria 識別のみ）
+ *       ＋ 相対時刻 ＋ いいねボタン（花 N）。
  * いいねは NIP-25 の kind:7 リアクションを読み書きする（1ユーザー1件）。
  * モーダルに反応領域を足せるよう、本文と meta を分けた構造にしてある。
  *
@@ -65,7 +67,14 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   const panelRef = useRef<HTMLDivElement>(null);
   // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const authorName = profile?.name ?? shortNpub(post.pubkey);
+  // npub はプロフィール URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
+  const hasAuthorName = normalizeAuthorName(profile?.name) !== null;
+  const locale = useLocale();
+  const t = useT(locale);
+  const authorName = authorDisplayName(profile?.name, t("author.unnamed"));
+  const authorProfileLabel = hasAuthorName
+    ? t("card.author.profile", { name: authorName })
+    : t("card.author.profileWithId", { name: authorName, id: shortNpub(post.pubkey) });
   // 著者の複数サイトリンク（#35 Piece 2）。kind:0 拡張 websites[] をアイコン列で出す。
   const siteLinks = toSiteLinks(profile?.websites ?? []);
 
@@ -77,8 +86,6 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // revision > 0 は現在の投稿で送信成功済み＝それ以前に開始した初期取得結果を捨てる。
   const reactionStateRef = useRef({ postId: post.id, revision: 0 });
   const [photoIndex, setPhotoIndex] = useState(() => clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
-  const locale = useLocale();
-  const t = useT(locale);
   // 現在表示中の写真の撮影日（#324・写真↔日付の対応を保つ）。無ければ出さない。
   const currentShotDate = post.photoShotDates?.[photoIndex] ?? null;
   // スワイプ中の写真ぼかし（px・#275）。0＝ぼかし無し。指を離すと 0 に戻し、
@@ -433,7 +440,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 ) : (
                   <a
                     href={href}
-                    aria-label={t("card.author.profile", { name: authorName })}
+                    aria-label={authorProfileLabel}
                     className="flex min-w-0 items-center gap-2 rounded-full hover:text-ha-green-deep transition-colors"
                   >
                     {inner}

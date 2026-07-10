@@ -68,7 +68,8 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       if (!aliveRef.current) return;
       setPosts(result);
       setStatus("loaded");
-      // モーダルの著者表示用に自分のプロフィールも引く（失敗は null＝npub フォールバック）。
+      // モーダルの著者表示用に自分のプロフィールも引く（失敗時の可視名は author.unnamed、
+      // npub はプロフィールリンクと aria の識別補助にだけ残す）。
       void fetchMyProfileResilient(pubkey).then((p) => {
         if (aliveRef.current) setMyProfile(p);
       });

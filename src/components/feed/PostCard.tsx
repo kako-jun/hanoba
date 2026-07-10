@@ -4,6 +4,7 @@ import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
 import { localizeHashtag } from "../../lib/plants/plant-i18n.ts";
 import { shotDateRange, SHOT_DATE_RANGE_SEP } from "../../lib/feed/shotDate.ts";
+import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import {
   nextPhotoIndex,
   prevPhotoIndex,
@@ -28,7 +29,7 @@ interface Props {
   onOpen: (photoIndex?: number) => void;
   /** タグクリック（クライアント側絞り込み/再検索）。 */
   onSelectHashtag: (tag: string) => void;
-  /** 著者プロフィール（#35・未取得なら null＝npub フォールバック表示）。 */
+  /** 著者プロフィール（#35・未取得なら null＝可視名は author.unnamed、npub はリンク/aria 識別のみ）。 */
   profile?: Profile | null;
   /**
    * 札解決の索引（#239/#257・植物札用）。`PostGrid` がグリッド単位で1回 `buildVarietyIndex` した
@@ -76,8 +77,12 @@ export default function PostCard({
   // 撮影期間（#324・kako-jun A案）。写真ごとの撮影日があれば表紙に「2024-06-01〜2024-06-22」を出す
   // ＝「1つの被写体の1ヶ月を振り返る」投稿が一目で分かる。無ければ null（出さない）。全言語 ISO 固定（#347）。
   const dateRange = shotDateRange(post.photoShotDates ?? []);
-  // 著者名は取得できればユーザー名、未取得なら npub 短縮（#35）。
-  const authorName = profile?.name ?? shortNpub(post.pubkey);
+  // npub はプロフィール URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
+  const hasAuthorName = normalizeAuthorName(profile?.name) !== null;
+  const authorName = authorDisplayName(profile?.name, t("author.unnamed"));
+  const authorProfileLabel = hasAuthorName
+    ? t("card.author.profile", { name: authorName })
+    : t("card.author.profileWithId", { name: authorName, id: shortNpub(post.pubkey) });
   const [expanded, setExpanded] = useState(false);
   const [clipped, setClipped] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -290,7 +295,7 @@ export default function PostCard({
                 <a
                   href={href}
                   onClick={(e) => e.stopPropagation()}
-                  aria-label={t("card.author.profile", { name: authorName })}
+                  aria-label={authorProfileLabel}
                   className="flex min-w-0 items-center gap-2 hover:text-ha-green-deep transition-colors"
                 >
                   {inner}

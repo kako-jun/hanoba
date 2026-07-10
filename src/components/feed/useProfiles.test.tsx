@@ -70,7 +70,7 @@ describe("useProfiles (#103 bounded retry)", () => {
 
     const { result } = renderHook(() => useProfiles([pk]));
     await flush();
-    // retry 待ちの間は Map に入らない＝呼び出し側は npub フォールバック表示。
+    // retry 待ちの間は Map に入らない＝呼び出し側の可視名は author.unnamed。
     expect(result.current.has(pk)).toBe(false);
 
     await advance(700);
