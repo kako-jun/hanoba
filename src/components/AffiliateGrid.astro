@@ -11,6 +11,7 @@
 // 開示（景表法 / ステマ規制 2023・必須）: アフィリエイトである旨を商品の近くに
 // 明示する。rel に sponsored nofollow を付け、文言でも「Amazon アソシエイトです」と示す。
 import { AFFILIATE_ENABLED, AFFILIATE_PRODUCTS } from "../data/affiliateProducts";
+import Icon from "./ui/Icon.tsx";
 
 // 無効化フラグ・空配列なら一切描画しない。
 const show = AFFILIATE_ENABLED && AFFILIATE_PRODUCTS.length > 0;
@@ -62,8 +63,18 @@ const show = AFFILIATE_ENABLED && AFFILIATE_PRODUCTS.length > 0;
       </ul>
 
       <p class="text-xs text-ha-ink/60 leading-relaxed [word-break:auto-phrase]">
-        Amazon アソシエイトです。運営への水やりです。
+        Amazon アソシエイトです。
       </p>
+
+      <a
+        href="https://github.com/sponsors/kako-jun"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex w-fit items-center gap-2 rounded-full border border-ha-green/25 px-4 py-2 text-sm font-bold text-ha-green-deep hover:border-ha-green/55 transition-colors"
+      >
+        <Icon name="heart" className="h-4 w-4 text-ha-orange" />
+        GitHub Sponsors で支援する
+      </a>
     </section>
   )
 }

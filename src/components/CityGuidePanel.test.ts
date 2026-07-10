@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const panelSrc = readFileSync(join(import.meta.dirname, "CityGuidePanel.astro"), "utf8");
+const affiliateGridSrc = readFileSync(join(import.meta.dirname, "AffiliateGrid.astro"), "utf8");
 const aboutSrc = readFileSync(join(import.meta.dirname, "..", "pages", "about.astro"), "utf8");
 const publicDir = join(import.meta.dirname, "..", "..", "public");
 
@@ -19,8 +20,28 @@ describe("CityGuidePanel（#543）", () => {
     expect(existsSync(join(publicDir, "hanoba-qr-code.png"))).toBe(true);
   });
 
-  it("GitHub Sponsors 導線は案内札に置く", () => {
-    expect(panelSrc).toContain('href="https://github.com/sponsors/kako-jun"');
-    expect(panelSrc).toContain("運営へ水やりする");
+  it("QR に装飾枠を付けず、白地と緑色化で読み取り面を作る", () => {
+    expect(panelSrc).not.toContain("border-dashed");
+    expect(panelSrc).toContain("bg-white p-2");
+    expect(panelSrc).toContain("qr-code-image");
+    expect(panelSrc).toContain("filter:");
+  });
+
+  it("QR 下の URL は中央揃えにする", () => {
+    expect(panelSrc).toContain("text-center text-sm font-bold");
+  });
+
+  it("GitHub Sponsors 導線は案内札に混ぜない", () => {
+    expect(panelSrc).not.toContain("github.com/sponsors");
+    expect(panelSrc).not.toContain("水やり");
+  });
+
+  it("GitHub Sponsors 導線は道具棚の一番下に置き、水やり文言を使わない", () => {
+    const amazonDisclosureIndex = affiliateGridSrc.indexOf("Amazon アソシエイトです。");
+    const sponsorsIndex = affiliateGridSrc.indexOf('href="https://github.com/sponsors/kako-jun"');
+
+    expect(sponsorsIndex).toBeGreaterThan(amazonDisclosureIndex);
+    expect(affiliateGridSrc).toContain("GitHub Sponsors で支援する");
+    expect(affiliateGridSrc).not.toContain("水やり");
   });
 });
