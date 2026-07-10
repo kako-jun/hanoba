@@ -3,6 +3,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import AstroPWA from "@vite-pwa/astro";
 import { defineConfig } from "astro/config";
+import { hanobaWorkboxOptions } from "./src/lib/pwa/workbox-options.mjs";
 
 // 完全静的・バックエンドレス。状態は全て Nostr（クライアント側）に乗る。
 // SSR アダプタは持たない（dist/ をそのまま CF Pages に配信）。
@@ -16,19 +17,7 @@ export default defineConfig({
     sitemap(),
     AstroPWA({
       registerType: "autoUpdate",
-      workbox: {
-        // クエリ付きのナビゲーション（例: 植物札→ `/discover?tags=ブレビカウレ`）が、precache 済みの
-        // 各ページ HTML（`/discover/index.html` 等）に**マッチするよう、マッチ時に全クエリパラメータを
-        // 無視する**（既定は utm_/fbclid のみ無視）。これが無いと `?tags=` 付き /discover が precache に
-        // マッチせず、生成 SW の navigateFallback（`createHandlerBoundToURL("/")`＝ホーム）にすり替わり、
-        // discover が一切描画されない＝**札クリックで品種絞り込みに遷移できない真因**（#291・本番のみ／
-        // SW 有効時のみ再現。dev は SW 無しで露見しなかった）。`?q=`（JSON-LD 検索）・旧 `?tag=` も同時に救済。
-        ignoreURLParametersMatching: [/.*/],
-        // 天気の水滴素材（#231・雨のときだけ出る装飾）は precache しない＝雨を見ないユーザーにも
-        // install で数百 KB を背負わせない（#132「軽量」）。雨が降ったとき初回だけ network 取得し、
-        // 以後は _headers の長期 Cache-Control（public/_headers の /weather/*）でブラウザ HTTP キャッシュに乗る。
-        globIgnores: ["**/weather/**"],
-      },
+      workbox: hanobaWorkboxOptions,
       manifest: {
         name: "Hanōba",
         short_name: "Hanōba",
