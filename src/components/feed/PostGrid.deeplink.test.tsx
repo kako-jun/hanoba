@@ -12,7 +12,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   // フィード外の `?p=` 着地で単一投稿を引く（観測対象）。
   fetchPostById: (...a: unknown[]) => fetchPostById(...a),
   // PostGrid → PostCard / PostDetail（選択時）が呼ぶ周辺取得はこの検証では使わない。
-  fetchReactionCount: () => Promise.resolve(0),
+  fetchReactionState: () => Promise.resolve({ count: 0, myReactionId: undefined }),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
   fetchEngagementCountsBatch: () => Promise.resolve({ reactions: new Map(), comments: new Map() }),

@@ -275,40 +275,58 @@ export async function fetchRankingPosts(limit = 500): Promise<FeedPost[]> {
 }
 
 /**
- * 投稿（kind:1）に対するいいね数を取得する。NIP-25 の kind:7 リアクションを
- * `#e` で対象投稿に絞って集計する。表示時と、いいね送信後の確定件数取得で共有する。
+ * 投稿の反応状態（件数＋自分の反応）を1クエリで取得する（#537・トグルいいねの表示同期）。
+ * PostDetail はこの結果をそのまま表示に反映する＝件数と自分の状態を常に relay 由来の値で揃える
+ * （ローカルでの ±1 演算はしない）。
  *
  * - `{kinds:[7], "#e":[eventId]}` で対象投稿宛のリアクションを取得
- * - countLikes で dislike を除外し、同一 pubkey は 1 票に畳む（1 人 1 いいね）
- * - 失敗（オフライン等）は throw せず 0 にフォールバックする
+ * - count は countLikes（1人1いいねに畳む・dislike 除外）
+ * - 自分の反応: 自分の pubkey の反応のうち最新（latestReaction）が isLike なら、その event id を
+ *   myReactionId とする（dislike／取り消し済みで最新が無ければ undefined＝未いいね扱い）
+ * - 失敗（オフライン等）は throw せず `{ count: 0, myReactionId: undefined }` にフォールバックする
+ * - `opts.excludeReactionId`: 直前に自分が削除確定させた kind:7 の id（#537 フォローアップ）。
+ *   `deleteReaction` の `confirmEventStored` は kind:5 削除イベント自体が read relay に保存された
+ *   ことしか確認しておらず、relay が NIP-09 を適用して対象 kind:7 を検索結果から除外するのは
+ *   非同期な実装もある。削除直後の再取得でまだ古い kind:7 が返っても、この id を計算前に除外して
+ *   「存在しない」ものとして扱う（count・自分の反応判定の両方から外す）。未指定時は現状と同じ挙動。
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
-async function queryReactionCount(eventId: string, limit = 500): Promise<number> {
-  const reactions = await getPool().querySync(
-    [...GENERAL_RELAYS],
-    { kinds: [7], "#e": [eventId], limit },
-    { maxWait: QUERY_MAXWAIT },
-  );
-  return countLikes(reactions);
-}
-
-export async function fetchReactionCount(eventId: string, limit = 500): Promise<number> {
+export async function fetchReactionState(
+  eventId: string,
+  opts?: { limit?: number; excludeReactionId?: string },
+): Promise<{ count: number; myReactionId: string | undefined }> {
+  const limit = opts?.limit ?? 500;
+  const excludeReactionId = opts?.excludeReactionId;
   try {
-    return await queryReactionCount(eventId, limit);
+    const myPubkey = await getPublicKeyHex();
+    const rawReactions = await getPool().querySync(
+      [...GENERAL_RELAYS],
+      { kinds: [7], "#e": [eventId], limit },
+      { maxWait: QUERY_MAXWAIT },
+    );
+    const reactions =
+      excludeReactionId === undefined
+        ? rawReactions
+        : rawReactions.filter((e) => e.id !== excludeReactionId);
+    const count = countLikes(reactions);
+    const myLatest = latestReaction(reactions.filter((e) => e.pubkey === myPubkey));
+    const myReactionId = myLatest !== undefined && isLike(myLatest) ? myLatest.id : undefined;
+    return { count, myReactionId };
   } catch {
-    return 0;
+    return { count: 0, myReactionId: undefined };
   }
 }
 
 /**
  * 投稿へ標準 NIP-25 のいいねを publish する。
  * 先に自分の既存反応を確認し、同じユーザーによる重複加算を防ぐ。
+ * 戻り値は成否のみで件数は返さない（呼び出し側が別途 fetchReactionState で取得する設計・#537）。
  */
 export async function publishReaction(
   targetEventId: string,
   targetPubkey: string,
-): Promise<{ status: "published" | "already-reacted"; count: number }> {
+): Promise<{ status: "published" | "already-reacted" }> {
   const pubkey = await getPublicKeyHex();
   const ownReactions = await getPool().querySync(
     [...GENERAL_RELAYS],
@@ -317,7 +335,7 @@ export async function publishReaction(
   );
   const latestOwnReaction = latestReaction(ownReactions);
   if (latestOwnReaction !== undefined && isLike(latestOwnReaction)) {
-    return { status: "already-reacted", count: await queryReactionCount(targetEventId) };
+    return { status: "already-reacted" };
   }
 
   const signed = await signTemplate(buildReactionTemplate(targetEventId, targetPubkey));
@@ -325,7 +343,21 @@ export async function publishReaction(
   if (!(await confirmEventStored(signed.id))) {
     throw new Error("いいねを読み取りリレーで確認できませんでした");
   }
-  return { status: "published", count: await queryReactionCount(targetEventId) };
+  return { status: "published" };
+}
+
+/**
+ * 自分の kind:7 リアクションを取り消す（#537・NIP-09 kind:5・トグルいいねの「もう一度押す」側）。
+ * publishReaction と対称に送信確認を必須にする（deleteComment と違い、この機能は件数表示に直結する
+ * ため、確認できないまま成功扱いにすると「取り消したのに件数が減らない／減ったのに実は残っている」
+ * 事故になる。確認できなければ throw し、呼び出し側で件数・状態を変更しないまま失敗を伝えさせる）。
+ */
+export async function deleteReaction(reactionId: string): Promise<void> {
+  const signed = await signTemplate(buildDeletionEvent([reactionId]));
+  await publishEvent(signed);
+  if (!(await confirmEventStored(signed.id))) {
+    throw new Error("いいねの取り消しを読み取りリレーで確認できませんでした");
+  }
 }
 
 // バッチ取得（タイムライン/discover のカード・#276）の kind:7/kind:1 上限。

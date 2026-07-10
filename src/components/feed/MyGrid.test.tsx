@@ -7,7 +7,7 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 const fetchMyPosts = vi.fn();
 const deletePost = vi.fn();
 const fetchMyProfileResilient = vi.fn();
-const fetchReactionCount = vi.fn();
+const fetchReactionState = vi.fn();
 const getPublicKeyHex = vi.fn();
 // 編集モーダル（#300・EditPost）が使う client 関数。MyGrid から EditPost を開く統合テスト用にスタブ。
 const editPost = vi.fn();
@@ -19,7 +19,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchMyPosts: (...a: unknown[]) => fetchMyPosts(...a),
   deletePost: (...a: unknown[]) => deletePost(...a),
   fetchMyProfileResilient: (...a: unknown[]) => fetchMyProfileResilient(...a),
-  fetchReactionCount: (...a: unknown[]) => fetchReactionCount(...a),
+  fetchReactionState: (...a: unknown[]) => fetchReactionState(...a),
   editPost: (...a: unknown[]) => editPost(...a),
   fetchEngagementCountsBatch: (...a: unknown[]) => fetchEngagementCountsBatch(...a),
   // コメント欄（#142）は検証対象外なので空（コメント0件）で固定。
@@ -50,7 +50,7 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
     fetchMyPosts.mockReset().mockResolvedValue([post]);
     deletePost.mockReset().mockResolvedValue({ noteDeleted: true, imageDeleted: true });
     fetchMyProfileResilient.mockReset().mockResolvedValue(null);
-    fetchReactionCount.mockReset().mockResolvedValue(0);
+    fetchReactionState.mockReset().mockResolvedValue({ count: 0, myReactionId: undefined });
     getPublicKeyHex.mockReset().mockResolvedValue("a".repeat(64));
   });
   afterEach(() => cleanup());

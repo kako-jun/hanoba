@@ -18,7 +18,8 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchMyPosts: (...a: unknown[]) => fetchMyPosts(...a),
   deletePost: vi.fn(),
   fetchMyProfileResilient: (...a: unknown[]) => fetchMyProfileResilient(...a),
-  fetchReactionCount: () => Promise.resolve(0),
+  // #537: fetchReactionCount → fetchReactionState（件数＋自分の反応）。
+  fetchReactionState: () => Promise.resolve({ count: 0, myReactionId: undefined }),
   editPost: vi.fn(),
   fetchEngagementCountsBatch: () =>
     Promise.resolve({ reactions: new Map<string, number>(), comments: new Map<string, number>() }),

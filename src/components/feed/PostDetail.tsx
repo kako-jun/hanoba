@@ -18,7 +18,7 @@ import {
   swipeToBlur,
 } from "../../lib/feed/carousel.ts";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
-import { fetchReactionCount, publishReaction } from "../../lib/nostr/client.ts";
+import { deleteReaction, fetchReactionState, publishReaction } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
@@ -80,6 +80,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
+  // 自分の既存反応（#537・トグルいいね）。Nostr の正本はリレー上の event とし、ここは
+  // 表示中の一時状態としてのみ使う（localStorage には控えない）。
+  const [isLikedByMe, setIsLikedByMe] = useState(false);
+  const [myReactionId, setMyReactionId] = useState<string | undefined>(undefined);
   const [liking, setLiking] = useState(false);
   const [likeError, setLikeError] = useState(false);
   // 初期件数取得と送信の競合、および同一コンポーネントでの投稿切替を識別する。
@@ -164,19 +168,23 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     };
   }, []);
 
-  // いいね数を取得する（クライアントのみ・SSR では走らない）。
+  // いいね状態（件数＋自分の反応）を取得する（クライアントのみ・SSR では走らない）。
   // アンマウント後・post 切替後の setState を alive フラグで防ぐ。
   useEffect(() => {
     let alive = true;
     reactionStateRef.current = { postId: post.id, revision: 0 };
     const revision = reactionStateRef.current.revision;
     setLikeCount(null);
+    setIsLikedByMe(false);
+    setMyReactionId(undefined);
     setLiking(false);
     setLikeError(false);
-    fetchReactionCount(post.id).then((count) => {
+    fetchReactionState(post.id).then((state) => {
       const current = reactionStateRef.current;
       if (alive && current.postId === post.id && current.revision === revision) {
-        setLikeCount(count);
+        setLikeCount(state.count);
+        setIsLikedByMe(state.myReactionId !== undefined);
+        setMyReactionId(state.myReactionId);
       }
     });
     return () => {
@@ -184,17 +192,40 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     };
   }, [post.id]);
 
-  async function likePost() {
+  // いいねボタンのトグル動作（#537）。Nostr の正本はリレー上の event なので、publish/delete の
+  // 成否に関わらず**必ず fetchReactionState を再取得**して件数・自分の状態を relay 由来の値に揃える
+  // （ローカルでの ±1 演算はしない）。liking フラグが連打・二重 publish/削除を防ぐ。
+  async function toggleLike() {
     if (liking) return;
     setLiking(true);
     setLikeError(false);
     try {
-      const result = await publishReaction(post.id, post.pubkey);
-      // post 切替後に旧投稿の送信が完了しても、新投稿の件数を変更しない。
+      let deletedReactionId: string | undefined;
+      if (isLikedByMe) {
+        // 自分の反応が見つからない場合は何もしない（防御的ガード。表示と実体がずれていても壊さない）。
+        if (myReactionId === undefined) return;
+        // state 経由の myReactionId は次の setState で上書きされ得るため、削除対象 id を退避する。
+        deletedReactionId = myReactionId;
+        await deleteReaction(deletedReactionId);
+      } else {
+        await publishReaction(post.id, post.pubkey);
+      }
+      // post 切替後に旧投稿の送信/削除が完了しても、新投稿の状態を変更しない。
+      if (reactionStateRef.current.postId !== post.id) return;
+      // 削除直後は relay の NIP-09 適用が非同期な場合があるため、削除確定させた id を計算から除外する
+      // （relay がまだ返しても「存在しない」ものとして扱う）。publish 側は同一イベントの伝播待ちが
+      // 不要なため対象外。
+      const state = await fetchReactionState(
+        post.id,
+        deletedReactionId === undefined ? undefined : { excludeReactionId: deletedReactionId },
+      );
       if (reactionStateRef.current.postId !== post.id) return;
       reactionStateRef.current.revision += 1;
-      setLikeCount(result.count);
+      setLikeCount(state.count);
+      setIsLikedByMe(state.myReactionId !== undefined);
+      setMyReactionId(state.myReactionId);
     } catch {
+      // 件数・状態は変更しない（失敗時に不正に減らした/増やしたままにしない）。
       if (reactionStateRef.current.postId === post.id) setLikeError(true);
     } finally {
       if (reactionStateRef.current.postId === post.id) setLiking(false);
@@ -448,22 +479,29 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 );
               })()}
               <span className="flex shrink-0 items-center gap-1">
-                {/* いいね（#529）。標準 NIP-25 を1ユーザー1件送る。黄色い花アイコン（#116）。 */}
+                {/* いいね（#529/#537）。標準 NIP-25 を1ユーザー1件送る。未いいねは押すと送信、
+                    いいね済みはもう一度押すと NIP-09 kind:5 で取り消すトグル。 */}
                 <button
                   type="button"
-                  onClick={likePost}
+                  onClick={toggleLike}
                   disabled={liking}
                   aria-label={
                     liking
-                      ? t("detail.likes.sending")
-                      : t("reaction.likes.aria", {
+                      ? isLikedByMe
+                        ? t("detail.likes.unsending")
+                        : t("detail.likes.sending")
+                      : t(isLikedByMe ? "detail.likes.unlike.aria" : "detail.likes.like.aria", {
                           n: likeCount === null ? t("detail.likes.loading") : likeCount,
                         })
                   }
                   aria-describedby={likeError ? "post-like-error" : undefined}
                   className="inline-flex min-w-11 min-h-11 items-center justify-center gap-[5px] rounded-full px-2 text-ha-ink/70 hover:bg-ha-ink/5 hover:text-ha-yellow transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
-                  <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
+                  {isLikedByMe ? (
+                    <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
+                  ) : (
+                    <Icon name="flowerOutline" className="w-4 h-4 text-ha-orange" />
+                  )}
                   <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
                     {likeCount === null ? "-" : likeCount}
                   </span>
@@ -529,7 +567,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
             </div>
             {likeError && (
               <p id="post-like-error" role="alert" className="text-right text-ha-pink">
-                {t("detail.likes.error")}
+                {t(isLikedByMe ? "detail.likes.unlike.error" : "detail.likes.error")}
               </p>
             )}
 

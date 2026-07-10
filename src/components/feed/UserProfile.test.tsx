@@ -15,7 +15,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   // PostGrid のカード集計（#276 / #462・統合バッチ）と著者プロフィール（#35）はこの検証では空 Map。
   fetchEngagementCountsBatch: () => Promise.resolve({ reactions: new Map(), comments: new Map() }),
   fetchProfiles: () => Promise.resolve(new Map()),
-  fetchReactionCount: () => Promise.resolve(0),
+  fetchReactionState: () => Promise.resolve({ count: 0, myReactionId: undefined }),
   fetchReplies: () => Promise.resolve([]),
 }));
 

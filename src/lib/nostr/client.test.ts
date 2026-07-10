@@ -19,10 +19,12 @@ vi.mock("./keys.ts", async (importOriginal) => ({
 
 import {
   deletePostImages,
+  deleteReaction,
   fetchDiscoverFiltered,
   fetchEngagementCountsBatch,
   fetchMyProfileResilient,
   fetchPostById,
+  fetchReactionState,
   publishReaction,
 } from "./client.ts";
 import type { Profile } from "../feed/parse.ts";
@@ -66,9 +68,9 @@ describe("publishReaction", () => {
   });
 
   it("未反応なら署名・publish・保存確認後に published を返す", async () => {
-    querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([signed]).mockResolvedValueOnce([signed]);
+    querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([signed]);
 
-    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published", count: 1 });
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published" });
     expect(querySyncMock.mock.calls[0]![1]).toMatchObject({
       kinds: [7],
       authors: [PUBKEY],
@@ -86,20 +88,17 @@ describe("publishReaction", () => {
   });
 
   it.each(["+", "🌱"])("既存の有効な反応 %s があれば再送しない", async (content) => {
-    querySyncMock.mockResolvedValueOnce([reactionEvent(content)]).mockResolvedValueOnce([reactionEvent(content)]);
+    querySyncMock.mockResolvedValueOnce([reactionEvent(content)]);
 
-    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "already-reacted", count: 1 });
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "already-reacted" });
     expect(signTemplateMock).not.toHaveBeenCalled();
     expect(publishMock).not.toHaveBeenCalled();
   });
 
   it("既存が dislike のみなら新しい like を送る", async () => {
-    querySyncMock
-      .mockResolvedValueOnce([reactionEvent("-")])
-      .mockResolvedValueOnce([signed])
-      .mockResolvedValueOnce([signed]);
+    querySyncMock.mockResolvedValueOnce([reactionEvent("-")]).mockResolvedValueOnce([signed]);
 
-    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published", count: 1 });
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published" });
     expect(signTemplateMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledTimes(1);
   });
@@ -134,6 +133,169 @@ describe("publishReaction", () => {
   it("accept 後も読み取りリレーで保存未確認なら reject する", async () => {
     querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
     await expect(publishReaction(targetId, targetPubkey)).rejects.toThrow("確認できませんでした");
+  });
+});
+
+describe("fetchReactionState (#537 トグルいいねの状態取得)", () => {
+  const eventId = "post-1";
+
+  // querySync が返す生の kind:7 イベントを組み立てる（id/pubkey/content/created_at を指定）。
+  function makeReaction(overrides: {
+    id: string;
+    pubkey: string;
+    content?: string;
+    created_at?: number;
+  }): NostrEvent {
+    return {
+      id: overrides.id,
+      pubkey: overrides.pubkey,
+      created_at: overrides.created_at ?? 1700000000,
+      kind: 7,
+      tags: [["e", eventId]],
+      content: overrides.content ?? "+",
+      sig: "",
+    } as NostrEvent;
+  }
+
+  beforeEach(() => {
+    querySyncMock.mockReset();
+    getPublicKeyHexMock.mockReset().mockResolvedValue(PUBKEY);
+  });
+
+  it("複数pubkeyの反応が混在(一部dislike)しても count は畳まれ、myReactionId は自分の最新いいねidになる", async () => {
+    querySyncMock.mockResolvedValueOnce([
+      makeReaction({ id: "other-a-like", pubkey: "other-a", content: "+" }),
+      makeReaction({ id: "other-b-dislike", pubkey: "other-b", content: "-" }),
+      makeReaction({ id: "mine-like", pubkey: PUBKEY, content: "+" }),
+    ]);
+
+    await expect(fetchReactionState(eventId)).resolves.toEqual({ count: 2, myReactionId: "mine-like" });
+  });
+
+  it("自分の反応が dislike のみなら myReactionId は undefined で、count にも自分は含まれない", async () => {
+    querySyncMock.mockResolvedValueOnce([
+      makeReaction({ id: "other-a-like", pubkey: "other-a", content: "+" }),
+      makeReaction({ id: "mine-dislike", pubkey: PUBKEY, content: "-" }),
+    ]);
+
+    await expect(fetchReactionState(eventId)).resolves.toEqual({ count: 1, myReactionId: undefined });
+  });
+
+  it("自分は無反応で他人のみなら myReactionId は undefined で、count は他人分だけ", async () => {
+    querySyncMock.mockResolvedValueOnce([
+      makeReaction({ id: "other-a-like", pubkey: "other-a", content: "+" }),
+      makeReaction({ id: "other-b-like", pubkey: "other-b", content: "+" }),
+    ]);
+
+    await expect(fetchReactionState(eventId)).resolves.toEqual({ count: 2, myReactionId: undefined });
+  });
+
+  it("自分が like→dislike→like と複数回反応していれば、最新(created_at最大)の like id が myReactionId になる", async () => {
+    // querySync の返却順は created_at 降順（relay の一般的な並び）で与える。
+    querySyncMock.mockResolvedValueOnce([
+      makeReaction({ id: "mine-3-like", pubkey: PUBKEY, content: "+", created_at: 300 }),
+      makeReaction({ id: "mine-2-dislike", pubkey: PUBKEY, content: "-", created_at: 200 }),
+      makeReaction({ id: "mine-1-like", pubkey: PUBKEY, content: "+", created_at: 100 }),
+    ]);
+
+    await expect(fetchReactionState(eventId)).resolves.toEqual({ count: 1, myReactionId: "mine-3-like" });
+  });
+
+  it("excludeReactionId が生の応答に含まれていれば count・myReactionId 双方から除外される(#537 削除直後のstale応答対策)", async () => {
+    querySyncMock.mockResolvedValueOnce([
+      makeReaction({ id: "other-a-like", pubkey: "other-a", content: "+" }),
+      makeReaction({ id: "mine-like", pubkey: PUBKEY, content: "+" }),
+    ]);
+
+    const state = await fetchReactionState(eventId, { excludeReactionId: "mine-like" });
+    // 除外id分が count からも myReactionId からも消え、他人分だけが残る。
+    expect(state).toEqual({ count: 1, myReactionId: undefined });
+  });
+
+  it("excludeReactionId が応答に存在しなければ通常時と同じ結果になる", async () => {
+    querySyncMock.mockResolvedValueOnce([
+      makeReaction({ id: "other-a-like", pubkey: "other-a", content: "+" }),
+      makeReaction({ id: "mine-like", pubkey: PUBKEY, content: "+" }),
+    ]);
+
+    const state = await fetchReactionState(eventId, { excludeReactionId: "not-present" });
+    expect(state).toEqual({ count: 2, myReactionId: "mine-like" });
+  });
+
+  it("opts.limit が querySync の filter へ転送される", async () => {
+    querySyncMock.mockResolvedValueOnce([]);
+
+    await fetchReactionState(eventId, { limit: 42 });
+    expect(querySyncMock).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ kinds: [7], "#e": [eventId], limit: 42 }),
+      expect.any(Object),
+    );
+  });
+
+  it("querySync が失敗したら {count:0, myReactionId:undefined} にフォールバックする", async () => {
+    querySyncMock.mockRejectedValueOnce(new Error("relay offline"));
+
+    await expect(fetchReactionState(eventId)).resolves.toEqual({ count: 0, myReactionId: undefined });
+  });
+
+  it("getPublicKeyHex が失敗したら querySync は呼ばれず {count:0, myReactionId:undefined} を返す", async () => {
+    getPublicKeyHexMock.mockRejectedValueOnce(new Error("key failed"));
+
+    await expect(fetchReactionState(eventId)).resolves.toEqual({ count: 0, myReactionId: undefined });
+    expect(querySyncMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteReaction (#537 NIP-09 kind:5 でいいねを取り消す)", () => {
+  const reactionId = "reaction-to-delete";
+  const signedDeletion: NostrEvent = {
+    id: "deletion-1",
+    pubkey: PUBKEY,
+    created_at: 1700000100,
+    kind: 5,
+    tags: [["e", reactionId]],
+    content: "",
+    sig: "",
+  };
+
+  beforeEach(() => {
+    querySyncMock.mockReset();
+    publishMock.mockReset();
+    signTemplateMock.mockReset().mockResolvedValue(signedDeletion);
+    publishMock.mockReturnValue([Promise.resolve()]);
+  });
+
+  it("正常系: buildDeletionEvent→signTemplate→publishEvent→confirmEventStored(true) の順で成功する(void解決)", async () => {
+    querySyncMock.mockResolvedValueOnce([signedDeletion]); // confirmEventStored の実在確認
+
+    await expect(deleteReaction(reactionId)).resolves.toBeUndefined();
+
+    expect(signTemplateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 5, tags: [["e", reactionId]] }),
+    );
+    expect(publishMock).toHaveBeenCalledWith(expect.any(Array), signedDeletion);
+    expect(querySyncMock).toHaveBeenCalledWith(expect.any(Array), { ids: [signedDeletion.id] }, expect.any(Object));
+  });
+
+  it("confirmEventStoredがfalse(読み取りリレーに未着地)なら「確認できませんでした」を含むエラーで throw する", async () => {
+    querySyncMock.mockResolvedValueOnce([]); // 実在確認できない
+
+    await expect(deleteReaction(reactionId)).rejects.toThrow("確認できませんでした");
+  });
+
+  it("publishEventが全リレーで失敗(reject)したら throw し、confirmEventStoredは呼ばれない", async () => {
+    publishMock.mockReturnValue([Promise.reject(new Error("publish failed"))]);
+
+    await expect(deleteReaction(reactionId)).rejects.toBeInstanceOf(AggregateError);
+    expect(querySyncMock).not.toHaveBeenCalled();
+  });
+
+  it("signTemplateが失敗したら throw し、publishEventは呼ばれない", async () => {
+    signTemplateMock.mockRejectedValueOnce(new Error("sign failed"));
+
+    await expect(deleteReaction(reactionId)).rejects.toThrow("sign failed");
+    expect(publishMock).not.toHaveBeenCalled();
   });
 });
 
