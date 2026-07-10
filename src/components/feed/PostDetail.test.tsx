@@ -141,7 +141,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined }) // 初期取得
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-zero" }); // 送信成功後の再取得
-    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    publishReaction.mockResolvedValue({ status: "published" });
     const post = makePost({ id: "like-zero", pubkey: "author" });
     render(<PostDetail post={post} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: likeAria(0) }));
@@ -153,7 +153,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 4, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 5, myReactionId: "r-four" });
-    publishReaction.mockResolvedValue({ status: "published", count: 5 });
+    publishReaction.mockResolvedValue({ status: "published" });
     render(<PostDetail post={makePost({ id: "like-four" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: likeAria(4) }));
     expect(await screen.findByRole("button", { name: unlikeAria(5) })).toBeInTheDocument();
@@ -163,7 +163,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 2, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 3, myReactionId: "r-two" });
-    let resolve!: (value: { status: "published"; count: number }) => void;
+    let resolve!: (value: { status: "published" }) => void;
     publishReaction.mockReturnValue(new Promise((r) => { resolve = r; }));
     render(<PostDetail post={makePost({ id: "like-pending" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: likeAria(2) });
@@ -172,7 +172,7 @@ describe("PostDetail いいね数表示", () => {
     expect(sending).toBeDisabled();
     fireEvent.click(sending);
     expect(publishReaction).toHaveBeenCalledTimes(1);
-    resolve({ status: "published", count: 3 });
+    resolve({ status: "published" });
     expect(await screen.findByRole("button", { name: unlikeAria(3) })).toBeInTheDocument();
   });
 
@@ -180,7 +180,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 3, myReactionId: undefined }) // ローカルは未いいね表示
       .mockResolvedValueOnce({ count: 3, myReactionId: "already-id" }); // relay は既にいいね済み
-    publishReaction.mockResolvedValue({ status: "already-reacted", count: 3 });
+    publishReaction.mockResolvedValue({ status: "already-reacted" });
     render(<PostDetail post={makePost({ id: "already" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: likeAria(3) });
     fireEvent.click(button);
@@ -196,7 +196,7 @@ describe("PostDetail いいね数表示", () => {
       .mockResolvedValueOnce({ count: 7, myReactionId: "r-six" });
     publishReaction
       .mockRejectedValueOnce(new Error("offline"))
-      .mockResolvedValueOnce({ status: "published", count: 7 });
+      .mockResolvedValueOnce({ status: "published" });
     render(<PostDetail post={makePost({ id: "retry" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: likeAria(6) }));
     const alert = await screen.findByRole("alert");
@@ -213,7 +213,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockReturnValueOnce(new Promise((r) => { resolveInitial = r; })) // 初期取得（保留のまま）
       .mockResolvedValueOnce({ count: 9, myReactionId: "r-nine" }); // 送信成功後の再取得（先に解決）
-    publishReaction.mockResolvedValue({ status: "published", count: 999 });
+    publishReaction.mockResolvedValue({ status: "published" });
     render(<PostDetail post={makePost({ id: "race" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: likeAria("取得中") }));
     expect(await screen.findByRole("button", { name: unlikeAria(9) })).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe("PostDetail いいね数表示", () => {
 
   it("投稿切替後に旧投稿の取得・送信が完了しても新投稿を汚さない", async () => {
     let resolveOldCount!: (value: { count: number; myReactionId: string | undefined }) => void;
-    let resolveOldPublish!: (value: { status: "published"; count: number }) => void;
+    let resolveOldPublish!: (value: { status: "published" }) => void;
     fetchReactionState
       .mockReturnValueOnce(new Promise((r) => { resolveOldCount = r; }))
       .mockResolvedValueOnce({ count: 9, myReactionId: undefined });
@@ -236,7 +236,7 @@ describe("PostDetail いいね数表示", () => {
     rerender(<PostDetail post={makePost({ id: "new" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     expect(await screen.findByRole("button", { name: likeAria(9) })).not.toBeDisabled();
     resolveOldCount({ count: 20, myReactionId: "old-reaction" });
-    resolveOldPublish({ status: "published", count: 21 });
+    resolveOldPublish({ status: "published" });
     await waitFor(() => expect(screen.getByRole("button", { name: likeAria(9) })).toBeInTheDocument());
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -245,7 +245,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-a11y" });
-    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    publishReaction.mockResolvedValue({ status: "published" });
     const user = userEvent.setup();
     render(<PostDetail post={makePost({ id: "a11y" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: likeAria(0) });
@@ -262,7 +262,7 @@ describe("PostDetail いいね数表示", () => {
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined }) // 初期取得
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-1" }) // publish 後の再取得
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined }); // delete 後の再取得
-    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    publishReaction.mockResolvedValue({ status: "published" });
     deleteReaction.mockResolvedValue(undefined);
     render(<PostDetail post={makePost({ id: "roundtrip" })} onClose={() => {}} onSelectHashtag={() => {}} />);
 
@@ -281,7 +281,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 2, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 3, myReactionId: "r-icon" });
-    publishReaction.mockResolvedValue({ status: "published", count: 3 });
+    publishReaction.mockResolvedValue({ status: "published" });
     render(<PostDetail post={makePost({ id: "icon-check" })} onClose={() => {}} onSelectHashtag={() => {}} />);
 
     const button = await screen.findByRole("button", { name: likeAria(2) });
@@ -332,7 +332,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-pub-args" });
-    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    publishReaction.mockResolvedValue({ status: "published" });
     render(<PostDetail post={makePost({ id: "args-pub" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: likeAria(0) }));
     await screen.findByRole("button", { name: unlikeAria(1) });
@@ -354,7 +354,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 2, myReactionId: undefined })
       .mockRejectedValueOnce(new Error("refetch failed"));
-    publishReaction.mockResolvedValue({ status: "published", count: 3 });
+    publishReaction.mockResolvedValue({ status: "published" });
     render(<PostDetail post={makePost({ id: "pub-refetch-fail" })} onClose={() => {}} onSelectHashtag={() => {}} />);
 
     fireEvent.click(await screen.findByRole("button", { name: likeAria(2) }));
@@ -392,7 +392,7 @@ describe("PostDetail いいね数表示", () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-en" });
-    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    publishReaction.mockResolvedValue({ status: "published" });
     render(
       <LocaleProvider value="en">
         <PostDetail post={makePost({ id: "i18n-en" })} onClose={() => {}} onSelectHashtag={() => {}} />
