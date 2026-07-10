@@ -20,6 +20,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "nav.menu.close": "关闭菜单",
   "nav.home.aria": "Hanōba 首页",
 
+  "footer.nav.aria": "页脚导航",
   "footer.tagline": "Hanōba：一座由大家共同培育的、爱植物之人的虚构城市。",
 
   "scrollToTop.aria": "回到顶部",

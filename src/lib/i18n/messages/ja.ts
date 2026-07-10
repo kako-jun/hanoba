@@ -26,6 +26,7 @@ export const ja = {
   "nav.home.aria": "葉の場 Hanoba トップへ",
 
   // 共通フッタ（SiteFooter）。
+  "footer.nav.aria": "フッターナビゲーション",
   "footer.tagline":
     "架空の植物好き都市ハノーバ（葉の場）を、みんなで育てています。",
 

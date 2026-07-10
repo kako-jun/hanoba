@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildCityHallBook, civicHub } from "./cityHall.ts";
+import { t } from "../i18n/t.ts";
+import type { Locale } from "../i18n/locale.ts";
+
+const LOCALES: Locale[] = ["ja", "en", "es", "zh"];
 
 describe("10ページの市民手帳（#137）", () => {
   it("安定IDを持つ10ページを重複なく組み立てる", () => {
@@ -30,14 +34,40 @@ describe("10ページの市民手帳（#137）", () => {
     if (ordinances?.kind === "ordinances") expect(ordinances.ordinances).toHaveLength(5);
   });
 
-  it("市政の窓口は実在routeと近日開庁を維持する（#164で市政だより/gazette を追加）", () => {
-    expect(civicHub("ja").map((link) => link.route)).toEqual(["/vote", "/ranking", null, "/gazette"]);
+  it.each(LOCALES)("市政の窓口は %s でも同じ route 順を維持する", (locale) => {
+    expect(civicHub(locale).map((link) => link.route)).toEqual(["/gazette", "/ranking", "/vote", null]);
   });
 
-  it("住民投票・市勢調査・市政だよりの label が route とセットでフッタと同名になる（#525・#164 命名統一）", () => {
-    const hub = civicHub("ja");
-    expect(hub[0]).toMatchObject({ label: "住民投票", route: "/vote" });
-    expect(hub[1]).toMatchObject({ label: "市勢調査", route: "/ranking" });
-    expect(hub[3]).toMatchObject({ label: "市政だより", route: "/gazette" });
+  it.each(LOCALES)("%s の各 label は対応 route の nav 文言と一致する", (locale) => {
+    const hub = civicHub(locale);
+    expect(hub.slice(0, 3).map(({ label, route }) => ({ label, route }))).toEqual([
+      { label: t(locale, "nav.gazette"), route: "/gazette" },
+      { label: t(locale, "nav.ranking"), route: "/ranking" },
+      { label: t(locale, "nav.vote"), route: "/vote" },
+    ]);
+  });
+
+  it.each(LOCALES)("%s の nav 文言と civic label キーが機能ごとに一致する", (locale) => {
+    expect([
+      t(locale, "nav.gazette"),
+      t(locale, "nav.ranking"),
+      t(locale, "nav.vote"),
+    ]).toEqual([
+      t(locale, "cityHall.map.civic.2.label"),
+      t(locale, "cityHall.map.civic.3.label"),
+      t(locale, "cityHall.map.civic.0.label"),
+    ]);
+  });
+
+  it.each(LOCALES)("%s では品評会だけが未開庁で comingSoon を持つ", (locale) => {
+    const hub = civicHub(locale);
+    expect(hub.filter((link) => link.route === null)).toEqual([
+      {
+        label: t(locale, "cityHall.map.civic.1.label"),
+        route: null,
+        comingSoon: t(locale, "cityHall.map.comingSoon"),
+      },
+    ]);
+    expect(hub.slice(0, 3).every((link) => link.comingSoon === undefined)).toBe(true);
   });
 });
