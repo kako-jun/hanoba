@@ -68,9 +68,9 @@ describe("publishReaction", () => {
   });
 
   it("未反応なら署名・publish・保存確認後に published を返す", async () => {
-    querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([signed]).mockResolvedValueOnce([signed]);
+    querySyncMock.mockResolvedValueOnce([]).mockResolvedValueOnce([signed]);
 
-    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published", count: 1 });
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published" });
     expect(querySyncMock.mock.calls[0]![1]).toMatchObject({
       kinds: [7],
       authors: [PUBKEY],
@@ -88,20 +88,17 @@ describe("publishReaction", () => {
   });
 
   it.each(["+", "🌱"])("既存の有効な反応 %s があれば再送しない", async (content) => {
-    querySyncMock.mockResolvedValueOnce([reactionEvent(content)]).mockResolvedValueOnce([reactionEvent(content)]);
+    querySyncMock.mockResolvedValueOnce([reactionEvent(content)]);
 
-    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "already-reacted", count: 1 });
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "already-reacted" });
     expect(signTemplateMock).not.toHaveBeenCalled();
     expect(publishMock).not.toHaveBeenCalled();
   });
 
   it("既存が dislike のみなら新しい like を送る", async () => {
-    querySyncMock
-      .mockResolvedValueOnce([reactionEvent("-")])
-      .mockResolvedValueOnce([signed])
-      .mockResolvedValueOnce([signed]);
+    querySyncMock.mockResolvedValueOnce([reactionEvent("-")]).mockResolvedValueOnce([signed]);
 
-    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published", count: 1 });
+    await expect(publishReaction(targetId, targetPubkey)).resolves.toEqual({ status: "published" });
     expect(signTemplateMock).toHaveBeenCalledTimes(1);
     expect(publishMock).toHaveBeenCalledTimes(1);
   });

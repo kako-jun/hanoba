@@ -275,30 +275,11 @@ export async function fetchRankingPosts(limit = 500): Promise<FeedPost[]> {
 }
 
 /**
- * 投稿（kind:1）に対するいいね数を取得する。NIP-25 の kind:7 リアクションを
- * `#e` で対象投稿に絞って集計する。表示時と、いいね送信後の確定件数取得で共有する。
- *
- * - `{kinds:[7], "#e":[eventId]}` で対象投稿宛のリアクションを取得
- * - countLikes で dislike を除外し、同一 pubkey は 1 票に畳む（1 人 1 いいね）
- * - 失敗（オフライン等）は throw せず 0 にフォールバックする
- *
- * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
- */
-async function queryReactionCount(eventId: string, limit = 500): Promise<number> {
-  const reactions = await getPool().querySync(
-    [...GENERAL_RELAYS],
-    { kinds: [7], "#e": [eventId], limit },
-    { maxWait: QUERY_MAXWAIT },
-  );
-  return countLikes(reactions);
-}
-
-/**
  * 投稿の反応状態（件数＋自分の反応）を1クエリで取得する（#537・トグルいいねの表示同期）。
  * PostDetail はこの結果をそのまま表示に反映する＝件数と自分の状態を常に relay 由来の値で揃える
  * （ローカルでの ±1 演算はしない）。
  *
- * - `{kinds:[7], "#e":[eventId]}` で対象投稿宛のリアクションを取得（queryReactionCount と同じ relay 群・作法）
+ * - `{kinds:[7], "#e":[eventId]}` で対象投稿宛のリアクションを取得
  * - count は countLikes（1人1いいねに畳む・dislike 除外）
  * - 自分の反応: 自分の pubkey の反応のうち最新（latestReaction）が isLike なら、その event id を
  *   myReactionId とする（dislike／取り消し済みで最新が無ければ undefined＝未いいね扱い）
@@ -340,11 +321,12 @@ export async function fetchReactionState(
 /**
  * 投稿へ標準 NIP-25 のいいねを publish する。
  * 先に自分の既存反応を確認し、同じユーザーによる重複加算を防ぐ。
+ * 戻り値は成否のみで件数は返さない（呼び出し側が別途 fetchReactionState で取得する設計・#537）。
  */
 export async function publishReaction(
   targetEventId: string,
   targetPubkey: string,
-): Promise<{ status: "published" | "already-reacted"; count: number }> {
+): Promise<{ status: "published" | "already-reacted" }> {
   const pubkey = await getPublicKeyHex();
   const ownReactions = await getPool().querySync(
     [...GENERAL_RELAYS],
@@ -353,7 +335,7 @@ export async function publishReaction(
   );
   const latestOwnReaction = latestReaction(ownReactions);
   if (latestOwnReaction !== undefined && isLike(latestOwnReaction)) {
-    return { status: "already-reacted", count: await queryReactionCount(targetEventId) };
+    return { status: "already-reacted" };
   }
 
   const signed = await signTemplate(buildReactionTemplate(targetEventId, targetPubkey));
@@ -361,7 +343,7 @@ export async function publishReaction(
   if (!(await confirmEventStored(signed.id))) {
     throw new Error("いいねを読み取りリレーで確認できませんでした");
   }
-  return { status: "published", count: await queryReactionCount(targetEventId) };
+  return { status: "published" };
 }
 
 /**
