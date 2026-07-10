@@ -15,20 +15,22 @@ describe("CityGuidePanel（#543）", () => {
 
   it("QR は提供済み画像 public/hanoba-qr-code.png を参照し、準備中文言を残さない", () => {
     expect(panelSrc).toContain('const QR_SRC = "/hanoba-qr-code.png"');
-    expect(panelSrc).toContain('src={QR_SRC}');
+    expect(panelSrc).toContain('style={`--qr-src: url("${QR_SRC}")`}');
     expect(panelSrc).not.toContain("QR 準備中");
     expect(existsSync(join(publicDir, "hanoba-qr-code.png"))).toBe(true);
   });
 
-  it("QR に装飾枠を付けず、白地と緑色化で読み取り面を作る", () => {
+  it("QR に装飾枠を付けず、黒地角丸と既存の明るい緑で読み取り面を作る", () => {
     expect(panelSrc).not.toContain("border-dashed");
-    expect(panelSrc).toContain("bg-white p-2");
-    expect(panelSrc).toContain("qr-code-image");
-    expect(panelSrc).toContain("filter:");
+    expect(panelSrc).toContain("rounded-xl bg-ha-base p-3");
+    expect(panelSrc).toContain("qr-code-mask block h-32 w-32 bg-ha-green");
+    expect(panelSrc).not.toContain("filter:");
+    expect(panelSrc).toContain("mask-image: var(--qr-src)");
   });
 
   it("QR 下の URL は中央揃えにする", () => {
     expect(panelSrc).toContain("text-center text-sm font-bold");
+    expect(panelSrc).not.toContain("QR を見せれば");
   });
 
   it("GitHub Sponsors 導線は案内札に混ぜない", () => {

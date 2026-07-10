@@ -14,16 +14,13 @@ const QR_SRC = "/hanoba-qr-code.png";
   </header>
 
   <div class="mx-auto flex w-full max-w-xs flex-col items-center gap-3 text-center">
-    <div class="bg-white p-2">
-      <img
-        src={QR_SRC}
-        alt="Hanōba を開く QR コード"
-        width="128"
-        height="128"
-        loading="lazy"
-        decoding="async"
-        class="qr-code-image block h-32 w-32 object-contain"
-      />
+    <div class="rounded-xl bg-ha-base p-3">
+      <span
+        role="img"
+        aria-label="Hanōba を開く QR コード"
+        class="qr-code-mask block h-32 w-32 bg-ha-green"
+        style={`--qr-src: url("${QR_SRC}")`}
+      ></span>
     </div>
 
     <a
@@ -32,15 +29,18 @@ const QR_SRC = "/hanoba-qr-code.png";
     >
       hanoba.llll-ll.com
     </a>
-    <p class="text-center text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
-      QR を見せれば、別の端末からもこの街を開けます。
-    </p>
   </div>
 </section>
 
 <style>
-  .qr-code-image {
-    filter: brightness(0) saturate(100%) invert(28%) sepia(20%) saturate(1161%) hue-rotate(96deg)
-      brightness(93%) contrast(89%);
+  .qr-code-mask {
+    -webkit-mask-image: var(--qr-src);
+    mask-image: var(--qr-src);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
   }
 </style>
