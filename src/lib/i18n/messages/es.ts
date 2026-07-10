@@ -589,7 +589,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   // manual del ciudadano. Los artículos se numeran del más antiguo al más reciente; sin página guardada
   // la primera visita abre la última página, la más reciente (#533).
   "gazette.book.title": "La Gaceta Municipal de Hanōba",
-  // Artículo 0 (el más reciente): la revisión del manual del ciudadano (#137).
+  // Artículo 0: la revisión del manual del ciudadano (#137).
   "gazette.articles.0.heading": "El manual del ciudadano, revisado por completo",
   "gazette.articles.0.body.0":
     "Ejem. He revisado por completo el manual del ciudadano. Las guías de cada distrito, la crónica de la ciudad, las ordenanzas: todo lo que un viajero querría saber, reunido de nuevo en un solo volumen.",
@@ -621,4 +621,13 @@ export const es: Partial<Record<MessageKey, string>> = {
     "Ahora, con solo mirar esa tarjeta, se sabe qué clase de ciudadano eres.",
   "gazette.articles.3.closing": "Tu tarjeta también será, sin duda, motivo de orgullo.",
   "gazette.articles.3.link.0.label": "Ver tus plantas",
+  // Artículo 4 (el más reciente): apertura de las reacciones (flores) y los comentarios (#529 · #530 · #142 · #537).
+  "gazette.articles.4.heading": "Una flor para regalar, una palabra para compartir",
+  "gazette.articles.4.body.0":
+    "Ejem. He hecho posible enviar una flor amarilla en señal de aprecio a una publicación, y añadir además unas palabras propias. Y si cambias de parecer, toca de nuevo esa flor y el obsequio queda retirado: el alcalde no guarda rencor.",
+  "gazette.articles.4.body.1":
+    "Volcar el corazón hacia la maceta de otro, e intercambiar palabras: eso también forma parte de la labor de cultivo de esta ciudad.",
+  "gazette.articles.4.closing":
+    "Ni una sola de tus flores, ni una sola palabra, se perderán: todas se convierten en sustento para el cultivo.",
+  "gazette.articles.4.link.0.label": "Ver las plantas de todos",
 };

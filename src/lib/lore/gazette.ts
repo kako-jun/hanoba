@@ -75,6 +75,15 @@ const ARTICLE_KEYS = [
     closing: "gazette.articles.0.closing",
     links: [{ label: "gazette.articles.0.link.0.label", href: "/about" }] as const,
   },
+  {
+    // #529/#530/#142/#537: いいね（花）とコメントを贈れるようになった（2026-07-10）。
+    id: "reactions-and-comments",
+    date: "2026-07-10",
+    heading: "gazette.articles.4.heading",
+    body: ["gazette.articles.4.body.0", "gazette.articles.4.body.1"] as const,
+    closing: "gazette.articles.4.closing",
+    links: [{ label: "gazette.articles.4.link.0.label", href: "/discover" }] as const,
+  },
 ] as const;
 
 /** 市政だよりの在世タイトルを locale で引く。 */
