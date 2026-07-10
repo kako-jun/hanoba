@@ -17,31 +17,31 @@ describe("GazetteBook（#164）", () => {
     vi.restoreAllMocks();
   });
 
-  it("保存位置なしの初期表示で最新記事（最終ページ）が表示され4 / 4になる", async () => {
+  it("保存位置なしの初期表示で最新記事（最終ページ）が表示され5 / 5になる", async () => {
     render(<GazetteBook />);
-    expect(await screen.findByRole("heading", { level: 2, name: "市民手帳、全面改訂" })).toBeInTheDocument();
-    expect(screen.getByText("4 / 4")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: "花を贈り、言葉を交わす" })).toBeInTheDocument();
+    expect(screen.getByText("5 / 5")).toBeInTheDocument();
   });
 
   it("表示中の記事にMayorMark（市長アイコン+肩書き）が出る", async () => {
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     expect(screen.getByText("ボタニクス市長")).toBeInTheDocument();
     expect(document.querySelector("img[alt='']")).not.toBeNull();
   });
 
-  it("「前へ」クリックで1つ古い記事に移り3 / 4になる", async () => {
+  it("「前へ」クリックで1つ古い記事に移り4 / 5になる", async () => {
     const user = userEvent.setup();
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     await user.click(screen.getByRole("button", { name: "前のページ" }));
-    expect(screen.getByText("3 / 4")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "表示言語、世界へ開く" })).toBeInTheDocument();
+    expect(screen.getByText("4 / 5")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "市民手帳、全面改訂" })).toBeInTheDocument();
   });
 
   it("最終ページで「次へ」「最後のページ」がdisabled", async () => {
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     expect(screen.getByRole("button", { name: "次のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "最後のページ" })).toBeDisabled();
   });
@@ -49,36 +49,40 @@ describe("GazetteBook（#164）", () => {
   it("1ページ目（最古）で「前へ」「最初のページ」がdisabled", async () => {
     const user = userEvent.setup();
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     await user.click(screen.getByRole("button", { name: "最初のページ" }));
-    expect(screen.getByText("1 / 4")).toBeInTheDocument();
+    expect(screen.getByText("1 / 5")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "「あなたの植物」を一枚の札に" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "前のページ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "最初のページ" })).toBeDisabled();
   });
 
   it("記事0のリンクが実際のhrefを指す", async () => {
+    const user = userEvent.setup();
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
+    await user.click(screen.getByRole("button", { name: "前のページ" }));
+    await screen.findByText("4 / 5");
     expect(screen.getByRole("link", { name: /市民手帳を開く/ })).toHaveAttribute("href", "/about");
   });
 
   it("links0件の記事は関連リンクのul自体が描画されない", async () => {
     const user = userEvent.setup();
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     await user.click(screen.getByRole("button", { name: "前のページ" }));
-    expect(await screen.findByText("3 / 4")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "前のページ" }));
+    expect(await screen.findByText("3 / 5")).toBeInTheDocument();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 
   it("links複数件の記事は全リンクが描画される", async () => {
     const user = userEvent.setup();
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     await user.click(screen.getByRole("button", { name: "最初のページ" }));
     await user.click(screen.getByRole("button", { name: "次のページ" }));
-    expect(await screen.findByText("2 / 4")).toBeInTheDocument();
+    expect(await screen.findByText("2 / 5")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /住民投票へ/ })).toHaveAttribute("href", "/vote");
     expect(screen.getByRole("link", { name: /市勢調査へ/ })).toHaveAttribute("href", "/ranking");
   });
@@ -95,7 +99,7 @@ describe("GazetteBook（#164）", () => {
 
     history.replaceState(null, "", "/gazette?page=welcome");
     render(<GazetteBook />);
-    expect(await screen.findByText("4 / 4")).toBeInTheDocument();
+    expect(await screen.findByText("5 / 5")).toBeInTheDocument();
   });
 
   it("article.dateはlocaleを切り替えても書式が変化しない", async () => {
@@ -103,19 +107,19 @@ describe("GazetteBook（#164）", () => {
     // locale切替は localStorage 側で行う。
     localStorage.setItem("hanoba:lang", "ja");
     const { unmount } = render(<GazetteBook />);
-    expect(await screen.findByText("2026-07-09")).toBeInTheDocument();
+    expect(await screen.findByText("2026-07-10")).toBeInTheDocument();
     unmount();
     cleanup();
 
     localStorage.setItem("hanoba:lang", "en");
     render(<GazetteBook />);
-    expect(await screen.findByText("2026-07-09")).toBeInTheDocument();
+    expect(await screen.findByText("2026-07-10")).toBeInTheDocument();
   });
 
   it("GazetteBookのレンダリングにfetchMyPostsモックが不要（Nostr依存を暗黙に引き継いでいない）", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     render(<GazetteBook />);
-    await screen.findByText("4 / 4");
+    await screen.findByText("5 / 5");
     expect(errorSpy).not.toHaveBeenCalled();
   });
 });

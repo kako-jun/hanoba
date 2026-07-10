@@ -549,7 +549,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   // 与市民手册共用同一套本页翻页组件（BookPager）。条目按最早到最新编号；没有保存页的初次访问
   // 会打开最后一页（最新条目）（#533）。
   "gazette.book.title": "Hanōba 市政通讯",
-  // 第0条（最新）：市民手册全面修订（#137）。
+  // 第0条：市民手册全面修订（#137）。
   "gazette.articles.0.heading": "市民手册全面修订",
   "gazette.articles.0.body.0":
     "咳咳。本市长将市民手册作了一次全面修订。各街区指南、编年史、市政条文——旅途中诸位想知道的一切，如今重新汇编成一册。",
@@ -581,4 +581,12 @@ export const zh: Partial<Record<MessageKey, string>> = {
     "如今只需看这一张卡片，便知诸位是怎样一位市民。",
   "gazette.articles.3.closing": "诸位的这张卡片，想必也会成为值得骄傲的一张。",
   "gazette.articles.3.link.0.label": "查看你的植物",
+  // 第4条（最新）：开放点赞（花）与评论（#529 · #530 · #142 · #537）。
+  "gazette.articles.4.heading": "赠一朵花，说一句话",
+  "gazette.articles.4.body.0":
+    "咳咳。本市长已允许诸位为帖子送上一朵黄花以表心意，还能附上一句话。若改变心意，再次触碰那朵花，便可收回——即便反悔，本市长也绝不见怪。",
+  "gazette.articles.4.body.1":
+    "将心意寄予他人的花盆，彼此交换言语——这也是本市养护之道的一部分。",
+  "gazette.articles.4.closing": "诸位的花与言语，皆将化作养护的养分，一分不落。",
+  "gazette.articles.4.link.0.label": "查看大家的植物",
 };

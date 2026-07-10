@@ -578,7 +578,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   // Mayor Botanics von Hanōba. Shares the same book pager (BookPager) as the Citizen's Handbook.
   // Articles are numbered oldest to newest; a first visit with no saved page opens the final/newest page (#533).
   "gazette.book.title": "The Hanōba Municipal Gazette",
-  // Article 0 (newest): the Citizen's Handbook revision (#137).
+  // Article 0: the Citizen's Handbook revision (#137).
   "gazette.articles.0.heading": "A Revised Citizen's Handbook",
   "gazette.articles.0.body.0":
     "Ahem. I have given the Citizen's Handbook a full revision. District guides, the city chronicle, the ordinances — everything a traveler might wish to know, gathered anew into one volume.",
@@ -610,4 +610,13 @@ export const en: Partial<Record<MessageKey, string>> = {
     "Now a single glance at that card tells you just what kind of citizen you are.",
   "gazette.articles.3.closing": "Your card, too, shall surely be one to take pride in.",
   "gazette.articles.3.link.0.label": "View Your Plants",
+  // Article 4 (newest): reactions (flowers) and comments open (#529 · #530 · #142 · #537).
+  "gazette.articles.4.heading": "A Flower to Give, a Word to Share",
+  "gazette.articles.4.body.0":
+    "Ahem. I have made it so a post may be sent a yellow flower in token of your favor, with a few words of your own attached besides. And should you have a change of heart, touch that flower once more and the gift is undone — the Mayor holds no grudge.",
+  "gazette.articles.4.body.1":
+    "To lend your heart to another's pot, and to exchange a few words — that too is part of this city's work of cultivation.",
+  "gazette.articles.4.closing":
+    "Not one of your flowers, nor a single word, shall go to waste — all become nourishment for this city's growth.",
+  "gazette.articles.4.link.0.label": "View Everyone's Plants",
 };
