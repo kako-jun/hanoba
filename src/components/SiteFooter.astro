@@ -7,7 +7,7 @@
 import Icon from "./ui/Icon.tsx";
 import { aboutLabelVisitor, aboutLabelCitizen } from "../lib/lore/aboutLabel.ts";
 import { t, LOCALES, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
-import { HANOBA_VERSION, NOSTALGIC_COUNTER_ENABLED, NOSTALGIC_COUNTER_ID } from "../lib/build-info.ts";
+import { HANOBA_BUILD_DATE, NOSTALGIC_COUNTER_ENABLED, NOSTALGIC_COUNTER_ID } from "../lib/build-info.ts";
 
 // 表示言語（#147）。今は既定（en）固定＝殻はこの言語で焼く。非既定言語は MainLayout 末尾の言語 swap が差し替える。
 const locale: Locale = DEFAULT_LOCALE;
@@ -96,7 +96,7 @@ const external = [
           </span>
         )
       }
-      <span>v{HANOBA_VERSION}</span>
+      <span>v{HANOBA_BUILD_DATE}</span>
     </div>
 
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-ha-ink/55 text-xs">

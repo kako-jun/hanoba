@@ -45,7 +45,7 @@ hanoba の製品仕様・画面挙動（非ビジュアル）。見た目は `DE
   6. 中身（綴り・読み・trade designation と cultivar の区別）の精度は #23「育てる辞書」として実運用で上げる。書式は上記で統一済み。
 - **ヘッダ（全ページ共通・#30）**: 主要ナビ（みんなの植物／自分の植物／Hanōba とは／投稿する）を `SiteHeader.astro` に内蔵。sm 以上はインライン、sm 未満はハンバーガー→ドロップダウン。ページごとの `current` で現在地を強調。`hidden sm:inline` でモバイル時にリンクが消える旧構成は廃止。
 - **フッタ（全ページ共通・#532）**: 内部リンクの DOM 順は **市民手帳 → 市政だより → 市勢調査 → 住民投票 → みんなの植物 → あなたの植物 → 投稿する**。市政の実在窓口3件は `civicHub()` と同順、対になる植物一覧2件は隣接させる。デスクトップ左→右／モバイル上→下は同じ DOM 順を `flex-wrap` するだけで成立させ、画面幅別の並べ替えはしない。内部 `nav` はヘッダ等の別ランドマークと区別できる locale 対応の `footer.nav.aria` を持ち、殻の言語 swap でも `aria-label` を追従させる。
-- **公開導線（#543）**: フッタは市内案内板なので、追加する公開情報は Nostalgic Counter（来街者）と version に絞る。QR / GitHub Sponsors / Amazon アソシエイト道具棚はフッタに詰めず、市民手帳の下に「ハノーバ案内札」→「園芸師の道具棚」として分散配置する。QR 画像は `public/hanoba-qr-code.png` を使う。
+- **公開導線（#543）**: フッタは市内案内板なので、追加する公開情報は Nostalgic Counter（来街者）と version に絞る。version は他アプリと同じく SemVer ではなく JST のビルド年月日（`vYYYY-MM-DD`）を表示する。QR / GitHub Sponsors / Amazon アソシエイト道具棚はフッタに詰めず、市民手帳の下に「ハノーバ案内札」→「園芸師の道具棚」として分散配置する。QR 画像は `public/hanoba-qr-code.png` を使う。
 - **投稿SEO（#542）**: build 時に取得できた Hanoba 投稿だけ `/p/<nevent>` の静的ページを生成し、caption / 画像 / canonical / OGP / Twitter Card / JSON-LD を JS なしで読めるようにする。Nostr 取得失敗時は投稿ページ生成をスキップし、固定ページのみでビルド継続する。フィード上のモーダル復元は従来どおり `?p=<nevent>` を使う。
 - **市政だよりのページ順（#533）**: 記事は最古→最新で1から採番し、前＝過去／次＝未来とする。保存位置の無い初回は最終ページ（最新）を開く。共通 `BookPager` の初期解決順は **有効なURL指定 → 有効なlocalStorage保存位置 → `defaultPage`**。市政だよりは `defaultPage="last"`、市民手帳は既定の `"first"` を維持し、不正・削除済みIDは安全に既定端へフォールバックする。
 

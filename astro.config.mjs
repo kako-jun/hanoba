@@ -5,6 +5,9 @@ import AstroPWA from "@vite-pwa/astro";
 import { defineConfig } from "astro/config";
 import { hanobaWorkboxOptions } from "./src/lib/pwa/workbox-options.mjs";
 
+// フッタ等に出す公開版数。orber / machigai-salad と同じく JST のビルド年月日を使う。
+const BUILD_DATE = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
 // 完全静的・バックエンドレス。状態は全て Nostr（クライアント側）に乗る。
 // SSR アダプタは持たない（dist/ をそのまま CF Pages に配信）。
 export default defineConfig({
@@ -53,5 +56,8 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    define: {
+      __BUILD_DATE__: JSON.stringify(BUILD_DATE),
+    },
   },
 });

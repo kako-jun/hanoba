@@ -114,8 +114,8 @@ describe("フッタ公開情報（#543）", () => {
   });
 
   it("version 表記を出す", () => {
-    expect(footerSrc).toContain("HANOBA_VERSION");
-    expect(footerSrc).toContain("v{HANOBA_VERSION}");
+    expect(footerSrc).toContain("HANOBA_BUILD_DATE");
+    expect(footerSrc).toContain("v{HANOBA_BUILD_DATE}");
   });
 
   it("GitHub Sponsors はフッタ外部リンクに混ぜない", () => {
