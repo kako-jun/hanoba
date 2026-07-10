@@ -45,6 +45,8 @@ export interface BookPagerProps<T extends BookPagerPage> {
   pages: T[];
   /** localStorage の永続化キー（本ごとに別キーにする＝手帳と市政だよりを混同しない）。 */
   storageKey: string;
+  /** URL・保存位置に有効な ID が無いときに開く端。既定 first は市民手帳の挙動を維持する。 */
+  defaultPage?: "first" | "last";
   /** 現在ページの中身を描画する（ページ種別ごとの描画は呼び出し元の責務）。 */
   renderPage: (page: T) => ReactNode;
   /** ページ内容の下・ページャー操作の上に置く共通領域（市民手帳の「市政の窓口」等・任意）。 */
@@ -55,6 +57,7 @@ export default function BookPager<T extends BookPagerPage>({
   title,
   pages,
   storageKey,
+  defaultPage = "first",
   renderPage,
   footer,
 }: BookPagerProps<T>) {
@@ -63,6 +66,8 @@ export default function BookPager<T extends BookPagerPage>({
   const totalPages = pages.length;
 
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
+  // 初期解決前の暫定 1p を localStorage へ書き戻して保存位置を潰さないためのガード。
+  const [initialized, setInitialized] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   // 本のスワイプ（#275）。←→ボタン・キーボード矢印と同じ goPrev/goNext を駆動する。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -70,12 +75,18 @@ export default function BookPager<T extends BookPagerPage>({
   const [swipeBlur, setSwipeBlur] = useState(0);
 
   useIsoLayoutEffect(() => {
-    // 初期ページは URL（?page=<安定ID>）→ 保存位置（localStorage）→ 1p の順。
+    // 初期ページは「有効なURL → 有効な保存位置 → defaultPage」の順。
+    // 不正・削除済み ID は次の候補へ安全にフォールバックする。
     // id は locale 非依存なので、呼び出し元がどの locale で pages を組んでいても解決できる。
     const requestedId = new URLSearchParams(window.location.search).get("page");
     const savedId = window.localStorage.getItem(storageKey);
-    const initial = pages.find((item) => item.id === requestedId) ?? pages.find((item) => item.id === savedId);
+    const fallback = defaultPage === "last" ? pages.at(-1) : pages[0];
+    const initial =
+      pages.find((item) => item.id === requestedId) ??
+      pages.find((item) => item.id === savedId) ??
+      fallback;
     if (initial !== undefined) setPage(initial.page);
+    setInitialized(true);
     // マウント時の初期解決のみ行う（pages 差し替えでの再解決はしない＝ページ送り中に locale が
     // 変わっても現在ページを保つ既存挙動を維持）。
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,9 +120,10 @@ export default function BookPager<T extends BookPagerPage>({
   }
 
   useEffect(() => {
+    if (!initialized) return;
     const id = pages.find((item) => item.page === page)?.id;
     if (id !== undefined) window.localStorage.setItem(storageKey, id);
-  }, [page, pages, storageKey]);
+  }, [initialized, page, pages, storageKey]);
 
   // 本のスワイプでページめくり＋スワイプ量で中身をぼかす（#275・PostDetail と同じ作法）。
   // 写真カルーセルと純関数（swipeProgress/swipeToBlur/swipeDirection）を共有する。

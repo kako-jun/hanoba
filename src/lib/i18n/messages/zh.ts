@@ -542,8 +542,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "book.nav.indicator": "{page} / {total}",
 
   // 市政通讯（gazette.ts / GazetteBook · #164）。以市长 Botanics von Hanōba 之声撰写的静态更新记录，
-  // 与市民手册共用同一套本页翻页组件（BookPager）。最新一条为第1页，「下一页」翻向更早的记录
-  // （与手册方向相反）。
+  // 与市民手册共用同一套本页翻页组件（BookPager）。条目按最早到最新编号；没有保存页的初次访问
+  // 会打开最后一页（最新条目）（#533）。
   "gazette.book.title": "Hanōba 市政通讯",
   // 第0条（最新）：市民手册全面修订（#137）。
   "gazette.articles.0.heading": "市民手册全面修订",

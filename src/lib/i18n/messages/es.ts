@@ -582,8 +582,8 @@ export const es: Partial<Record<MessageKey, string>> = {
 
   // Gaceta Municipal (gazette.ts / GazetteBook · #164). Un historial de cambios estático narrado con
   // la voz del Alcalde Botanics von Hanōba. Comparte el mismo paginador de libro (BookPager) que el
-  // manual del ciudadano. El artículo más reciente es la página 1; "Siguiente" retrocede hacia
-  // artículos más antiguos (al revés que el manual).
+  // manual del ciudadano. Los artículos se numeran del más antiguo al más reciente; sin página guardada
+  // la primera visita abre la última página, la más reciente (#533).
   "gazette.book.title": "La Gaceta Municipal de Hanōba",
   // Artículo 0 (el más reciente): la revisión del manual del ciudadano (#137).
   "gazette.articles.0.heading": "El manual del ciudadano, revisado por completo",

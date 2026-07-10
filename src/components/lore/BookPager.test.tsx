@@ -20,12 +20,13 @@ function pages(n: number): Fixture[] {
   }));
 }
 
-function renderPager(items: Fixture[], storageKey: string) {
+function renderPager(items: Fixture[], storageKey: string, defaultPage?: "first" | "last") {
   return render(
     <BookPager
       title="テスト本"
       pages={items}
       storageKey={storageKey}
+      defaultPage={defaultPage}
       renderPage={(page) => <p>{page.label}</p>}
     />,
   );
@@ -128,10 +129,25 @@ describe("BookPager（#164）", () => {
     expect(screen.getByText("1 / 3")).toBeInTheDocument();
   });
 
+  it("URLにも保存位置にも有効なidがない場合、defaultPage=\"last\"なら最終ページにフォールバックする", async () => {
+    localStorage.setItem("k15-last", "deleted-page");
+    history.replaceState(null, "", "/test?page=does-not-exist");
+    renderPager(pages(3), "k15-last", "last");
+    expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+    expect(screen.getByText("Page 3")).toBeInTheDocument();
+  });
+
   it("localStorageの保存idのみで再訪した場合、そのページから再開する", async () => {
     localStorage.setItem("k16", "p2");
     renderPager(pages(3), "k16");
     expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+  });
+
+  it("defaultPage=\"last\"でも有効なlocalStorage保存位置が優先される", async () => {
+    localStorage.setItem("k16-last", "p2");
+    renderPager(pages(3), "k16-last", "last");
+    expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+    expect(screen.getByText("Page 2")).toBeInTheDocument();
   });
 
   it("URL指定とlocalStorage指定が両方あるとき、URLが優先される", async () => {
