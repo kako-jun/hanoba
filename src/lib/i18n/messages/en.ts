@@ -572,7 +572,7 @@ export const en: Partial<Record<MessageKey, string>> = {
 
   // Municipal Gazette (gazette.ts / GazetteBook · #164). A static changelog written in the voice of
   // Mayor Botanics von Hanōba. Shares the same book pager (BookPager) as the Citizen's Handbook.
-  // The newest article is page 1; "Next" steps back through older articles (reverse of the handbook).
+  // Articles are numbered oldest to newest; a first visit with no saved page opens the final/newest page (#533).
   "gazette.book.title": "The Hanōba Municipal Gazette",
   // Article 0 (newest): the Citizen's Handbook revision (#137).
   "gazette.articles.0.heading": "A Revised Citizen's Handbook",
