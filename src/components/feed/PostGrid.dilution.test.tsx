@@ -5,10 +5,10 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない）。
 // PostGrid は useProfiles（fetchProfiles）、PostDetail はいいね/コメント取得を呼ぶ。
-const fetchReactionCount = vi.fn();
+const fetchReactionState = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
-  fetchReactionCount: (...a: unknown[]) => fetchReactionCount(...a),
+  fetchReactionState: (...a: unknown[]) => fetchReactionState(...a),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
   // カードのいいね/コメント数（#276）はグリッド単位バッチ取得。この検証では空 Map（カードに数を出さない）。
@@ -39,7 +39,7 @@ const BOB = "b".repeat(64);
 describe("PostGrid × 薄める設定（取得後・表示前の間引き段・#138）", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    fetchReactionCount.mockReset().mockResolvedValue(0);
+    fetchReactionState.mockReset().mockResolvedValue({ count: 0, myReactionId: undefined });
   });
 
   afterEach(() => {

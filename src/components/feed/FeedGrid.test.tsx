@@ -6,11 +6,11 @@ import type { FeedPost } from "../../lib/feed/parse.ts";
 // relay 取得はモック境界で止める（実ネットワークを呼ばない）。
 const fetchHanobaFeed = vi.fn();
 // PostDetail がマウント時に呼ぶいいね数取得もモックで止める（#12）。
-const fetchReactionCount = vi.fn();
+const fetchReactionState = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchHanobaFeed: (...args: unknown[]) => fetchHanobaFeed(...args),
-  fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  fetchReactionState: (...args: unknown[]) => fetchReactionState(...args),
   // コメント欄（#142）は検証対象外なので空（コメント0件）で固定。
   fetchReplies: () => Promise.resolve([]),
   // 著者プロフィール一括取得（#35）。テストでは空 Map（可視名は author.unnamed）。
@@ -36,8 +36,8 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 describe("FeedGrid", () => {
   beforeEach(() => {
     fetchHanobaFeed.mockReset();
-    fetchReactionCount.mockReset();
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockReset();
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
   });
 
   afterEach(() => {

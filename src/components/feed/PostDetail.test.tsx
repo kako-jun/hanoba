@@ -6,15 +6,20 @@ import type { Profile } from "../../lib/feed/parse.ts";
 import { nip19 } from "nostr-tools";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない・#12）。
-const fetchReactionCount = vi.fn();
+// #537: 旧 fetchReactionCount を fetchReactionState（件数＋自分の反応）に置き換え、いいねの
+// 取り消し（deleteReaction）を追加。このモック更新は最小限の追従（呼び出し先の rename）に留め、
+// トグル化に伴う本格的なテスト改修（既存アサーションの書き換え）は後続で行う。
+const fetchReactionState = vi.fn();
 const publishReaction = vi.fn();
+const deleteReaction = vi.fn();
 // コメント欄（#142）も同じ client を使う。PostDetail のテストはコメント機能の検証対象外なので、
 // fetchReplies は空（コメント0件）で固定し、いいね/シェア/札のテストに影響を与えない。
 const fetchReplies = vi.fn().mockResolvedValue([]);
 
 vi.mock("../../lib/nostr/client.ts", () => ({
-  fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  fetchReactionState: (...args: unknown[]) => fetchReactionState(...args),
   publishReaction: (...args: unknown[]) => publishReaction(...args),
+  deleteReaction: (...args: unknown[]) => deleteReaction(...args),
   fetchReplies: (...args: unknown[]) => fetchReplies(...args),
 }));
 
@@ -50,8 +55,9 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 
 describe("PostDetail いいね数表示", () => {
   beforeEach(() => {
-    fetchReactionCount.mockReset();
+    fetchReactionState.mockReset();
     publishReaction.mockReset();
+    deleteReaction.mockReset();
   });
 
   afterEach(() => {
@@ -61,16 +67,16 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("取得したいいね数を花アイコン＋数で表示する", async () => {
-    fetchReactionCount.mockResolvedValue(3);
+    fetchReactionState.mockResolvedValue({ count: 3, myReactionId: undefined });
     render(<PostDetail post={makePost({ id: "p1" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     // 花アイコン化したので数は aria-label（いいね N）で確認する。
     const like = await screen.findByLabelText("いいね 3");
     expect(like).toHaveTextContent("3");
-    expect(fetchReactionCount).toHaveBeenCalledWith("p1");
+    expect(fetchReactionState).toHaveBeenCalledWith("p1");
   });
 
   it("0 でも いいね 0 を表示する", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(<PostDetail post={makePost({ id: "p2" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const like = await screen.findByLabelText("いいね 0");
     expect(like).toHaveTextContent("0");
@@ -78,7 +84,7 @@ describe("PostDetail いいね数表示", () => {
 
   it("取得前は いいね 取得中（プレースホルダ -）を出す", async () => {
     // 解決しない Promise で「取得中」のまま固定する。
-    fetchReactionCount.mockReturnValue(new Promise(() => {}));
+    fetchReactionState.mockReturnValue(new Promise(() => {}));
     render(<PostDetail post={makePost({ id: "p3" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     await waitFor(() => {
       const like = screen.getByLabelText("いいね 取得中");
@@ -87,7 +93,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("空白名は旅人として表示し、正しい npub href と aria 識別だけに npub を残す", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     const pubkey = "4".repeat(64);
     const profile: Profile = {
       name: " \n ",
@@ -113,7 +119,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("表示名があれば前後空白を除去して維持する", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({ id: "author-named", pubkey: "5".repeat(64) })}
@@ -128,7 +134,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("0件で送信成功すると1件へ増える", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     publishReaction.mockResolvedValue({ status: "published", count: 1 });
     const post = makePost({ id: "like-zero", pubkey: "author" });
     render(<PostDetail post={post} onClose={() => {}} onSelectHashtag={() => {}} />);
@@ -138,7 +144,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("既存件数で送信成功すると1件だけ増える", async () => {
-    fetchReactionCount.mockResolvedValue(4);
+    fetchReactionState.mockResolvedValue({ count: 4, myReactionId: undefined });
     publishReaction.mockResolvedValue({ status: "published", count: 5 });
     render(<PostDetail post={makePost({ id: "like-four" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: "いいね 4" }));
@@ -146,7 +152,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("送信中は disabled・送信中 aria になり連打しても1回だけ送る", async () => {
-    fetchReactionCount.mockResolvedValue(2);
+    fetchReactionState.mockResolvedValue({ count: 2, myReactionId: undefined });
     let resolve!: (value: { status: "published"; count: number }) => void;
     publishReaction.mockReturnValue(new Promise((r) => { resolve = r; }));
     render(<PostDetail post={makePost({ id: "like-pending" })} onClose={() => {}} onSelectHashtag={() => {}} />);
@@ -161,7 +167,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("既に反応済みなら件数を据え置く", async () => {
-    fetchReactionCount.mockResolvedValue(3);
+    fetchReactionState.mockResolvedValue({ count: 3, myReactionId: undefined });
     publishReaction.mockResolvedValue({ status: "already-reacted", count: 3 });
     render(<PostDetail post={makePost({ id: "already" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: "いいね 3" });
@@ -172,7 +178,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("失敗時は件数据え置き・alert関連付けし、再試行成功で増えてalertを消す", async () => {
-    fetchReactionCount.mockResolvedValue(6);
+    fetchReactionState.mockResolvedValue({ count: 6, myReactionId: undefined });
     publishReaction
       .mockRejectedValueOnce(new Error("offline"))
       .mockResolvedValueOnce({ status: "published", count: 7 });
@@ -189,7 +195,7 @@ describe("PostDetail いいね数表示", () => {
 
   it("初期件数取得より送信成功が先でも古い取得結果で上書きしない", async () => {
     let resolveCount!: (value: number) => void;
-    fetchReactionCount.mockReturnValue(new Promise((r) => { resolveCount = r; }));
+    fetchReactionState.mockReturnValue(new Promise((r) => { resolveCount = r; }));
     publishReaction.mockResolvedValue({ status: "published", count: 9 });
     render(<PostDetail post={makePost({ id: "race" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: "いいね 取得中" }));
@@ -201,9 +207,9 @@ describe("PostDetail いいね数表示", () => {
   it("投稿切替後に旧投稿の取得・送信が完了しても新投稿を汚さない", async () => {
     let resolveOldCount!: (value: number) => void;
     let resolveOldPublish!: (value: { status: "published"; count: number }) => void;
-    fetchReactionCount
+    fetchReactionState
       .mockReturnValueOnce(new Promise((r) => { resolveOldCount = r; }))
-      .mockResolvedValueOnce(9);
+      .mockResolvedValueOnce({ count: 9, myReactionId: undefined });
     publishReaction.mockReturnValueOnce(new Promise((r) => { resolveOldPublish = r; }));
     const { rerender } = render(
       <PostDetail post={makePost({ id: "old" })} onClose={() => {}} onSelectHashtag={() => {}} />,
@@ -218,7 +224,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("いいねはキーボード操作可能な44pxボタンとして表示する", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     publishReaction.mockResolvedValue({ status: "published", count: 1 });
     const user = userEvent.setup();
     render(<PostDetail post={makePost({ id: "a11y" })} onClose={() => {}} onSelectHashtag={() => {}} />);
@@ -230,7 +236,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("複数画像は前後ボタンで切り替えられる", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({
@@ -256,7 +262,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("initialPhotoIndex があればその写真から始まり、範囲外は末尾に丸める", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     const post = makePost({
       id: "initial-index",
       caption: "成長記録",
@@ -299,7 +305,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("複数画像は写真領域の左スワイプで次へ・右スワイプで前へ切り替えられる（#184）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({
@@ -342,7 +348,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("単一画像はスワイプしても切り替わらない（スワイプ無効・#184）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(<PostDetail post={makePost({ id: "single1", caption: "一枚だけ" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const img = screen.getByRole("img", { name: "一枚だけ" });
     const area = img.parentElement!;
@@ -355,7 +361,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("複数画像はスワイプ中に写真ラッパへ blur が付き、指を離すと消える（#275）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     // reduced-motion なし（ぼかしが効く側）を明示する。
     stubMatchMedia(false);
     render(
@@ -388,7 +394,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("単一画像はスワイプしてもぼかさない（#275・onTouchMove 早期 return）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     stubMatchMedia(false);
     render(<PostDetail post={makePost({ id: "blur-single", caption: "一枚だけ" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const img = screen.getByRole("img", { name: "一枚だけ" });
@@ -402,7 +408,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("reduced-motion ではスワイプしてもぼかさない（#275・prefersReducedMotion）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     // matchMedia('(prefers-reduced-motion: reduce)') を matches:true にする。
     stubMatchMedia(true);
     render(
@@ -428,7 +434,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("縦優位ドラッグはぼかさない（#275・縦スクロール優先で 0 に戻す）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     stubMatchMedia(false);
     render(
       <PostDetail
@@ -453,7 +459,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("本文 <p> から #タグ を除き、タグはチップにだけ出す（二重表示解消・#43）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({ id: "t1", caption: "きれいに咲いた #アガベ", hashtags: ["アガベ"] })}
@@ -470,7 +476,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("タグだけの投稿は本文 <p> を出さない（空段落の余白を作らない・#43）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({ id: "t2", caption: "#アガベ #多肉", hashtags: ["アガベ", "多肉"] })}
@@ -483,7 +489,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("X でシェア（短文）= 1クリックで X intent を開く・採番なし（#37）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     render(
       <PostDetail
@@ -509,7 +515,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("X でシェア（長文）= ポップオーバーで全文／各パートを開ける（#37）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     render(
       <PostDetail
@@ -539,7 +545,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("Esc は まずシェアのポップオーバーを閉じ、もう一度でモーダルを閉じる（#37）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     const onClose = vi.fn();
     render(
       <PostDetail
@@ -566,7 +572,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("属タグから札を組み 学名のみを出し discover 検索へリンクする（属単独・#182/#23/#459）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({ id: "p4", caption: "うちのパキポ、いい形", hashtags: ["パキポディウム"] })}
@@ -587,7 +593,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("属＋品種タグは品種1枚に畳み 学名＋品種和名を並べる（属単独札は出さない・#182/#23）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({
@@ -620,7 +626,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("非 pickable 見出し属配下の品種は学名のみ・見出し語を出さない（should #1 回帰ガード・#182/#23/#459）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         // リドレイは ビカクシダ › 原種(pickable:false) 配下＝属タグを持てずカテゴリ（ビカクシダ）が共起する（#448）。
@@ -647,7 +653,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("学名がどこからも引けない品種は札にしない（#459＝和名へ倒さない・苔玉）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         // 「苔玉」は様式（グループ概念）の variety＝species でないので catalog.sci も dictionary も
@@ -667,7 +673,7 @@ describe("PostDetail いいね数表示", () => {
   });
 
   it("カテゴリタグ（塊根植物）は札にしない（#182）", async () => {
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(
       <PostDetail
         post={makePost({ id: "p6", caption: "観察", hashtags: ["塊根植物", "水やり"] })}
@@ -686,7 +692,7 @@ describe("PostDetail いいね数表示", () => {
   // #460: ハッシュタグの**表示**だけ閲覧言語に訳す。実カタログを動的 import するので実 loc 値で検証する。
   describe("ハッシュタグ表示ローカライズ（#460・en・実タグは ja 正準）", () => {
     it("en ではカテゴリ/属タグの表示を loc.en に訳し、品種/世話タグは ja のまま", async () => {
-      fetchReactionCount.mockResolvedValue(0);
+      fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
       render(
         <LocaleProvider value="en">
           <PostDetail
@@ -709,7 +715,7 @@ describe("PostDetail いいね数表示", () => {
     });
 
     it("en でも onSelectHashtag は JA 正準タグで呼ぶ（表示=Pachypodium・値=パキポディウム）", async () => {
-      fetchReactionCount.mockResolvedValue(0);
+      fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
       const picked: string[] = [];
       render(
         <LocaleProvider value="en">

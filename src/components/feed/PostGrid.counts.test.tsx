@@ -9,7 +9,8 @@ const fetchEngagementCountsBatch = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   // PostGrid → PostDetail（選択時）が呼ぶいいね/コメント取得・プロフィールはこの検証では使わない。
-  fetchReactionCount: () => Promise.resolve(0),
+  // #537: fetchReactionCount → fetchReactionState（件数＋自分の反応）。
+  fetchReactionState: () => Promise.resolve({ count: 0, myReactionId: undefined }),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
   // 観測対象：グリッドの統合バッチ取得。

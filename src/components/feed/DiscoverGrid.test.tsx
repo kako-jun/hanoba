@@ -7,11 +7,11 @@ import { EMPTY_FILTER, type DiscoverFilter } from "../../lib/feed/discoverFilter
 // relay 取得はモック境界で止める。discover は #239 で「品種で絞るだけ」になり、取得は
 // fetchDiscoverFiltered(tags のみの filter) に集約。応答は filter の canonical 文字列をキーに引く。
 const fetchDiscoverFiltered = vi.fn();
-const fetchReactionCount = vi.fn();
+const fetchReactionState = vi.fn();
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchDiscoverFiltered: (...args: unknown[]) => fetchDiscoverFiltered(...args),
-  fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  fetchReactionState: (...args: unknown[]) => fetchReactionState(...args),
   fetchReplies: () => Promise.resolve([]),
   fetchProfiles: () => Promise.resolve(new Map()),
   // カードのいいね/コメント数（#276 / #462・統合バッチ）はグリッド単位取得。この検証では空 Map（カードに数を出さない）。
@@ -55,8 +55,8 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     responses.clear();
     fetchDiscoverFiltered.mockReset();
     fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter) => Promise.resolve(responses.get(keyOf(f)) ?? []));
-    fetchReactionCount.mockReset();
-    fetchReactionCount.mockResolvedValue(0);
+    fetchReactionState.mockReset();
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     window.history.replaceState(null, "", "/discover");
     window.localStorage.clear();
     localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
