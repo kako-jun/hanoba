@@ -336,6 +336,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "detail.translate.original": "显示原文",
   "detail.translate.busy": "翻译中…",
   "detail.likes.loading": "加载中",
+  "detail.likes.sending": "正在点赞",
+  "detail.likes.error": "点赞发送失败，请重试。",
   "detail.share.aria": "分享到 X",
   "detail.share.split.aria": "分享到 X（拆分）",
   "detail.share.whole": "全文",

@@ -14,27 +14,42 @@ export function isLike(event: NostrEvent): boolean {
   return event.content !== "-";
 }
 
+/** created_at の新しい順、同秒は id の辞書順で決定的に新しい反応を選ぶ。 */
+export function latestReaction(reactions: NostrEvent[]): NostrEvent | undefined {
+  let latest: NostrEvent | undefined;
+  for (const event of reactions) {
+    if (
+      latest === undefined ||
+      event.created_at > latest.created_at ||
+      (event.created_at === latest.created_at && event.id > latest.id)
+    ) {
+      latest = event;
+    }
+  }
+  return latest;
+}
+
 /**
  * kind:7 リアクションの配列から「いいね」数を集計する純粋関数。
  *
  * - dislike（content === "-"）は除外する（isLike）。
  * - 1 人 1 いいねに畳む（同一 pubkey の重複は 1 票）。
- *   イベントは取得順で走査し、同一 pubkey の最後の反応を採用する
+ *   created_at が最新の反応を採用する
  *   ＝ 後から dislike に変えていれば like から落ち、like に変えていれば数える。
+ *   created_at が同秒なら event id の辞書順が大きい方を採用し、relay の返却順に依存させない。
  * - 返り値は 0 以上の整数。
- *
- * 注: 同一 pubkey が like と dislike の両方を出している場合、配列内で最後に
- * 現れたイベントの content で like/dislike を決める（最後採用）。
  */
 export function countLikes(reactions: NostrEvent[]): number {
-  // pubkey → 最後に観測した反応が like かどうか。
-  const byPubkey = new Map<string, boolean>();
+  const byPubkey = new Map<string, NostrEvent[]>();
   for (const event of reactions) {
-    byPubkey.set(event.pubkey, isLike(event));
+    const events = byPubkey.get(event.pubkey) ?? [];
+    events.push(event);
+    byPubkey.set(event.pubkey, events);
   }
   let count = 0;
-  for (const liked of byPubkey.values()) {
-    if (liked) count += 1;
+  for (const events of byPubkey.values()) {
+    const latest = latestReaction(events);
+    if (latest !== undefined && isLike(latest)) count += 1;
   }
   return count;
 }
@@ -48,7 +63,7 @@ export function countLikes(reactions: NostrEvent[]): number {
  * - 各 kind:7 を、その `e` タグ値のうち eventIds に含まれる**最初の1つ**へ割り当てる
  *   （リアクションは通常1投稿宛だが、複数 e タグを持つ稀ケースでも対象投稿に倒す）。
  *   eventIds にどれも一致しなければそのリアクションは無視する。
- * - 各群を既存 `countLikes` で数える（dislike 除外・同一 pubkey は最後採用＝単一取得と同じ集計）。
+ * - 各群を既存 `countLikes` で数える（dislike 除外・同一 pubkey は時刻/idで最新を採用）。
  * - 返り値は eventIds の全 id をキーに持つ Map（該当0件の id は 0）。0 を出すか隠すかは呼び出し側の責務。
  */
 export function countLikesByEvent(

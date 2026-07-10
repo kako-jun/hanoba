@@ -347,6 +347,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "detail.translate.original": "Show original",
   "detail.translate.busy": "Translating…",
   "detail.likes.loading": "loading",
+  "detail.likes.sending": "Sending like",
+  "detail.likes.error": "Could not send your like. Please try again.",
   "detail.share.aria": "Share on X",
   "detail.share.split.aria": "Share on X (split)",
   "detail.share.whole": "Full text",

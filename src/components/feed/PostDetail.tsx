@@ -17,7 +17,7 @@ import {
   swipeToBlur,
 } from "../../lib/feed/carousel.ts";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
-import { fetchReactionCount } from "../../lib/nostr/client.ts";
+import { fetchReactionCount, publishReaction } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
 import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
@@ -54,9 +54,8 @@ function clampPhotoIndex(i: number | undefined, len: number): number {
  * ＝静的サイト（CF Pages・SSR なし）を維持する。
  *
  * 内容: 1:1 画像 ＋ 一言（caption）＋ ハッシュタグ（クリックで絞り込み）
- *       ＋ 投稿者（npub 短縮）＋ 相対時刻 ＋ いいね数（♡ N）。
- * いいね数は NIP-25 の kind:7 リアクションの読み取り集計（表示のみ・#12）。
- * いいねの書き込み（kind:7 publish）はこの Issue では作らない。
+ *       ＋ 投稿者（npub 短縮）＋ 相対時刻 ＋ いいねボタン（花 N）。
+ * いいねは NIP-25 の kind:7 リアクションを読み書きする（1ユーザー1件）。
  * モーダルに反応領域を足せるよう、本文と meta を分けた構造にしてある。
  *
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
@@ -72,6 +71,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
 
   // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [liking, setLiking] = useState(false);
+  const [likeError, setLikeError] = useState(false);
+  // 初期件数取得と送信の競合、および同一コンポーネントでの投稿切替を識別する。
+  // revision > 0 は現在の投稿で送信成功済み＝それ以前に開始した初期取得結果を捨てる。
+  const reactionStateRef = useRef({ postId: post.id, revision: 0 });
   const [photoIndex, setPhotoIndex] = useState(() => clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
   const locale = useLocale();
   const t = useT(locale);
@@ -157,14 +161,38 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // アンマウント後・post 切替後の setState を alive フラグで防ぐ。
   useEffect(() => {
     let alive = true;
+    reactionStateRef.current = { postId: post.id, revision: 0 };
+    const revision = reactionStateRef.current.revision;
     setLikeCount(null);
+    setLiking(false);
+    setLikeError(false);
     fetchReactionCount(post.id).then((count) => {
-      if (alive) setLikeCount(count);
+      const current = reactionStateRef.current;
+      if (alive && current.postId === post.id && current.revision === revision) {
+        setLikeCount(count);
+      }
     });
     return () => {
       alive = false;
     };
   }, [post.id]);
+
+  async function likePost() {
+    if (liking) return;
+    setLiking(true);
+    setLikeError(false);
+    try {
+      const result = await publishReaction(post.id, post.pubkey);
+      // post 切替後に旧投稿の送信が完了しても、新投稿の件数を変更しない。
+      if (reactionStateRef.current.postId !== post.id) return;
+      reactionStateRef.current.revision += 1;
+      setLikeCount(result.count);
+    } catch {
+      if (reactionStateRef.current.postId === post.id) setLikeError(true);
+    } finally {
+      if (reactionStateRef.current.postId === post.id) setLiking(false);
+    }
+  }
 
   // 投稿の札（鉢の名前＝学名＋最も有名な和名を1枚・#182/#23）。caption は使わず hashtags のみ
   // （#181 で属＋品種が tag に入る）。索引は useFudaIndex（catalog を動的 import し buildVarietyIndex を
@@ -412,17 +440,27 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   </a>
                 );
               })()}
-              <span className="flex shrink-0 items-center gap-3">
-                {/* いいね（#117）。X シェアより使用頻度が高いので左に置く。黄色い花アイコン（#116）。 */}
-                <span
-                  className="inline-flex items-center gap-[5px]"
-                  aria-label={t("reaction.likes.aria", { n: likeCount === null ? t("detail.likes.loading") : likeCount })}
+              <span className="flex shrink-0 items-center gap-1">
+                {/* いいね（#529）。標準 NIP-25 を1ユーザー1件送る。黄色い花アイコン（#116）。 */}
+                <button
+                  type="button"
+                  onClick={likePost}
+                  disabled={liking}
+                  aria-label={
+                    liking
+                      ? t("detail.likes.sending")
+                      : t("reaction.likes.aria", {
+                          n: likeCount === null ? t("detail.likes.loading") : likeCount,
+                        })
+                  }
+                  aria-describedby={likeError ? "post-like-error" : undefined}
+                  className="inline-flex min-w-11 min-h-11 items-center justify-center gap-[5px] rounded-full px-2 text-ha-ink/70 hover:bg-ha-ink/5 hover:text-ha-yellow transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
                   <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
                   <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
                     {likeCount === null ? "-" : likeCount}
                   </span>
-                </span>
+                </button>
                 {/* X でシェア（#37）。1パートなら即 intent、複数なら全文／各パートのメニュー。
                     パーマリンクは njump（nevent）で、X 上に写真の OGP プレビューを出す。 */}
                 <span className="relative inline-flex">
@@ -438,7 +476,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                         openXShare(shareParts[0] ?? "");
                       }
                     }}
-                    className="grid place-items-center w-7 h-7 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-ha-ink/5 transition-colors"
+                    className="grid place-items-center w-11 h-11 rounded-full text-ha-ink/55 hover:text-ha-ink hover:bg-ha-ink/5 transition-colors"
                   >
                     <Icon name="x" className="w-4 h-4" />
                   </button>
@@ -482,6 +520,11 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 <time>{relativeTime(post.createdAt, Math.floor(Date.now() / 1000))}</time>
               </span>
             </div>
+            {likeError && (
+              <p id="post-like-error" role="alert" className="text-right text-ha-pink">
+                {t("detail.likes.error")}
+              </p>
+            )}
 
             {/* 著者の複数サイトリンク（#35 Piece 2）。各人が自分のサイトへ誘導する核。
                 フィードカードには出さない（Piece 1 の方針）。サービス判定は services.ts。 */}
