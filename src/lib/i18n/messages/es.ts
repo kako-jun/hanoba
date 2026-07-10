@@ -20,6 +20,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "nav.menu.close": "Cerrar menú",
   "nav.home.aria": "Inicio de Hanōba",
 
+  "footer.nav.aria": "Navegación del pie de página",
   "footer.tagline":
     "Hanōba: una ciudad imaginaria de amantes de las plantas, cultivada entre todos.",
 
@@ -356,6 +357,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "detail.translate.original": "Ver original",
   "detail.translate.busy": "Traduciendo…",
   "detail.likes.loading": "cargando",
+  "detail.likes.sending": "Enviando Me gusta",
+  "detail.likes.error": "No se pudo enviar. Inténtalo de nuevo.",
   "detail.share.aria": "Compartir en X",
   "detail.share.split.aria": "Compartir en X (dividido)",
   "detail.share.whole": "Texto completo",

@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { Profile } from "../../lib/feed/parse.ts";
@@ -6,12 +7,14 @@ import { nip19 } from "nostr-tools";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない・#12）。
 const fetchReactionCount = vi.fn();
+const publishReaction = vi.fn();
 // コメント欄（#142）も同じ client を使う。PostDetail のテストはコメント機能の検証対象外なので、
 // fetchReplies は空（コメント0件）で固定し、いいね/シェア/札のテストに影響を与えない。
 const fetchReplies = vi.fn().mockResolvedValue([]);
 
 vi.mock("../../lib/nostr/client.ts", () => ({
   fetchReactionCount: (...args: unknown[]) => fetchReactionCount(...args),
+  publishReaction: (...args: unknown[]) => publishReaction(...args),
   fetchReplies: (...args: unknown[]) => fetchReplies(...args),
 }));
 
@@ -48,6 +51,7 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
 describe("PostDetail いいね数表示", () => {
   beforeEach(() => {
     fetchReactionCount.mockReset();
+    publishReaction.mockReset();
   });
 
   afterEach(() => {
@@ -121,6 +125,108 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.getByRole("link", { name: "葉子 のプロフィール" })).toHaveTextContent("葉子");
     await screen.findByLabelText("いいね 0");
     await screen.findByText("まだコメントはありません");
+  });
+
+  it("0件で送信成功すると1件へ増える", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    const post = makePost({ id: "like-zero", pubkey: "author" });
+    render(<PostDetail post={post} onClose={() => {}} onSelectHashtag={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "いいね 0" }));
+    expect(await screen.findByRole("button", { name: "いいね 1" })).toBeInTheDocument();
+    expect(publishReaction).toHaveBeenCalledWith("like-zero", "author");
+  });
+
+  it("既存件数で送信成功すると1件だけ増える", async () => {
+    fetchReactionCount.mockResolvedValue(4);
+    publishReaction.mockResolvedValue({ status: "published", count: 5 });
+    render(<PostDetail post={makePost({ id: "like-four" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "いいね 4" }));
+    expect(await screen.findByRole("button", { name: "いいね 5" })).toBeInTheDocument();
+  });
+
+  it("送信中は disabled・送信中 aria になり連打しても1回だけ送る", async () => {
+    fetchReactionCount.mockResolvedValue(2);
+    let resolve!: (value: { status: "published"; count: number }) => void;
+    publishReaction.mockReturnValue(new Promise((r) => { resolve = r; }));
+    render(<PostDetail post={makePost({ id: "like-pending" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    const button = await screen.findByRole("button", { name: "いいね 2" });
+    fireEvent.click(button);
+    const sending = screen.getByRole("button", { name: "いいねを送信中" });
+    expect(sending).toBeDisabled();
+    fireEvent.click(sending);
+    expect(publishReaction).toHaveBeenCalledTimes(1);
+    resolve({ status: "published", count: 3 });
+    expect(await screen.findByRole("button", { name: "いいね 3" })).toBeInTheDocument();
+  });
+
+  it("既に反応済みなら件数を据え置く", async () => {
+    fetchReactionCount.mockResolvedValue(3);
+    publishReaction.mockResolvedValue({ status: "already-reacted", count: 3 });
+    render(<PostDetail post={makePost({ id: "already" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    const button = await screen.findByRole("button", { name: "いいね 3" });
+    fireEvent.click(button);
+    await waitFor(() => expect(button).not.toBeDisabled());
+    expect(screen.getByRole("button", { name: "いいね 3" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("失敗時は件数据え置き・alert関連付けし、再試行成功で増えてalertを消す", async () => {
+    fetchReactionCount.mockResolvedValue(6);
+    publishReaction
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce({ status: "published", count: 7 });
+    render(<PostDetail post={makePost({ id: "retry" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "いいね 6" }));
+    const alert = await screen.findByRole("alert");
+    const button = screen.getByRole("button", { name: "いいね 6" });
+    expect(button).toHaveAttribute("aria-describedby", alert.id);
+    expect(button).not.toBeDisabled();
+    fireEvent.click(button);
+    expect(await screen.findByRole("button", { name: "いいね 7" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("初期件数取得より送信成功が先でも古い取得結果で上書きしない", async () => {
+    let resolveCount!: (value: number) => void;
+    fetchReactionCount.mockReturnValue(new Promise((r) => { resolveCount = r; }));
+    publishReaction.mockResolvedValue({ status: "published", count: 9 });
+    render(<PostDetail post={makePost({ id: "race" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "いいね 取得中" }));
+    expect(await screen.findByRole("button", { name: "いいね 9" })).toBeInTheDocument();
+    resolveCount(8);
+    await waitFor(() => expect(screen.getByRole("button", { name: "いいね 9" })).toBeInTheDocument());
+  });
+
+  it("投稿切替後に旧投稿の取得・送信が完了しても新投稿を汚さない", async () => {
+    let resolveOldCount!: (value: number) => void;
+    let resolveOldPublish!: (value: { status: "published"; count: number }) => void;
+    fetchReactionCount
+      .mockReturnValueOnce(new Promise((r) => { resolveOldCount = r; }))
+      .mockResolvedValueOnce(9);
+    publishReaction.mockReturnValueOnce(new Promise((r) => { resolveOldPublish = r; }));
+    const { rerender } = render(
+      <PostDetail post={makePost({ id: "old" })} onClose={() => {}} onSelectHashtag={() => {}} />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "いいね 取得中" }));
+    rerender(<PostDetail post={makePost({ id: "new" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    expect(await screen.findByRole("button", { name: "いいね 9" })).not.toBeDisabled();
+    resolveOldCount(20);
+    resolveOldPublish({ status: "published", count: 21 });
+    await waitFor(() => expect(screen.getByRole("button", { name: "いいね 9" })).toBeInTheDocument());
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("いいねはキーボード操作可能な44pxボタンとして表示する", async () => {
+    fetchReactionCount.mockResolvedValue(0);
+    publishReaction.mockResolvedValue({ status: "published", count: 1 });
+    const user = userEvent.setup();
+    render(<PostDetail post={makePost({ id: "a11y" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+    const button = await screen.findByRole("button", { name: "いいね 0" });
+    expect(button).toHaveClass("min-w-11", "min-h-11");
+    button.focus();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByRole("button", { name: "いいね 1" })).toBeInTheDocument();
   });
 
   it("複数画像は前後ボタンで切り替えられる", async () => {

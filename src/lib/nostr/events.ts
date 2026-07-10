@@ -123,6 +123,25 @@ export function buildReplyTemplate(content: string, parentEventId: string, creat
   };
 }
 
+/** 投稿への標準 NIP-25「いいね」（kind:7）テンプレートを構築する。 */
+export function buildReactionTemplate(
+  targetEventId: string,
+  targetPubkey: string,
+  createdAt?: number,
+): EventTemplate {
+  if (targetEventId === "") throw new Error("いいね先の投稿がありません");
+  if (targetPubkey === "") throw new Error("いいね先の投稿者がありません");
+  return {
+    kind: 7,
+    created_at: createdAt ?? nowSec(),
+    tags: [
+      ["e", targetEventId],
+      ["p", targetPubkey],
+    ],
+    content: "+",
+  };
+}
+
 /**
  * NIP-98（HTTP Auth）の認証イベントテンプレートを構築する。
  * 画像アップロード（nostr.build）の Authorization ヘッダ用。

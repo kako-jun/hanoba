@@ -20,6 +20,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "nav.menu.close": "关闭菜单",
   "nav.home.aria": "Hanōba 首页",
 
+  "footer.nav.aria": "页脚导航",
   "footer.tagline": "Hanōba：一座由大家共同培育的、爱植物之人的虚构城市。",
 
   "scrollToTop.aria": "回到顶部",
@@ -339,6 +340,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "detail.translate.original": "显示原文",
   "detail.translate.busy": "翻译中…",
   "detail.likes.loading": "加载中",
+  "detail.likes.sending": "正在点赞",
+  "detail.likes.error": "点赞发送失败，请重试。",
   "detail.share.aria": "分享到 X",
   "detail.share.split.aria": "分享到 X（拆分）",
   "detail.share.whole": "全文",
