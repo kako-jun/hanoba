@@ -5,7 +5,8 @@
 //   - weightedLengthX: twitter-text 準拠の加重長（ASCII=1 / CJK・絵文字=2 / URL=固定23）。
 //   - buildXShareParts: caption（インライン #タグ込み）を 280 加重長に収まるよう分割し、
 //     `(N/総数)` 採番・先頭にハッシュタグ・最終にパーマリンクを配分した投稿用文字列の配列を返す。
-//   - buildNjumpPermalink: 単一投稿ルートが無い hanoba 用の普遍 Nostr パーマリンク（njump）。
+//   - buildNjumpPermalink: Nostr 汎用パーマリンク（njump）。
+//   - buildHanobaPostPermalink: Hanoba 内の静的投稿ページ（/p/<nevent>）。
 //   - openXShare: X intent を新規タブで開く（副作用・テスト対象外）。
 //
 // relay には触れない（純粋）。permalink 生成は nip19（純粋）のみ使う。
@@ -247,7 +248,7 @@ function allPartsFit(parts: string[], hashtags: string[], permalink: string): bo
  *
  * @param caption    投稿の一言（画像 URL は除去済み・#タグはインラインで残す）。
  * @param hashtags   先頭パートに追記する追加ハッシュタグ（hanoba ではインライン済みのため通常 []）。
- * @param permalink  最終パートに付けるパーマリンク（njump URL）。空なら付けない。
+ * @param permalink  最終パートに付けるパーマリンク。空なら付けない。
  * @returns 投稿用文字列の配列。total>1 のときのみ `(N/総数)` 採番が付く。1パートなら採番なし。
  *
  * 分割優先度: 空行 → 改行 → 句読点 → 強制分割（書記素境界スナップ）。
@@ -307,9 +308,8 @@ export function getXIntentUrl(text: string): string {
 }
 
 /**
- * 投稿（FeedPost）への普遍 Nostr パーマリンク（njump）を生成する。hanoba は単一投稿ルートを
- * 持たない（モーダル島）ので、nip19 nevent（リレーヒント込み）で `https://njump.me/<nevent>` を作る。
- * njump が画像を OGP に出すので X 上でも写真プレビューが出る＝写真 SNS として正しいリンクバック。
+ * 投稿（FeedPost）への普遍 Nostr パーマリンク（njump）を生成する。
+ * Hanoba 外のクライアントへ渡す用途として残す。X 共有は #542 以降 buildHanobaPostPermalink を使う。
  *
  * nevent 生成のロジックは `encodePostNevent`（deep-link.ts）に集約した正本を使う（重複排除・#386）。
  * 64桁小文字 hex でない id・encode 不能（壊れた id）は null になるので、その場合はリンク無し（""）を返す。
@@ -317,6 +317,16 @@ export function getXIntentUrl(text: string): string {
 export function buildNjumpPermalink(post: Pick<FeedPost, "id" | "pubkey">): string {
   const nevent = encodePostNevent(post);
   return nevent ? `https://njump.me/${nevent}` : "";
+}
+
+/**
+ * 投稿（FeedPost）への Hanoba 内パーマリンクを生成する（#542）。
+ * build 時に `/p/<nevent>` の静的ページを生成するため、X 共有も njump ではなく
+ * Hanoba 自身へ寄せられる。encode 不能時は従来どおりリンク無し（""）にする。
+ */
+export function buildHanobaPostPermalink(post: Pick<FeedPost, "id" | "pubkey">): string {
+  const nevent = encodePostNevent(post);
+  return nevent ? `https://hanoba.llll-ll.com/p/${nevent}` : "";
 }
 
 /** X intent を新規タブで開く（副作用）。noopener,noreferrer で開く。 */

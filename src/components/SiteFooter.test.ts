@@ -106,6 +106,23 @@ describe("フッタ導線順（#532）", () => {
   });
 });
 
+describe("フッタ公開情報（#543）", () => {
+  it("Nostalgic Counter はフッタに小さく置き、実IDを使う", () => {
+    expect(footerSrc).toContain("<nostalgic-counter");
+    expect(footerSrc).toContain("NOSTALGIC_COUNTER_ID");
+    expect(footerSrc).toContain("来街者");
+  });
+
+  it("version 表記を出す", () => {
+    expect(footerSrc).toContain("HANOBA_VERSION");
+    expect(footerSrc).toContain("v{HANOBA_VERSION}");
+  });
+
+  it("GitHub Sponsors はフッタ外部リンクに混ぜない", () => {
+    expect(footerSrc).not.toContain("github.com/sponsors");
+  });
+});
+
 describe("フッタナビの aria（#532）", () => {
   it.each([
     ["ja", "フッターナビゲーション"],

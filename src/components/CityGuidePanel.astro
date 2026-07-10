@@ -1,0 +1,51 @@
+---
+// 市民手帳の下に置く公開導線（#543）。
+// QR / Sponsors / 道具棚はフッタへ詰め込まず、手帳を閉じた後の案内札として扱う。
+import Icon from "./ui/Icon.tsx";
+
+const QR_SRC = "/hanoba-qr-code.png";
+---
+
+<section class="glass ha-rise rounded-2xl p-6 flex flex-col gap-5" style="--i:4">
+  <header class="flex flex-col gap-1">
+    <h2 class="font-display text-xl font-bold text-ha-green-deep">ハノーバ案内札</h2>
+    <p class="text-sm text-ha-ink/70 leading-relaxed [word-break:auto-phrase]">
+      手元の端末でもう一度この街を開くための控えです。
+    </p>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center">
+    <div class="mx-auto flex aspect-square w-32 items-center justify-center rounded-2xl border border-dashed border-ha-green/35 bg-ha-green-soft/45 text-center text-xs font-bold text-ha-green-deep/70">
+      <img
+        src={QR_SRC}
+        alt="Hanōba を開く QR コード"
+        width="128"
+        height="128"
+        loading="lazy"
+        decoding="async"
+        class="h-full w-full rounded-2xl object-contain"
+      />
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <a
+        href="https://hanoba.llll-ll.com"
+        class="text-sm font-bold text-ha-green hover:text-ha-green-deep underline underline-offset-2 transition-colors"
+      >
+        hanoba.llll-ll.com
+      </a>
+      <a
+        href="https://github.com/sponsors/kako-jun"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex w-fit items-center gap-2 rounded-full border border-ha-green/25 px-4 py-2 text-sm font-bold text-ha-green-deep hover:border-ha-green/55 transition-colors"
+      >
+        <Icon name="heart" className="h-4 w-4 text-ha-orange" />
+        運営へ水やりする
+      </a>
+      <p class="text-xs text-ha-ink/55 leading-relaxed [word-break:auto-phrase]">
+        QR を見せれば、別の端末からもこの街を開けます。支援は GitHub Sponsors へ移動します。
+      </p>
+    </div>
+  </div>
+</section>

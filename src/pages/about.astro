@@ -14,6 +14,7 @@ import MainLayout from "../layouts/MainLayout.astro";
 // パーソナル読み物でクライアントでしか確定しないため実害ほぼなし。
 // #27: 道具棚（アフィリエイト）は本の下に 1 スロットだけ残す。
 import AffiliateGrid from "../components/AffiliateGrid.astro";
+import CityGuidePanel from "../components/CityGuidePanel.astro";
 import CityHallBook from "../components/lore/CityHallBook.tsx";
 import { t, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 import { BOOK_FRAME_SRC, BOOK_PAGE_SRC, MAYOR_AVATAR_SRC } from "../lib/lore/cityHallAssets.ts";
@@ -37,6 +38,8 @@ const locale: Locale = DEFAULT_LOCALE;
 
   <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
     <CityHallBook client:only="react" lang={locale} />
+
+    <CityGuidePanel />
 
     <AffiliateGrid />
   </main>

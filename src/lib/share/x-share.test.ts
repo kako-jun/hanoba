@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { nip19 } from "nostr-tools";
 import {
+  buildHanobaPostPermalink,
   buildNjumpPermalink,
   buildXShareParts,
   buildXShareWhole,
@@ -240,5 +241,26 @@ describe("buildNjumpPermalink", () => {
 
   it("正しい 64桁小文字 hex なら https://njump.me/nevent1... を返す", () => {
     expect(buildNjumpPermalink({ id, pubkey }).startsWith("https://njump.me/nevent1")).toBe(true);
+  });
+});
+
+describe("buildHanobaPostPermalink", () => {
+  const id = "e".repeat(64);
+  const pubkey = "a".repeat(64);
+
+  it("nevent を作り Hanoba 内の /p/<nevent> URL を返す", () => {
+    const url = buildHanobaPostPermalink({ id, pubkey });
+    expect(url.startsWith("https://hanoba.llll-ll.com/p/nevent1")).toBe(true);
+    const nevent = url.replace("https://hanoba.llll-ll.com/p/", "");
+    const decoded = nip19.decode(nevent);
+    expect(decoded.type).toBe("nevent");
+    if (decoded.type === "nevent") {
+      expect(decoded.data.id).toBe(id);
+      expect(decoded.data.author).toBe(pubkey);
+    }
+  });
+
+  it("壊れた id は空文字を返す", () => {
+    expect(buildHanobaPostPermalink({ id: "not-hex", pubkey })).toBe("");
   });
 });

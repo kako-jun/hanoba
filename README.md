@@ -5,6 +5,12 @@
 自前のバックエンドを持たない（バックエンドレス）。状態は全て Nostr（クライアント側）に乗る。
 フロントエンドは Astro（静的生成）＋ React islands ＋ PWA。
 
+本番: https://hanoba.llll-ll.com
+
+運営支援: https://github.com/sponsors/kako-jun
+
+QR コード画像は公開導線用に `public/hanoba-qr-code.png` として配置する。
+
 ## 開発
 
 ```sh

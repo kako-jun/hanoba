@@ -665,7 +665,7 @@ describe("PostDetail いいね数表示", () => {
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     render(
       <PostDetail
-        // permalink（njump nevent）は 64hex の id を要求するため有効な id を使う。
+        // permalink（Hanoba 内 /p/<nevent>）は 64hex の id を要求するため有効な id を使う。
         post={makePost({ id: "e".repeat(64), caption: "開花した #アガベ", hashtags: ["アガベ"] })}
         onClose={() => {}}
         onSelectHashtag={() => {}}
@@ -679,10 +679,10 @@ describe("PostDetail いいね数表示", () => {
     const url = open.mock.calls[0]![0] as string;
     expect(url.startsWith("https://twitter.com/intent/tweet?text=")).toBe(true);
     const text = decodeURIComponent(url.replace("https://twitter.com/intent/tweet?text=", ""));
-    // 生 caption（インライン #タグ込み）を共有し、採番は付かない。njump パーマリンクが末尾に付く。
+    // 生 caption（インライン #タグ込み）を共有し、採番は付かない。Hanoba 内パーマリンクが末尾に付く。
     expect(text).toContain("開花した #アガベ");
     expect(text).not.toMatch(/\(\d+\/\d+\)/);
-    expect(text).toContain("https://njump.me/");
+    expect(text).toContain("https://hanoba.llll-ll.com/p/");
     open.mockRestore();
   });
 

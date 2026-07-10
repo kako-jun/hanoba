@@ -1,0 +1,128 @@
+---
+import SiteHeader from "../../components/SiteHeader.astro";
+import MainLayout from "../../layouts/MainLayout.astro";
+import { DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { relativeTime, type FeedPost } from "../../lib/feed/parse.ts";
+import { postPageDescription, postPageTitle, postReadableCaption, fetchStaticPostPages } from "../../lib/seo/post-pages.ts";
+
+export async function getStaticPaths() {
+  const pages = await fetchStaticPostPages();
+  return pages.map(({ nevent, post }) => ({
+    params: { nevent },
+    props: { nevent, post },
+  }));
+}
+
+interface Props {
+  nevent: string;
+  post: FeedPost;
+}
+
+const { nevent, post } = Astro.props;
+const locale: Locale = DEFAULT_LOCALE;
+const SITE = Astro.site ?? new URL("https://hanoba.llll-ll.com");
+const pageUrl = new URL(`/p/${nevent}`, SITE).href;
+const title = postPageTitle(post);
+const description = postPageDescription(post);
+const readableCaption = postReadableCaption(post);
+const publishedDate = new Date(post.createdAt * 1000);
+const image = post.imageUrl ?? new URL("/og/og-image.jpg", SITE).href;
+const now = Math.floor(Date.now() / 1000);
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SocialMediaPosting",
+  headline: title.replace(/ — Hanōba$/, ""),
+  text: readableCaption === "" ? description : readableCaption,
+  datePublished: publishedDate.toISOString(),
+  url: pageUrl,
+  image: post.imageUrls,
+  publisher: {
+    "@type": "Organization",
+    name: "Hanōba",
+    url: SITE.href,
+  },
+};
+---
+
+<MainLayout
+  title={title}
+  description={description}
+  ogType="article"
+  ogImage={image}
+  ogImageWidth={1200}
+  ogImageHeight={1200}
+  jsonLd={jsonLd}
+>
+  <SiteHeader wide />
+
+  <main class="mx-auto max-w-3xl lg:max-w-5xl px-5 py-9 flex flex-col gap-8">
+    <article class="ha-rise grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] lg:items-start">
+      <div class="grid gap-3">
+        {
+          post.imageUrls.map((src, index) => (
+            <figure class="glass overflow-hidden rounded-2xl">
+              <img
+                src={src}
+                alt={index === 0 ? title : `${title} ${index + 1}`}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                class="aspect-square w-full object-cover"
+              />
+            </figure>
+          ))
+        }
+      </div>
+
+      <div class="glass rounded-2xl p-5 sm:p-6 flex flex-col gap-5">
+        <header class="flex flex-col gap-2">
+          <p class="text-xs text-ha-ink/55 tabular-nums">
+            <time datetime={publishedDate.toISOString()}>{relativeTime(post.createdAt, now, locale)}</time>
+          </p>
+          <h1 class="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ha-green-deep [word-break:auto-phrase]">
+            Hanōba の植物
+          </h1>
+        </header>
+
+        {
+          readableCaption !== "" && (
+            <div class="whitespace-pre-wrap text-base leading-relaxed text-ha-ink/90 [word-break:auto-phrase]">
+              {readableCaption}
+            </div>
+          )
+        }
+
+        {
+          post.hashtags.length > 0 && (
+            <ul class="flex flex-wrap gap-2">
+              {post.hashtags.map((tag) => (
+                <li>
+                  <a
+                    href={`/discover?tags=${encodeURIComponent(tag)}`}
+                    class="inline-flex rounded-full border border-ha-green/25 bg-ha-green-soft/70 px-3 py-1 text-xs font-medium text-ha-green-deep hover:border-ha-green/55 transition-colors"
+                  >
+                    #{tag}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        <div class="flex flex-wrap gap-3 text-sm">
+          <a
+            href={`/?p=${nevent}`}
+            class="inline-flex items-center justify-center rounded-full bg-ha-green px-4 py-2 font-bold text-ha-base shadow-sm shadow-black/20 hover:bg-ha-green-deep transition-colors"
+          >
+            Hanōba で開く
+          </a>
+          <a
+            href="/"
+            class="inline-flex items-center justify-center rounded-full border border-ha-green/25 px-4 py-2 font-bold text-ha-green-deep hover:border-ha-green/55 transition-colors"
+          >
+            タイムラインへ
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+</MainLayout>

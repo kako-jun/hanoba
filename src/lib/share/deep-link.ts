@@ -1,11 +1,11 @@
 // 投稿詳細モーダルの deep-link（#386）の純粋ロジック。relay には触れない（nip19 のみ）。
 //
-// hanoba は output:"static"（SSR/edge 無し）なので、単一投稿に別ルート `/p/<id>` は持てない。
-// 同じ静的 index のまま、クエリ `?p=<nevent>` をクライアント JS が読んでモーダルを開く
-// （「URL は同じ・モーダル島」思想と整合）。共有・ブックマーク・リロードで開き直せる。
+// hanoba は output:"static"（SSR/edge 無し）なので、フィード上のモーダル復元は
+// クエリ `?p=<nevent>` をクライアント JS が読んで開く。検索エンジン向けには
+// build 時に生成する `/p/<nevent>` の静的投稿ページも持つ（#542）。
 //
 // 役割:
-//   - encodePostNevent: 投稿 → nevent 文字列（buildNjumpPermalink から切り出した正本・x-share と共有）。
+//   - encodePostNevent: 投稿 → nevent 文字列（x-share と静的投稿ページ生成で共有）。
 //   - readPostParam:    URLSearchParams の `?p=` を decode して {id, relays} に戻す（graceful）。
 //   - applyPostParamTo: URLSearchParams に `?p=` を in-place で書く/消す（他クエリは触らない）。
 
@@ -22,7 +22,7 @@ const EVENT_ID_HEX = /^[0-9a-f]{64}$/;
 /**
  * 投稿（FeedPost の id/pubkey）を nevent 文字列にエンコードする（#386・共有 deep-link の正本）。
  *
- * buildNjumpPermalink（x-share.ts）と同一ロジックをここに集約し、njump permalink もこれを使う
+ * x-share.ts と `/p/<nevent>` 生成の同一ロジックをここに集約する
  * （重複排除・単一の正本）。
  *
  * - id が 64桁小文字 hex でなければ null（空 id を渡すと nip19 は見た目だけ正しい無意味な nevent を
@@ -36,7 +36,7 @@ export function encodePostNevent(post: Pick<FeedPost, "id" | "pubkey">): string 
     return nip19.neventEncode({
       id: post.id,
       author: post.pubkey,
-      // アプリの一般リレーを2本ヒントに添える（njump/他クライアントが投稿を引けるように）。
+      // アプリの一般リレーを2本ヒントに添える（他クライアントが投稿を引けるように）。
       relays: GENERAL_RELAYS.slice(0, 2),
     });
   } catch {

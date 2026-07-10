@@ -20,7 +20,7 @@ import {
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { deleteReaction, fetchReactionState, publishReaction } from "../../lib/nostr/client.ts";
 import { toSiteLinks } from "../../lib/profile/services.ts";
-import { buildNjumpPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
+import { buildHanobaPostPermalink, buildXShareParts, buildXShareWhole, openXShare } from "../../lib/share/x-share.ts";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import FudaList from "./FudaList.tsx";
 import Avatar from "./Avatar.tsx";
@@ -113,9 +113,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   const [shareOpen, setShareOpen] = useState(false);
 
   // 共有テキストは生 caption（インライン #タグ込み）を使う。画像 URL は本文から除去済み
-  // （parsePost）で、リンクは njump（最終パート）に集約する。タグはインライン済みなので
-  // 追加ハッシュタグは渡さない（[]）。permalink は単一投稿ルートを持たない hanoba 用の nevent。
-  const permalink = buildNjumpPermalink(post);
+  // （parsePost）で、リンクは Hanoba 内の静的投稿ページ（最終パート）に集約する。タグは
+  // インライン済みなので追加ハッシュタグは渡さない（[]）。
+  const permalink = buildHanobaPostPermalink(post);
   const shareParts = buildXShareParts(post.caption, [], permalink);
   const isSplit = shareParts.length > 1;
 
@@ -507,7 +507,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   </span>
                 </button>
                 {/* X でシェア（#37）。1パートなら即 intent、複数なら全文／各パートのメニュー。
-                    パーマリンクは njump（nevent）で、X 上に写真の OGP プレビューを出す。 */}
+                    パーマリンクは Hanoba 内の静的投稿ページ（/p/<nevent>）へ寄せる（#542）。 */}
                 <span className="relative inline-flex">
                   <button
                     type="button"
