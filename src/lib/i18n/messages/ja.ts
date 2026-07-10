@@ -395,10 +395,15 @@ export const ja = {
   "detail.translate": "翻訳",
   "detail.translate.original": "原文を表示",
   "detail.translate.busy": "翻訳中…",
-  // いいね aria は「いいね {n}」を reaction.likes.aria と共有。取得中はこの語を {n} に差す。
+  // いいねボタンの aria（#537・トグル化）。取得中はこの語を {n} に差す。
   "detail.likes.loading": "取得中",
+  // 未いいね／いいね済みでボタンの aria-label を出し分ける（押すとどうなるかを伝える）。
+  "detail.likes.like.aria": "いいね {n}（押すといいねする）",
+  "detail.likes.unlike.aria": "いいね {n}（もう一度押すと取り消す）",
   "detail.likes.sending": "いいねを送信中",
-  "detail.likes.error": "いいねを送信できませんでした。もう一度お試しください。",
+  "detail.likes.unsending": "いいねを取り消し中",
+  "detail.likes.error": "いいねの送信に失敗しました。もう一度お試しください。",
+  "detail.likes.unlike.error": "いいねの取り消しに失敗しました。もう一度お試しください。",
   "detail.share.aria": "X でシェア",
   "detail.share.split.aria": "X でシェア（分割）",
   "detail.share.whole": "全文",

@@ -13,6 +13,7 @@ export type IconName =
   | "info"
   | "heart"
   | "flower"
+  | "flowerOutline"
   | "search"
   | "chevron"
   | "trash"
@@ -84,6 +85,19 @@ export default function Icon({ name, className }: IconProps) {
           <circle cx="8.8" cy="16.3" r="3.1" />
           <circle cx="6.9" cy="10.3" r="3.1" />
           <circle cx="12" cy="12" r="2.6" fill="var(--color-ha-base)" />
+        </svg>
+      );
+    case "flowerOutline":
+      // 未いいね状態の花（#537・線アイコン側）。同じ5花弁の輪郭を線画で描く（flower と単一出自）。
+      // 塗りの flower と違い「まだ確定していない状態」を軽く見せる。中心の抜き円は線画には要らない
+      // （背景と同化するため描かない）。色は呼び出し側で指定（text-ha-orange）。
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...STROKE}>
+          <circle cx="12" cy="6.6" r="3.1" />
+          <circle cx="17.1" cy="10.3" r="3.1" />
+          <circle cx="15.2" cy="16.3" r="3.1" />
+          <circle cx="8.8" cy="16.3" r="3.1" />
+          <circle cx="6.9" cy="10.3" r="3.1" />
         </svg>
       );
     case "search":
