@@ -38,14 +38,13 @@ describe("CityGuidePanel（#543）", () => {
     expect(panelSrc).not.toContain("水やり");
   });
 
-  it("GitHub Sponsors 導線は道具棚の一番下に置き、水やり文言を使わない", () => {
-    const disclosureText = "Amazon アソシエイトです。購入による紹介料は運営費に充てます。";
+  it("GitHub Sponsors 導線は道具棚の一番下に置き、水やり文言を使う", () => {
+    const disclosureText = "Amazon アソシエイトです。運営への水やりです。";
     const amazonDisclosureIndex = affiliateGridSrc.indexOf(disclosureText);
     const sponsorsIndex = affiliateGridSrc.indexOf('href="https://github.com/sponsors/kako-jun"');
 
     expect(affiliateGridSrc).toContain(disclosureText);
     expect(sponsorsIndex).toBeGreaterThan(amazonDisclosureIndex);
     expect(affiliateGridSrc).toContain("GitHub Sponsors で支援する");
-    expect(affiliateGridSrc).not.toContain("水やり");
   });
 });
