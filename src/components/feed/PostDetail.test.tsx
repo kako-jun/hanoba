@@ -425,12 +425,140 @@ describe("PostDetail いいね数表示", () => {
       "src",
       "https://image.nostr.build/one.jpg",
     );
+    expect(screen.getByRole("img", { name: "成長記録 1枚目" })).toHaveAttribute("loading", "eager");
     fireEvent.click(screen.getByRole("button", { name: "次の写真" }));
     expect(screen.getByRole("img", { name: "成長記録 2枚目" })).toHaveAttribute(
       "src",
       "https://image.nostr.build/two.jpg",
     );
     expect(screen.getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("複数画像は表示中の前後写真だけを先読みする", async () => {
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+    const preloads: Array<{ src: string; decoding: string; decode: ReturnType<typeof vi.fn> }> = [];
+    const ImageMock = vi.fn(function () {
+      const img = {
+        src: "",
+        decoding: "",
+        decode: vi.fn().mockResolvedValue(undefined),
+      };
+      preloads.push(img);
+      return img;
+    });
+    vi.stubGlobal("Image", ImageMock);
+
+    render(
+      <PostDetail
+        post={makePost({
+          id: "preload-neighbors",
+          caption: "成長記録",
+          imageUrls: [
+            "https://image.nostr.build/one.jpg",
+            "https://image.nostr.build/two.jpg",
+            "https://image.nostr.build/three.jpg",
+          ],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        initialPhotoIndex={1}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+
+    await waitFor(() => expect(preloads.map((img) => img.src)).toEqual([
+      "https://image.nostr.build/one.jpg",
+      "https://image.nostr.build/three.jpg",
+    ]));
+    expect(preloads.every((img) => img.decoding === "async")).toBe(true);
+    expect(preloads.every((img) => img.decode.mock.calls.length === 1)).toBe(true);
+  });
+
+  it("2枚投稿の先読みは同じ隣接写真を重複して読まない", async () => {
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+    const preloads: Array<{ src: string; decoding: string; decode: ReturnType<typeof vi.fn> }> = [];
+    vi.stubGlobal("Image", vi.fn(function () {
+      const img = {
+        src: "",
+        decoding: "",
+        decode: vi.fn().mockResolvedValue(undefined),
+      };
+      preloads.push(img);
+      return img;
+    }));
+
+    render(
+      <PostDetail
+        post={makePost({
+          id: "preload-two",
+          caption: "成長記録",
+          imageUrls: ["https://image.nostr.build/one.jpg", "https://image.nostr.build/two.jpg"],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+
+    await waitFor(() => expect(preloads.map((img) => img.src)).toEqual([
+      "https://image.nostr.build/two.jpg",
+    ]));
+  });
+
+  it("4枚以上の先読みは移動後も現在位置の前後だけを保持し、古い先読みを再利用し続けない", async () => {
+    fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+    const preloads: Array<{ src: string; decoding: string; decode: ReturnType<typeof vi.fn> }> = [];
+    vi.stubGlobal("Image", vi.fn(function () {
+      const img = {
+        src: "",
+        decoding: "",
+        decode: vi.fn().mockResolvedValue(undefined),
+      };
+      preloads.push(img);
+      return img;
+    }));
+
+    render(
+      <PostDetail
+        post={makePost({
+          id: "preload-rolling-window",
+          caption: "成長記録",
+          imageUrls: [
+            "https://image.nostr.build/one.jpg",
+            "https://image.nostr.build/two.jpg",
+            "https://image.nostr.build/three.jpg",
+            "https://image.nostr.build/four.jpg",
+          ],
+          imageUrl: "https://image.nostr.build/one.jpg",
+        })}
+        initialPhotoIndex={1}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+      />,
+    );
+
+    await waitFor(() => expect(preloads.map((img) => img.src)).toEqual([
+      "https://image.nostr.build/one.jpg",
+      "https://image.nostr.build/three.jpg",
+    ]));
+
+    fireEvent.click(screen.getByRole("button", { name: "次の写真" }));
+    await waitFor(() => expect(preloads.map((img) => img.src)).toEqual([
+      "https://image.nostr.build/one.jpg",
+      "https://image.nostr.build/three.jpg",
+      "https://image.nostr.build/two.jpg",
+      "https://image.nostr.build/four.jpg",
+    ]));
+
+    fireEvent.click(screen.getByRole("button", { name: "次の写真" }));
+    await waitFor(() => expect(preloads.map((img) => img.src)).toEqual([
+      "https://image.nostr.build/one.jpg",
+      "https://image.nostr.build/three.jpg",
+      "https://image.nostr.build/two.jpg",
+      "https://image.nostr.build/four.jpg",
+      "https://image.nostr.build/three.jpg",
+      "https://image.nostr.build/one.jpg",
+    ]));
   });
 
   it("initialPhotoIndex があればその写真から始まり、範囲外は末尾に丸める", async () => {

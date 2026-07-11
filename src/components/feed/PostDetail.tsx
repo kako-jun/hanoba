@@ -101,13 +101,41 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // （短い写真でも最終的にぴたり収まる）。ラッパは img を密に包む内側 div（ぼかしラッパ）を測る。
   const photoWrapRef = useRef<HTMLDivElement>(null);
   const [reservedH, setReservedH] = useState<number | undefined>(undefined);
+  // 複数写真の隣接画像を先読みする（#544）。表示後に new Image() が GC されないよう、
+  // モーダルを開いている間だけ URL -> HTMLImageElement を保持する。
+  const preloadedImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
     setPhotoIndex(clampPhotoIndex(initialPhotoIndex, post.imageUrls.length));
     setSwipeBlur(0);
     setReservedH(undefined);
     touchStartRef.current = null;
+    preloadedImagesRef.current.clear();
   }, [post.id, post.imageUrls.length, initialPhotoIndex]);
+
+  useEffect(() => {
+    if (post.imageUrls.length <= 1) return;
+    const safePhotoIndex = clampPhotoIndex(photoIndex, post.imageUrls.length);
+    const currentUrl = post.imageUrls[safePhotoIndex];
+    const candidates = [
+      post.imageUrls[prevPhotoIndex(safePhotoIndex, post.imageUrls.length)],
+      post.imageUrls[nextPhotoIndex(safePhotoIndex, post.imageUrls.length)],
+    ];
+    const preloadUrls = new Set(candidates.filter((url): url is string => url !== undefined && url !== currentUrl));
+    for (const url of preloadedImagesRef.current.keys()) {
+      if (!preloadUrls.has(url)) preloadedImagesRef.current.delete(url);
+    }
+    for (const url of preloadUrls) {
+      if (preloadedImagesRef.current.has(url)) continue;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = url;
+      preloadedImagesRef.current.set(url, img);
+      void img.decode?.().catch(() => {
+        // 先読み失敗は表示時の通常ロードへフォールバックする。
+      });
+    }
+  }, [photoIndex, post.id, post.imageUrls]);
 
   // X シェアのメニュー開閉（複数パートのときだけ「全文／1/n…」を出す・#37）。
   const [shareOpen, setShareOpen] = useState(false);
@@ -347,6 +375,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                   src={post.imageUrls[photoIndex] ?? post.imageUrls[0] ?? ""}
                   alt={post.imageUrls.length === 1 ? post.caption : t("detail.photo.alt", { caption: post.caption, n: photoIndex + 1 })}
                   className="max-w-full max-h-[70vh] select-none object-contain"
+                  loading="eager"
                   draggable={false}
                   // 新画像が高さを持った時点で予約高を実測値に更新（#290）。これで切替中の
                   // 潰れを防ぎつつ、短い写真でも最終的に余白なくぴたり収まる。
