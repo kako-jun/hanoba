@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TAG_CATEGORIES } from "./tag-catalog.ts";
 
 const postType = TAG_CATEGORIES.find((c) => c.label === "投稿の種類")!;
+const trouble = TAG_CATEGORIES.find((c) => c.label === "トラブル")!;
 // 世話と記録は #353 で「世話・記録」1枠に統合（境界が曖昧＝発芽/発根が世話・開花が記録は分からない）。
 const careRecord = TAG_CATEGORIES.find((c) => c.label === "世話・記録")!;
 const trait = TAG_CATEGORIES.find((c) => c.label === "特徴")!;
@@ -109,11 +110,18 @@ describe("tag-catalog", () => {
     expect(all).not.toContain("観葉植物");
   });
 
-  it("投稿の種類（成長記録/質問/実験/失敗）を先頭の枠に持つ（#311・実験は失敗の隣＝kako-jun）", () => {
+  it("投稿の種類（成長記録/質問/実験）を先頭の枠に持つ（#311）", () => {
     expect(postType).toBeTruthy();
-    expect(postType.tags).toEqual(["成長記録", "質問", "実験", "失敗"]);
+    expect(postType.tags).toEqual(["成長記録", "質問", "実験"]);
     // 先頭の枠＝高位の descriptor（共有文化を促す・kako-jun 配置サインオフ対象）。
     expect(TAG_CATEGORIES[0]!.label).toBe("投稿の種類");
+  });
+
+  it("トラブルは投稿の種類の直後に置き、失敗/病気/虫害を持つ", () => {
+    expect(trouble).toBeTruthy();
+    expect(TAG_CATEGORIES[1]!.label).toBe("トラブル");
+    expect(trouble.tags).toEqual(["失敗", "病気", "虫害"]);
+    expect(postType.tags).not.toContain("失敗");
   });
 
   it("成長記録・実験は「世話・記録」でなく「投稿の種類」に置く（植物の出来事でなく投稿タイプ・kako-jun）", () => {
@@ -123,15 +131,17 @@ describe("tag-catalog", () => {
     expect(postType.tags).toContain("実験");
   });
 
-  it("原則1（#311 改訂）: 症状の細目はタグにしない／投稿の種類（質問・失敗）は可（#251/#311）", () => {
+  it("原則1: 症状の細目はタグにしない／大分類のトラブルは可", () => {
     const all = TAG_CATEGORIES.flatMap((c) => c.tags);
     // 症状の細目はタグにしない（本文へ）。
-    for (const symptom of ["徒長", "葉焼け", "殺虫", "うどんこ病", "根腐れ", "病気", "害虫"]) {
+    for (const symptom of ["徒長", "葉焼け", "殺虫", "うどんこ病", "根腐れ", "害虫", "カイガラムシ"]) {
       expect(all).not.toContain(symptom);
     }
-    // 投稿の種類タグ（質問・失敗）は可（#311・失敗は症状でなく投稿タイプ）。
+    // 投稿タイプの質問と、大分類のトラブルは可。
     expect(all).toContain("質問");
     expect(all).toContain("失敗");
+    expect(all).toContain("病気");
+    expect(all).toContain("虫害");
   });
 
   it("原則2: 現実の家・私生活を指すタグは入れない（ハノーバ架空設定・#251）", () => {
@@ -139,11 +149,11 @@ describe("tag-catalog", () => {
     expect(all).not.toContain("我が家の植物");
   });
 
-  it("特徴は斑の細分を持たず「斑入り」一本＋綴化/石化だけ（#251）", () => {
+  it("特徴は斑の細分を持たず「斑入り」一本＋綴化/石化/変異だけ（#251）", () => {
     for (const sub of ["錦", "黄斑", "白斑", "中斑", "覆輪", "モンスト"]) {
       expect(trait.tags).not.toContain(sub);
     }
-    expect(trait.tags).toEqual(["斑入り", "綴化", "石化"]);
+    expect(trait.tags).toEqual(["斑入り", "綴化", "石化", "変異"]);
   });
 
   it("世話・記録は植物の出来事（収穫・開花 等）を持ち、「開花待ち」は持たない（#251/#353）", () => {
