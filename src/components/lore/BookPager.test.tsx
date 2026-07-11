@@ -171,6 +171,25 @@ describe("BookPager（#164）", () => {
     expect(within(b.container).getByText("1 / 3")).toBeInTheDocument();
   });
 
+  it("ページ送りしても本文パネルへ自動スクロールしない", async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.mocked(Element.prototype.scrollIntoView);
+    renderPager(pages(3), "k18-scroll");
+
+    await user.click(screen.getByRole("button", { name: "次のページ" }));
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByText("3 / 3")).toBeInTheDocument();
+
+    const panel = document.querySelector('[aria-live="polite"]')!.parentElement!;
+    fireEvent.touchStart(panel, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 200, clientY: 100 }] });
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
   it("ArrowLeft/ArrowRightでページが変わるが、フォーカスがinput上のときは矢印を奪わない", async () => {
     const user = userEvent.setup();
     render(

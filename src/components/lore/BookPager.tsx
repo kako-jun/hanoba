@@ -68,7 +68,6 @@ export default function BookPager<T extends BookPagerPage>({
   const [page, setPage] = useState(1); // 1-indexed。安全既定は 1p。
   // 初期解決前の暫定 1p を localStorage へ書き戻して保存位置を潰さないためのガード。
   const [initialized, setInitialized] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
   // 本のスワイプ（#275）。←→ボタン・キーボード矢印と同じ goPrev/goNext を駆動する。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   // スワイプ中のページ内容ぼかし（px・#275）。0＝ぼかし無し。reduced-motion ではかからない。
@@ -106,10 +105,6 @@ export default function BookPager<T extends BookPagerPage>({
       url.searchParams.set("page", id);
       window.history.replaceState(null, "", url);
     }
-    panelRef.current?.scrollIntoView({
-      block: "start",
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
-    });
   }
 
   function goPrev() {
@@ -211,7 +206,6 @@ export default function BookPager<T extends BookPagerPage>({
         スワイプでページめくり（#275）＝左で次・右で前。ぼかしは中身（下の key={page}）だけにかけ、
         和綴じ枠（このパネルの border）は固定する＝枠ごとぼかす違和感を避ける。 */}
       <div
-        ref={panelRef}
         className="flex flex-col gap-5 border-solid border-[20px] sm:border-[32px] border-l-[40px] sm:border-l-[60px] p-5 sm:p-7 min-h-[520px]"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
