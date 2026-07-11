@@ -123,6 +123,24 @@ describe("フッタ公開情報（#543）", () => {
   });
 });
 
+describe("フッタ光粒演出（#146）", () => {
+  it("街並み帯の背景演出として aria-hidden の光粒を持つ", () => {
+    expect(footerSrc).toContain('class="hanoba-footer-ambient" aria-hidden="true"');
+    expect(footerSrc.match(/hanoba-footer-orb hanoba-footer-orb-/g)).toHaveLength(12);
+  });
+
+  it("光粒は CSS アニメーションだけで動き、reduced-motion では止まる", () => {
+    expect(footerSrc).toContain("@keyframes hanoba-footer-orb-drift");
+    expect(footerSrc).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(footerSrc).toContain("animation: none;");
+  });
+
+  it("フッタ光粒演出のために追加 script を増やさない", () => {
+    expect(footerSrc.match(/<script\b/g)).toHaveLength(1);
+    expect(footerSrc).toContain("visit.js");
+  });
+});
+
 describe("フッタナビの aria（#532）", () => {
   it.each([
     ["ja", "フッターナビゲーション"],

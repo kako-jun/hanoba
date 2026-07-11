@@ -26,7 +26,21 @@ const external = [
   {/* 街＋緑のシルエット（#94/#112）。単色透過画像を CSS マスクにし、色と上下グラデは CSS で付ける
       ＝テーマ色を後から自在に変えられる。素材は左右のフェード端を切り落とした密シルエット。
       mask-size:cover でどの幅でも左右端まで充填する（鏡像なし＝#94 既決・端は街が画面外へ続く断ち切り）。 */}
-  <div class="hanoba-skyline" aria-hidden="true"></div>
+  <div class="hanoba-footer-ambient" aria-hidden="true">
+    <div class="hanoba-skyline"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-a"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-b"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-c"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-d"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-e"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-f"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-g"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-h"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-i"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-j"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-k"></div>
+    <div class="hanoba-footer-orb hanoba-footer-orb-l"></div>
+  </div>
   <div class="mx-auto max-w-3xl px-5 py-7 flex flex-col gap-5 text-sm">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <nav
@@ -124,7 +138,19 @@ const external = [
      素材は左右のフェード端を切り落とした密な単色シルエット（鏡像なし＝反射に気づかれない）。
      mask-size:cover で帯を充填＝どの幅でも左右端まで届く。狭い画面は中央スライス、広い画面は
      縦に少しトリミング（建物の頭は元から暗地に溶けるので影響小）。 */
+  .hanoba-footer-ambient {
+    position: relative;
+    isolation: isolate;
+    height: clamp(74px, 9vw, 118px);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
   .hanoba-skyline {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 0;
     height: clamp(44px, 6vw, 84px);
     /* 上ほど透過が強い縦グラデ（建物の頭が暗地に溶ける）。色は緑のまま alpha だけ落とすので
        transparent との混色で灰色化しない（color-mix で同色の alpha を下げる）。 */
@@ -143,5 +169,212 @@ const external = [
     mask-position: center bottom;
     -webkit-mask-size: cover;
     mask-size: cover;
+  }
+
+  /* #146: フッタの街並みにだけ置く控えめな光粒。投稿や読書の主導線を邪魔しない背景演出。 */
+  .hanoba-footer-orb {
+    position: absolute;
+    z-index: 2;
+    width: var(--orb-size);
+    height: var(--orb-size);
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--orb-color) 16%, transparent) 0%,
+      color-mix(in srgb, var(--orb-color) 18%, transparent) 38%,
+      color-mix(in srgb, var(--orb-color) 21%, transparent) 58%,
+      color-mix(in srgb, var(--orb-color) 22%, transparent) 72%,
+      color-mix(in srgb, var(--orb-color) 8%, transparent) 88%,
+      transparent 100%
+    );
+    border: 0;
+    box-shadow:
+      0 0 calc(var(--orb-size) * 0.22) color-mix(in srgb, var(--orb-color) 6%, transparent),
+      inset 0 0 calc(var(--orb-size) * 0.2) color-mix(in srgb, var(--orb-color) 8%, transparent);
+    opacity: var(--orb-opacity);
+    filter: none;
+    transform: translate3d(0, 0, 0);
+    animation: hanoba-footer-orb-drift var(--orb-duration) ease-in-out infinite alternate;
+  }
+
+  .hanoba-footer-orb-a {
+    --orb-size: 17px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 82%, var(--color-ha-green-deep));
+    --orb-opacity: 0.62;
+    --orb-duration: 6s;
+    --orb-dx: 10px;
+    --orb-dy: -5px;
+    left: 15%;
+    bottom: 17%;
+  }
+
+  .hanoba-footer-orb-b {
+    --orb-size: 11px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 78%, var(--color-ha-green-deep));
+    --orb-opacity: 0.55;
+    --orb-duration: 6s;
+    --orb-dx: -8px;
+    --orb-dy: 5px;
+    left: 31%;
+    bottom: 34%;
+    animation-delay: -3s;
+  }
+
+  .hanoba-footer-orb-c {
+    --orb-size: 19px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 84%, var(--color-ha-green-deep));
+    --orb-opacity: 0.42;
+    --orb-duration: 6s;
+    --orb-dx: 7px;
+    --orb-dy: 4px;
+    left: 45%;
+    bottom: 14%;
+    animation-delay: -6s;
+  }
+
+  .hanoba-footer-orb-d {
+    --orb-size: 9px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 80%, var(--color-ha-green-deep));
+    --orb-opacity: 0.6;
+    --orb-duration: 6s;
+    --orb-dx: -9px;
+    --orb-dy: -5px;
+    left: 57%;
+    bottom: 37%;
+    animation-delay: -1.5s;
+  }
+
+  .hanoba-footer-orb-e {
+    --orb-size: 15px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 76%, var(--color-ha-green-deep));
+    --orb-opacity: 0.5;
+    --orb-duration: 6s;
+    --orb-dx: 10px;
+    --orb-dy: -5px;
+    left: 68%;
+    bottom: 22%;
+    animation-delay: -5s;
+  }
+
+  .hanoba-footer-orb-f {
+    --orb-size: 8px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 74%, var(--color-ha-green-deep));
+    --orb-opacity: 0.64;
+    --orb-duration: 6s;
+    --orb-dx: -7px;
+    --orb-dy: 4px;
+    left: 78%;
+    bottom: 35%;
+    animation-delay: -2.5s;
+  }
+
+  .hanoba-footer-orb-g {
+    --orb-size: 14px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 86%, var(--color-ha-green-deep));
+    --orb-opacity: 0.48;
+    --orb-duration: 6s;
+    --orb-dx: 8px;
+    --orb-dy: 5px;
+    left: 88%;
+    bottom: 18%;
+    animation-delay: -8s;
+  }
+
+  .hanoba-footer-orb-h {
+    --orb-size: 10px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 78%, var(--color-ha-green-deep));
+    --orb-opacity: 0.58;
+    --orb-duration: 6s;
+    --orb-dx: 10px;
+    --orb-dy: -5px;
+    left: 8%;
+    bottom: 40%;
+    animation-delay: -4s;
+  }
+
+  .hanoba-footer-orb-i {
+    --orb-size: 7px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 84%, var(--color-ha-green-deep));
+    --orb-opacity: 0.66;
+    --orb-duration: 6s;
+    --orb-dx: -6px;
+    --orb-dy: 4px;
+    left: 24%;
+    bottom: 47%;
+    animation-delay: -7s;
+  }
+
+  .hanoba-footer-orb-j {
+    --orb-size: 13px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 82%, var(--color-ha-green-deep));
+    --orb-opacity: 0.52;
+    --orb-duration: 6s;
+    --orb-dx: 10px;
+    --orb-dy: -5px;
+    left: 39%;
+    bottom: 43%;
+    animation-delay: -9s;
+  }
+
+  .hanoba-footer-orb-k {
+    --orb-size: 9px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 80%, var(--color-ha-green-deep));
+    --orb-opacity: 0.56;
+    --orb-duration: 6s;
+    --orb-dx: -8px;
+    --orb-dy: -5px;
+    left: 73%;
+    bottom: 46%;
+    animation-delay: -3.5s;
+  }
+
+  .hanoba-footer-orb-l {
+    --orb-size: 8px;
+    --orb-color: color-mix(in srgb, var(--color-ha-white) 86%, var(--color-ha-green-deep));
+    --orb-opacity: 0.6;
+    --orb-duration: 6s;
+    --orb-dx: 7px;
+    --orb-dy: 4px;
+    left: 94%;
+    bottom: 39%;
+    animation-delay: -5.5s;
+  }
+
+  @keyframes hanoba-footer-orb-drift {
+    0% {
+      transform: translate3d(calc(var(--orb-dx) * -0.45), calc(var(--orb-dy) * -0.35), 0);
+    }
+    45% {
+      transform: translate3d(calc(var(--orb-dx) * 0.45), calc(var(--orb-dy) * 0.6), 0);
+    }
+    100% {
+      transform: translate3d(var(--orb-dx), var(--orb-dy), 0);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hanoba-footer-orb {
+      width: calc(var(--orb-size) * 0.72);
+      height: calc(var(--orb-size) * 0.72);
+    }
+
+    .hanoba-footer-orb-c {
+      display: none;
+    }
+
+    .hanoba-footer-orb-g {
+      display: none;
+    }
+
+    .hanoba-footer-orb-j,
+    .hanoba-footer-orb-l {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hanoba-footer-orb {
+      animation: none;
+    }
   }
 </style>
