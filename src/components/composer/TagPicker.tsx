@@ -58,6 +58,12 @@ const MIN_OVERFLOW = 4;
  */
 const QUICK_SHORTCUT_LIMIT = 8;
 
+const drillChipClass =
+  "rounded-full border border-dashed border-ha-green/40 bg-ha-green/5 px-3 py-1 text-sm text-ha-green-deep transition-colors hover:bg-ha-green/10 hover:border-ha-green/70";
+
+const overflowTriggerClass =
+  "flex items-center gap-1 rounded-full border border-dashed border-ha-ink/35 bg-white/[0.03] px-3 py-1 text-sm text-ha-ink/70 transition-colors hover:border-ha-green/55 hover:bg-ha-green/10 hover:text-ha-green-deep";
+
 /**
  * 品種追加リクエストの宛先（#169/#232）。市役所ハブ（#163）が整ったので GitHub をやめ、
  * `/vote` の「品種への要望」板（住民投票 BBS の先頭・Nostalgic）へ集約する。
@@ -391,7 +397,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       aria-haspopup="dialog"
                       aria-expanded={overflowOpen === c.label}
                       aria-label={t("tag.overflow.aria", { label: c.label })}
-                      className="glass flex items-center gap-1 rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                      className={overflowTriggerClass}
                     >
                       <Icon name="plus" className="h-3.5 w-3.5" />
                       {t("tag.overflow.button")}
@@ -516,7 +522,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       type="button"
                       // engage には ja 正準 h.name を渡す（drillIn のキー）。表示だけ閲覧言語化（#409）。
                       onClick={() => engage(h.name)}
-                      className="rounded-full px-3 py-1 text-sm glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                      className={drillChipClass}
                     >
                       {pickLoc(h.name, h.categoryLoc, locale)}
                       <span className="ml-1 text-[10px] text-ha-ink/40">{t("tag.category.label")}</span>
@@ -531,7 +537,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                       className={`rounded-full px-3 py-1 text-sm transition-colors ${
                         has(h.name)
                           ? "border border-ha-green bg-ha-green text-ha-white"
-                          : "glass text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep"
+                          : "border border-dashed border-ha-green/40 bg-ha-green/5 text-ha-green-deep hover:border-ha-green/70 hover:bg-ha-green/10"
                       }`}
                     >
                       #{h.name}
@@ -584,7 +590,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                   key={c.label}
                   type="button"
                   onClick={() => setCat(c)}
-                  className="glass rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                  className={drillChipClass}
                 >
                   {categoryLabel(c, locale)} <span aria-hidden className="text-ha-ink/40">›</span>
                 </button>
@@ -599,7 +605,7 @@ export default function TagPicker({ popular, caption, onPick, onRemove, mode = "
                   key={g.name}
                   type="button"
                   onClick={() => setGenus(g)}
-                  className="glass rounded-full px-3 py-1 text-sm text-ha-ink hover:border-ha-green/50 hover:text-ha-green-deep transition-colors"
+                  className={drillChipClass}
                 >
                   {genusLabel(g, locale)}
                   <span className="ml-1 text-[10px] text-ha-ink/40">{g.varieties.length}</span>
