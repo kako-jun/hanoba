@@ -40,6 +40,52 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
   };
 }
 
+function mockSizes(scroll: number, client: number) {
+  const sh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
+  const ch = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+  Object.defineProperty(HTMLElement.prototype, "scrollHeight", { configurable: true, get: () => scroll });
+  Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get: () => client });
+  return () => {
+    if (sh) Object.defineProperty(HTMLElement.prototype, "scrollHeight", sh);
+    else delete (HTMLElement.prototype as unknown as { scrollHeight?: number }).scrollHeight;
+    if (ch) Object.defineProperty(HTMLElement.prototype, "clientHeight", ch);
+    else delete (HTMLElement.prototype as unknown as { clientHeight?: number }).clientHeight;
+  };
+}
+
+function stubImmediateFocusFrame() {
+  const originalScrollIntoView = Object.getOwnPropertyDescriptor(Element.prototype, "scrollIntoView");
+  const originalRequestAnimationFrame = Object.getOwnPropertyDescriptor(window, "requestAnimationFrame");
+  const originalCancelAnimationFrame = Object.getOwnPropertyDescriptor(window, "cancelAnimationFrame");
+  const scrollIntoView = vi.fn();
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    value: scrollIntoView,
+  });
+  Object.defineProperty(window, "requestAnimationFrame", {
+    configurable: true,
+    value: (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    },
+  });
+  Object.defineProperty(window, "cancelAnimationFrame", {
+    configurable: true,
+    value: () => {},
+  });
+  return {
+    scrollIntoView,
+    restore() {
+      if (originalScrollIntoView) Object.defineProperty(Element.prototype, "scrollIntoView", originalScrollIntoView);
+      else delete (Element.prototype as unknown as { scrollIntoView?: Element["scrollIntoView"] }).scrollIntoView;
+      if (originalRequestAnimationFrame) Object.defineProperty(window, "requestAnimationFrame", originalRequestAnimationFrame);
+      else delete (window as unknown as { requestAnimationFrame?: Window["requestAnimationFrame"] }).requestAnimationFrame;
+      if (originalCancelAnimationFrame) Object.defineProperty(window, "cancelAnimationFrame", originalCancelAnimationFrame);
+      else delete (window as unknown as { cancelAnimationFrame?: Window["cancelAnimationFrame"] }).cancelAnimationFrame;
+    },
+  };
+}
+
 // `?p=` クエリへ載せる nevent 文字列を id から作る（着地 URL を組む用）。
 function neventOf(id: string, pubkey = "0".repeat(64), relays: string[] = []): string {
   return nip19.neventEncode({ id, author: pubkey, relays });
@@ -152,6 +198,32 @@ describe("PostGrid × deep-link `?p=<nevent>`（#386）", () => {
       "https://image.nostr.build/two.jpg",
     );
     expect(within(dialog).getByRole("button", { name: "2枚目を表示" })).toHaveAttribute("aria-current", "true");
+  });
+
+  it("(21d) 展開済みカードのコメント CTA から PostDetail を開くとコメント入力へ focus される（#550）", async () => {
+    const restoreSizes = mockSizes(1000, 200);
+    const focusFrame = stubImmediateFocusFrame();
+    try {
+      const user = userEvent.setup();
+      const id = hexId("ad");
+      render(
+        <PostGrid
+          posts={[makePost({ id, caption: "長い栽培ログ。".repeat(50) })]}
+          onSelectHashtag={() => {}}
+        />,
+      );
+
+      await user.click(await screen.findByRole("button", { name: "続きを読む" }));
+      await user.click(screen.getByRole("button", { name: "コメント" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "投稿の詳細" });
+      const input = within(dialog).getByRole("textbox", { name: "コメントを入力" });
+      expect(document.activeElement).toBe(input);
+      expect(focusFrame.scrollIntoView.mock.contexts[0]).toBe(input);
+    } finally {
+      focusFrame.restore();
+      restoreSizes();
+    }
   });
 
   // ---- closePost（DT-2） ----

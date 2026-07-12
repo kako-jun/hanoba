@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authorHref, relativeTime, shortNpub } from "../../lib/feed/parse.ts";
 import { authorDisplayName, normalizeAuthorName } from "../../lib/feed/author.ts";
 import ResizableTextarea from "../ui/ResizableTextarea.tsx";
@@ -10,6 +10,8 @@ import { useT, useLocale } from "../../lib/i18n/index.ts";
 interface Props {
   /** コメント対象の投稿 id（親イベント id）。 */
   postId: string;
+  /** コメント件数が変わったら親へ知らせる。タイムラインの件数を詳細と同期する。 */
+  onCountChange?: (count: number) => void;
 }
 
 /**
@@ -23,7 +25,7 @@ interface Props {
  *
  * relay 呼び出しは useComments → client に集約。暗色・控えめの glass で「静かなコメント」に。
  */
-export default function CommentSection({ postId }: Props) {
+export default function CommentSection({ postId, onCountChange }: Props) {
   const t = useT(useLocale());
   const { comments, loading, myPubkey, order, setOrder, submit, remove } = useComments(postId);
   // 著者プロフィール（アイコン・名前）。未取得/未名乗りの可視名は author.unnamed、npub はリンク/aria 識別のみ。
@@ -38,6 +40,10 @@ export default function CommentSection({ postId }: Props) {
 
   const now = Math.floor(Date.now() / 1000);
   const canSubmit = draft.trim() !== "" && !submitting;
+
+  useEffect(() => {
+    if (comments !== null) onCountChange?.(comments.length);
+  }, [comments, onCountChange]);
 
   async function onSubmit() {
     if (!canSubmit) return;

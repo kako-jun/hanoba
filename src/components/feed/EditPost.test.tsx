@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 
-// ネットワーク境界（編集＝publish新規+kind:5削除／いいね・コメント数）をモックする。parsePost は実物を使う。
+// ネットワーク境界（編集＝publish新規+kind:5削除／花・コメント数）をモックする。parsePost は実物を使う。
 const editPost = vi.fn();
 const fetchEngagementCountsBatch = vi.fn();
 
@@ -42,7 +42,7 @@ describe("EditPost（投稿の編集＝確認つき再投稿・#300）", () => {
     expect(screen.getByRole("button", { name: "更新する" })).toBeDisabled();
   });
 
-  it("本文を変えると確認が出て、いいね・コメント数を提示し、確定で editPost を画像 URL 再利用で呼ぶ", async () => {
+  it("本文を変えると確認が出て、花・コメント数を提示し、確定で editPost を画像 URL 再利用で呼ぶ", async () => {
     const user = userEvent.setup();
     const onEdited = vi.fn();
     const created = {
@@ -68,8 +68,8 @@ describe("EditPost（投稿の編集＝確認つき再投稿・#300）", () => {
     expect(update).toBeEnabled();
     await user.click(update);
 
-    // 確認段：いいね 3・コメント 2 が引き継がれない旨を出す。
-    expect(screen.getByText(/いいね 3・コメント 2/)).toBeInTheDocument();
+    // 確認段：花 3・コメント 2 が引き継がれない旨を出す。
+    expect(screen.getByText(/花 3・コメント 2/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "編集して再投稿" }));
 

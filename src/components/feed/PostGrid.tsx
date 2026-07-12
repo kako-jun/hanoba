@@ -8,6 +8,7 @@ import { useProfiles } from "./useProfiles.ts";
 import { useDilution } from "./useDilution.ts";
 import { useFudaIndex } from "./useFudaIndex.ts";
 import { usePostDeepLink } from "./usePostDeepLink.ts";
+import type { EngagementFocusTarget } from "./PostDetail.tsx";
 
 interface Props {
   /** 表示する投稿（すべて画像あり想定・呼び出し側で取得・絞り込み済み）。 */
@@ -33,6 +34,7 @@ interface Props {
 export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedInitialPhotoIndex, setSelectedInitialPhotoIndex] = useState(0);
+  const [selectedFocusTarget, setSelectedFocusTarget] = useState<EngagementFocusTarget | undefined>(undefined);
   const openingFromCardRef = useRef(false);
 
   // 投稿頻度の高い人を「薄める」設定（#138）。取得済みリスト → 表示の間に間引き段を挟む。
@@ -48,7 +50,10 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     posts,
     selectedId,
     setSelectedId: (id) => {
-      if (!openingFromCardRef.current) setSelectedInitialPhotoIndex(0);
+      if (!openingFromCardRef.current) {
+        setSelectedInitialPhotoIndex(0);
+        setSelectedFocusTarget(undefined);
+      }
       setSelectedId(id);
     },
   });
@@ -58,12 +63,13 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   // の絞り込みチップ翻訳でも同じ索引を使う・#464）。読み込み中/失敗時は null＝札を出さないだけ。
   const fudaIndex = useFudaIndex();
 
-  // カードのいいね数・コメント数（#276）。グリッド単位で**1回ずつ**バッチ取得し各 PostCard へ配る
+  // カードの花数・コメント数（#276）。グリッド単位で**1回ずつ**バッチ取得し各 PostCard へ配る
   // （catalog/useProfiles と同じ「1回取得し配る」パターン・カードごとに query しない＝N+1 回避）。
   // 取得は非同期＝カードは即描画し、count はロード後にふっと出る。失敗時は空 Map＝count を出さない。
   // カードは間引き前後で id 集合が変わらない（diluteFeed は posts の部分集合）ので、間引き前の posts で引く。
   const [reactionCounts, setReactionCounts] = useState<Map<string, number>>(new Map());
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(new Map());
+  const [myReactionIds, setMyReactionIds] = useState<Map<string, string>>(new Map());
   // id 列をキーにして、同じ投稿集合では取り直さない（タグ絞り込み等で集合が変わったら引き直す）。
   // ids（配列）を持ち idsKey は join で派生する＝useEffect は idsKey（文字列）が変わった時だけ再実行する
   // （id 集合が変わった時だけ＝挙動は従来と等価。string→split の往復をやめただけ）。
@@ -73,10 +79,11 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     if (idsKey === "") return; // 投稿0件なら取得しない。
     let alive = true;
     fetchEngagementCountsBatch(ids)
-      .then(({ reactions, comments }) => {
+      .then(({ reactions, comments, myReactionIds }) => {
         if (!alive) return;
         setReactionCounts(reactions);
         setCommentCounts(comments);
+        setMyReactionIds(myReactionIds ?? new Map());
       })
       .catch(() => {
         /* 二重防御：fetchEngagementCountsBatch は失敗時も空ペアを返す契約なので通常ここは通らない。
@@ -102,16 +109,44 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
     onSelectHashtag(tag);
   }
 
-  function openCardPost(post: FeedPost, photoIndex = 0) {
+  function openCardPost(post: FeedPost, photoIndex = 0, focusTarget?: EngagementFocusTarget) {
     openingFromCardRef.current = true;
     setSelectedInitialPhotoIndex(photoIndex);
+    setSelectedFocusTarget(focusTarget);
     openPost(post);
     openingFromCardRef.current = false;
   }
 
   function closeSelectedPost(opts?: { viaHistory?: boolean }) {
     setSelectedInitialPhotoIndex(0);
+    setSelectedFocusTarget(undefined);
     closePost(opts);
+  }
+
+  function updateEngagement(postId: string, next: { reactionCount?: number; myReactionId?: string; commentCount?: number }) {
+    if (next.reactionCount !== undefined) {
+      setReactionCounts((prev) => {
+        if (prev.get(postId) === next.reactionCount) return prev;
+        return new Map(prev).set(postId, next.reactionCount!);
+      });
+    }
+    if (next.myReactionId !== undefined) {
+      setMyReactionIds((prev) => {
+        if (next.myReactionId === "" && !prev.has(postId)) return prev;
+        if (next.myReactionId !== "" && prev.get(postId) === next.myReactionId) return prev;
+        const copy = new Map(prev);
+        const id = next.myReactionId;
+        if (id === "") copy.delete(postId);
+        else if (id !== undefined) copy.set(postId, id);
+        return copy;
+      });
+    }
+    if (next.commentCount !== undefined) {
+      setCommentCounts((prev) => {
+        if (prev.get(postId) === next.commentCount) return prev;
+        return new Map(prev).set(postId, next.commentCount!);
+      });
+    }
   }
 
   return (
@@ -123,12 +158,13 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
             post={post}
             index={i}
             now={now}
-            onOpen={(photoIndex) => openCardPost(post, photoIndex)}
+            onOpen={(photoIndex, focusTarget) => openCardPost(post, photoIndex, focusTarget)}
             onSelectHashtag={selectHashtag}
             profile={profiles.get(post.pubkey) ?? null}
             fudaIndex={fudaIndex}
             reactionCount={reactionCounts.get(post.id)}
             commentCount={commentCounts.get(post.id)}
+            isLikedByMe={myReactionIds.has(post.id)}
           />
         ))}
       </ul>
@@ -140,6 +176,8 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
           onClose={closeSelectedPost}
           onSelectHashtag={selectHashtag}
           initialPhotoIndex={selectedInitialPhotoIndex}
+          initialFocusTarget={selectedFocusTarget}
+          onEngagementChange={(next) => updateEngagement(selectedPost.id, next)}
           // フィード/discover は他人を薄める導線を出す（#138）。/me（MyGrid）は出さない＝自分を薄めない。
           showDilution
         />

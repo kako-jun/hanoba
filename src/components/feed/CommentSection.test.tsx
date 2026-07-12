@@ -88,6 +88,17 @@ describe("CommentSection", () => {
     expect(screen.getByText("ふたつ目")).toBeInTheDocument();
   });
 
+  it("コメント取得後に件数を親へ通知する", async () => {
+    const onCountChange = vi.fn();
+    useCommentsState.comments = [
+      comment({ id: "c1", content: "ひとつ目" }),
+      comment({ id: "c2", content: "ふたつ目" }),
+    ];
+    useCommentsState.loading = false;
+    render(<CommentSection postId="p1" onCountChange={onCountChange} />);
+    await waitFor(() => expect(onCountChange).toHaveBeenCalledWith(2));
+  });
+
   it("並び替えトグルで setOrder を呼ぶ（古い順 → 新しい順）", () => {
     // トグルは並べ替える対象（2件以上）があるときだけ出る。
     useCommentsState.comments = [comment({ id: "c1" }), comment({ id: "c2" })];
