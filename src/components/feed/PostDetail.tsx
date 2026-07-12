@@ -43,7 +43,13 @@ interface Props {
   showDilution?: boolean;
   /** カードで見ていた写真から開く時の初期 index。未指定なら従来どおり1枚目。 */
   initialPhotoIndex?: number;
+  /** タイムライン上の展開後導線から開く時、モーダル内で最初に寄せる反応先。 */
+  initialFocusTarget?: EngagementFocusTarget;
+  /** 詳細内で変わった花/コメント状態をタイムライン側へ戻す。 */
+  onEngagementChange?: (next: { reactionCount?: number; myReactionId?: string; commentCount?: number }) => void;
 }
+
+export type EngagementFocusTarget = "like" | "comment";
 
 function clampPhotoIndex(i: number | undefined, len: number): number {
   if (len <= 0 || i === undefined || !Number.isFinite(i)) return 0;
@@ -56,15 +62,25 @@ function clampPhotoIndex(i: number | undefined, len: number): number {
  *
  * 内容: 1:1 画像 ＋ 一言（caption）＋ ハッシュタグ（クリックで絞り込み）
  *       ＋ 投稿者（名前、未名乗りは author.unnamed。npub はリンク/aria 識別のみ）
- *       ＋ 相対時刻 ＋ いいねボタン（花 N）。
- * いいねは NIP-25 の kind:7 リアクションを読み書きする（1ユーザー1件）。
+ *       ＋ 相対時刻 ＋ 花ボタン（花を添える/花を添えた N）。
+ * 花ボタンは NIP-25 の kind:7 リアクションを読み書きする（1ユーザー1件）。
  * モーダルに反応領域を足せるよう、本文と meta を分けた構造にしてある。
  *
  * a11y: role="dialog" aria-modal、Esc / 背景クリック / × で閉じる。
  */
-export default function PostDetail({ post, profile, onClose, onSelectHashtag, showDilution = false, initialPhotoIndex }: Props) {
+export default function PostDetail({
+  post,
+  profile,
+  onClose,
+  onSelectHashtag,
+  showDilution = false,
+  initialPhotoIndex,
+  initialFocusTarget,
+  onEngagementChange,
+}: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const likeButtonRef = useRef<HTMLButtonElement>(null);
   // タッチスワイプの始点（onTouchStart で記録 → onTouchEnd で差分を取る・#184）。
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   // npub はプロフィール URL と支援技術向けの識別補助にだけ残し、可視名には出さない（#531）。
@@ -78,9 +94,9 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
   // 著者の複数サイトリンク（#35 Piece 2）。kind:0 拡張 websites[] をアイコン列で出す。
   const siteLinks = toSiteLinks(profile?.websites ?? []);
 
-  // いいね数（kind:7 集計）。取得前は null＝プレースホルダ（♡ -）を出す。
+  // 花リアクション数（kind:7 集計）。取得前は null＝プレースホルダ（-）を出す。
   const [likeCount, setLikeCount] = useState<number | null>(null);
-  // 自分の既存反応（#537・トグルいいね）。Nostr の正本はリレー上の event とし、ここは
+  // 自分の既存反応（#537・トグル）。Nostr の正本はリレー上の event とし、ここは
   // 表示中の一時状態としてのみ使う（localStorage には控えない）。
   const [isLikedByMe, setIsLikedByMe] = useState(false);
   const [myReactionId, setMyReactionId] = useState<string | undefined>(undefined);
@@ -196,7 +212,26 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     };
   }, []);
 
-  // いいね状態（件数＋自分の反応）を取得する（クライアントのみ・SSR では走らない）。
+  // 展開済みカード末尾の「花を添える/コメント」導線から開いた時だけ、モーダル内の該当操作へ寄せる。
+  // フォーカス先はどちらもダイアログ内なので、既存の focus trap の範囲を広げない。
+  useEffect(() => {
+    if (initialFocusTarget === undefined) return;
+    const frame = window.requestAnimationFrame(() => {
+      const target =
+        initialFocusTarget === "like"
+          ? likeButtonRef.current
+          : document.getElementById(`hanoba-comment-${post.id}`);
+      if (!(target instanceof HTMLElement)) return;
+      target.scrollIntoView({
+        block: "center",
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+      });
+      target.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialFocusTarget, post.id]);
+
+  // 花リアクション状態（件数＋自分の反応）を取得する（クライアントのみ・SSR では走らない）。
   // アンマウント後・post 切替後の setState を alive フラグで防ぐ。
   useEffect(() => {
     let alive = true;
@@ -213,6 +248,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
         setLikeCount(state.count);
         setIsLikedByMe(state.myReactionId !== undefined);
         setMyReactionId(state.myReactionId);
+        onEngagementChange?.({ reactionCount: state.count, myReactionId: state.myReactionId ?? "" });
       }
     });
     return () => {
@@ -220,7 +256,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
     };
   }, [post.id]);
 
-  // いいねボタンのトグル動作（#537）。Nostr の正本はリレー上の event なので、publish/delete の
+  // 花ボタンのトグル動作（#537）。Nostr の正本はリレー上の event なので、publish/delete の
   // 成否に関わらず**必ず fetchReactionState を再取得**して件数・自分の状態を relay 由来の値に揃える
   // （ローカルでの ±1 演算はしない）。liking フラグが連打・二重 publish/削除を防ぐ。
   async function toggleLike() {
@@ -252,6 +288,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
       setLikeCount(state.count);
       setIsLikedByMe(state.myReactionId !== undefined);
       setMyReactionId(state.myReactionId);
+      onEngagementChange?.({ reactionCount: state.count, myReactionId: state.myReactionId ?? "" });
     } catch {
       // 件数・状態は変更しない（失敗時に不正に減らした/増やしたままにしない）。
       if (reactionStateRef.current.postId === post.id) setLikeError(true);
@@ -508,9 +545,10 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                 );
               })()}
               <span className="flex shrink-0 items-center gap-1">
-                {/* いいね（#529/#537）。標準 NIP-25 を1ユーザー1件送る。未いいねは押すと送信、
-                    いいね済みはもう一度押すと NIP-09 kind:5 で取り消すトグル。 */}
+                {/* 花リアクション（#529/#537）。標準 NIP-25 を1ユーザー1件送る。未反応は押すと送信、
+                    反応済みはもう一度押すと NIP-09 kind:5 で取り消すトグル。 */}
                 <button
+                  ref={likeButtonRef}
                   type="button"
                   onClick={toggleLike}
                   disabled={liking}
@@ -524,13 +562,18 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
                         })
                   }
                   aria-describedby={likeError ? "post-like-error" : undefined}
-                  className="inline-flex min-w-11 min-h-11 items-center justify-center gap-[5px] rounded-full px-2 text-ha-ink/70 hover:bg-ha-ink/5 hover:text-ha-yellow transition-colors disabled:cursor-wait disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-ha-ink/5 px-3.5 text-ha-ink/75 hover:bg-ha-yellow/15 hover:text-ha-yellow transition-colors disabled:cursor-wait disabled:opacity-60"
                 >
                   {isLikedByMe ? (
                     <Icon name="flower" className="w-4 h-4 text-ha-yellow" />
                   ) : (
                     <Icon name="flowerOutline" className="w-4 h-4 text-ha-orange" />
                   )}
+                  <span className="text-sm font-medium">
+                    {liking
+                      ? t(isLikedByMe ? "detail.likes.unsending" : "detail.likes.sending")
+                      : t(isLikedByMe ? "detail.likes.unlike.label" : "detail.likes.like.label")}
+                  </span>
                   <span className="font-display font-semibold text-ha-ink/70 tabular-nums">
                     {likeCount === null ? "-" : likeCount}
                   </span>
@@ -630,7 +673,7 @@ export default function PostDetail({ post, profile, onClose, onSelectHashtag, sh
           {/* コメント欄（#142）。著者バー/サイトリンクの後・スクロール領域（p-5・親は overflow-y-auto）
               の中に置くので、長いコメント列はモーダル内でスクロールして辿れる。コメントは Nostr の
               リプライ（kind:1・親を e タグ root・@呼びかけなし）として publish/読み取りする。 */}
-          <CommentSection postId={post.id} />
+              <CommentSection postId={post.id} onCountChange={(commentCount) => onEngagementChange?.({ commentCount })} />
         </div>
       </div>
     </div>

@@ -390,8 +390,8 @@ function engagementBatchLimit(n: number): number {
  */
 export async function fetchEngagementCountsBatch(
   eventIds: string[],
-): Promise<{ reactions: Map<string, number>; comments: Map<string, number> }> {
-  if (eventIds.length === 0) return { reactions: new Map(), comments: new Map() };
+): Promise<{ reactions: Map<string, number>; comments: Map<string, number>; myReactionIds: Map<string, string> }> {
+  if (eventIds.length === 0) return { reactions: new Map(), comments: new Map(), myReactionIds: new Map() };
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
@@ -401,12 +401,32 @@ export async function fetchEngagementCountsBatch(
     // kind で分離してから各集計へ渡す（混在のまま渡すと誤カウントするため必須）。
     const likeEvents = events.filter((e) => e.kind === 7);
     const commentEvents = events.filter((e) => e.kind === 1);
+    const myPubkey = await getPublicKeyHex().catch(() => undefined);
+    const myReactionIds = new Map<string, string>();
+    if (myPubkey !== undefined) {
+      const targets = new Set(eventIds);
+      const grouped = new Map<string, NostrEvent[]>();
+      for (const event of likeEvents) {
+        if (event.pubkey !== myPubkey) continue;
+        const targetTag = event.tags.find((tag) => tag[0] === "e" && tag[1] !== undefined && targets.has(tag[1]));
+        const id = targetTag?.[1];
+        if (id === undefined) continue;
+        const list = grouped.get(id) ?? [];
+        list.push(event);
+        grouped.set(id, list);
+      }
+      for (const [id, reactions] of grouped) {
+        const latest = latestReaction(reactions);
+        if (latest !== undefined && isLike(latest)) myReactionIds.set(id, latest.id);
+      }
+    }
     return {
       reactions: countLikesByEvent(likeEvents, eventIds),
       comments: countCommentsByEvent(commentEvents, eventIds),
+      myReactionIds,
     };
   } catch {
-    return { reactions: new Map(), comments: new Map() };
+    return { reactions: new Map(), comments: new Map(), myReactionIds: new Map() };
   }
 }
 

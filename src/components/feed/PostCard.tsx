@@ -1,4 +1,13 @@
-import { type CSSProperties, type TouchEvent as ReactTouchEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type TouchEvent as ReactTouchEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { authorHref, relativeTime, shortNpub, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
 import { stripHashtags } from "../../lib/nostr/tags.ts";
 import { resolveFuda, type FudaIndex } from "../../lib/plants/fuda.ts";
@@ -18,6 +27,7 @@ import Icon from "../ui/Icon.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
 import Avatar from "./Avatar.tsx";
 import FudaList from "./FudaList.tsx";
+import type { EngagementFocusTarget } from "./PostDetail.tsx";
 
 interface Props {
   post: FeedPost;
@@ -26,7 +36,7 @@ interface Props {
   /** 相対時刻の基準（秒）。親で1回計算して配る。 */
   now: number;
   /** 写真タップで拡大（PostDetail モーダルを開く）。写真から開く時は現在の写真 index を渡す。 */
-  onOpen: (photoIndex?: number) => void;
+  onOpen: (photoIndex?: number, focusTarget?: EngagementFocusTarget) => void;
   /** タグクリック（クライアント側絞り込み/再検索）。 */
   onSelectHashtag: (tag: string) => void;
   /** 著者プロフィール（#35・未取得なら null＝可視名は author.unnamed、npub はリンク/aria 識別のみ）。 */
@@ -37,13 +47,15 @@ interface Props {
    */
   fudaIndex?: FudaIndex | null;
   /**
-   * いいね数（#276・kind:7 集計）。グリッド単位でバッチ取得した値を親が配る。
+   * 花数（#276・kind:7 集計）。グリッド単位でバッチ取得した値を親が配る。
    * undefined は未ロード。**カードは 0 / undefined を出さない**（1 以上のときだけ控えめに添える）。
    * ※ 投稿詳細モーダル（PostDetail）は 0 でも出す＝非対称（カードは「ある時だけ」）。
    */
   reactionCount?: number;
   /** コメント数（#276・kind:1 リプライ集計）。reactionCount と同じく 0/undefined はカードでは出さない。 */
   commentCount?: number;
+  /** 自分がこの投稿へ花を添えているか。タイムライン上の CTA を PostDetail と揃える。 */
+  isLikedByMe?: boolean;
 }
 
 /**
@@ -68,6 +80,7 @@ export default function PostCard({
   fudaIndex,
   reactionCount,
   commentCount,
+  isLikedByMe = false,
 }: Props) {
   const locale = useLocale();
   const t = useT(locale);
@@ -87,25 +100,58 @@ export default function PostCard({
   const [clipped, setClipped] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [swipeBlur, setSwipeBlur] = useState(0);
+  const canEngageFromCard = expanded || !clipped;
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const suppressNextPhotoClickRef = useRef(false);
   const captionRef = useRef<HTMLParagraphElement>(null);
   const rightColRef = useRef<HTMLDivElement>(null);
+  const clippingKeyRef = useRef("");
   const currentImageUrl = post.imageUrls[photoIndex] ?? post.imageUrl ?? post.imageUrls[0] ?? null;
 
   // 投稿の植物札（#182/#23）。索引未ロード時は空＝出さない。タグ列の上（右列の最上部）に出す（#239）。
   // 索引は PostGrid がグリッド単位で1回作って配る（#257）。resolveFuda は純粋（hashtags は post 固定）。
   const fuda = useMemo(() => (fudaIndex ? resolveFuda(post.hashtags, fudaIndex) : []), [post.hashtags, fudaIndex]);
 
-  // 折りたたみ時に本文/右列（札＋タグ）が収まりきらず clip されているかを実測してトグルの要否を決める。
-  useLayoutEffect(() => {
-    if (expanded) return; // 展開中は「閉じる」を出すので判定不要。
+  const clippingKey = useMemo(
+    () => [post.id, captionText, post.hashtags.join("\u0000"), fuda.length].join("\u0001"),
+    [post.id, captionText, post.hashtags, fuda.length],
+  );
+
+  const measureClipping = useCallback((resetSticky = false) => {
     const cap = captionRef.current;
     const col = rightColRef.current;
     const capOver = cap !== null && cap.scrollHeight > cap.clientHeight + 1;
     const colOver = col !== null && col.scrollHeight > col.clientHeight + 1;
-    setClipped(capOver || colOver);
-  }, [captionText, post.hashtags.length, fuda.length, expanded]);
+    const over = capOver || colOver;
+    setClipped((prev) => over || (!resetSticky && prev && !expanded));
+  }, [expanded]);
+
+  // 折りたたみ時に本文/右列（札＋タグ）が収まりきらず clip されているかを実測してトグルの要否を決める。
+  // CTA や画像/フォント読み込みで本文領域が後から狭くなるため、描画直後だけでなくリサイズ後も再判定する。
+  useLayoutEffect(() => {
+    if (expanded) return; // 展開中は「閉じる」を出すので判定不要。
+    const resetSticky = clippingKeyRef.current !== clippingKey;
+    clippingKeyRef.current = clippingKey;
+    measureClipping(resetSticky);
+    const remeasure = () => measureClipping();
+    const raf = window.requestAnimationFrame(remeasure);
+    const cap = captionRef.current;
+    const col = rightColRef.current;
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", remeasure);
+      return () => {
+        window.cancelAnimationFrame(raf);
+        window.removeEventListener("resize", remeasure);
+      };
+    }
+    const observer = new ResizeObserver(remeasure);
+    if (cap !== null) observer.observe(cap);
+    if (col !== null) observer.observe(col);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [clippingKey, expanded, canEngageFromCard, measureClipping]);
 
   // 投稿が差し替わった時は表紙に戻す。フィードの再利用描画で前投稿の index を持ち越さない。
   useEffect(() => {
@@ -277,6 +323,36 @@ export default function PostCard({
               {captionText}
             </p>
           )}
+          {canEngageFromCard && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ha-ink/10 pt-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen(photoIndex, "like");
+                }}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-ha-ink/5 px-3.5 text-sm font-medium text-ha-ink/75 transition-colors hover:bg-ha-yellow/15 hover:text-ha-yellow focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+              >
+                {isLikedByMe ? (
+                  <Icon name="flower" className="h-4 w-4 text-ha-yellow" />
+                ) : (
+                  <Icon name="flowerOutline" className="h-4 w-4 text-ha-orange" />
+                )}
+                {t(isLikedByMe ? "detail.likes.unlike.label" : "card.engagement.like")}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen(photoIndex, "comment");
+                }}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-ha-ink/5 px-3.5 text-sm font-medium text-ha-ink/75 transition-colors hover:bg-ha-green-soft hover:text-ha-green-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-ha-green"
+              >
+                <Icon name="chat" className="h-4 w-4" />
+                {t("card.engagement.comment")}
+              </button>
+            </div>
+          )}
           {/* 著者（アイコン＋名前）と時刻（#35）。著者はその人の公開プロフィール /u?npub= へリンク（#272 段階3）。
               カード全体が拡大モーダルを開く（article onClick）ので、リンククリックは stopPropagation で
               遷移だけにする（タグ/続きを読むと同じ作法）。npub にできない時は素の名前のまま。 */}
@@ -304,12 +380,16 @@ export default function PostCard({
             })()}
             <span className="text-ha-ink/30">·</span>
             <time className="shrink-0">{relativeTime(post.createdAt, now, locale)}</time>
-            {/* いいね数・コメント数（#276）。**カードは 1 以上のときだけ控えめに添える**
+            {/* 花数・コメント数（#276）。**カードは 1 以上のときだけ控えめに添える**
                 （0 / 未ロード＝undefined はそのカウンタを出さない＝要素ごと描画しない）。
-                配色・アイコンは PostDetail と揃える（いいね＝黄色い花・コメント＝吹き出し・既存トークン）。 */}
+                配色・アイコンは PostDetail と揃える（花＝黄色い花・コメント＝吹き出し・既存トークン）。 */}
             {reactionCount !== undefined && reactionCount > 0 && (
               <span className="inline-flex shrink-0 items-center gap-[3px]" aria-label={t("reaction.likes.aria", { n: reactionCount })}>
-                <Icon name="flower" className="h-3.5 w-3.5 text-ha-yellow" />
+                {isLikedByMe ? (
+                  <Icon name="flower" className="h-3.5 w-3.5 text-ha-yellow" />
+                ) : (
+                  <Icon name="flowerOutline" className="h-3.5 w-3.5 text-ha-orange" />
+                )}
                 <span className="tabular-nums">{reactionCount}</span>
               </span>
             )}

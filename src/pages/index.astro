@@ -23,7 +23,7 @@ const [subBefore, subAfter] = t(locale, "home.hero.sub").split("{link}");
       <h1 class="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-ha-green-deep" data-i18n="home.hero.title">
         {t(locale, "home.hero.title")}
       </h1>
-      <p class="text-base leading-relaxed text-ha-ink/75 [word-break:auto-phrase]" data-i18n="home.hero.lead">
+      <p class="text-base leading-relaxed text-ha-ink/75 [word-break:keep-all]" data-i18n="home.hero.lead">
         {t(locale, "home.hero.lead")}
       </p>
       {/* サブ見出しは文中リンクで {subBefore}<a>{subAfter} に割れる。#380 で3片を個別 data-i18n に分け、

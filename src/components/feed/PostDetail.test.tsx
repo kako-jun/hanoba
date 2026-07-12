@@ -6,13 +6,13 @@ import type { Profile } from "../../lib/feed/parse.ts";
 import { nip19 } from "nostr-tools";
 
 // relay 取得はモック境界で止める（実ネットワークを呼ばない・#12）。
-// #537: いいねをトグル化。件数＋自分の反応を返す fetchReactionState、取り消しの deleteReaction を
+// #537: 花リアクションをトグル化。件数＋自分の反応を返す fetchReactionState、取り消しの deleteReaction を
 // publishReaction と並べてモックする。
 const fetchReactionState = vi.fn();
 const publishReaction = vi.fn();
 const deleteReaction = vi.fn();
 // コメント欄（#142）も同じ client を使う。PostDetail のテストはコメント機能の検証対象外なので、
-// fetchReplies は空（コメント0件）で固定し、いいね/シェア/札のテストに影響を与えない。
+// fetchReplies は空（コメント0件）で固定し、花/シェア/札のテストに影響を与えない。
 const fetchReplies = vi.fn().mockResolvedValue([]);
 
 vi.mock("../../lib/nostr/client.ts", () => ({
@@ -52,13 +52,55 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     shotDates: [],  };
 }
 
-// いいねボタンの aria-label（#537・ja.ts「detail.likes.*」の実文言と一致させる）。
-// 未いいね/いいね済みで押した時の挙動が変わることを伝える文言なので、件数だけでなく
+// 花ボタンの aria-label（#537・ja.ts「detail.likes.*」の実文言と一致させる）。
+// 未反応/反応済みで押した時の挙動が変わることを伝える文言なので、件数だけでなく
 // 全文を検証の同期点にする（部分一致の findByLabelText 誤マッチを避ける）。
-const likeAria = (n: number | string) => `いいね ${n}（押すといいねする）`;
-const unlikeAria = (n: number | string) => `いいね ${n}（もう一度押すと取り消す）`;
+const likeAria = (n: number | string) => `花 ${n}（押すと花を添える）`;
+const unlikeAria = (n: number | string) => `花 ${n}（花を添えています。もう一度押すと取り消す）`;
 
-describe("PostDetail いいね数表示", () => {
+function stubFocusFrame() {
+  const originalScrollIntoView = Object.getOwnPropertyDescriptor(Element.prototype, "scrollIntoView");
+  const scrollIntoView = vi.fn();
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    value: scrollIntoView,
+  });
+
+  const focus = vi.spyOn(HTMLElement.prototype, "focus");
+  let nextFrame = 1;
+  const frames = new Map<number, FrameRequestCallback>();
+  const requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+    const id = nextFrame;
+    nextFrame += 1;
+    frames.set(id, cb);
+    return id;
+  });
+  const cancelAnimationFrame = vi.fn((id: number) => {
+    frames.delete(id);
+  });
+  vi.stubGlobal("requestAnimationFrame", requestAnimationFrame);
+  vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrame);
+
+  return {
+    scrollIntoView,
+    focus,
+    requestAnimationFrame,
+    cancelAnimationFrame,
+    runFrames() {
+      for (const [id, cb] of [...frames]) {
+        if (!frames.delete(id)) continue;
+        cb(0);
+      }
+    },
+    restore() {
+      focus.mockRestore();
+      if (originalScrollIntoView) Object.defineProperty(Element.prototype, "scrollIntoView", originalScrollIntoView);
+      else delete (Element.prototype as unknown as { scrollIntoView?: Element["scrollIntoView"] }).scrollIntoView;
+    },
+  };
+}
+
+describe("PostDetail 花リアクション表示", () => {
   beforeEach(() => {
     fetchReactionState.mockReset();
     publishReaction.mockReset();
@@ -71,22 +113,23 @@ describe("PostDetail いいね数表示", () => {
     vi.unstubAllGlobals();
   });
 
-  it("取得したいいね数を花アイコン＋数で表示する", async () => {
+  it("取得した花リアクション数をラベル＋花アイコン＋数で表示する", async () => {
     fetchReactionState.mockResolvedValue({ count: 3, myReactionId: undefined });
     render(<PostDetail post={makePost({ id: "p1" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const like = await screen.findByLabelText(likeAria(3));
+    expect(like).toHaveTextContent("花を添える");
     expect(like).toHaveTextContent("3");
     expect(fetchReactionState).toHaveBeenCalledWith("p1");
   });
 
-  it("0 でも いいね 0 を表示する", async () => {
+  it("0 でも 花 0 を表示する", async () => {
     fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     render(<PostDetail post={makePost({ id: "p2" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const like = await screen.findByLabelText(likeAria(0));
     expect(like).toHaveTextContent("0");
   });
 
-  it("取得前は いいね 取得中（プレースホルダ -）を出す", async () => {
+  it("取得前は 花 取得中（プレースホルダ -）を出す", async () => {
     // 解決しない Promise で「取得中」のまま固定する。
     fetchReactionState.mockReturnValue(new Promise(() => {}));
     render(<PostDetail post={makePost({ id: "p3" })} onClose={() => {}} onSelectHashtag={() => {}} />);
@@ -149,6 +192,26 @@ describe("PostDetail いいね数表示", () => {
     expect(publishReaction).toHaveBeenCalledWith("like-zero", "author");
   });
 
+  it("花の送信後に親へ件数と自分の反応IDを通知する", async () => {
+    fetchReactionState
+      .mockResolvedValueOnce({ count: 0, myReactionId: undefined })
+      .mockResolvedValueOnce({ count: 1, myReactionId: "r-sync" });
+    publishReaction.mockResolvedValue({ status: "published" });
+    const onEngagementChange = vi.fn();
+    render(
+      <PostDetail
+        post={makePost({ id: "like-sync" })}
+        onClose={() => {}}
+        onSelectHashtag={() => {}}
+        onEngagementChange={onEngagementChange}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: likeAria(0) }));
+    await screen.findByRole("button", { name: unlikeAria(1) });
+    expect(onEngagementChange).toHaveBeenCalledWith({ reactionCount: 1, myReactionId: "r-sync" });
+  });
+
   it("既存件数で送信成功すると1件だけ増える", async () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 4, myReactionId: undefined })
@@ -168,7 +231,7 @@ describe("PostDetail いいね数表示", () => {
     render(<PostDetail post={makePost({ id: "like-pending" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: likeAria(2) });
     fireEvent.click(button);
-    const sending = screen.getByRole("button", { name: "いいねを送信中" });
+    const sending = screen.getByRole("button", { name: "花を添えています" });
     expect(sending).toBeDisabled();
     fireEvent.click(sending);
     expect(publishReaction).toHaveBeenCalledTimes(1);
@@ -176,10 +239,10 @@ describe("PostDetail いいね数表示", () => {
     expect(await screen.findByRole("button", { name: unlikeAria(3) })).toBeInTheDocument();
   });
 
-  it("既に反応済みなら件数を据え置き、後続の再取得でリレー側のいいね済みへ収束する", async () => {
+  it("既に反応済みなら件数を据え置き、後続の再取得でリレー側の反応済みへ収束する", async () => {
     fetchReactionState
-      .mockResolvedValueOnce({ count: 3, myReactionId: undefined }) // ローカルは未いいね表示
-      .mockResolvedValueOnce({ count: 3, myReactionId: "already-id" }); // relay は既にいいね済み
+      .mockResolvedValueOnce({ count: 3, myReactionId: undefined }) // ローカルは未反応表示
+      .mockResolvedValueOnce({ count: 3, myReactionId: "already-id" }); // relay は既に反応済み
     publishReaction.mockResolvedValue({ status: "already-reacted" });
     render(<PostDetail post={makePost({ id: "already" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: likeAria(3) });
@@ -241,7 +304,7 @@ describe("PostDetail いいね数表示", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("いいねはキーボード操作可能な44pxボタンとして表示する", async () => {
+  it("花ボタンはキーボード操作可能な44pxボタンとして表示する", async () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-a11y" });
@@ -249,7 +312,8 @@ describe("PostDetail いいね数表示", () => {
     const user = userEvent.setup();
     render(<PostDetail post={makePost({ id: "a11y" })} onClose={() => {}} onSelectHashtag={() => {}} />);
     const button = await screen.findByRole("button", { name: likeAria(0) });
-    expect(button).toHaveClass("min-w-11", "min-h-11");
+    expect(button).toHaveClass("min-h-11");
+    expect(button).toHaveTextContent("花を添える");
     button.focus();
     await user.keyboard("{Enter}");
     expect(await screen.findByRole("button", { name: unlikeAria(1) })).toBeInTheDocument();
@@ -257,7 +321,7 @@ describe("PostDetail いいね数表示", () => {
 
   // --- ここから #537 トグル化の新規ケース ---
 
-  it("未いいね→いいね→もう一度押して取り消す往復が1回のクリックずつで成立する（#537）", async () => {
+  it("未反応→花を添える→もう一度押して取り消す往復が1回のクリックずつで成立する（#537）", async () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined }) // 初期取得
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-1" }) // publish 後の再取得
@@ -277,7 +341,7 @@ describe("PostDetail いいね数表示", () => {
     expect(deleteReaction).toHaveBeenCalledWith("r-1");
   });
 
-  it("未いいねはflowerOutline(オレンジ・線画)、いいね済みはflower(黄・塗り)をDOMに出す（#537）", async () => {
+  it("未反応はflowerOutline(オレンジ・線画)、反応済みはflower(黄・塗り)をDOMに出す（#537）", async () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 2, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 3, myReactionId: "r-icon" });
@@ -291,20 +355,21 @@ describe("PostDetail いいね数表示", () => {
 
     fireEvent.click(button);
     const likedButton = await screen.findByRole("button", { name: unlikeAria(3) });
+    expect(likedButton).toHaveTextContent("花を添えた");
     const filledIcon = likedButton.querySelector("svg");
     expect(filledIcon).toHaveClass("text-ha-yellow");
     expect(filledIcon).toHaveAttribute("fill", "currentColor"); // flower は塗り。
   });
 
   it("取り消し失敗時は専用エラー文言を出し、状態不変・アイコンはflowerのまま（#537）", async () => {
-    fetchReactionState.mockResolvedValue({ count: 5, myReactionId: "r-del-fail" }); // 常にいいね済み状態
+    fetchReactionState.mockResolvedValue({ count: 5, myReactionId: "r-del-fail" }); // 常に反応済み状態
     deleteReaction.mockRejectedValue(new Error("offline"));
     render(<PostDetail post={makePost({ id: "del-fail" })} onClose={() => {}} onSelectHashtag={() => {}} />);
 
     const button = await screen.findByRole("button", { name: unlikeAria(5) });
     fireEvent.click(button);
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("いいねの取り消しに失敗しました。もう一度お試しください。");
+    expect(alert).toHaveTextContent("花を取り下げられませんでした。もう一度お試しください。");
     const stillLiked = screen.getByRole("button", { name: unlikeAria(5) });
     expect(stillLiked.querySelector("svg")).toHaveClass("text-ha-yellow");
     expect(publishReaction).not.toHaveBeenCalled();
@@ -320,7 +385,7 @@ describe("PostDetail いいね数表示", () => {
 
     const button = await screen.findByRole("button", { name: unlikeAria(4) });
     fireEvent.click(button);
-    const sending = screen.getByRole("button", { name: "いいねを取り消し中" });
+    const sending = screen.getByRole("button", { name: "花を取り下げています" });
     expect(sending).toBeDisabled();
     fireEvent.click(sending);
     expect(deleteReaction).toHaveBeenCalledTimes(1);
@@ -359,7 +424,7 @@ describe("PostDetail いいね数表示", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: likeAria(2) }));
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("いいねの送信に失敗しました。もう一度お試しください。");
+    expect(alert).toHaveTextContent("花を添えられませんでした。もう一度お試しください。");
     // publish 自体は成功したが再取得が失敗＝件数・isLikedByMe は初期取得のまま据え置き。
     expect(screen.getByRole("button", { name: likeAria(2) })).toBeInTheDocument();
   });
@@ -373,7 +438,7 @@ describe("PostDetail いいね数表示", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: unlikeAria(5) }));
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("いいねの取り消しに失敗しました。もう一度お試しください。");
+    expect(alert).toHaveTextContent("花を取り下げられませんでした。もう一度お試しください。");
     expect(screen.getByRole("button", { name: unlikeAria(5) })).toBeInTheDocument();
   });
 
@@ -388,7 +453,7 @@ describe("PostDetail いいね数表示", () => {
     // 到達手段が無いため未実装（コメント参照）。
   });
 
-  it("i18nスモーク: en ロケールでは like/unlike aria が英語文言になる（#537）", async () => {
+  it("i18nスモーク: en ロケールでは flower aria が英語文言になる（#537）", async () => {
     fetchReactionState
       .mockResolvedValueOnce({ count: 0, myReactionId: undefined })
       .mockResolvedValueOnce({ count: 1, myReactionId: "r-en" });
@@ -398,14 +463,113 @@ describe("PostDetail いいね数表示", () => {
         <PostDetail post={makePost({ id: "i18n-en" })} onClose={() => {}} onSelectHashtag={() => {}} />
       </LocaleProvider>,
     );
-    const button = await screen.findByRole("button", { name: "0 likes. Tap to like." });
+    const button = await screen.findByRole("button", { name: "0 flowers. Tap to add a flower." });
     fireEvent.click(button);
     expect(
-      await screen.findByRole("button", { name: "1 likes. Tap again to remove your like." }),
+      await screen.findByRole("button", { name: "1 flowers. A flower is added. Tap again to remove it." }),
     ).toBeInTheDocument();
   });
 
   // --- ここまで #537 トグル化の新規ケース ---
+
+  describe("初期 focus target（#550）", () => {
+    it('initialFocusTarget="like" で rAF 後に花ボタンへ scroll/focus する', async () => {
+      fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+      const stubs = stubFocusFrame();
+      try {
+        render(
+          <PostDetail
+            post={makePost({ id: "focus-like" })}
+            initialFocusTarget="like"
+            onClose={() => {}}
+            onSelectHashtag={() => {}}
+          />,
+        );
+        const like = await screen.findByRole("button", { name: likeAria(0) });
+
+        stubs.runFrames();
+
+        expect(stubs.scrollIntoView).toHaveBeenCalledTimes(1);
+        expect(stubs.scrollIntoView.mock.contexts[0]).toBe(like);
+        expect(stubs.scrollIntoView).toHaveBeenCalledWith({ block: "center", behavior: "smooth" });
+        expect(document.activeElement).toBe(like);
+      } finally {
+        stubs.restore();
+      }
+    });
+
+    it('initialFocusTarget="comment" で hanoba-comment-${post.id} の入力へ scroll/focus する', async () => {
+      fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+      const stubs = stubFocusFrame();
+      try {
+        const post = makePost({ id: "focus-comment" });
+        render(
+          <PostDetail
+            post={post}
+            initialFocusTarget="comment"
+            onClose={() => {}}
+            onSelectHashtag={() => {}}
+          />,
+        );
+        await screen.findByLabelText(likeAria(0));
+        const input = document.getElementById(`hanoba-comment-${post.id}`);
+        expect(input).toBeInstanceOf(HTMLElement);
+
+        stubs.runFrames();
+
+        expect(stubs.scrollIntoView).toHaveBeenCalledTimes(1);
+        expect(stubs.scrollIntoView.mock.contexts[0]).toBe(input);
+        expect(stubs.scrollIntoView).toHaveBeenCalledWith({ block: "center", behavior: "smooth" });
+        expect(document.activeElement).toBe(input);
+      } finally {
+        stubs.restore();
+      }
+    });
+
+    it("initialFocusTarget=undefined では focus target 用の scrollIntoView が走らない", async () => {
+      fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+      const stubs = stubFocusFrame();
+      try {
+        render(<PostDetail post={makePost({ id: "focus-none" })} onClose={() => {}} onSelectHashtag={() => {}} />);
+        await screen.findByLabelText(likeAria(0));
+
+        stubs.runFrames();
+
+        expect(stubs.requestAnimationFrame).not.toHaveBeenCalled();
+        expect(stubs.scrollIntoView).not.toHaveBeenCalled();
+      } finally {
+        stubs.restore();
+      }
+    });
+
+    it("rAF 実行前に unmount しても cancelAnimationFrame され、unmounted DOM へ focus しない", async () => {
+      fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
+      const stubs = stubFocusFrame();
+      try {
+        const { unmount } = render(
+          <PostDetail
+            post={makePost({ id: "focus-unmount" })}
+            initialFocusTarget="like"
+            onClose={() => {}}
+            onSelectHashtag={() => {}}
+          />,
+        );
+        const like = await screen.findByRole("button", { name: likeAria(0) });
+        stubs.focus.mockClear();
+        stubs.scrollIntoView.mockClear();
+
+        unmount();
+        stubs.runFrames();
+
+        expect(stubs.cancelAnimationFrame).toHaveBeenCalledWith(1);
+        expect(stubs.scrollIntoView).not.toHaveBeenCalled();
+        expect(stubs.focus.mock.contexts).not.toContain(like);
+        expect(document.body.contains(like)).toBe(false);
+      } finally {
+        stubs.restore();
+      }
+    });
+  });
 
   it("複数画像は前後ボタンで切り替えられる", async () => {
     fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
@@ -855,7 +1019,7 @@ describe("PostDetail いいね数表示", () => {
         onSelectHashtag={() => {}}
       />,
     );
-    // 非同期のいいね数取得を先に確定させてから操作する（act 警告回避）。
+    // 非同期の花数取得を先に確定させてから操作する（act 警告回避）。
     await screen.findByLabelText(likeAria(0));
     // ポップオーバーを開く。
     fireEvent.click(screen.getByRole("button", { name: "X でシェア" }));

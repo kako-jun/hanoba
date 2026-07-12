@@ -549,14 +549,32 @@ describe("fetchEngagementCountsBatch (#462 統合クエリの kind 分離)", () 
     expect(reactions.get(ID_A)).toBe(2);
   });
 
+  it("自分の最新リアクションが like の投稿だけ myReactionIds に入れる", async () => {
+    querySyncMock.mockReset();
+    getPublicKeyHexMock.mockReset().mockResolvedValue(PUBKEY);
+    querySyncMock.mockResolvedValueOnce([
+      { ...like(ID_A, PUBKEY, "+"), id: "mine-old", created_at: 1700000000 },
+      { ...like(ID_A, PUBKEY, "+"), id: "mine-new", created_at: 1700000001 },
+      { ...like(ID_B, PUBKEY, "-"), id: "mine-dislike", created_at: 1700000002 },
+      like(ID_A, "other"),
+    ]);
+
+    const { reactions, myReactionIds } = await fetchEngagementCountsBatch([ID_A, ID_B]);
+
+    expect(reactions.get(ID_A)).toBe(2);
+    expect(myReactionIds.get(ID_A)).toBe("mine-new");
+    expect(myReactionIds.has(ID_B)).toBe(false);
+  });
+
   it("空入力は querySync を呼ばず空 Map ペアを返す", async () => {
     querySyncMock.mockReset();
 
-    const { reactions, comments } = await fetchEngagementCountsBatch([]);
+    const { reactions, comments, myReactionIds } = await fetchEngagementCountsBatch([]);
 
     expect(querySyncMock).not.toHaveBeenCalled();
     expect(reactions.size).toBe(0);
     expect(comments.size).toBe(0);
+    expect(myReactionIds.size).toBe(0);
   });
 
   it("非空入力では filter が kinds:[7,1]・#e:eventIds・limit=n*120（上限5000）になる", async () => {
@@ -594,8 +612,9 @@ describe("fetchEngagementCountsBatch (#462 統合クエリの kind 分離)", () 
     querySyncMock.mockReset();
     querySyncMock.mockRejectedValueOnce(new Error("relay offline"));
 
-    const { reactions, comments } = await fetchEngagementCountsBatch([ID_A, ID_B]);
+    const { reactions, comments, myReactionIds } = await fetchEngagementCountsBatch([ID_A, ID_B]);
     expect(reactions.size).toBe(0);
     expect(comments.size).toBe(0);
+    expect(myReactionIds.size).toBe(0);
   });
 });

@@ -51,14 +51,16 @@ export const ja = {
   "time.hoursAgo": "{n}時間前",
   "time.daysAgo": "{n}日前",
 
-  // フィード表示（PostCard・FudaList・VarietyFilter・いいね/コメント数）。
+  // フィード表示（PostCard・FudaList・VarietyFilter・花/コメント数）。
   "card.photo.zoom": "写真を拡大",
   "card.photos.count": "{n}枚",
   "card.author.profile": "{name} のプロフィール",
   "card.author.profileWithId": "{name}（{id}）のプロフィール",
   "author.unnamed": "旅人",
   "card.readMore": "続きを読む",
-  "reaction.likes.aria": "いいね {n}",
+  "card.engagement.like": "花を添える",
+  "card.engagement.comment": "コメント",
+  "reaction.likes.aria": "花 {n}",
   "reaction.comments.aria": "コメント {n}",
   "fuda.search.title": "{label}で探す",
   "filter.remove.aria": "「{tag}」を外す",
@@ -93,7 +95,7 @@ export const ja = {
   // ホーム（index）ヒーロー。世界観文言＝直訳でなく意訳前提（en.ts 参照）。
   "home.hero.title": "育てて、見せる。",
   "home.hero.lead":
-    "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。畑もビカクも実生も、この一画に。",
+    "植物写真のSNS。Instagram より、早く、簡単に、ひとこと添えて。畑もビカクも実生も、この一画に。",
   "home.hero.sub":
     "ここは Hanōba に置かれた植物のタイムライン。Nostr 全体の植物は{link}へ。",
   "home.hero.sub.link": "みんなの植物",
@@ -103,7 +105,7 @@ export const ja = {
 
   // サイト既定メタ（MainLayout）。
   "site.description":
-    "植物写真のSNS。Instagram より、はやくかんたんに、ひとこと添えて。",
+    "植物写真のSNS。Instagram より、早く、簡単に、ひとこと添えて。",
 
   // 各ページのメタ（<title> / <meta description>・SEO・OGP）。
   "meta.about.title": "Hanōba とは — 架空の植物都市",
@@ -395,15 +397,17 @@ export const ja = {
   "detail.translate": "翻訳",
   "detail.translate.original": "原文を表示",
   "detail.translate.busy": "翻訳中…",
-  // いいねボタンの aria（#537・トグル化）。取得中はこの語を {n} に差す。
+  // 投稿詳細の花ボタン（#537・トグル化）。取得中はこの語を {n} に差す。
   "detail.likes.loading": "取得中",
-  // 未いいね／いいね済みでボタンの aria-label を出し分ける（押すとどうなるかを伝える）。
-  "detail.likes.like.aria": "いいね {n}（押すといいねする）",
-  "detail.likes.unlike.aria": "いいね {n}（もう一度押すと取り消す）",
-  "detail.likes.sending": "いいねを送信中",
-  "detail.likes.unsending": "いいねを取り消し中",
-  "detail.likes.error": "いいねの送信に失敗しました。もう一度お試しください。",
-  "detail.likes.unlike.error": "いいねの取り消しに失敗しました。もう一度お試しください。",
+  "detail.likes.like.label": "花を添える",
+  "detail.likes.unlike.label": "花を添えた",
+  // 未反応／反応済みでボタンの aria-label を出し分ける（押すとどうなるかを伝える）。
+  "detail.likes.like.aria": "花 {n}（押すと花を添える）",
+  "detail.likes.unlike.aria": "花 {n}（花を添えています。もう一度押すと取り消す）",
+  "detail.likes.sending": "花を添えています",
+  "detail.likes.unsending": "花を取り下げています",
+  "detail.likes.error": "花を添えられませんでした。もう一度お試しください。",
+  "detail.likes.unlike.error": "花を取り下げられませんでした。もう一度お試しください。",
   "detail.share.aria": "X でシェア",
   "detail.share.split.aria": "X でシェア（分割）",
   "detail.share.whole": "全文",
@@ -442,9 +446,9 @@ export const ja = {
   "edit.confirm.repost": "新しい投稿として再投稿",
   "edit.confirm.mid": "され、",
   "edit.confirm.has.prefix": "この投稿の",
-  "edit.confirm.has.counts": "いいね {likes}・コメント {comments}",
+  "edit.confirm.has.counts": "花 {likes}・コメント {comments}",
   "edit.confirm.has.suffix": "は引き継がれません。",
-  "edit.confirm.none": "元の投稿に付いたいいね・コメントは引き継がれません。",
+  "edit.confirm.none": "元の投稿に付いた花・コメントは引き継がれません。",
   "edit.confirm.q": "よろしいですか？",
   "edit.back": "もどる",
   "edit.confirm.submit": "編集して再投稿",
@@ -662,10 +666,10 @@ export const ja = {
     "自分がどんな市民であるか、この一枚を見るだけでわかるようにしたのだ。",
   "gazette.articles.3.closing": "諸君の札も、きっと誇らしい一枚になっておろう。",
   "gazette.articles.3.link.0.label": "あなたの植物を見る",
-  // 記事4（最新）: いいね・コメント解禁（#529/#530/#142/#537）。
+  // 記事4（最新）: 花リアクション・コメント解禁（#529/#530/#142/#537）。
   "gazette.articles.4.heading": "花を贈り、言葉を交わす",
   "gazette.articles.4.body.0":
-    "おっほん。投稿には黄色い花でいいねを贈れるようにし、ひとことの言葉を添えられるようにもした。いいねはもう一度触れれば取り消せる——気が変わっても、市長は咎めん。",
+    "おっほん。投稿には黄色い花を添えられるようにし、ひとことの言葉を添えられるようにもした。花はもう一度触れれば取り下げられる——気が変わっても、市長は咎めん。",
   "gazette.articles.4.body.1":
     "誰かの鉢に心を寄せ、言葉を交わす。それもまた、この街の育ての営みのひとつだ。",
   "gazette.articles.4.closing": "諸君の花も言葉も、余さず育ての糧となろう。",

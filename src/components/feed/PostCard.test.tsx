@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import PostCard from "./PostCard.tsx";
 import type { FeedPost } from "../../lib/feed/parse.ts";
 import type { VarietyCategory } from "../../lib/plants/variety-catalog.ts";
@@ -237,6 +237,196 @@ describe("PostCard", () => {
     } finally {
       restore();
     }
+  });
+
+  describe("全文を読めたカードの花/コメント導線（#550）", () => {
+    it("収まりきる短文カードでは 花を添える/コメント CTA を表示する", () => {
+      const restore = mockSizes(100, 100);
+      try {
+        render(
+          <PostCard
+            post={makePost({ caption: "開花した #アガベ" })}
+            index={0}
+            now={2000}
+            onOpen={noop}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        expect(screen.queryByRole("button", { name: "続きを読む" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "花を添える" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "コメント" })).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
+
+    it("自分が花を添えているカードは CTA を塗り花と「花を添えた」で出す", () => {
+      const restore = mockSizes(100, 100);
+      try {
+        render(
+          <PostCard
+            post={makePost({ caption: "開花した #アガベ" })}
+            index={0}
+            now={2000}
+            onOpen={noop}
+            onSelectHashtag={noop}
+            isLikedByMe
+          />,
+        );
+
+        const button = screen.getByRole("button", { name: "花を添えた" });
+        expect(button).toBeInTheDocument();
+        expect(button.querySelector("svg")).toHaveClass("text-ha-yellow");
+      } finally {
+        restore();
+      }
+    });
+
+    it("clip されている展開前は 花を添える/コメント CTA を表示しない", () => {
+      const restore = mockSizes(1000, 200);
+      try {
+        render(
+          <PostCard
+            post={makePost({ caption: "とても長い栽培ログ。".repeat(50) })}
+            index={0}
+            now={2000}
+            onOpen={noop}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        expect(screen.getByRole("button", { name: "続きを読む" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "花を添える" })).toBeNull();
+        expect(screen.queryByRole("button", { name: "コメント" })).toBeNull();
+      } finally {
+        restore();
+      }
+    });
+
+    it("「続きを読む」で展開後は 花を添える/コメント CTA を表示する", async () => {
+      const restore = mockSizes(1000, 200);
+      try {
+        const user = userEvent.setup();
+        render(
+          <PostCard
+            post={makePost({ caption: "とても長い栽培ログ。".repeat(50) })}
+            index={0}
+            now={2000}
+            onOpen={noop}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        await user.click(screen.getByRole("button", { name: "続きを読む" }));
+
+        expect(screen.getByRole("button", { name: "花を添える" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "コメント" })).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
+
+    it("展開後の 花を添える クリックで現在の写真 index と focus target を渡し、カード本体 open は二重発火しない", async () => {
+      const restore = mockSizes(1000, 200);
+      try {
+        const user = userEvent.setup();
+        const onOpen = vi.fn();
+        render(
+          <PostCard
+            post={makePost({ caption: "とても長い栽培ログ。".repeat(50) })}
+            index={0}
+            now={2000}
+            onOpen={onOpen}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        await user.click(screen.getByRole("button", { name: "続きを読む" }));
+        await user.click(screen.getByRole("button", { name: "花を添える" }));
+
+        expect(onOpen).toHaveBeenCalledTimes(1);
+        expect(onOpen).toHaveBeenCalledWith(0, "like");
+      } finally {
+        restore();
+      }
+    });
+
+    it("展開後の コメント クリックで現在の写真 index と focus target を渡し、カード本体 open は二重発火しない", async () => {
+      const restore = mockSizes(1000, 200);
+      try {
+        const user = userEvent.setup();
+        const onOpen = vi.fn();
+        render(
+          <PostCard
+            post={makePost({ caption: "とても長い栽培ログ。".repeat(50) })}
+            index={0}
+            now={2000}
+            onOpen={onOpen}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        await user.click(screen.getByRole("button", { name: "続きを読む" }));
+        await user.click(screen.getByRole("button", { name: "コメント" }));
+
+        expect(onOpen).toHaveBeenCalledTimes(1);
+        expect(onOpen).toHaveBeenCalledWith(0, "comment");
+      } finally {
+        restore();
+      }
+    });
+
+    it("複数写真の2枚目表示中に CTA を押すと photoIndex=1 を維持する", async () => {
+      const restore = mockSizes(1000, 200);
+      try {
+        const user = userEvent.setup();
+        const onOpen = vi.fn();
+        render(
+          <PostCard
+            post={makeMultiPhotoPost({ caption: "とても長い成長記録。".repeat(50) })}
+            index={0}
+            now={2000}
+            onOpen={onOpen}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        await user.click(screen.getByRole("button", { name: "次の写真" }));
+        await user.click(screen.getByRole("button", { name: "続きを読む" }));
+        await user.click(screen.getByRole("button", { name: "花を添える" }));
+
+        expect(onOpen).toHaveBeenCalledTimes(1);
+        expect(onOpen).toHaveBeenCalledWith(1, "like");
+      } finally {
+        restore();
+      }
+    });
+
+    it("en ロケールでは CTA ラベルが Add a flower / Comment になる", async () => {
+      const restore = mockSizes(1000, 200);
+      try {
+        const user = userEvent.setup();
+        render(
+          <LocaleProvider value="en">
+            <PostCard
+              post={makePost({ caption: "A very long growing note. ".repeat(50) })}
+              index={0}
+              now={2000}
+              onOpen={noop}
+              onSelectHashtag={noop}
+            />
+          </LocaleProvider>,
+        );
+
+        await user.click(screen.getByRole("button", { name: "Read more" }));
+
+        expect(screen.getByRole("button", { name: "Add a flower" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Comment" })).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
   });
 
   it("写真タップで onOpen を呼び、表示中の写真 index を渡す（拡大）", async () => {
@@ -709,10 +899,10 @@ describe("PostCard", () => {
     }
   });
 
-  // いいね数・コメント数の表示（#276）。カードは 1 以上のときだけ控えめに添え、
+  // 花数・コメント数の表示（#276）。カードは 1 以上のときだけ控えめに添え、
   // 0 / undefined はその要素ごと描画しない（hidden/style でなく DOM の有無で判定）。
-  describe("いいね/コメント数（#276・カードは0非表示）", () => {
-    function renderCard(props: { reactionCount?: number; commentCount?: number }) {
+  describe("花/コメント数（#276・カードは0非表示）", () => {
+    function renderCard(props: { reactionCount?: number; commentCount?: number; isLikedByMe?: boolean }) {
       return render(
         <PostCard
           post={makePost()}
@@ -725,14 +915,26 @@ describe("PostCard", () => {
       );
     }
 
-    it("reactionCount=5 のときいいね要素が出て「5」を表示する", () => {
+    it("reactionCount=5 のとき花要素が出て「5」を表示する", () => {
       const restore = mockSizes(0, 0);
       try {
         renderCard({ reactionCount: 5 });
-        const like = screen.getByLabelText("いいね 5");
+        const like = screen.getByLabelText("花 5");
         expect(like).toBeInTheDocument();
-        // 数字「5」は いいね要素の中に出る。
+        expect(like.querySelector("svg")).toHaveClass("text-ha-orange");
+        // 数字「5」は 花要素の中に出る。
         expect(within(like).getByText("5")).toBeInTheDocument();
+      } finally {
+        restore();
+      }
+    });
+
+    it("自分が花を添えている reactionCount は塗り花で表示する", () => {
+      const restore = mockSizes(0, 0);
+      try {
+        renderCard({ reactionCount: 5, isLikedByMe: true });
+        const like = screen.getByLabelText("花 5");
+        expect(like.querySelector("svg")).toHaveClass("text-ha-yellow");
       } finally {
         restore();
       }
@@ -750,12 +952,12 @@ describe("PostCard", () => {
       }
     });
 
-    it("reactionCount=0 のときいいね要素は DOM に存在しない（要素の有無で判定）", () => {
+    it("reactionCount=0 のとき花要素は DOM に存在しない（要素の有無で判定）", () => {
       const restore = mockSizes(0, 0);
       try {
         renderCard({ reactionCount: 0 });
         // hidden/style でなく、要素そのものが描画されていないことを確認する。
-        expect(screen.queryByLabelText(/^いいね/)).toBeNull();
+        expect(screen.queryByLabelText(/^花/)).toBeNull();
       } finally {
         restore();
       }
@@ -771,22 +973,22 @@ describe("PostCard", () => {
       }
     });
 
-    it("どちらも渡さない（undefined）ときは いいね/コメント要素とも存在しない", () => {
+    it("どちらも渡さない（undefined）ときは 花/コメント要素とも存在しない", () => {
       const restore = mockSizes(0, 0);
       try {
         renderCard({});
-        expect(screen.queryByLabelText(/^いいね/)).toBeNull();
+        expect(screen.queryByLabelText(/^花/)).toBeNull();
         expect(screen.queryByLabelText(/^コメント/)).toBeNull();
       } finally {
         restore();
       }
     });
 
-    it("reactionCount=2・commentCount=0 ではいいねだけ出てコメントは出ない（片方0の出し分け）", () => {
+    it("reactionCount=2・commentCount=0 では花だけ出てコメントは出ない（片方0の出し分け）", () => {
       const restore = mockSizes(0, 0);
       try {
         renderCard({ reactionCount: 2, commentCount: 0 });
-        expect(screen.getByLabelText("いいね 2")).toBeInTheDocument();
+        expect(screen.getByLabelText("花 2")).toBeInTheDocument();
         expect(screen.queryByLabelText(/^コメント/)).toBeNull();
       } finally {
         restore();
