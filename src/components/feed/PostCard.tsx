@@ -117,38 +117,40 @@ export default function PostCard({
     [post.id, captionText, post.hashtags, fuda.length],
   );
 
-  const measureClipping = useCallback((resetSticky = false) => {
+  const measureClipping = useCallback((keepOverflowSticky = true) => {
     const cap = captionRef.current;
     const col = rightColRef.current;
     const capOver = cap !== null && cap.scrollHeight > cap.clientHeight + 1;
     const colOver = col !== null && col.scrollHeight > col.clientHeight + 1;
     const over = capOver || colOver;
-    setClipped((prev) => over || (!resetSticky && prev && !expanded));
+    setClipped((prev) => over || (keepOverflowSticky && prev && !expanded));
   }, [expanded]);
 
   // 折りたたみ時に本文/右列（札＋タグ）が収まりきらず clip されているかを実測してトグルの要否を決める。
   // CTA や画像/フォント読み込みで本文領域が後から狭くなるため、描画直後だけでなくリサイズ後も再判定する。
   useLayoutEffect(() => {
     if (expanded) return; // 展開中は「閉じる」を出すので判定不要。
-    const resetSticky = clippingKeyRef.current !== clippingKey;
+    const contentChanged = clippingKeyRef.current !== clippingKey;
     clippingKeyRef.current = clippingKey;
-    measureClipping(resetSticky);
-    const remeasure = () => measureClipping();
-    const raf = window.requestAnimationFrame(remeasure);
+    measureClipping(!contentChanged);
+    const remeasureSticky = () => measureClipping(true);
+    const remeasureAllowClear = () => measureClipping(false);
+    const raf = window.requestAnimationFrame(remeasureSticky);
     const cap = captionRef.current;
     const col = rightColRef.current;
+    window.addEventListener("resize", remeasureAllowClear);
     if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", remeasure);
       return () => {
         window.cancelAnimationFrame(raf);
-        window.removeEventListener("resize", remeasure);
+        window.removeEventListener("resize", remeasureAllowClear);
       };
     }
-    const observer = new ResizeObserver(remeasure);
+    const observer = new ResizeObserver(remeasureSticky);
     if (cap !== null) observer.observe(cap);
     if (col !== null) observer.observe(col);
     return () => {
       window.cancelAnimationFrame(raf);
+      window.removeEventListener("resize", remeasureAllowClear);
       observer.disconnect();
     };
   }, [clippingKey, expanded, canEngageFromCard, measureClipping]);

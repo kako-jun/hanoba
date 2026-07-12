@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // fetchDiscoverFiltered のリレー問い合わせを検証するため SimplePool をモックする（#258）。
 // pool は client.ts の遅延シングルトンなので、querySync を hoisted な vi.fn に差し替える。
-const { querySyncMock, publishMock, getPublicKeyHexMock, signTemplateMock } = vi.hoisted(() => ({
+const { querySyncMock, publishMock, getPublicKeyHexMock, getExistingPublicKeyHexMock, signTemplateMock } = vi.hoisted(() => ({
   querySyncMock: vi.fn(),
   publishMock: vi.fn(),
   getPublicKeyHexMock: vi.fn(),
+  getExistingPublicKeyHexMock: vi.fn(),
   signTemplateMock: vi.fn(),
 }));
 vi.mock("nostr-tools/pool", () => ({
@@ -14,6 +15,7 @@ vi.mock("nostr-tools/pool", () => ({
 vi.mock("./keys.ts", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./keys.ts")>()),
   getPublicKeyHex: (...args: unknown[]) => getPublicKeyHexMock(...args),
+  getExistingPublicKeyHex: (...args: unknown[]) => getExistingPublicKeyHexMock(...args),
   signTemplate: (...args: unknown[]) => signTemplateMock(...args),
 }));
 
@@ -551,7 +553,7 @@ describe("fetchEngagementCountsBatch (#462 統合クエリの kind 分離)", () 
 
   it("自分の最新リアクションが like の投稿だけ myReactionIds に入れる", async () => {
     querySyncMock.mockReset();
-    getPublicKeyHexMock.mockReset().mockResolvedValue(PUBKEY);
+    getExistingPublicKeyHexMock.mockReset().mockReturnValue(PUBKEY);
     querySyncMock.mockResolvedValueOnce([
       { ...like(ID_A, PUBKEY, "+"), id: "mine-old", created_at: 1700000000 },
       { ...like(ID_A, PUBKEY, "+"), id: "mine-new", created_at: 1700000001 },
@@ -564,6 +566,18 @@ describe("fetchEngagementCountsBatch (#462 統合クエリの kind 分離)", () 
     expect(reactions.get(ID_A)).toBe(2);
     expect(myReactionIds.get(ID_A)).toBe("mine-new");
     expect(myReactionIds.has(ID_B)).toBe(false);
+  });
+
+  it("既存鍵が無いカード用バッチでは公開鍵を生成/要求せず myReactionIds を空にする", async () => {
+    querySyncMock.mockReset();
+    getPublicKeyHexMock.mockReset();
+    getExistingPublicKeyHexMock.mockReset().mockReturnValue(undefined);
+    querySyncMock.mockResolvedValueOnce([like(ID_A, PUBKEY, "+")]);
+
+    const { myReactionIds } = await fetchEngagementCountsBatch([ID_A]);
+
+    expect(myReactionIds.size).toBe(0);
+    expect(getPublicKeyHexMock).not.toHaveBeenCalled();
   });
 
   it("空入力は querySync を呼ばず空 Map ペアを返す", async () => {

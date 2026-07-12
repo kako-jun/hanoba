@@ -29,6 +29,7 @@ import {
   type ProfileFields,
 } from "./events.ts";
 import {
+  getExistingPublicKeyHex,
   getProfileExtra,
   getPublicKeyHex,
   mergeProfileExtra,
@@ -401,7 +402,7 @@ export async function fetchEngagementCountsBatch(
     // kind で分離してから各集計へ渡す（混在のまま渡すと誤カウントするため必須）。
     const likeEvents = events.filter((e) => e.kind === 7);
     const commentEvents = events.filter((e) => e.kind === 1);
-    const myPubkey = await getPublicKeyHex().catch(() => undefined);
+    const myPubkey = getExistingPublicKeyHex();
     const myReactionIds = new Map<string, string>();
     if (myPubkey !== undefined) {
       const targets = new Set(eventIds);

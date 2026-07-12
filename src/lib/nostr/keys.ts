@@ -93,6 +93,16 @@ export async function getPublicKeyHex(): Promise<string> {
 }
 
 /**
+ * 既に保存済みのローカル鍵から公開鍵を返す。鍵が無ければ undefined。
+ * フィードの受動的な状態表示など、鍵生成や NIP-07 権限要求を起こしたくない場所で使う。
+ */
+export function getExistingPublicKeyHex(): string | undefined {
+  if (isNip07Enabled()) return undefined;
+  const existing = getStoredSecretKey();
+  return existing === null ? undefined : getPublicKey(existing);
+}
+
+/**
  * テンプレートに署名して署名済みイベントを返す。
  * NIP-07 有効なら拡張に委譲、無ければ保存鍵でローカル署名（finalizeEvent）。
  */

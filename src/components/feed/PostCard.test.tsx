@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import PostCard from "./PostCard.tsx";
@@ -44,6 +44,25 @@ function mockSizes(scroll: number, client: number) {
     else delete (HTMLElement.prototype as unknown as { scrollHeight?: number }).scrollHeight;
     if (ch) Object.defineProperty(HTMLElement.prototype, "clientHeight", ch);
     else delete (HTMLElement.prototype as unknown as { clientHeight?: number }).clientHeight;
+  };
+}
+
+function mockMutableSizes(scroll: number, client: number) {
+  const sh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
+  const ch = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+  let current = { scroll, client };
+  Object.defineProperty(HTMLElement.prototype, "scrollHeight", { configurable: true, get: () => current.scroll });
+  Object.defineProperty(HTMLElement.prototype, "clientHeight", { configurable: true, get: () => current.client });
+  return {
+    set(nextScroll: number, nextClient: number) {
+      current = { scroll: nextScroll, client: nextClient };
+    },
+    restore() {
+      if (sh) Object.defineProperty(HTMLElement.prototype, "scrollHeight", sh);
+      else delete (HTMLElement.prototype as unknown as { scrollHeight?: number }).scrollHeight;
+      if (ch) Object.defineProperty(HTMLElement.prototype, "clientHeight", ch);
+      else delete (HTMLElement.prototype as unknown as { clientHeight?: number }).clientHeight;
+    },
   };
 }
 
@@ -301,6 +320,33 @@ describe("PostCard", () => {
         expect(screen.queryByRole("button", { name: "コメント" })).toBeNull();
       } finally {
         restore();
+      }
+    });
+
+    it("リサイズ後に全文が収まる場合は sticky な clip 状態を解除して CTA を戻す", async () => {
+      const sizes = mockMutableSizes(1000, 200);
+      try {
+        render(
+          <PostCard
+            post={makePost({ caption: "とても長い栽培ログ。".repeat(50) })}
+            index={0}
+            now={2000}
+            onOpen={noop}
+            onSelectHashtag={noop}
+          />,
+        );
+
+        expect(screen.getByRole("button", { name: "続きを読む" })).toBeInTheDocument();
+        sizes.set(100, 100);
+        fireEvent(window, new Event("resize"));
+
+        await waitFor(() => {
+          expect(screen.queryByRole("button", { name: "続きを読む" })).not.toBeInTheDocument();
+        });
+        expect(screen.getByRole("button", { name: "花を添える" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "コメント" })).toBeInTheDocument();
+      } finally {
+        sizes.restore();
       }
     });
 
