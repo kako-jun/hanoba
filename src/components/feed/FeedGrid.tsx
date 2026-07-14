@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchHanobaFeed } from "../../lib/nostr/client.ts";
 import { filterByHashtag, type FeedPost } from "../../lib/feed/parse.ts";
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { waitForSwCheck } from "../../lib/pwa/registerUpdate.ts";
 import PostGrid from "./PostGrid.tsx";
 import FeedSkeleton from "./FeedSkeleton.tsx";
 
@@ -33,6 +34,9 @@ export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   async function load() {
     setStatus("loading");
     try {
+      // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。直後に
+      // 更新 reload が起きた場合に無駄になる取得を減らす。初回以降はすでに解決済みで即時。
+      await waitForSwCheck;
       const result = await fetchHanobaFeed();
       setPosts(result);
       setStatus("loaded");

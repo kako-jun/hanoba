@@ -11,6 +11,7 @@ import {
 } from "../../lib/feed/discoverFilter.ts";
 import { type FeedPost } from "../../lib/feed/parse.ts";
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { waitForSwCheck } from "../../lib/pwa/registerUpdate.ts";
 import PostGrid from "./PostGrid.tsx";
 import VarietyFilter from "./VarietyFilter.tsx";
 
@@ -78,6 +79,9 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     const token = ++latestRef.current;
     setStatus("loading");
     try {
+      // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。マウント直後の
+      // 初回取得だけでなく絞り込み変更/popstate/再試行でも通るが、初回以降は解決済みで即時。
+      await waitForSwCheck;
       const result = await fetchDiscoverFiltered(filter);
       if (token !== latestRef.current) return; // 新しい操作が走っていたら古い応答は捨てる
       // 既定（みんなの植物）の空振りは空グリッドでなく idle 案内（温室）に戻す。
