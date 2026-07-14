@@ -154,3 +154,26 @@ describe("maskable アセット/生成ジョブが物理的に復活していな
     expect([...new Set(sources)], `PNG 生成ソースが単一でない: ${sources.join(", ")}`).toEqual(["anySvg"]);
   });
 });
+
+describe("MainLayout.astro の /compose 判定は updateGuard.ts の isComposeRoute に一本化されている（#551 修正2・#511/#513/#515 と同種のドリフト再発防止）", () => {
+  // 修正前は PostFAB 出し分け用に MainLayout.astro が独自に
+  // `Astro.url.pathname.replace(/\/$/, "") === "/compose"` という正規表現ロジックを持ち、
+  // registerUpdate.ts の PWA 更新 defer 判定（#551）と同じ「/compose 判定＋末尾スラッシュ吸収」を
+  // 別々に実装していた（QA 指摘で updateGuard.ts の isComposeRoute に統合）。
+  // このリポには .astro を直接評価するテストインフラが無いため、他の #511/#513/#515 ガードと
+  // 同じく fs でソーステキストを読み、正規表現で静的に縛る。
+
+  it("updateGuard.ts から isComposeRoute を import している", () => {
+    expect(layoutSrc).toMatch(
+      /import\s*\{[^}]*\bisComposeRoute\b[^}]*\}\s*from\s*["']\.\.\/lib\/pwa\/updateGuard\.ts["']/,
+    );
+  });
+
+  it("isComposeRoute(Astro.url.pathname) の呼び出しで isCompose を導出している", () => {
+    expect(layoutSrc).toMatch(/isComposeRoute\(\s*Astro\.url\.pathname\s*\)/);
+  });
+
+  it("撤去済みの独自正規表現（末尾スラッシュ吸収の手書き比較）が復活していない", () => {
+    expect(layoutSrc).not.toContain('.replace(/\\/$/, "") === "/compose"');
+  });
+});
