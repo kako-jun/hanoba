@@ -5,6 +5,12 @@
 // onNeedRefresh を受け、①overlay 表示 → ②skipWaiting → ③controllerchange 待ち → ④reload する。
 // controllerchange が来ない場合の fallback reload も持つ（ブラウザ差異・SW 実装差異への保険）。
 //
+// **reload は1回だけ**（QA 指摘・3min で見つかった同種バグの再発防止）: registerType:"prompt" では
+// `updateSW(reloadPage)` の引数はもう使われず（vite-plugin-pwa 0.13.2+）、実際の reload は
+// workbox-window 内部の `controlling` リスナーが `event.isUpdate` を見て独自に window.location.reload()
+// する可能性がある。ここで張る自前の controllerchange リスナー・fallback timeout・updateSW() の
+// catch と合わせると reload 経路が複数走り得るため、`reloaded` フラグで1回目以降を無視する。
+//
 // 投稿フォーム（/compose）にいる間は reload を defer する（#228 の自動下書き保存と衝突しないよう、
 // skipWaiting を送らず待機 SW のまま留める）。判定は updateGuard.ts の isComposeRoute。
 // reload ループ防止に sessionStorage cooldown を持つ（mypace 同様 10 秒）。
@@ -50,6 +56,15 @@ function showUpdateOverlay(): void {
 
 /** SW 登録を開始し、更新検知（onNeedRefresh）を能動的にハンドルする。 */
 export function initUpdateRegistration(): void {
+  // reload 経路が複数（自前の controllerchange リスナー・fallback timeout・workbox-window 内部の
+  // controlling リスナー）走り得るため、実行済みなら以降は無視する（QA 指摘・二重 reload 防止）。
+  let reloaded = false;
+  const reloadOnce = (): void => {
+    if (reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  };
+
   const updateSW = registerSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
@@ -68,17 +83,11 @@ export function initUpdateRegistration(): void {
       showUpdateOverlay();
       sessionStorage.setItem(SW_UPDATE_STORAGE_KEY, String(Date.now()));
 
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        window.location.reload();
-      });
+      navigator.serviceWorker.addEventListener("controllerchange", reloadOnce);
 
       window.setTimeout(() => {
-        updateSW(true).catch(() => {
-          window.location.reload();
-        });
-        window.setTimeout(() => {
-          window.location.reload();
-        }, FALLBACK_RELOAD_MS);
+        updateSW(true).catch(reloadOnce);
+        window.setTimeout(reloadOnce, FALLBACK_RELOAD_MS);
       }, OVERLAY_DELAY_MS);
     },
   });
