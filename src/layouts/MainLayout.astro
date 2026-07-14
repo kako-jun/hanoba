@@ -8,6 +8,7 @@ import AmbientWeather from "../components/weather/AmbientWeather.tsx";
 import AmbientCalendar from "../components/weather/AmbientCalendar.tsx";
 import { t, LOCALES, DEFAULT_LOCALE, type Locale } from "../lib/i18n/index.ts";
 import { type MessageKey } from "../lib/i18n/messages/ja.ts";
+import { isComposeRoute } from "../lib/pwa/updateGuard.ts";
 
 interface Props {
   title?: string;
@@ -42,8 +43,9 @@ const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage = ogImageProp ?? new URL("/og/og-image.jpg", SITE).href;
 
 // 投稿 FAB は /compose では出さない（もうそこにいる・#283）。サーバ側で出し分けて
-// クライアント判定もフラッシュも要らないようにする。末尾スラッシュも吸収する。
-const isCompose = Astro.url.pathname.replace(/\/$/, "") === "/compose";
+// クライアント判定もフラッシュも要らないようにする。末尾スラッシュ吸収を含む判定は
+// updateGuard.ts の isComposeRoute に一本化（PWA 更新 defer 判定と同一ロジック・#551）。
+const isCompose = isComposeRoute(Astro.url.pathname);
 
 // 検索エンジン向け構造化データ（JSON-LD・<script> で描画＝meta 化しない）。
 // WebSite ＋ サイトリンク検索ボックス（discover の ?q= 検索を提示）。
