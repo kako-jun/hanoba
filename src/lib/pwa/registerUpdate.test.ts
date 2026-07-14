@@ -26,7 +26,12 @@ vi.mock("virtual:pwa-register", () => ({
 
 const OVERLAY_DELAY_MS = 1500;
 const FALLBACK_RELOAD_MS = 2000;
+// registerUpdate.ts 内の同名定数と一致させる（waitForSwCheck のタイミング境界テスト用）。
+const POST_CHECK_GRACE_MS = 500;
+const SW_CHECK_TIMEOUT_MS = 2000;
 const BASE_TIME = new Date("2026-07-14T00:00:00.000Z").getTime();
+
+type OnRegisteredSW = (swUrl: string, registration?: unknown) => void;
 
 /**
  * registerUpdate.ts をフレッシュな module closure（reloaded フラグ含む）で読み込み、
@@ -41,6 +46,25 @@ async function loadOnNeedRefresh(): Promise<OnNeedRefresh> {
     throw new Error("registerSW に onNeedRefresh が渡されなかった（テスト構成の不備）");
   }
   return options.onNeedRefresh;
+}
+
+/**
+ * registerUpdate.ts をフレッシュな module closure で読み込み、onNeedRefresh・onRegisteredSW・
+ * module の waitForSwCheck export をまとめて返す（#551・waitForSwCheck 系テスト用）。
+ * loadOnNeedRefresh と同じく vi.resetModules() で毎回作り直し、closure 漏れを防ぐ。
+ */
+async function loadModule(): Promise<{
+  onNeedRefresh: OnNeedRefresh;
+  onRegisteredSW: OnRegisteredSW;
+  waitForSwCheck: Promise<void>;
+}> {
+  vi.resetModules();
+  const mod = await import("./registerUpdate.ts");
+  const options = registerSWMock.mock.calls.at(-1)?.[0] as RegisterSWOptions | undefined;
+  if (!options?.onNeedRefresh || !options?.onRegisteredSW) {
+    throw new Error("registerSW に onNeedRefresh/onRegisteredSW が渡されなかった（テスト構成の不備）");
+  }
+  return { onNeedRefresh: options.onNeedRefresh, onRegisteredSW: options.onRegisteredSW, waitForSwCheck: mod.waitForSwCheck };
 }
 
 /** navigator.serviceWorker を happy-dom に無い最小スタブで補い、addEventListener の呼び出しを捕捉できるようにする。 */
@@ -149,5 +173,128 @@ describe("registerUpdate（#551 プロンプト方式の更新検知・onNeedRef
     await vi.advanceTimersByTimeAsync(OVERLAY_DELAY_MS + FALLBACK_RELOAD_MS);
 
     expect(reloadSpy).toHaveBeenCalled();
+  });
+});
+
+describe("waitForSwCheck（#551・agasteer 方式の初回更新チェック待ち）", () => {
+  // FeedGrid/DiscoverGrid/MyGrid の初回 relay fetch はこの Promise を await してから始まる
+  // （agasteer の src/main.ts の waitForSwCheck と同じ設計）。ここでは resolve/非 resolve の
+  // タイミング境界だけを検証する（Grid 側での実際の await 配線は各 component テストの守備範囲）。
+
+  // 上の describe とは別スコープ（sibling describe）なので updateSWMock はここで独自に持つ。
+  let updateSWMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(BASE_TIME);
+    sessionStorage.clear();
+    document.body.innerHTML = "";
+    setPath("/");
+
+    updateSWMock = vi.fn().mockResolvedValue(undefined);
+    registerSWMock.mockReset();
+    registerSWMock.mockReturnValue(updateSWMock);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  /** waitForSwCheck の resolve 有無を観測するための boolean ref を返す（直接 await すると未解決時に無限待ちになるため）。 */
+  function observeResolution(waitForSwCheck: Promise<void>): { resolved: boolean } {
+    const state = { resolved: false };
+    void waitForSwCheck.then(() => {
+      state.resolved = true;
+    });
+    return state;
+  }
+
+  it("registration が undefined（SW 未対応・登録失敗）なら即座に resolve する", async () => {
+    stubServiceWorker();
+    const { onRegisteredSW, waitForSwCheck } = await loadModule();
+    const state = observeResolution(waitForSwCheck);
+
+    onRegisteredSW("/sw.js", undefined);
+    await vi.advanceTimersByTimeAsync(0); // マイクロタスクだけ流す（setTimeout 不要のはず）。
+
+    expect(state.resolved).toBe(true);
+  });
+
+  it("registration.update() 成功後、POST_CHECK_GRACE_MS 経過するまでは resolve しない", async () => {
+    stubServiceWorker();
+    const { onRegisteredSW, waitForSwCheck } = await loadModule();
+    const state = observeResolution(waitForSwCheck);
+
+    const registration = { update: vi.fn().mockResolvedValue(undefined) };
+    onRegisteredSW("/sw.js", registration);
+    await vi.advanceTimersByTimeAsync(0); // update() 自体の resolve を待つ。
+
+    expect(registration.update).toHaveBeenCalledTimes(1);
+    expect(state.resolved, "onNeedRefresh が呼ばれる猶予中はまだ resolve しないはず").toBe(false);
+
+    await vi.advanceTimersByTimeAsync(POST_CHECK_GRACE_MS - 1);
+    expect(state.resolved).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(state.resolved).toBe(true);
+  });
+
+  it("registration.update() が reject（オフライン等）しても resolve する", async () => {
+    stubServiceWorker();
+    const { onRegisteredSW, waitForSwCheck } = await loadModule();
+    const state = observeResolution(waitForSwCheck);
+
+    const registration = { update: vi.fn().mockRejectedValue(new Error("offline")) };
+    onRegisteredSW("/sw.js", registration);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(state.resolved).toBe(true);
+  });
+
+  it("onRegisteredSW が呼ばれなくても SW_CHECK_TIMEOUT_MS 経過で resolve する（フォールバック）", async () => {
+    stubServiceWorker();
+    const { waitForSwCheck } = await loadModule();
+    const state = observeResolution(waitForSwCheck);
+
+    await vi.advanceTimersByTimeAsync(SW_CHECK_TIMEOUT_MS - 1);
+    expect(state.resolved).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(state.resolved).toBe(true);
+  });
+
+  it("onNeedRefresh が実際に reload フローへ入っても、その経路自体は resolve を呼ばない（Agasteer と同じ判断＝reload 予定なら fetch を許可する意味が無い）", async () => {
+    // 注意: waitForSwCheck には reload フローとは独立な SW_CHECK_TIMEOUT_MS（2秒）の安全弁が
+    // 別途あり、そちらは onNeedRefresh の状態に関係なく必ず resolve へ向かう（Agasteer 本家も同じ
+    // 構造＝2秒より先の時点まで進めると、たとえ reload 中でもいずれ resolve してしまう）。
+    // ここでは「reload フロー（overlay→skipWaiting）自体が resolve を呼ばない」ことだけを、
+    // その安全弁がまだ発火していない時点（OVERLAY_DELAY_MS < SW_CHECK_TIMEOUT_MS）で確認する。
+    stubServiceWorker();
+    setPath("/discover");
+    const { onNeedRefresh, waitForSwCheck } = await loadModule();
+    const state = observeResolution(waitForSwCheck);
+
+    onNeedRefresh();
+    await vi.advanceTimersByTimeAsync(OVERLAY_DELAY_MS);
+
+    expect(state.resolved).toBe(false);
+  });
+
+  it("cooldown 中で onNeedRefresh が早期 return しても、resolve は onRegisteredSW 側の経路で独立に進む", async () => {
+    // cooldown/compose defer は「reload しない」だけで、waitForSwCheck の resolve 有無を
+    // 左右する設計ではない（resolve は onRegisteredSW から辿る別経路）。早期 return 後も
+    // 通常どおり resolve できることを確認する。
+    stubServiceWorker();
+    setPath("/discover");
+    sessionStorage.setItem(SW_UPDATE_STORAGE_KEY, String(BASE_TIME)); // cooldown 中にしておく。
+    const { onNeedRefresh, onRegisteredSW, waitForSwCheck } = await loadModule();
+    const state = observeResolution(waitForSwCheck);
+
+    onNeedRefresh(); // cooldown 中なので何もしない。
+    onRegisteredSW("/sw.js", undefined);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(state.resolved).toBe(true);
   });
 });

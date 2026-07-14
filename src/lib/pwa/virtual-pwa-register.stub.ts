@@ -5,8 +5,22 @@
 // 「specifier が解決できるか」の事前チェックを通過できない（このチェックは resolve.alias の後に
 // vi.mock のモック解決へ渡る前段で走るため）。そこで vitest.config.ts の resolve.alias で
 // "virtual:pwa-register" をこのファイルへ静的に向け、実体を持たせて transform を通す。
-// ここでエクスポートする registerSW は常に vi.mock で上書きされる前提のダミーで、テストが
-// これを直接呼ぶことは無い（呼ばれたらモックし忘れの signal として気づけるよう no-op にしてある）。
-export function registerSW(_options?: unknown): (reloadPage?: boolean) => Promise<void> {
+//
+// registerUpdate.test.ts はこの既定挙動を vi.mock で丸ごと上書きする（呼ばれることは無い）。
+// 一方 FeedGrid/DiscoverGrid/MyGrid の component テスト（#551・waitForSwCheck 導入）は
+// registerUpdate.ts を経由でこのスタブへ実際に到達する＝ここが no-op のままだと
+// registerUpdate.ts の waitForSwCheck が SW_CHECK_TIMEOUT_MS（2秒の実タイマー）でしか解決せず、
+// テストの findBy* 系デフォルトタイムアウト（1秒）より長くかかってタイムアウトする。
+// happy-dom は実 Service Worker を持たないため「登録できなかった」を模し、マイクロタスクで
+// onRegisteredSW(url, undefined) を呼んで即座に解決させる（実体の registerSW も非同期で
+// onRegisteredSW を呼ぶので、同期呼び出しにはしない）。
+interface StubRegisterSWOptions {
+  onRegisteredSW?: (swUrl: string, registration: unknown) => void;
+}
+
+export function registerSW(options?: StubRegisterSWOptions): (reloadPage?: boolean) => Promise<void> {
+  queueMicrotask(() => {
+    options?.onRegisteredSW?.("/sw.js", undefined);
+  });
   return async () => {};
 }
