@@ -112,6 +112,7 @@ describe("新規キーの多言語完備（#525・#164）", () => {
     "gazette.articles.1.heading",
     "gazette.articles.2.heading",
     "gazette.articles.3.heading",
+    "update.restarting",
   ])(
     "%s は ja/en/es/zh 全てに空でない値を持つ",
     (key) => {

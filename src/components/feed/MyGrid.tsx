@@ -12,6 +12,7 @@ import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
+import { waitForSwCheck } from "../../lib/pwa/registerUpdate.ts";
 
 type Status = "loading" | "error" | "loaded";
 
@@ -63,6 +64,9 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   async function load() {
     setStatus("loading");
     try {
+      // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。直後に
+      // 更新 reload が起きた場合に無駄になる取得を減らす。初回以降はすでに解決済みで即時。
+      await waitForSwCheck;
       const pubkey = await getPublicKeyHex();
       const result = await fetchMyPosts(pubkey);
       if (!aliveRef.current) return;
