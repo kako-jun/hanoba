@@ -19,7 +19,15 @@ export default defineConfig({
     // sitemap-index.xml / sitemap-0.xml を全ページから自動生成（robots.txt から参照）。
     sitemap(),
     AstroPWA({
-      registerType: "autoUpdate",
+      // "prompt"（mypace 方式・#551）＝新しい SW を検知しても自動 skipWaiting しない。
+      // "autoUpdate" だと新SWが自動でclientsClaimし、開いたままのタブが無警告でネットワーク境界を
+      // 差し替えられる（overlay も cooldown も挟めない）。src/lib/pwa/registerUpdate.ts が
+      // onNeedRefresh を受けて overlay 表示 → skipWaiting → controllerchange 待ち → reload する。
+      registerType: "prompt",
+      // 自動生成される registerSW.js（素の navigator.serviceWorker.register のみ・onNeedRefresh を
+      // 呼ばない）は使わない。src/layouts/MainLayout.astro から registerUpdate.ts を
+      // 直接 import する自前の <script> に置き換える（#551）。
+      injectRegister: false,
       workbox: hanobaWorkboxOptions,
       manifest: {
         name: "Hanōba",

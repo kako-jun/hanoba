@@ -223,10 +223,15 @@ const swapJson = JSON.stringify(SHELL_SWAP_BY_LOCALE);
     <!-- @vite-pwa/astro は manifest を生成するが <link rel="manifest"> は注入しないため明示する
          （これが無いとブラウザが manifest を発見できず PWA として install できない）。 -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <!-- 同様に Service Worker 登録スクリプト（registerSW.js）も自動注入されないため明示する。
-         これが無いと sw.js が登録されず PWA がオフライン動作・install できない（#PWA）。
-         dev では registerSW.js が無く 404 になるが、本番ビルド（dist）でのみ生成・登録される。 -->
-    <script is:inline async src="/registerSW.js"></script>
+    <!-- Service Worker 登録（sw.js が無いと PWA がオフライン動作・install できない）。
+         @vite-pwa/astro は script タグを自動注入しないため明示する。astro.config.mjs で
+         injectRegister: false にしてあるので、自動生成の素の registerSW.js（onNeedRefresh を
+         呼ばず即 reload するだけ）は使わず、overlay + defer + cooldown を持つ自前の
+         registerUpdate.ts を import する（Vite 経由でバンドルされる通常の module script。
+         is:inline は import 不可なのでここは inline にしない・#551）。 -->
+    <script>
+      import "../lib/pwa/registerUpdate.ts";
+    </script>
     <!-- OGP / Twitter カード（共有時のサムネ）。画像は AI 生成の温室ヒーロー（/image スキル）。
          og:image は絶対 URL が要るので本番ドメインで固定する。 -->
     <meta property="og:type" content={ogType} />

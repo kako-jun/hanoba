@@ -32,6 +32,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "install.add": "添加",
   "install.later": "以后再说",
 
+  "update.restarting": "有新版本，正在重启…",
+
   "common.close": "关闭",
   "common.retry": "重试",
 

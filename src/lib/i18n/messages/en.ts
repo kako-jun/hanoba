@@ -34,6 +34,8 @@ export const en: Partial<Record<MessageKey, string>> = {
   "install.add": "Add",
   "install.later": "Later",
 
+  "update.restarting": "New version available. Restarting...",
+
   "common.close": "Close",
   "common.retry": "Retry",
 

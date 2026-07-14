@@ -41,6 +41,9 @@ export const ja = {
   "install.add": "追加",
   "install.later": "あとで",
 
+  // PWA 更新検知時の再起動 overlay（registerUpdate.ts・mypace 方式・#551）。
+  "update.restarting": "新しいバージョンがあります。再起動します...",
+
   // 汎用（複数箇所で共有）。
   "common.close": "閉じる",
   "common.retry": "再試行",
