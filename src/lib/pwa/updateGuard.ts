@@ -12,7 +12,10 @@ export const SW_UPDATE_STORAGE_KEY = "hanoba:sw-update-time";
 
 /**
  * 直近のクールダウン期間内に既に更新を適用済みか（純関数・テスト可能に now を引数で受ける）。
- * `lastUpdatedAt` が null（未更新）なら false。未来時刻（時計巻き戻し等）も保守的に「まだ」とみなす。
+ * `lastUpdatedAt` が null（未更新）なら false。`elapsed` が負（時計巻き戻し等の異常系）でも
+ * `elapsed < durationMs` は真になる＝保守的に「まだクールダウン中」として reload を抑止する
+ * （`elapsed >= 0` を別途要求すると、時計が巻き戻った瞬間だけ cooldown が外れて即 reload を
+ * 許してしまい doc の意図と逆になる・QA 指摘で修正）。
  */
 export function isUpdateCooldownActive(
   lastUpdatedAt: number | null,
@@ -21,14 +24,15 @@ export function isUpdateCooldownActive(
 ): boolean {
   if (lastUpdatedAt === null) return false;
   const elapsed = now - lastUpdatedAt;
-  return elapsed >= 0 && elapsed < durationMs;
+  return elapsed < durationMs;
 }
 
 /**
  * 投稿フォーム（/compose）にいる間は reload を defer する対象パスか（#228 自動下書き保存との
- * 事故防止・#551）。MainLayout.astro の isCompose 判定と同じ末尾スラッシュ吸収ロジックを共有する
- * （二重に書かないほうがよいが、あちらは Astro.url.pathname、こちらは location.pathname と
- * 引数の型は同じ string なので、同一の純関数として切り出せる）。
+ * 事故防止・#551）。MainLayout.astro の投稿 FAB 出し分け（#283）も同じ判定を使う＝
+ * 判定ロジックはここ1箇所に一本化し、両者から import する（#511/#513/#515 で踏んだ
+ * 「同じ判定ロジックの二重管理によるドリフト」を再発させない・QA 指摘で統合）。
+ * 引数は Astro.url.pathname / location.pathname のどちらでも渡せる（同じ string 型）。
  *
  * Composer は /compose だけの client:only 島なので、このページに留まっている＝
  * フォーム入力中・下書き中とみなす。ページを離れる（＝Astro は MPA なので必ずフルナビゲーション）と
