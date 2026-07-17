@@ -9,11 +9,14 @@ import {
   sameTagSet,
   type DiscoverFilter,
 } from "../../lib/feed/discoverFilter.ts";
-import { type FeedPost } from "../../lib/feed/parse.ts";
+import { mergeAppendById, type FeedPost } from "../../lib/feed/parse.ts";
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import { waitForSwCheck } from "../../lib/pwa/registerUpdate.ts";
 import PostGrid from "./PostGrid.tsx";
 import VarietyFilter from "./VarietyFilter.tsx";
+import LoadMoreButton from "./LoadMoreButton.tsx";
+
+const DISCOVER_PAGE = 100;
 
 type Status = "idle" | "loading" | "error" | "loaded";
 
@@ -49,6 +52,9 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   const [tags, setTags] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  // #554: 「もっと見る」（現在の filter を保ったまま過去へ遡って追記）。hasMore は初期 true、新規増分0 で打ち止め。
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   // 直近の取得トークン。連続操作で古い応答が新しい結果を上書きしないよう、await 後に最新でなければ捨てる。
   const latestRef = useRef(0);
@@ -78,6 +84,7 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
 
     const token = ++latestRef.current;
     setStatus("loading");
+    setHasMore(true); // #554: filter 変更/復元/再試行で母集団をリセット＝もっと見るも初期化。
     try {
       // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。マウント直後の
       // 初回取得だけでなく絞り込み変更/popstate/再試行でも通るが、初回以降は解決済みで即時。
@@ -95,6 +102,31 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     } catch {
       if (token !== latestRef.current) return;
       setStatus(isDefaultFilter(filter) ? "idle" : "error");
+    }
+  }
+
+  // #554: 現在の filter を保ったまま、最古 createdAt を until にして次バッチを追記する。
+  // client filter 後に件数が減るので**新規増分0**を主判定に打ち止める（生 fetch の limit 未満では止めない）。
+  async function loadMore() {
+    const oldest = posts[posts.length - 1]; // createdAt 降順＝末尾が最古。
+    if (loadingMore || oldest === undefined) return;
+    setLoadingMore(true);
+    const until = oldest.createdAt;
+    const filter: DiscoverFilter = { ...EMPTY_FILTER, tags };
+    const token = latestRef.current; // 現在の取得世代。applyTags（filter 変更）が割り込んだら追記を捨てる。
+    try {
+      await waitForSwCheck;
+      const batch = await fetchDiscoverFiltered(filter, DISCOVER_PAGE, until);
+      if (token !== latestRef.current) return; // 新しい絞り込みが走っていたら古い応答は捨てる
+      setPosts((prev) => {
+        const merged = mergeAppendById(prev, batch);
+        if (merged.length === prev.length) setHasMore(false); // 新規増分0 で打ち止め。
+        return merged;
+      });
+    } catch {
+      // 取得失敗はボタンを残して再試行可能にする。
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -157,6 +189,11 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
             // 複数品種の AND は上の VarietyFilter で明示的に組む（そちらは add/remove の意図的操作）。
             <PostGrid posts={posts} onSelectHashtag={(tag) => void applyTags([tag], "push")} />
           ))}
+
+        {/* #554: もっと見る（現在の絞り込みを保ったまま過去へ遡って追記）。取得済みがあるときだけ出す。 */}
+        {status === "loaded" && posts.length > 0 && (
+          <LoadMoreButton hasMore={hasMore} loading={loadingMore} onClick={() => void loadMore()} />
+        )}
       </section>
     </LocaleProvider>
   );

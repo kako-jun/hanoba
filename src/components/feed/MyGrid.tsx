@@ -6,11 +6,14 @@ import PostDetail from "./PostDetail.tsx";
 import EditPost from "./EditPost.tsx";
 import CitizenStats from "./CitizenStats.tsx";
 import ProgressiveImage from "../ui/ProgressiveImage.tsx";
+import LoadMoreButton from "./LoadMoreButton.tsx";
 import { useBackToClose } from "./useBackToClose.ts";
 import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nostr/client.ts";
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
-import type { FeedPost, Profile } from "../../lib/feed/parse.ts";
+import { mergeAppendById, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
+
+const MY_PAGE = 100;
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import { waitForSwCheck } from "../../lib/pwa/registerUpdate.ts";
 
@@ -51,6 +54,9 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   // ProfileEditor の nameHint 同期エフェクトが render-1 時点の null を一瞬だけ見てしまい、
   // 自分自身の正しい値を無駄に巻き戻す再レンダーが挟まる（#525 セルフレビュー S1）。
   const [accountName, setAccountName] = useState<string | null>(() => getDisplayName());
+  // #554: 「もっと見る」（過去へ遡って追記）。hasMore は初期 true、新規増分0 で打ち止め。
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   // アンマウント後 / 再取得中の古い応答での setState を防ぐ（stale-async ガード）。
   const aliveRef = useRef(true);
@@ -63,12 +69,13 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
 
   async function load() {
     setStatus("loading");
+    setHasMore(true);
     try {
       // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。直後に
       // 更新 reload が起きた場合に無駄になる取得を減らす。初回以降はすでに解決済みで即時。
       await waitForSwCheck;
       const pubkey = await getPublicKeyHex();
-      const result = await fetchMyPosts(pubkey);
+      const result = await fetchMyPosts(pubkey, MY_PAGE);
       if (!aliveRef.current) return;
       setPosts(result);
       setStatus("loaded");
@@ -79,6 +86,29 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       });
     } catch {
       if (aliveRef.current) setStatus("error");
+    }
+  }
+
+  // #554: 最古 createdAt を until にして自分の投稿を過去へ遡り追記する。編集/削除（id ベース）と両立し、
+  // CitizenStats は増えた posts 全体を見るので自然に更新される。
+  async function loadMore() {
+    const oldest = posts[posts.length - 1]; // createdAt 降順＝末尾が最古。
+    if (loadingMore || oldest === undefined) return;
+    setLoadingMore(true);
+    const until = oldest.createdAt;
+    try {
+      const pubkey = await getPublicKeyHex();
+      const batch = await fetchMyPosts(pubkey, MY_PAGE, until);
+      if (!aliveRef.current) return;
+      setPosts((prev) => {
+        const merged = mergeAppendById(prev, batch);
+        if (merged.length === prev.length) setHasMore(false); // 新規増分0 で打ち止め。
+        return merged;
+      });
+    } catch {
+      // 取得失敗はボタンを残して再試行可能にする。
+    } finally {
+      if (aliveRef.current) setLoadingMore(false);
     }
   }
 
@@ -263,6 +293,11 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
             ))}
           </ul>
         ))}
+
+      {/* #554: もっと見る（自分の投稿を過去へ遡って追記）。投稿があるときだけ出す。 */}
+      {status === "loaded" && posts.length > 0 && (
+        <LoadMoreButton hasMore={hasMore} loading={loadingMore} onClick={() => void loadMore()} />
+      )}
 
       {/* 編集モーダル（#300）。編集＝削除→確認つき再投稿（写真 URL は再利用）。 */}
       {editingId !== null &&
