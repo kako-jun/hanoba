@@ -71,7 +71,7 @@ export default function UserProfile({ lang = DEFAULT_LOCALE }: { lang?: Locale }
     try {
       // 投稿とプロフィールは独立に取れる＝並行。投稿取得が本体（失敗時は error）。
       // プロフィールは best-effort（取れなくても可視名は author.unnamed、npub は URL/aria 識別に残る）。
-      const [result, prof] = await Promise.all([
+      const [{ posts: result }, prof] = await Promise.all([
         fetchMyPosts(target),
         fetchMyProfileResilient(target).catch(() => null),
       ]);

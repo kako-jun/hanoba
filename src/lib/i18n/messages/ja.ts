@@ -74,6 +74,9 @@ export const ja = {
   "feed.error.short": "読み込めませんでした。",
   "feed.filter.clear": "絞り込みを解除",
   "feed.tag.empty": "「#{tag}」の投稿はまだありません。",
+  // #554: 写真一覧の「もっと見る」（100件上限を過去へ遡って追記する）。打ち止め時はボタンごと消す。
+  "feed.loadMore": "もっと見る",
+  "feed.loadingMore": "読み込み中…",
   "discover.loading": "「{summary}」を探しています…",
   "discover.empty":
     "「{summary}」の投稿は見つかりませんでした。別の品種で試してみましょう。",

@@ -61,6 +61,8 @@ export const es: Partial<Record<MessageKey, string>> = {
   "feed.error.short": "No se pudo cargar.",
   "feed.filter.clear": "Quitar filtro",
   "feed.tag.empty": "Aún no hay publicaciones para «#{tag}».",
+  "feed.loadMore": "Ver más",
+  "feed.loadingMore": "Cargando…",
   "discover.loading": "Buscando «{summary}»…",
   "discover.empty":
     "No se encontraron publicaciones para «{summary}». Prueba con otra variedad.",

@@ -3,6 +3,7 @@ import { nip19 } from "nostr-tools";
 import {
   authorHref,
   filterByHashtag,
+  mergeAppendById,
   mergePostsById,
   parseProfile,
   parseProfileName,
@@ -324,5 +325,57 @@ describe("relativeTime", () => {
 
   it("未来はたった今に丸める", () => {
     expect(relativeTime(2000, 1000, "ja")).toBe("たった今");
+  });
+});
+
+describe("mergeAppendById（#554・もっと見る）", () => {
+  function p(id: string, createdAt: number, caption = ""): FeedPost {
+    return { id, pubkey: "pk", createdAt, caption, imageUrls: [], imageUrl: null, hashtags: [], shotDates: [] };
+  }
+
+  it("空 prev + next → next 全件が createdAt 降順で返る", () => {
+    const merged = mergeAppendById([], [p("a", 1), p("c", 3), p("b", 2)]);
+    expect(merged.map((x) => x.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("prev + 空 next → prev そのまま（同一内容・降順）", () => {
+    const prev = [p("c", 3), p("b", 2), p("a", 1)];
+    const merged = mergeAppendById(prev, []);
+    expect(merged.map((x) => x.id)).toEqual(["c", "b", "a"]);
+    expect(merged).toEqual(prev);
+  });
+
+  it("全件 id 重複（next ⊆ prev）→ 返り値.length === prev.length（hasMore=false 経路の根拠）", () => {
+    const prev = [p("a", 1), p("b", 2)];
+    const next = [p("a", 1), p("b", 2)];
+    const merged = mergeAppendById(prev, next);
+    expect(merged.length).toBe(prev.length);
+  });
+
+  it("prev 優先: 同 id が prev/next 両方で中身違い → prev 側の値が保持される", () => {
+    const merged = mergeAppendById([p("a", 1, "prev-caption")], [p("a", 1, "next-caption")]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]!.caption).toBe("prev-caption");
+  });
+
+  it("新規 id 混在 → prev + 新規だけ足され createdAt 降順で整列", () => {
+    const merged = mergeAppendById([p("b", 2)], [p("b", 2), p("a", 1), p("c", 3)]);
+    expect(merged.map((x) => x.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("同一 createdAt 複数件（別 id）→ 全件保持・降順維持", () => {
+    const merged = mergeAppendById([p("a", 5)], [p("b", 5), p("c", 5), p("d", 3)]);
+    // 同 createdAt は全件残る（id で畳まれない）。length で全件保持を検証。
+    expect(merged).toHaveLength(4);
+    // 先頭3件は createdAt=5、末尾は 3（降順は維持）。
+    expect(merged[3]!.id).toBe("d");
+    expect(merged.slice(0, 3).every((x) => x.createdAt === 5)).toBe(true);
+  });
+
+  it("next 側が降順でない入力 → 返り値は必ず createdAt 降順にソート", () => {
+    const merged = mergeAppendById([], [p("a", 1), p("b", 5), p("c", 3)]);
+    const times = merged.map((x) => x.createdAt);
+    expect(times).toEqual([...times].sort((x, y) => y - x));
+    expect(merged.map((x) => x.id)).toEqual(["b", "c", "a"]);
   });
 });

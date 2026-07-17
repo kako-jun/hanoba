@@ -227,7 +227,10 @@ export async function fetchPopularHashtags(limit = 30): Promise<RankedTag[]> {
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
-export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
+export async function fetchHanobaFeed(
+  limit = 100,
+  until?: number,
+): Promise<{ posts: FeedPost[]; rawCount: number }> {
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
@@ -235,13 +238,23 @@ export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
         kinds: [1],
         "#t": [TAG_HANOBA],
         limit,
+        // #554: until（Unix秒）を渡すと created_at <= until のイベントだけ返る＝過去へ遡る（もっと見る）。
+        // 未指定時は付けない＝既存の挙動（最新から limit 件）は完全に不変。
+        ...(until !== undefined ? { until } : {}),
       },
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
-    return posts.filter((post) => post.imageUrl !== null);
+    // #554: rawCount ＝「もっと見る」の打ち止め判定用の生イベント数（parse/merge/画像フィルタ前）。
+    // until 指定時は NIP-01 の until が**包含**（created_at <= until）で、境界＝表示中最古のイベント自身が
+    // 毎回返るため、生総数だと rawCount>=1 が永続してボタンが消えない。そこで until より**厳密に古い**
+    // （created_at < until）生イベントだけを数える。真の末尾では境界のみ返る→0→打ち止め（ボタン消滅）。
+    // until 未指定（初回）は従来どおり生総数（0件なら空フィード＝hasMore false で正しい）。
+    const rawCount =
+      until !== undefined ? events.filter((e) => e.created_at < until).length : events.length;
+    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount };
   } catch {
-    return [];
+    return { posts: [], rawCount: 0 };
   }
 }
 
@@ -522,19 +535,24 @@ function getCatalogAliasIndex(): Promise<Map<string, string[]>> {
 export async function fetchDiscoverFiltered(
   filter: DiscoverFilter,
   limit = 100,
-): Promise<FeedPost[]> {
+  until?: number,
+): Promise<{ posts: FeedPost[]; rawCount: number }> {
   const pool = getPool();
   const filtering = filter.tags.length > 0;
   const popLimit = filtering ? Math.max(limit, POP_LIMIT_FILTERED) : limit;
   // catalog 別名索引は relay 取得と並行で読み込む（filtering 時のみ・初回以降はキャッシュ即時）。
   const aliasIndexPromise = filtering ? getCatalogAliasIndex() : null;
 
+  // #554: until（Unix秒）指定時は母集団3クエリ＋補助 search すべてに until を流して過去へ遡る（もっと見る）。
+  // 未指定時は付けず既存の挙動（最新から）を保つ。最後の slice(0, limit) は据え置き＝1バッチ最大 limit 件の契約は不変。
+  const untilPart = until !== undefined ? { until } : {};
+
   // 母集団は常に「みんなの植物」フィード（#t:plantstr ∪ search:#plantstr ∪ #t:hanoba）。
   // 品種は本文タグなので relay の #t:[品種] では引けない＝母集団を取り applyClientFilter で絞る。
   const jobs: Promise<NostrEvent[]>[] = [
-    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
-    pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
-    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit: popLimit, ...untilPart }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit: popLimit, ...untilPart }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit: popLimit, ...untilPart }, { maxWait: QUERY_MAXWAIT }),
   ];
 
   if (filtering) {
@@ -542,7 +560,7 @@ export async function fetchDiscoverFiltered(
     jobs.push(
       pool.querySync(
         [...SEARCH_RELAYS],
-        { kinds: [1], search: filter.tags.map((t) => `#${t}`).join(" "), limit },
+        { kinds: [1], search: filter.tags.map((t) => `#${t}`).join(" "), limit, ...untilPart },
         { maxWait: QUERY_MAXWAIT },
       ),
     );
@@ -550,6 +568,13 @@ export async function fetchDiscoverFiltered(
 
   const settled = await Promise.allSettled(jobs);
   const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  // #554: rawCount ＝打ち止め判定用の生イベント数（母集団3クエリ＋補助 search・dedup 前）。
+  // until 指定時は境界（created_at == until）が毎回再取得されるため、until より厳密に古い
+  // （created_at < until）分だけ数える＝真の末尾では境界のみ返り 0 → 打ち止め（ボタン消滅）。
+  // 品種フィルタで増分 0 でも「厳密に古い」生イベントがあれば rawCount>0 で継続（S2 barren window の誤打ち止め回避）。
+  // until 未指定（初回）は従来どおり生総数（dedup 前・「relay が何か返したか」の指標）。詳細は fetchHanobaFeed 参照。
+  const rawCount =
+    until !== undefined ? events.filter((e) => e.created_at < until).length : events.length;
   const merged = mergePostsById(events.map(parsePost)); // id dedup・新着降順
 
   // 別名展開＝dictionary（#23・学名/英名）∪ variety-catalog のカテゴリ/属/品種別名（#303 / #409・札と同じ source）。
@@ -566,7 +591,7 @@ export async function fetchDiscoverFiltered(
           return cat === undefined ? dict : [...new Set([...dict, ...cat])];
         };
   const filtered = applyClientFilter(merged, { tags: filter.tags, resolveTagAliases });
-  return filtered.slice(0, limit);
+  return { posts: filtered.slice(0, limit), rawCount };
 }
 
 /**
@@ -731,17 +756,27 @@ function profileToExtra(p: Profile): ProfileExtra {
  * 自分の植物（#28）＝自分の pubkey ＋ t:hanoba の投稿だけを取得する。
  * fetchHanobaFeed と同様に画像ありのみ・createdAt 降順。失敗は空配列。
  */
-export async function fetchMyPosts(pubkey: string, limit = 100): Promise<FeedPost[]> {
+export async function fetchMyPosts(
+  pubkey: string,
+  limit = 100,
+  until?: number,
+): Promise<{ posts: FeedPost[]; rawCount: number }> {
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
-      { kinds: [1], "#t": [TAG_HANOBA], authors: [pubkey], limit },
+      // #554: until 指定で過去へ遡る（もっと見る）。未指定時は付けず既存の挙動を保つ。
+      { kinds: [1], "#t": [TAG_HANOBA], authors: [pubkey], limit, ...(until !== undefined ? { until } : {}) },
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
-    return posts.filter((post) => post.imageUrl !== null);
+    // #554: rawCount ＝打ち止め判定用の生イベント数。until 指定時は境界（created_at == until）が毎回
+    // 再取得されるため、until より厳密に古い（created_at < until）分だけ数える（真の末尾で 0 → 打ち止め）。
+    // until 未指定（初回）は従来どおり生総数。詳細は fetchHanobaFeed のコメント参照。
+    const rawCount =
+      until !== undefined ? events.filter((e) => e.created_at < until).length : events.length;
+    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount };
   } catch {
-    return [];
+    return { posts: [], rawCount: 0 };
   }
 }
 

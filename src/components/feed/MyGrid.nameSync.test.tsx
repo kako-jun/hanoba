@@ -32,7 +32,7 @@ import MyGrid from "./MyGrid.tsx";
 
 describe("MyGrid × AccountName/ProfileEditor 実結合（#525 S1 nameHint 初期同期レース回帰防止）", () => {
   beforeEach(() => {
-    fetchMyPosts.mockReset().mockResolvedValue([]);
+    fetchMyPosts.mockReset().mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockReset().mockResolvedValue(null);
     saveDisplayName.mockReset().mockResolvedValue(undefined);
     saveProfile.mockReset().mockResolvedValue({ id: "evt1" });

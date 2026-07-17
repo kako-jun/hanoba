@@ -114,6 +114,17 @@ export function mergePostsById(...lists: FeedPost[][]): FeedPost[] {
 }
 
 /**
+ * 既存リスト（prev）に追記バッチ（next）を id 重複除去しながら連結する（#554・もっと見る）。
+ * mergePostsById の「同 id は最初に出会ったものを採用」に乗るので **prev 側が優先**され（既存の
+ * いいね数等の付随状態を保つ）、next のうち prev に無い id だけが新規に足される。
+ * 返り値は createdAt 降順（mergePostsById 準拠）。純粋関数＝テスト可能。
+ * 新規増分は呼び出し側が `merged.length - prev.length` で算出する（打ち止め判定に使う）。
+ */
+export function mergeAppendById(prev: FeedPost[], next: FeedPost[]): FeedPost[] {
+  return mergePostsById(prev, next);
+}
+
+/**
  * hashtags に指定タグを含む投稿だけを返す（大小無視）。
  * クライアント側のタグ絞り込みに使う（取得済みの hanoba 投稿に対してのみ適用）。
  */
