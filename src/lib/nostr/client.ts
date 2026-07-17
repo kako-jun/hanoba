@@ -245,9 +245,14 @@ export async function fetchHanobaFeed(
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
-    // #554: rawCount = relay が返した生イベント総数（parse/merge/画像フィルタ前）。
-    // 「もっと見る」の打ち止めは生 0 件のときだけ＝取りこぼし窓ではボタンを残す（軽い保険版）。
-    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount: events.length };
+    // #554: rawCount ＝「もっと見る」の打ち止め判定用の生イベント数（parse/merge/画像フィルタ前）。
+    // until 指定時は NIP-01 の until が**包含**（created_at <= until）で、境界＝表示中最古のイベント自身が
+    // 毎回返るため、生総数だと rawCount>=1 が永続してボタンが消えない。そこで until より**厳密に古い**
+    // （created_at < until）生イベントだけを数える。真の末尾では境界のみ返る→0→打ち止め（ボタン消滅）。
+    // until 未指定（初回）は従来どおり生総数（0件なら空フィード＝hasMore false で正しい）。
+    const rawCount =
+      until !== undefined ? events.filter((e) => e.created_at < until).length : events.length;
+    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount };
   } catch {
     return { posts: [], rawCount: 0 };
   }
@@ -563,9 +568,13 @@ export async function fetchDiscoverFiltered(
 
   const settled = await Promise.allSettled(jobs);
   const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  // #554: rawCount = 母集団3クエリ＋補助 search の生イベント総数（dedup 前・「relay が何か返したか」の指標）。
-  // 品種フィルタで増分 0 でも生 >0 なら barren window とみなしボタンを残す（S2 の誤打ち止め回避）。
-  const rawCount = events.length;
+  // #554: rawCount ＝打ち止め判定用の生イベント数（母集団3クエリ＋補助 search・dedup 前）。
+  // until 指定時は境界（created_at == until）が毎回再取得されるため、until より厳密に古い
+  // （created_at < until）分だけ数える＝真の末尾では境界のみ返り 0 → 打ち止め（ボタン消滅）。
+  // 品種フィルタで増分 0 でも「厳密に古い」生イベントがあれば rawCount>0 で継続（S2 barren window の誤打ち止め回避）。
+  // until 未指定（初回）は従来どおり生総数（dedup 前・「relay が何か返したか」の指標）。詳細は fetchHanobaFeed 参照。
+  const rawCount =
+    until !== undefined ? events.filter((e) => e.created_at < until).length : events.length;
   const merged = mergePostsById(events.map(parsePost)); // id dedup・新着降順
 
   // 別名展開＝dictionary（#23・学名/英名）∪ variety-catalog のカテゴリ/属/品種別名（#303 / #409・札と同じ source）。
@@ -760,8 +769,12 @@ export async function fetchMyPosts(
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
-    // #554: rawCount = 生イベント総数（打ち止めは生 0 件のときだけ）。
-    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount: events.length };
+    // #554: rawCount ＝打ち止め判定用の生イベント数。until 指定時は境界（created_at == until）が毎回
+    // 再取得されるため、until より厳密に古い（created_at < until）分だけ数える（真の末尾で 0 → 打ち止め）。
+    // until 未指定（初回）は従来どおり生総数。詳細は fetchHanobaFeed のコメント参照。
+    const rawCount =
+      until !== undefined ? events.filter((e) => e.created_at < until).length : events.length;
+    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount };
   } catch {
     return { posts: [], rawCount: 0 };
   }

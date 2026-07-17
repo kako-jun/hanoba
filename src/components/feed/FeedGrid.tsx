@@ -64,6 +64,8 @@ export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
 
   // #554: 母集団（絞り込み前の posts）の最古 createdAt を until にして次バッチを追記する。
   // 絞り込み（activeTag）は表示時 useMemo のままで、ここは母集団を伸ばす（絞り込み表示が0件でも増やせる）。
+  // DiscoverGrid の latestRef 相当の世代トークンは持たず aliveRef のみ＝クエリが固定（t:hanoba）で
+  // 母集団が切り替わらないため。load() の再取得は error 状態でのみ起き loadMore と重ならない。
   async function loadMore() {
     const oldest = posts[posts.length - 1]; // posts は createdAt 降順＝末尾が最古。
     if (loadingMore || oldest === undefined) return;
@@ -72,9 +74,10 @@ export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     try {
       const { posts: batch, rawCount } = await fetchHanobaFeed(FEED_PAGE, until);
       if (!aliveRef.current) return;
-      // #554（軽い保険版）: 打ち止めは relay の生バッチが完全に空（rawCount===0）のときだけ。
-      // 増分0でも生>0ならボタンを残す＝取りこぼし窓で押し直せる（S1）。until=最古で遡るので
-      // 本当に古いイベントが無ければ生0件になり必ず止まる（無限ループにならない）。
+      // #554（軽い保険版）: 打ち止めは rawCount===0 のときだけ。rawCount は until より厳密に古い
+      // （created_at < until）生イベント数（境界＝再取得される最古イベント自身は数えない）。
+      // 増分0でも厳密に古い生>0ならボタンを残す＝取りこぼし窓で押し直せる（S1）。until=最古で遡るので
+      // 厳密に古いイベントが尽きれば必ず 0 になり止まる（無限ループにならない）。
       if (rawCount === 0) setHasMore(false);
       setPosts((prev) => mergeAppendById(prev, batch));
     } catch {

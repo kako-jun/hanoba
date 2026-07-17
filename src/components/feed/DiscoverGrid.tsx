@@ -106,8 +106,9 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }
 
   // #554: 現在の filter を保ったまま、最古 createdAt を until にして次バッチを追記する。
-  // client filter 後に件数が減るので、打ち止めは relay の生バッチが空（rawCount===0）のときだけにする。
-  // 品種フィルタで「今の窓は該当0だが古い所には該当あり」の barren window でも生>0ならボタンを残す（S2）。
+  // client filter 後に件数が減るので、打ち止めは rawCount===0（until より厳密に古い生イベントが尽きた）
+  // のときだけにする。品種フィルタで「今の窓は該当0だが古い所には該当あり」の barren window でも
+  // 厳密に古い生>0ならボタンを残す（S2）。
   async function loadMore() {
     const oldest = posts[posts.length - 1]; // createdAt 降順＝末尾が最古。
     if (loadingMore || oldest === undefined) return;
@@ -119,8 +120,9 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
       await waitForSwCheck;
       const { posts: batch, rawCount } = await fetchDiscoverFiltered(filter, DISCOVER_PAGE, until);
       if (token !== latestRef.current) return; // 新しい絞り込みが走っていたら古い応答は捨てる
-      // #554（軽い保険版）: 生バッチが空（rawCount===0）のときだけ打ち止め。品種フィルタで増分0でも
-      // 生>0なら barren window とみなしボタンを残す（S2）。until 遡行で古いイベントが尽きれば生0になる。
+      // #554（軽い保険版）: rawCount===0 のときだけ打ち止め。rawCount は until より厳密に古い
+      // （created_at < until）生イベント数（境界＝再取得される最古イベント自身は数えない）。品種フィルタで
+      // 増分0でも厳密に古い生>0なら barren window とみなしボタンを残す（S2）。厳密に古いのが尽きれば必ず 0 になる。
       if (rawCount === 0) setHasMore(false);
       setPosts((prev) => mergeAppendById(prev, batch));
     } catch {

@@ -708,6 +708,31 @@ describe("fetchHanobaFeed（#554・until ページング）", () => {
     const got = await fetchHanobaFeed(50);
     expect(got).toEqual({ posts: [], rawCount: 0 });
   });
+
+  it("#554: until 指定時 rawCount は created_at < until の生イベントだけ数える（境界 == until は数えない＝収束）", async () => {
+    querySyncMock.mockReset();
+    // until=1700 に対し、より新しい(>)・境界(==)・より古い(<) を混ぜる。境界は NIP-01 の until 包含で
+    // 毎回再取得される最古イベント自身に相当し、これを数えると打ち止まらない。< だけを数えるのが収束の核。
+    querySyncMock.mockResolvedValue([
+      { id: "a".repeat(64), pubkey: "b".repeat(64), created_at: 1701, kind: 1, tags: [["t", "hanoba"]], content: "新 https://image.nostr.build/a.jpg", sig: "" },
+      { id: "c".repeat(64), pubkey: "b".repeat(64), created_at: 1700, kind: 1, tags: [["t", "hanoba"]], content: "境界 https://image.nostr.build/c.jpg", sig: "" },
+      { id: "d".repeat(64), pubkey: "b".repeat(64), created_at: 1699, kind: 1, tags: [["t", "hanoba"]], content: "古1 https://image.nostr.build/d.jpg", sig: "" },
+      { id: "e".repeat(64), pubkey: "b".repeat(64), created_at: 1698, kind: 1, tags: [["t", "hanoba"]], content: "古2 https://image.nostr.build/e.jpg", sig: "" },
+    ]);
+    const { rawCount } = await fetchHanobaFeed(50, 1700);
+    // < 1700 は 1699・1698 の2件のみ（1701 も 1700 も数えない）。
+    expect(rawCount).toBe(2);
+  });
+
+  it("#554: until 指定で境界（全部 created_at == until）だけ返る＝真の末尾で rawCount=0（ボタン消滅）", async () => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([
+      { id: "a".repeat(64), pubkey: "b".repeat(64), created_at: 1700, kind: 1, tags: [["t", "hanoba"]], content: "境界1 https://image.nostr.build/a.jpg", sig: "" },
+      { id: "c".repeat(64), pubkey: "b".repeat(64), created_at: 1700, kind: 1, tags: [["t", "hanoba"]], content: "境界2 https://image.nostr.build/c.jpg", sig: "" },
+    ]);
+    const { rawCount } = await fetchHanobaFeed(50, 1700);
+    expect(rawCount).toBe(0);
+  });
 });
 
 describe("fetchMyPosts（#554・until ページング）", () => {
@@ -744,6 +769,24 @@ describe("fetchMyPosts（#554・until ページング）", () => {
     querySyncMock.mockRejectedValue(new Error("offline"));
     expect(await fetchMyPosts(PK, 30)).toEqual({ posts: [], rawCount: 0 });
   });
+
+  it("#554: until 指定時 rawCount は created_at < until だけ数える（境界 == until は除外）", async () => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([
+      { id: "a".repeat(64), pubkey: PK, created_at: 1701, kind: 1, tags: [["t", "hanoba"]], content: "新 https://image.nostr.build/a.jpg", sig: "" },
+      { id: "c".repeat(64), pubkey: PK, created_at: 1700, kind: 1, tags: [["t", "hanoba"]], content: "境界 https://image.nostr.build/c.jpg", sig: "" },
+      { id: "d".repeat(64), pubkey: PK, created_at: 1699, kind: 1, tags: [["t", "hanoba"]], content: "古 https://image.nostr.build/d.jpg", sig: "" },
+    ]);
+    expect((await fetchMyPosts(PK, 30, 1700)).rawCount).toBe(1);
+  });
+
+  it("#554: until 指定で境界だけ返る＝真の末尾で rawCount=0（収束）", async () => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([
+      { id: "a".repeat(64), pubkey: PK, created_at: 1700, kind: 1, tags: [["t", "hanoba"]], content: "境界 https://image.nostr.build/a.jpg", sig: "" },
+    ]);
+    expect((await fetchMyPosts(PK, 30, 1700)).rawCount).toBe(0);
+  });
 });
 
 describe("fetchDiscoverFiltered（#554・until ページング）", () => {
@@ -779,5 +822,44 @@ describe("fetchDiscoverFiltered（#554・until ページング）", () => {
   it("until 未指定 → どのクエリにも until が無い（既存挙動＝最新から）", async () => {
     await fetchDiscoverFiltered({ tags: ["トマト"] }, 100);
     expect(allFilters().every((f) => !("until" in f))).toBe(true);
+  });
+
+  it("#554: until 指定時 rawCount は複数クエリ合計の created_at < until だけ数える（境界 == until は除外）", async () => {
+    querySyncMock.mockReset();
+    const ev = (id: string, createdAt: number) => ({
+      id: id.repeat(64),
+      pubkey: "b".repeat(64),
+      created_at: createdAt,
+      kind: 1,
+      tags: [["t", "hanoba"]],
+      content: "咲いた #トマト https://image.nostr.build/x.jpg",
+      sig: "",
+    });
+    // hanoba クエリ: <1700 が1件・境界1件、plantstr クエリ: <1700 が1件・>1700 が1件。合計 < は2件。
+    querySyncMock.mockImplementation((_relays: unknown, filter: { "#t"?: string[] }) => {
+      if (filter?.["#t"]?.includes("hanoba")) return Promise.resolve([ev("a", 1699), ev("c", 1700)]);
+      if (filter?.["#t"]?.includes("plantstr")) return Promise.resolve([ev("d", 1698), ev("e", 1701)]);
+      return Promise.resolve([]);
+    });
+    const { rawCount } = await fetchDiscoverFiltered({ tags: ["トマト"] }, 100, 1700);
+    expect(rawCount).toBe(2);
+  });
+
+  it("#554: until 指定で全クエリ境界のみ（created_at == until）＝真の末尾で rawCount=0（収束）", async () => {
+    querySyncMock.mockReset();
+    const boundary = {
+      id: "a".repeat(64),
+      pubkey: "b".repeat(64),
+      created_at: 1700,
+      kind: 1,
+      tags: [["t", "hanoba"]],
+      content: "境界 #トマト https://image.nostr.build/x.jpg",
+      sig: "",
+    };
+    querySyncMock.mockImplementation((_relays: unknown, filter: { "#t"?: string[] }) =>
+      Promise.resolve(filter?.["#t"]?.includes("hanoba") ? [boundary] : []),
+    );
+    const { rawCount } = await fetchDiscoverFiltered({ tags: ["トマト"] }, 100, 1700);
+    expect(rawCount).toBe(0);
   });
 });

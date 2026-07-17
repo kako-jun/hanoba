@@ -91,6 +91,8 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
 
   // #554: 最古 createdAt を until にして自分の投稿を過去へ遡り追記する。編集/削除（id ベース）と両立し、
   // CitizenStats は増えた posts 全体を見るので自然に更新される。
+  // DiscoverGrid の latestRef 相当の世代トークンは持たず aliveRef のみ＝クエリが固定（pubkey）で
+  // 母集団が切り替わらないため。load() の再取得は error 状態でのみ起き loadMore と重ならない。
   async function loadMore() {
     const oldest = posts[posts.length - 1]; // createdAt 降順＝末尾が最古。
     if (loadingMore || oldest === undefined) return;
@@ -100,8 +102,9 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       const pubkey = await getPublicKeyHex();
       const { posts: batch, rawCount } = await fetchMyPosts(pubkey, MY_PAGE, until);
       if (!aliveRef.current) return;
-      // #554（軽い保険版）: 打ち止めは relay の生バッチが空（rawCount===0）のときだけ。
-      // 増分0でも生>0ならボタンを残す（取りこぼし窓で押し直せる・S1）。
+      // #554（軽い保険版）: 打ち止めは rawCount===0 のときだけ。rawCount は until より厳密に古い
+      // （created_at < until）生イベント数（境界＝再取得される最古イベント自身は数えない）。
+      // 増分0でも厳密に古い生>0ならボタンを残す（取りこぼし窓で押し直せる・S1）。厳密に古いのが尽きれば必ず止まる。
       if (rawCount === 0) setHasMore(false);
       setPosts((prev) => mergeAppendById(prev, batch));
     } catch {
