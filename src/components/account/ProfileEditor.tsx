@@ -202,34 +202,38 @@ export default function ProfileEditor({ bare = false, nameHint }: Props) {
 
   return (
     <section className={`${bare ? "" : "glass rounded-2xl p-5 "}flex flex-col gap-3`}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex min-w-0 items-center gap-2.5">
-          <Avatar src={picture} name={name ?? "?"} className="w-9 h-9" />
-          <span className="flex min-w-0 flex-col">
-            {/* bare（/me の統合カード）では名前は上の AccountName が主表示するので重複させない（#104）。 */}
-            <span className="text-sm font-semibold text-ha-ink/85 truncate">
-              {bare ? t("account.profile.heading") : (name ?? t("account.handle.unset"))}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <Avatar src={picture} name={name ?? "?"} className="w-9 h-9" />
+            <span className="flex min-w-0 flex-col">
+              {/* bare（/me の統合カード）では名前は上の AccountName が主表示するので重複させない（#104）。 */}
+              <span className="text-sm font-semibold text-ha-ink/85 truncate">
+                {bare ? t("account.profile.heading") : (name ?? t("account.handle.unset"))}
+              </span>
+              <span className="text-xs text-ha-ink/50">{t("account.profile.sub")}</span>
             </span>
-            <span className="text-xs text-ha-ink/50">{t("account.profile.sub")}</span>
           </span>
-        </span>
-        <span className="shrink-0 flex flex-col items-end gap-0.5">
-          {/* 名前未登録時はトグル自体を無効化する（#525）。保存は既存どおり nameMissing で弾くが、
-              トグルを開けてしまうとアイコンアップロード（nostr.build への実送信）等が名乗り前に
-              できてしまうため、パネルを開く前段でガードする。名前は AccountName 側（このカードの
-              上段）で設定するので、鶏卵問題にはならない。 */}
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            disabled={nameMissing}
-            className="inline-flex items-center gap-1 text-sm text-ha-green hover:text-ha-green-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-ha-green"
-          >
-            {open ? t("common.close") : t("account.profile.edit")}
-            <Icon name="chevron" className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
-          </button>
-          {nameMissing && <span className="text-[11px] text-ha-ink/50">{t("account.profile.editHint")}</span>}
-        </span>
+          <span className="shrink-0 flex flex-col items-end gap-0.5">
+            {/* 名前未登録時はトグル自体を無効化する（#525）。保存は既存どおり nameMissing で弾くが、
+                トグルを開けてしまうとアイコンアップロード（nostr.build への実送信）等が名乗り前に
+                できてしまうため、パネルを開く前段でガードする。名前は AccountName 側（このカードの
+                上段）で設定するので、鶏卵問題にはならない。 */}
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              disabled={nameMissing}
+              className="inline-flex items-center gap-1 text-sm text-ha-green hover:text-ha-green-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-ha-green"
+            >
+              {open ? t("common.close") : t("account.profile.edit")}
+              <Icon name="chevron" className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+          </span>
+        </div>
+        {nameMissing && (
+          <span className="text-[11px] text-ha-ink/50 text-right">{t("account.profile.editHint")}</span>
+        )}
       </div>
 
       {open && (
