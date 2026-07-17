@@ -33,6 +33,11 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     shotDates: [],  };
 }
 
+// #554: fetchHanobaFeed は { posts, rawCount } を返す。rawCount 未指定時は生バッチ＝posts と同数とみなす。
+function res(posts: FeedPost[], rawCount = posts.length): { posts: FeedPost[]; rawCount: number } {
+  return { posts, rawCount };
+}
+
 describe("FeedGrid", () => {
   beforeEach(() => {
     fetchHanobaFeed.mockReset();
@@ -45,7 +50,7 @@ describe("FeedGrid", () => {
   });
 
   it("投稿が無ければ空状態の文言と投稿リンクを出す", async () => {
-    fetchHanobaFeed.mockResolvedValue([]);
+    fetchHanobaFeed.mockResolvedValue(res([]));
     render(<FeedGrid />);
     expect(await screen.findByText(/まだ投稿がありません/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "投稿する" })).toHaveAttribute("href", "/compose");
@@ -53,10 +58,10 @@ describe("FeedGrid", () => {
 
   it("投稿 2 件で img が 2 つ並び、src は parsePost の imageUrl になる", async () => {
     // 一言必須（DESIGN §1）＝ alt は非空。空 alt の img は presentational になり role=img で拾えない。
-    fetchHanobaFeed.mockResolvedValue([
+    fetchHanobaFeed.mockResolvedValue(res([
       makePost({ id: "a", caption: "一枚目", imageUrl: "https://image.nostr.build/a.jpg" }),
       makePost({ id: "b", caption: "二枚目", imageUrl: "https://image.nostr.build/b.png" }),
-    ]);
+    ]));
     render(<FeedGrid />);
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
     const imgs = screen.getAllByRole("img");
@@ -68,11 +73,11 @@ describe("FeedGrid", () => {
 
   it("タグチップのクリックで絞り込まれ件数が減る", async () => {
     const user = userEvent.setup();
-    fetchHanobaFeed.mockResolvedValue([
+    fetchHanobaFeed.mockResolvedValue(res([
       makePost({ id: "a", caption: "開花 #アガベ", hashtags: ["アガベ"] }),
       makePost({ id: "b", caption: "水やり #パキポ", hashtags: ["パキポ"] }),
       makePost({ id: "c", caption: "発根 #アガベ", hashtags: ["アガベ"] }),
-    ]);
+    ]));
     render(<FeedGrid />);
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(3));
 
@@ -90,10 +95,10 @@ describe("FeedGrid", () => {
 
   it("絞り込み解除で全件に戻る", async () => {
     const user = userEvent.setup();
-    fetchHanobaFeed.mockResolvedValue([
+    fetchHanobaFeed.mockResolvedValue(res([
       makePost({ id: "a", caption: "開花 #アガベ", hashtags: ["アガベ"] }),
       makePost({ id: "b", caption: "水やり #パキポ", hashtags: ["パキポ"] }),
-    ]);
+    ]));
     render(<FeedGrid />);
     await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
 
@@ -121,7 +126,7 @@ describe("FeedGrid", () => {
     }
 
     it("loaded 後・posts>0 で「もっと見る」ボタンが出る", async () => {
-      fetchHanobaFeed.mockResolvedValue([makePost({ id: "a", caption: "花", createdAt: 2000 })]);
+      fetchHanobaFeed.mockResolvedValue(res([makePost({ id: "a", caption: "花", createdAt: 2000 })]));
       render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
       expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
@@ -131,11 +136,11 @@ describe("FeedGrid", () => {
       const user = userEvent.setup();
       // posts は createdAt 降順で来る（末尾=最古=1000）。
       fetchHanobaFeed
-        .mockResolvedValueOnce([
+        .mockResolvedValueOnce(res([
           makePost({ id: "a", caption: "新", createdAt: 2000 }),
           makePost({ id: "b", caption: "古", createdAt: 1000 }),
-        ])
-        .mockResolvedValueOnce([]);
+        ]))
+        .mockResolvedValueOnce(res([]));
       render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
 
@@ -146,8 +151,8 @@ describe("FeedGrid", () => {
     it("新規1件返す → 件数増・ボタン残る（hasMore 継続）", async () => {
       const user = userEvent.setup();
       fetchHanobaFeed
-        .mockResolvedValueOnce([makePost({ id: "a", caption: "新", createdAt: 2000 })])
-        .mockResolvedValueOnce([makePost({ id: "b", caption: "古", createdAt: 1000 })]);
+        .mockResolvedValueOnce(res([makePost({ id: "a", caption: "新", createdAt: 2000 })]))
+        .mockResolvedValueOnce(res([makePost({ id: "b", caption: "古", createdAt: 1000 })]));
       render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
 
@@ -156,11 +161,12 @@ describe("FeedGrid", () => {
       expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
     });
 
-    it("増分0（全重複/空）→ ボタン消える（hasMore=false）", async () => {
+    // #554（軽い保険版）: 打ち止めは生バッチ rawCount===0 のときだけ。
+    it("rawCount=0（生バッチ空＝枯渇）→ ボタン消える（hasMore=false）", async () => {
       const user = userEvent.setup();
       fetchHanobaFeed
-        .mockResolvedValueOnce([makePost({ id: "a", caption: "新", createdAt: 2000 })])
-        .mockResolvedValueOnce([]); // 空＝増分0。
+        .mockResolvedValueOnce(res([makePost({ id: "a", caption: "新", createdAt: 2000 })]))
+        .mockResolvedValueOnce(res([], 0)); // 生0件＝枯渇。
       render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
 
@@ -168,14 +174,31 @@ describe("FeedGrid", () => {
       await waitFor(() => expect(screen.queryByRole("button", { name: "もっと見る" })).toBeNull());
     });
 
+    // #554（軽い保険版・S1）: 増分0でも生>0ならボタンを残す＝取りこぼし窓で押し直せる。
+    it("増分0だが rawCount>0（全重複/取りこぼし窓）→ ボタン残る（hasMore 継続）", async () => {
+      const user = userEvent.setup();
+      fetchHanobaFeed
+        .mockResolvedValueOnce(res([makePost({ id: "a", caption: "新", createdAt: 2000 })]))
+        // 既存 id "a" だけを返す＝merge で増分0。だが生バッチは3件返っている（rawCount=3）。
+        .mockResolvedValueOnce(res([makePost({ id: "a", caption: "新", createdAt: 2000 })], 3));
+      render(<FeedGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      // 表示は1件のまま（増分0）だがボタンは残る。
+      await waitFor(() => expect(fetchHanobaFeed).toHaveBeenCalledTimes(2));
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+      expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
+    });
+
     it("loading 中は disabled＋ラベル差替、連打しても fetch は1回だけ", async () => {
       const user = userEvent.setup();
-      fetchHanobaFeed.mockResolvedValueOnce([makePost({ id: "a", caption: "新", createdAt: 2000 })]);
+      fetchHanobaFeed.mockResolvedValueOnce(res([makePost({ id: "a", caption: "新", createdAt: 2000 })]));
       render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
 
       // loadMore の応答を pending に固定し、loading 状態を保持する。
-      const d = deferred<FeedPost[]>();
+      const d = deferred<{ posts: FeedPost[]; rawCount: number }>();
       fetchHanobaFeed.mockClear();
       fetchHanobaFeed.mockReturnValue(d.promise);
 
@@ -188,7 +211,7 @@ describe("FeedGrid", () => {
       await user.click(btn);
       expect(fetchHanobaFeed).toHaveBeenCalledTimes(1);
 
-      d.resolve([]); // pending を解消して act 警告を残さない。
+      d.resolve(res([])); // pending を解消して act 警告を残さない。
       await waitFor(() => expect(screen.queryByRole("button", { name: "読み込み中…" })).toBeNull());
     });
 
@@ -196,11 +219,11 @@ describe("FeedGrid", () => {
       const user = userEvent.setup();
       // 母集団2件（別タグ）。#パキポ で絞ると表示1件だが、ボタンは母集団基準で出る。
       fetchHanobaFeed
-        .mockResolvedValueOnce([
+        .mockResolvedValueOnce(res([
           makePost({ id: "a", caption: "花 #アガベ", hashtags: ["アガベ"], createdAt: 2000 }),
           makePost({ id: "b", caption: "水 #パキポ", hashtags: ["パキポ"], createdAt: 1500 }),
-        ])
-        .mockResolvedValueOnce([makePost({ id: "c", caption: "実 #パキポ", hashtags: ["パキポ"], createdAt: 1000 })]);
+        ]))
+        .mockResolvedValueOnce(res([makePost({ id: "c", caption: "実 #パキポ", hashtags: ["パキポ"], createdAt: 1000 })]));
       render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
 
@@ -221,16 +244,16 @@ describe("FeedGrid", () => {
     it("loadMore 中にアンマウント → 応答到着で setState されない（act 警告・エラー無し）", async () => {
       const user = userEvent.setup();
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      fetchHanobaFeed.mockResolvedValueOnce([makePost({ id: "a", caption: "新", createdAt: 2000 })]);
+      fetchHanobaFeed.mockResolvedValueOnce(res([makePost({ id: "a", caption: "新", createdAt: 2000 })]));
       const { unmount } = render(<FeedGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
 
-      const d = deferred<FeedPost[]>();
+      const d = deferred<{ posts: FeedPost[]; rawCount: number }>();
       fetchHanobaFeed.mockReturnValue(d.promise);
       await user.click(screen.getByRole("button", { name: "もっと見る" }));
 
       unmount(); // 応答前にアンマウント。
-      d.resolve([makePost({ id: "b", caption: "古", createdAt: 1000 })]); // 到着しても setState しない。
+      d.resolve(res([makePost({ id: "b", caption: "古", createdAt: 1000 })])); // 到着しても setState しない。
       await Promise.resolve();
       await Promise.resolve();
 

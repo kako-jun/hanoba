@@ -89,7 +89,7 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
       // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。マウント直後の
       // 初回取得だけでなく絞り込み変更/popstate/再試行でも通るが、初回以降は解決済みで即時。
       await waitForSwCheck;
-      const result = await fetchDiscoverFiltered(filter);
+      const { posts: result } = await fetchDiscoverFiltered(filter);
       if (token !== latestRef.current) return; // 新しい操作が走っていたら古い応答は捨てる
       // 既定（みんなの植物）の空振りは空グリッドでなく idle 案内（温室）に戻す。
       if (isDefaultFilter(filter) && result.length === 0) {
@@ -106,7 +106,8 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
   }
 
   // #554: 現在の filter を保ったまま、最古 createdAt を until にして次バッチを追記する。
-  // client filter 後に件数が減るので**新規増分0**を主判定に打ち止める（生 fetch の limit 未満では止めない）。
+  // client filter 後に件数が減るので、打ち止めは relay の生バッチが空（rawCount===0）のときだけにする。
+  // 品種フィルタで「今の窓は該当0だが古い所には該当あり」の barren window でも生>0ならボタンを残す（S2）。
   async function loadMore() {
     const oldest = posts[posts.length - 1]; // createdAt 降順＝末尾が最古。
     if (loadingMore || oldest === undefined) return;
@@ -116,13 +117,12 @@ export default function DiscoverGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale 
     const token = latestRef.current; // 現在の取得世代。applyTags（filter 変更）が割り込んだら追記を捨てる。
     try {
       await waitForSwCheck;
-      const batch = await fetchDiscoverFiltered(filter, DISCOVER_PAGE, until);
+      const { posts: batch, rawCount } = await fetchDiscoverFiltered(filter, DISCOVER_PAGE, until);
       if (token !== latestRef.current) return; // 新しい絞り込みが走っていたら古い応答は捨てる
-      setPosts((prev) => {
-        const merged = mergeAppendById(prev, batch);
-        if (merged.length === prev.length) setHasMore(false); // 新規増分0 で打ち止め。
-        return merged;
-      });
+      // #554（軽い保険版）: 生バッチが空（rawCount===0）のときだけ打ち止め。品種フィルタで増分0でも
+      // 生>0なら barren window とみなしボタンを残す（S2）。until 遡行で古いイベントが尽きれば生0になる。
+      if (rawCount === 0) setHasMore(false);
+      setPosts((prev) => mergeAppendById(prev, batch));
     } catch {
       // 取得失敗はボタンを残して再試行可能にする。
     } finally {

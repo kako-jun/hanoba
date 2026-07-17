@@ -45,9 +45,14 @@ const post: FeedPost = {
   hashtags: [],
   shotDates: [],};
 
+// #554: fetchMyPosts は { posts, rawCount } を返す。rawCount 未指定は生バッチ＝posts と同数。
+function res(posts: FeedPost[], rawCount = posts.length): { posts: FeedPost[]; rawCount: number } {
+  return { posts, rawCount };
+}
+
 describe("MyGrid（あなたの植物・#28/#101）", () => {
   beforeEach(() => {
-    fetchMyPosts.mockReset().mockResolvedValue([post]);
+    fetchMyPosts.mockReset().mockResolvedValue(res([post]));
     deletePost.mockReset().mockResolvedValue({ noteDeleted: true, imageDeleted: true });
     fetchMyProfileResilient.mockReset().mockResolvedValue(null);
     fetchReactionState.mockReset().mockResolvedValue({ count: 0, myReactionId: undefined });
@@ -67,7 +72,7 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
   });
 
   it("0 件なら『まだ、あなたの植物はありません。』を出す", async () => {
-    fetchMyPosts.mockResolvedValue([]);
+    fetchMyPosts.mockResolvedValue(res([]));
     render(<MyGrid />);
     expect(await screen.findByText(/まだ、あなたの植物はありません。/)).toBeInTheDocument();
   });
@@ -106,11 +111,11 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
       getPublicKeyHex.mockResolvedValue(pk);
       fetchMyPosts
         .mockReset()
-        .mockResolvedValueOnce([
+        .mockResolvedValueOnce(res([
           mp({ id: "a", caption: "新", createdAt: 2000 }),
           mp({ id: "b", caption: "古", createdAt: 1000 }),
-        ])
-        .mockResolvedValueOnce([]);
+        ]))
+        .mockResolvedValueOnce(res([]));
       render(<MyGrid />);
       await screen.findByRole("button", { name: "新" });
 
@@ -122,8 +127,8 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
       const user = userEvent.setup();
       fetchMyPosts
         .mockReset()
-        .mockResolvedValueOnce([mp({ id: "a", caption: "新", createdAt: 2000 })])
-        .mockResolvedValueOnce([mp({ id: "b", caption: "古", createdAt: 1000 })]);
+        .mockResolvedValueOnce(res([mp({ id: "a", caption: "新", createdAt: 2000 })]))
+        .mockResolvedValueOnce(res([mp({ id: "b", caption: "古", createdAt: 1000 })]));
       render(<MyGrid />);
       await screen.findByRole("button", { name: "新" });
 
@@ -140,12 +145,12 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
       const user = userEvent.setup();
       fetchMyPosts
         .mockReset()
-        .mockResolvedValueOnce([mp({ id: "a", caption: "元キャプション", createdAt: 2000 })])
+        .mockResolvedValueOnce(res([mp({ id: "a", caption: "元キャプション", createdAt: 2000 })]))
         // batch に同 id a（中身違い）＋新規 b。prev 側の a が保持され b だけ足される。
-        .mockResolvedValueOnce([
+        .mockResolvedValueOnce(res([
           mp({ id: "a", caption: "書き換え後", createdAt: 2000 }),
           mp({ id: "b", caption: "新規", createdAt: 1000 }),
-        ]);
+        ]));
       render(<MyGrid />);
       await screen.findByRole("button", { name: "元キャプション" });
 
@@ -156,17 +161,34 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
       expect(screen.queryByRole("button", { name: "書き換え後" })).toBeNull();
     });
 
-    it("増分0 でボタンが消える（打ち止め）", async () => {
+    // #554（軽い保険版）: 打ち止めは生バッチ rawCount===0 のときだけ。
+    it("rawCount=0（生バッチ空＝枯渇）でボタンが消える（打ち止め）", async () => {
       const user = userEvent.setup();
       fetchMyPosts
         .mockReset()
-        .mockResolvedValueOnce([mp({ id: "a", caption: "新", createdAt: 2000 })])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce(res([mp({ id: "a", caption: "新", createdAt: 2000 })]))
+        .mockResolvedValueOnce(res([], 0)); // 生0件＝枯渇。
       render(<MyGrid />);
       await screen.findByRole("button", { name: "新" });
 
       await user.click(screen.getByRole("button", { name: "もっと見る" }));
       await waitFor(() => expect(screen.queryByRole("button", { name: "もっと見る" })).toBeNull());
+    });
+
+    // #554（軽い保険版・S1）: 増分0でも生>0ならボタンを残す（取りこぼし窓で押し直せる）。
+    it("増分0だが rawCount>0（取りこぼし窓）でボタンが残る", async () => {
+      const user = userEvent.setup();
+      fetchMyPosts
+        .mockReset()
+        .mockResolvedValueOnce(res([mp({ id: "a", caption: "新", createdAt: 2000 })]))
+        // 既存 id "a" だけ返す＝merge 増分0。だが生バッチは2件返っている（rawCount=2）。
+        .mockResolvedValueOnce(res([mp({ id: "a", caption: "新", createdAt: 2000 })], 2));
+      render(<MyGrid />);
+      await screen.findByRole("button", { name: "新" });
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await waitFor(() => expect(fetchMyPosts).toHaveBeenCalledTimes(2));
+      expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
     });
   });
 });

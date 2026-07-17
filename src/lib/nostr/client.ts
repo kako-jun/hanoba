@@ -227,7 +227,10 @@ export async function fetchPopularHashtags(limit = 30): Promise<RankedTag[]> {
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
-export async function fetchHanobaFeed(limit = 100, until?: number): Promise<FeedPost[]> {
+export async function fetchHanobaFeed(
+  limit = 100,
+  until?: number,
+): Promise<{ posts: FeedPost[]; rawCount: number }> {
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
@@ -242,9 +245,11 @@ export async function fetchHanobaFeed(limit = 100, until?: number): Promise<Feed
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
-    return posts.filter((post) => post.imageUrl !== null);
+    // #554: rawCount = relay が返した生イベント総数（parse/merge/画像フィルタ前）。
+    // 「もっと見る」の打ち止めは生 0 件のときだけ＝取りこぼし窓ではボタンを残す（軽い保険版）。
+    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount: events.length };
   } catch {
-    return [];
+    return { posts: [], rawCount: 0 };
   }
 }
 
@@ -526,7 +531,7 @@ export async function fetchDiscoverFiltered(
   filter: DiscoverFilter,
   limit = 100,
   until?: number,
-): Promise<FeedPost[]> {
+): Promise<{ posts: FeedPost[]; rawCount: number }> {
   const pool = getPool();
   const filtering = filter.tags.length > 0;
   const popLimit = filtering ? Math.max(limit, POP_LIMIT_FILTERED) : limit;
@@ -558,6 +563,9 @@ export async function fetchDiscoverFiltered(
 
   const settled = await Promise.allSettled(jobs);
   const events = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  // #554: rawCount = 母集団3クエリ＋補助 search の生イベント総数（dedup 前・「relay が何か返したか」の指標）。
+  // 品種フィルタで増分 0 でも生 >0 なら barren window とみなしボタンを残す（S2 の誤打ち止め回避）。
+  const rawCount = events.length;
   const merged = mergePostsById(events.map(parsePost)); // id dedup・新着降順
 
   // 別名展開＝dictionary（#23・学名/英名）∪ variety-catalog のカテゴリ/属/品種別名（#303 / #409・札と同じ source）。
@@ -574,7 +582,7 @@ export async function fetchDiscoverFiltered(
           return cat === undefined ? dict : [...new Set([...dict, ...cat])];
         };
   const filtered = applyClientFilter(merged, { tags: filter.tags, resolveTagAliases });
-  return filtered.slice(0, limit);
+  return { posts: filtered.slice(0, limit), rawCount };
 }
 
 /**
@@ -743,7 +751,7 @@ export async function fetchMyPosts(
   pubkey: string,
   limit = 100,
   until?: number,
-): Promise<FeedPost[]> {
+): Promise<{ posts: FeedPost[]; rawCount: number }> {
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
@@ -752,9 +760,10 @@ export async function fetchMyPosts(
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
-    return posts.filter((post) => post.imageUrl !== null);
+    // #554: rawCount = 生イベント総数（打ち止めは生 0 件のときだけ）。
+    return { posts: posts.filter((post) => post.imageUrl !== null), rawCount: events.length };
   } catch {
-    return [];
+    return { posts: [], rawCount: 0 };
   }
 }
 

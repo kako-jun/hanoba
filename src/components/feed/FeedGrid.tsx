@@ -52,7 +52,7 @@ export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       // PWA 更新チェックが一段落するまで relay 取得を待つ（#551・agasteer 方式）。直後に
       // 更新 reload が起きた場合に無駄になる取得を減らす。初回以降はすでに解決済みで即時。
       await waitForSwCheck;
-      const result = await fetchHanobaFeed(FEED_PAGE);
+      const { posts: result } = await fetchHanobaFeed(FEED_PAGE);
       if (!aliveRef.current) return;
       setPosts(result);
       setStatus("loaded");
@@ -70,14 +70,13 @@ export default function FeedGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     setLoadingMore(true);
     const until = oldest.createdAt;
     try {
-      const batch = await fetchHanobaFeed(FEED_PAGE, until);
+      const { posts: batch, rawCount } = await fetchHanobaFeed(FEED_PAGE, until);
       if (!aliveRef.current) return;
-      setPosts((prev) => {
-        const merged = mergeAppendById(prev, batch);
-        // 新規増分0 なら打ち止め（同秒境界の重複は dedup が畳むので -1 は不要）。
-        if (merged.length === prev.length) setHasMore(false);
-        return merged;
-      });
+      // #554（軽い保険版）: 打ち止めは relay の生バッチが完全に空（rawCount===0）のときだけ。
+      // 増分0でも生>0ならボタンを残す＝取りこぼし窓で押し直せる（S1）。until=最古で遡るので
+      // 本当に古いイベントが無ければ生0件になり必ず止まる（無限ループにならない）。
+      if (rawCount === 0) setHasMore(false);
+      setPosts((prev) => mergeAppendById(prev, batch));
     } catch {
       // 取得失敗はボタンを残して再試行可能にする（hasMore は据え置き）。
     } finally {

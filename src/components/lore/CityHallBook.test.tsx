@@ -16,7 +16,7 @@ import CityHallBook, { BOOK_PAGE_STORAGE_KEY } from "./CityHallBook.tsx";
 
 describe("CityHallBook 10ページナビ（#137）", () => {
   beforeEach(() => {
-    fetchMyPosts.mockReset().mockResolvedValue([]);
+    fetchMyPosts.mockReset().mockResolvedValue({ posts: [], rawCount: 0 });
     getDisplayName.mockReset().mockReturnValue(null);
     getPublicKeyHex.mockReset().mockResolvedValue("a".repeat(64));
     localStorage.clear();

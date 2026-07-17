@@ -42,6 +42,11 @@ function makePost(overrides: Partial<FeedPost> & { id: string }): FeedPost {
     shotDates: [],  };
 }
 
+// #554: fetchDiscoverFiltered は { posts, rawCount } を返す。rawCount 未指定は生バッチ＝posts と同数。
+function res(posts: FeedPost[], rawCount = posts.length): { posts: FeedPost[]; rawCount: number } {
+  return { posts, rawCount };
+}
+
 function param(key: string): string | null {
   return new URLSearchParams(window.location.search).get(key);
 }
@@ -54,7 +59,7 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
   beforeEach(() => {
     responses.clear();
     fetchDiscoverFiltered.mockReset();
-    fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter) => Promise.resolve(responses.get(keyOf(f)) ?? []));
+    fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter) => Promise.resolve(res(responses.get(keyOf(f)) ?? [])));
     fetchReactionState.mockReset();
     fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     window.history.replaceState(null, "", "/discover");
@@ -79,13 +84,13 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     // hanoba:lang=ja（beforeEach）・lang prop は既定 en（DEFAULT_LOCALE）。取得を pending のままにして
     // loading 文言「「{summary}」を探しています…」を観測する。summary が lang(en) で組まれていた頃は
     // 「Everyone's Plants」と英語が漏れていた（#399）。loc(ja) で組めば既定スコープ名は「みんなの植物」。
-    let resolveFetch: (v: FeedPost[]) => void = () => {};
-    fetchDiscoverFiltered.mockImplementation(() => new Promise<FeedPost[]>((r) => (resolveFetch = r)));
+    let resolveFetch: (v: { posts: FeedPost[]; rawCount: number }) => void = () => {};
+    fetchDiscoverFiltered.mockImplementation(() => new Promise<{ posts: FeedPost[]; rawCount: number }>((r) => (resolveFetch = r)));
     render(<DiscoverGrid />);
     // loc は mount 後 effect で ja に解決＝読込サマリが ja の既定スコープ名で出る。
     expect(await screen.findByText(/「みんなの植物」を探して/)).toBeInTheDocument();
     expect(screen.queryByText(/Everyone's Plants/)).not.toBeInTheDocument();
-    resolveFetch([]); // pending を解消し、state 更新を flush（act 警告を残さない）。
+    resolveFetch(res([])); // pending を解消し、state 更新を flush（act 警告を残さない）。
     await waitFor(() => expect(screen.queryByText(/探して/)).not.toBeInTheDocument());
   });
 
@@ -222,8 +227,9 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     expect(replaceSpy).toHaveBeenCalledTimes(0);
   });
 
-  // #554: もっと見る（現在の絞り込みを保ったまま過去へ遡って追記）。client filter 後に件数が
-  // 減るので新規増分0 を主判定に打ち止める。filter 変更で hasMore はリセットされる。latestRef で stale 破棄。
+  // #554（軽い保険版）: もっと見る（現在の絞り込みを保ったまま過去へ遡って追記）。打ち止めは
+  // relay の生バッチが空（rawCount===0）のときだけ＝barren window（生>0だが該当0）ではボタンを残す。
+  // filter 変更で hasMore はリセットされる。latestRef で stale 破棄。
   describe("もっと見る（#554）", () => {
     function deferred<T>() {
       let resolve!: (v: T) => void;
@@ -237,8 +243,8 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
       fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
         Promise.resolve(
           until === undefined
-            ? [makePost({ id: "x", createdAt: 2000 }), makePost({ id: "y", createdAt: 1000 })]
-            : [makePost({ id: "z", createdAt: 500 })],
+            ? res([makePost({ id: "x", createdAt: 2000 }), makePost({ id: "y", createdAt: 1000 })])
+            : res([makePost({ id: "z", createdAt: 500 })]),
         ),
       );
       render(<DiscoverGrid />);
@@ -254,9 +260,9 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
       const user = userEvent.setup();
       // 既定は1件、loadMore（until 指定）は増分0＝打ち止め。トマトは1件（filter 変更後）。
       fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter, _limit?: number, until?: number) => {
-        if (f.tags.includes("トマト")) return Promise.resolve([makePost({ id: "t", createdAt: 3000 })]);
-        if (until !== undefined) return Promise.resolve([]); // 既定の loadMore は増分0。
-        return Promise.resolve([makePost({ id: "x", createdAt: 2000 })]);
+        if (f.tags.includes("トマト")) return Promise.resolve(res([makePost({ id: "t", createdAt: 3000 })]));
+        if (until !== undefined) return Promise.resolve(res([], 0)); // 既定の loadMore は生0件＝枯渇。
+        return Promise.resolve(res([makePost({ id: "x", createdAt: 2000 })]));
       });
       render(<DiscoverGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
@@ -273,11 +279,11 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
 
     it("race: loadMore 応答前に applyTags で別品種切替 → 古い loadMore 応答は破棄され新 filter 結果だけ表示", async () => {
       const user = userEvent.setup();
-      const d = deferred<FeedPost[]>();
+      const d = deferred<{ posts: FeedPost[]; rawCount: number }>();
       fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter, _limit?: number, until?: number) => {
-        if (f.tags.includes("トマト")) return Promise.resolve([makePost({ id: "t", createdAt: 9000 })]);
+        if (f.tags.includes("トマト")) return Promise.resolve(res([makePost({ id: "t", createdAt: 9000 })]));
         if (until !== undefined) return d.promise; // 既定の loadMore は pending に固定。
-        return Promise.resolve([makePost({ id: "x", createdAt: 2000 })]);
+        return Promise.resolve(res([makePost({ id: "x", createdAt: 2000 })]));
       });
       render(<DiscoverGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
@@ -292,7 +298,7 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
       // 遅れて古い loadMore が解決しても、トークン不一致で破棄＝新 filter 結果（id=t）だけ。
       // 解決に伴う stale な loadingMore リセットの再描画を act で包む（警告を残さない）。
       await act(async () => {
-        d.resolve([makePost({ id: "stale", createdAt: 100 })]);
+        d.resolve(res([makePost({ id: "stale", createdAt: 100 })]));
         await Promise.resolve();
         await Promise.resolve();
       });
@@ -300,10 +306,11 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
       expect(screen.getByRole("img")).toHaveAttribute("src", "https://image.nostr.build/t.jpg");
     });
 
-    it("増分0 でボタンが消える（打ち止め）", async () => {
+    // #554（軽い保険版）: 打ち止めは生バッチ rawCount===0 のときだけ。
+    it("rawCount=0（生バッチ空＝枯渇）でボタンが消える（打ち止め）", async () => {
       const user = userEvent.setup();
       fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
-        Promise.resolve(until === undefined ? [makePost({ id: "x", createdAt: 2000 })] : []),
+        Promise.resolve(until === undefined ? res([makePost({ id: "x", createdAt: 2000 })]) : res([], 0)),
       );
       render(<DiscoverGrid />);
       await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
@@ -312,12 +319,30 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
       await waitFor(() => expect(screen.queryByRole("button", { name: "もっと見る" })).toBeNull());
     });
 
+    // #554（軽い保険版・S2）: 品種フィルタで「今の窓は該当0だが生>0（barren window）」なら
+    // 増分0でもボタンを残す＝もっと古い所に該当があるかもしれず押し直せる。
+    it("増分0だが rawCount>0（barren window）でボタンが残る", async () => {
+      const user = userEvent.setup();
+      fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
+        // 初回1件、loadMore は client filter 後0件（増分0）だが生バッチは50件返っている（rawCount=50）。
+        Promise.resolve(until === undefined ? res([makePost({ id: "x", createdAt: 2000 })]) : res([], 50)),
+      );
+      render(<DiscoverGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(EMPTY_FILTER, 100, 2000));
+      // 表示は増えないがボタンは残る（barren window で押し直せる）。
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+      expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
+    });
+
     it("loadMore 失敗（reject）後もボタンが残り再試行できる（hasMore 据え置き・console 汚染なし）", async () => {
       const user = userEvent.setup();
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
         until === undefined
-          ? Promise.resolve([makePost({ id: "x", createdAt: 2000 })])
+          ? Promise.resolve(res([makePost({ id: "x", createdAt: 2000 })]))
           : Promise.reject(new Error("relay down")),
       );
       render(<DiscoverGrid />);

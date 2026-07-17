@@ -75,7 +75,7 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       // 更新 reload が起きた場合に無駄になる取得を減らす。初回以降はすでに解決済みで即時。
       await waitForSwCheck;
       const pubkey = await getPublicKeyHex();
-      const result = await fetchMyPosts(pubkey, MY_PAGE);
+      const { posts: result } = await fetchMyPosts(pubkey, MY_PAGE);
       if (!aliveRef.current) return;
       setPosts(result);
       setStatus("loaded");
@@ -98,13 +98,12 @@ export default function MyGrid({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
     const until = oldest.createdAt;
     try {
       const pubkey = await getPublicKeyHex();
-      const batch = await fetchMyPosts(pubkey, MY_PAGE, until);
+      const { posts: batch, rawCount } = await fetchMyPosts(pubkey, MY_PAGE, until);
       if (!aliveRef.current) return;
-      setPosts((prev) => {
-        const merged = mergeAppendById(prev, batch);
-        if (merged.length === prev.length) setHasMore(false); // 新規増分0 で打ち止め。
-        return merged;
-      });
+      // #554（軽い保険版）: 打ち止めは relay の生バッチが空（rawCount===0）のときだけ。
+      // 増分0でも生>0ならボタンを残す（取りこぼし窓で押し直せる・S1）。
+      if (rawCount === 0) setHasMore(false);
+      setPosts((prev) => mergeAppendById(prev, batch));
     } catch {
       // 取得失敗はボタンを残して再試行可能にする。
     } finally {

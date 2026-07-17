@@ -69,10 +69,13 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
   });
 
   it("?npub= を pubkey hex に直して取得し、名前と活動スタッツ（市民/投稿/写真）を出す", async () => {
-    fetchMyPosts.mockResolvedValue([
-      makePost({ id: "1", imageUrls: ["a.jpg", "b.jpg"] }),
-      makePost({ id: "2", imageUrls: ["c.jpg"] }),
-    ]);
+    fetchMyPosts.mockResolvedValue({
+      posts: [
+        makePost({ id: "1", imageUrls: ["a.jpg", "b.jpg"] }),
+        makePost({ id: "2", imageUrls: ["c.jpg"] }),
+      ],
+      rawCount: 2,
+    });
     fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: "葉子" }));
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
     render(<UserProfile />);
@@ -89,7 +92,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
   });
 
   it("プロフィール名が無い人は旅人を見出しにし、aria-label に npub の識別補助を残す", async () => {
-    fetchMyPosts.mockResolvedValue([makePost({ id: "1" })]);
+    fetchMyPosts.mockResolvedValue({ posts: [makePost({ id: "1" })], rawCount: 1 });
     fetchMyProfileResilient.mockResolvedValue(null);
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
     render(<UserProfile />);
@@ -104,7 +107,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
   });
 
   it("空白だけのプロフィール名も旅人として扱う", async () => {
-    fetchMyPosts.mockResolvedValue([]);
+    fetchMyPosts.mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " \t " }));
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
     render(<UserProfile />);
@@ -118,7 +121,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
 
   it("プロフィール遅延取得で旅人から trim 済み表示名へ遷移する", async () => {
     let resolveProfile!: (profile: Profile) => void;
-    fetchMyPosts.mockResolvedValue([]);
+    fetchMyPosts.mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockReturnValue(
       new Promise<Profile>((resolve) => {
         resolveProfile = resolve;
@@ -135,7 +138,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
 
   it("isLikelyMe はローカル名とプロフィール名を trim 後に比較する", async () => {
     localStorage.setItem("hanoba:name", "  葉子 ");
-    fetchMyPosts.mockResolvedValue([]);
+    fetchMyPosts.mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " 葉子  " }));
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
     render(<UserProfile />);
@@ -148,7 +151,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
 
   it("未名乗りプロフィールと空白ローカル名は isLikelyMe にしない", async () => {
     localStorage.setItem("hanoba:name", "   ");
-    fetchMyPosts.mockResolvedValue([]);
+    fetchMyPosts.mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " " }));
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
     render(<UserProfile />);
