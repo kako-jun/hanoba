@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
@@ -220,5 +220,116 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenCalledWith(expect.objectContaining({ tags: ["トマト"] })));
     expect(pushSpy).toHaveBeenCalledTimes(0);
     expect(replaceSpy).toHaveBeenCalledTimes(0);
+  });
+
+  // #554: もっと見る（現在の絞り込みを保ったまま過去へ遡って追記）。client filter 後に件数が
+  // 減るので新規増分0 を主判定に打ち止める。filter 変更で hasMore はリセットされる。latestRef で stale 破棄。
+  describe("もっと見る（#554）", () => {
+    function deferred<T>() {
+      let resolve!: (v: T) => void;
+      const promise = new Promise<T>((res) => (resolve = res));
+      return { promise, resolve };
+    }
+
+    it("loaded 後 posts>0 でボタンが出て loadMore で fetchDiscoverFiltered が (現filter, limit, until) で呼ばれる", async () => {
+      const user = userEvent.setup();
+      // until 未指定=初回は2件、until 指定=loadMore は新規1件。tags は不変（既定）。
+      fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
+        Promise.resolve(
+          until === undefined
+            ? [makePost({ id: "x", createdAt: 2000 }), makePost({ id: "y", createdAt: 1000 })]
+            : [makePost({ id: "z", createdAt: 500 })],
+        ),
+      );
+      render(<DiscoverGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(2));
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      // 現 filter（既定＝EMPTY_FILTER）を保ち、limit=100・until=最古(1000) で呼ぶ。
+      await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(EMPTY_FILTER, 100, 1000));
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(3));
+    });
+
+    it("filter 変更（applyTags）で hasMore リセット → ボタン復活", async () => {
+      const user = userEvent.setup();
+      // 既定は1件、loadMore（until 指定）は増分0＝打ち止め。トマトは1件（filter 変更後）。
+      fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter, _limit?: number, until?: number) => {
+        if (f.tags.includes("トマト")) return Promise.resolve([makePost({ id: "t", createdAt: 3000 })]);
+        if (until !== undefined) return Promise.resolve([]); // 既定の loadMore は増分0。
+        return Promise.resolve([makePost({ id: "x", createdAt: 2000 })]);
+      });
+      render(<DiscoverGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      // 打ち止めでボタンが消える。
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "もっと見る" })).toBeNull());
+
+      // filter 変更（popstate で ?tags=トマト へ）＝hasMore リセット → ボタン復活。
+      popTo("/discover?tags=" + encodeURIComponent("トマト"));
+      await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(expect.objectContaining({ tags: ["トマト"] })));
+      await waitFor(() => expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument());
+    });
+
+    it("race: loadMore 応答前に applyTags で別品種切替 → 古い loadMore 応答は破棄され新 filter 結果だけ表示", async () => {
+      const user = userEvent.setup();
+      const d = deferred<FeedPost[]>();
+      fetchDiscoverFiltered.mockImplementation((f: DiscoverFilter, _limit?: number, until?: number) => {
+        if (f.tags.includes("トマト")) return Promise.resolve([makePost({ id: "t", createdAt: 9000 })]);
+        if (until !== undefined) return d.promise; // 既定の loadMore は pending に固定。
+        return Promise.resolve([makePost({ id: "x", createdAt: 2000 })]);
+      });
+      render(<DiscoverGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      // loadMore を発火（pending のまま）。
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      // 応答前に別品種へ切替（latestRef 世代が進む）。
+      popTo("/discover?tags=" + encodeURIComponent("トマト"));
+      await waitFor(() => expect(fetchDiscoverFiltered).toHaveBeenLastCalledWith(expect.objectContaining({ tags: ["トマト"] })));
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      // 遅れて古い loadMore が解決しても、トークン不一致で破棄＝新 filter 結果（id=t）だけ。
+      // 解決に伴う stale な loadingMore リセットの再描画を act で包む（警告を残さない）。
+      await act(async () => {
+        d.resolve([makePost({ id: "stale", createdAt: 100 })]);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+      expect(screen.getByRole("img")).toHaveAttribute("src", "https://image.nostr.build/t.jpg");
+    });
+
+    it("増分0 でボタンが消える（打ち止め）", async () => {
+      const user = userEvent.setup();
+      fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
+        Promise.resolve(until === undefined ? [makePost({ id: "x", createdAt: 2000 })] : []),
+      );
+      render(<DiscoverGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "もっと見る" })).toBeNull());
+    });
+
+    it("loadMore 失敗（reject）後もボタンが残り再試行できる（hasMore 据え置き・console 汚染なし）", async () => {
+      const user = userEvent.setup();
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      fetchDiscoverFiltered.mockImplementation((_f: DiscoverFilter, _limit?: number, until?: number) =>
+        until === undefined
+          ? Promise.resolve([makePost({ id: "x", createdAt: 2000 })])
+          : Promise.reject(new Error("relay down")),
+      );
+      render(<DiscoverGrid />);
+      await waitFor(() => expect(screen.getAllByRole("img")).toHaveLength(1));
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      // 失敗してもボタンは残る（hasMore 据え置き・再試行可能）。
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument(),
+      );
+      expect(errorSpy).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
   });
 });

@@ -24,6 +24,8 @@ import {
   deleteReaction,
   fetchDiscoverFiltered,
   fetchEngagementCountsBatch,
+  fetchHanobaFeed,
+  fetchMyPosts,
   fetchMyProfileResilient,
   fetchPostById,
   fetchReactionState,
@@ -630,5 +632,85 @@ describe("fetchEngagementCountsBatch (#462 統合クエリの kind 分離)", () 
     expect(reactions.size).toBe(0);
     expect(comments.size).toBe(0);
     expect(myReactionIds.size).toBe(0);
+  });
+});
+
+// #554「もっと見る」＝過去へ遡るページング。until（Unix秒）が relay の filter へ載るか（未指定なら
+// 付かず既存挙動が不変か）を querySync の filter で検証する。返り値（イベント）は関心外＝空で回す。
+describe("fetchHanobaFeed（#554・until ページング）", () => {
+  beforeEach(() => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([]);
+  });
+
+  it("until 未指定 → filter に until キーが無い（既存挙動＝最新から limit 件）", async () => {
+    await fetchHanobaFeed(50);
+    const filter = querySyncMock.mock.calls[0]![1] as Record<string, unknown>;
+    expect("until" in filter).toBe(false);
+    expect(filter.limit).toBe(50);
+  });
+
+  it("until 指定 → filter に until:値 が載り limit も維持", async () => {
+    await fetchHanobaFeed(50, 1700);
+    const filter = querySyncMock.mock.calls[0]![1] as Record<string, unknown>;
+    expect(filter.until).toBe(1700);
+    expect(filter.limit).toBe(50);
+  });
+});
+
+describe("fetchMyPosts（#554・until ページング）", () => {
+  const PK = "a".repeat(64);
+  beforeEach(() => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([]);
+  });
+
+  it("until 未指定 → until 無し", async () => {
+    await fetchMyPosts(PK, 30);
+    expect("until" in (querySyncMock.mock.calls[0]![1] as Record<string, unknown>)).toBe(false);
+  });
+
+  it("until 指定 → until:値 が載り authors/limit も維持", async () => {
+    await fetchMyPosts(PK, 30, 1700);
+    const filter = querySyncMock.mock.calls[0]![1] as Record<string, unknown>;
+    expect(filter.until).toBe(1700);
+    expect(filter.limit).toBe(30);
+    expect(filter.authors).toEqual([PK]);
+  });
+});
+
+describe("fetchDiscoverFiltered（#554・until ページング）", () => {
+  // querySync の全 filter を集める（第2引数）。
+  const allFilters = () =>
+    querySyncMock.mock.calls.map((c) => c[1] as Record<string, unknown>);
+
+  beforeEach(() => {
+    querySyncMock.mockReset();
+    querySyncMock.mockResolvedValue([]);
+  });
+
+  it("tags 空・until 指定 → 母集団3クエリ全部に until が載る・品種補助 search は発行されない", async () => {
+    await fetchDiscoverFiltered({ tags: [] }, 100, 1700);
+    const fs = allFilters();
+    // 絞り込み無し＝母集団3クエリのみ（品種 search の補助 4本目は出ない）。
+    expect(fs).toHaveLength(3);
+    expect(fs.every((f) => f.until === 1700)).toBe(true);
+    // 母集団固定の search:"#plantstr" 以外の search（品種名由来の補助）は出ない。
+    const tagSearches = fs.filter((f) => typeof f.search === "string" && f.search !== "#plantstr");
+    expect(tagSearches).toHaveLength(0);
+  });
+
+  it("tags あり・until 指定 → 母集団3＋品種補助 search=4クエリ全部に until が載る", async () => {
+    await fetchDiscoverFiltered({ tags: ["トマト"] }, 100, 1700);
+    const fs = allFilters();
+    expect(fs).toHaveLength(4);
+    expect(fs.every((f) => f.until === 1700)).toBe(true);
+    // 品種名を # で並べた補助 search が1本ある。
+    expect(fs.some((f) => f.search === "#トマト")).toBe(true);
+  });
+
+  it("until 未指定 → どのクエリにも until が無い（既存挙動＝最新から）", async () => {
+    await fetchDiscoverFiltered({ tags: ["トマト"] }, 100);
+    expect(allFilters().every((f) => !("until" in f))).toBe(true);
   });
 });

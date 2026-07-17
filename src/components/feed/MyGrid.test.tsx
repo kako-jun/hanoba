@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../lib/feed/parse.ts";
@@ -82,5 +82,91 @@ describe("MyGrid（あなたの植物・#28/#101）", () => {
     expect(dialog).toBeInTheDocument();
     // 本文が元投稿でプリフィルされている。
     expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("うちのアガベ");
+  });
+
+  // #554: もっと見る（自分の投稿を過去へ遡って追記）。編集/削除（id ベース）と両立し、
+  // CitizenStats は増えた posts 全体を見て自然に更新される。
+  describe("もっと見る（#554）", () => {
+    function mp(overrides: Partial<FeedPost> & { id: string }): FeedPost {
+      return {
+        id: overrides.id,
+        pubkey: overrides.pubkey ?? "a".repeat(64),
+        createdAt: overrides.createdAt ?? 1000,
+        caption: overrides.caption ?? "",
+        imageUrls: overrides.imageUrls ?? ["https://example.com/" + overrides.id + ".jpg"],
+        imageUrl: overrides.imageUrl ?? "https://example.com/" + overrides.id + ".jpg",
+        hashtags: overrides.hashtags ?? [],
+        shotDates: [],
+      };
+    }
+
+    it("loadMore で fetchMyPosts が (pubkey, limit, 最古 createdAt) で呼ばれる", async () => {
+      const user = userEvent.setup();
+      const pk = "a".repeat(64);
+      getPublicKeyHex.mockResolvedValue(pk);
+      fetchMyPosts
+        .mockReset()
+        .mockResolvedValueOnce([
+          mp({ id: "a", caption: "新", createdAt: 2000 }),
+          mp({ id: "b", caption: "古", createdAt: 1000 }),
+        ])
+        .mockResolvedValueOnce([]);
+      render(<MyGrid />);
+      await screen.findByRole("button", { name: "新" });
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await waitFor(() => expect(fetchMyPosts).toHaveBeenLastCalledWith(pk, 100, 1000));
+    });
+
+    it("追記後 CitizenStats が増えた posts 全体（投稿数）を反映する", async () => {
+      const user = userEvent.setup();
+      fetchMyPosts
+        .mockReset()
+        .mockResolvedValueOnce([mp({ id: "a", caption: "新", createdAt: 2000 })])
+        .mockResolvedValueOnce([mp({ id: "b", caption: "古", createdAt: 1000 })]);
+      render(<MyGrid />);
+      await screen.findByRole("button", { name: "新" });
+
+      // 活動スタッツの「投稿」欄が 1。
+      const postStat = () => screen.getByText("投稿").parentElement!.querySelector("dd")!.textContent;
+      expect(postStat()).toContain("1");
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      // 追記後は 2 件を反映。
+      await waitFor(() => expect(postStat()).toContain("2"));
+    });
+
+    it("id 重複は prev 優先で畳まれ、既存の状態（caption）が保持される", async () => {
+      const user = userEvent.setup();
+      fetchMyPosts
+        .mockReset()
+        .mockResolvedValueOnce([mp({ id: "a", caption: "元キャプション", createdAt: 2000 })])
+        // batch に同 id a（中身違い）＋新規 b。prev 側の a が保持され b だけ足される。
+        .mockResolvedValueOnce([
+          mp({ id: "a", caption: "書き換え後", createdAt: 2000 }),
+          mp({ id: "b", caption: "新規", createdAt: 1000 }),
+        ]);
+      render(<MyGrid />);
+      await screen.findByRole("button", { name: "元キャプション" });
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await screen.findByRole("button", { name: "新規" });
+      // prev 優先＝a は元キャプションのまま（書き換え後は採用されない）。
+      expect(screen.getByRole("button", { name: "元キャプション" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "書き換え後" })).toBeNull();
+    });
+
+    it("増分0 でボタンが消える（打ち止め）", async () => {
+      const user = userEvent.setup();
+      fetchMyPosts
+        .mockReset()
+        .mockResolvedValueOnce([mp({ id: "a", caption: "新", createdAt: 2000 })])
+        .mockResolvedValueOnce([]);
+      render(<MyGrid />);
+      await screen.findByRole("button", { name: "新" });
+
+      await user.click(screen.getByRole("button", { name: "もっと見る" }));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "もっと見る" })).toBeNull());
+    });
   });
 });
