@@ -227,7 +227,7 @@ export async function fetchPopularHashtags(limit = 30): Promise<RankedTag[]> {
  *
  * relay 呼び出しはこの client モジュールに集約する（島から直接叩かない）。
  */
-export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
+export async function fetchHanobaFeed(limit = 100, until?: number): Promise<FeedPost[]> {
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
@@ -235,6 +235,9 @@ export async function fetchHanobaFeed(limit = 100): Promise<FeedPost[]> {
         kinds: [1],
         "#t": [TAG_HANOBA],
         limit,
+        // #554: until（Unix秒）を渡すと created_at <= until のイベントだけ返る＝過去へ遡る（もっと見る）。
+        // 未指定時は付けない＝既存の挙動（最新から limit 件）は完全に不変。
+        ...(until !== undefined ? { until } : {}),
       },
       { maxWait: QUERY_MAXWAIT },
     );
@@ -522,6 +525,7 @@ function getCatalogAliasIndex(): Promise<Map<string, string[]>> {
 export async function fetchDiscoverFiltered(
   filter: DiscoverFilter,
   limit = 100,
+  until?: number,
 ): Promise<FeedPost[]> {
   const pool = getPool();
   const filtering = filter.tags.length > 0;
@@ -529,12 +533,16 @@ export async function fetchDiscoverFiltered(
   // catalog 別名索引は relay 取得と並行で読み込む（filtering 時のみ・初回以降はキャッシュ即時）。
   const aliasIndexPromise = filtering ? getCatalogAliasIndex() : null;
 
+  // #554: until（Unix秒）指定時は母集団3クエリ＋補助 search すべてに until を流して過去へ遡る（もっと見る）。
+  // 未指定時は付けず既存の挙動（最新から）を保つ。最後の slice(0, limit) は据え置き＝1バッチ最大 limit 件の契約は不変。
+  const untilPart = until !== undefined ? { until } : {};
+
   // 母集団は常に「みんなの植物」フィード（#t:plantstr ∪ search:#plantstr ∪ #t:hanoba）。
   // 品種は本文タグなので relay の #t:[品種] では引けない＝母集団を取り applyClientFilter で絞る。
   const jobs: Promise<NostrEvent[]>[] = [
-    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
-    pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
-    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit: popLimit }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": ["plantstr"], limit: popLimit, ...untilPart }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...SEARCH_RELAYS], { kinds: [1], search: "#plantstr", limit: popLimit, ...untilPart }, { maxWait: QUERY_MAXWAIT }),
+    pool.querySync([...GENERAL_RELAYS], { kinds: [1], "#t": [TAG_HANOBA], limit: popLimit, ...untilPart }, { maxWait: QUERY_MAXWAIT }),
   ];
 
   if (filtering) {
@@ -542,7 +550,7 @@ export async function fetchDiscoverFiltered(
     jobs.push(
       pool.querySync(
         [...SEARCH_RELAYS],
-        { kinds: [1], search: filter.tags.map((t) => `#${t}`).join(" "), limit },
+        { kinds: [1], search: filter.tags.map((t) => `#${t}`).join(" "), limit, ...untilPart },
         { maxWait: QUERY_MAXWAIT },
       ),
     );
@@ -731,11 +739,16 @@ function profileToExtra(p: Profile): ProfileExtra {
  * 自分の植物（#28）＝自分の pubkey ＋ t:hanoba の投稿だけを取得する。
  * fetchHanobaFeed と同様に画像ありのみ・createdAt 降順。失敗は空配列。
  */
-export async function fetchMyPosts(pubkey: string, limit = 100): Promise<FeedPost[]> {
+export async function fetchMyPosts(
+  pubkey: string,
+  limit = 100,
+  until?: number,
+): Promise<FeedPost[]> {
   try {
     const events = await getPool().querySync(
       [...GENERAL_RELAYS],
-      { kinds: [1], "#t": [TAG_HANOBA], authors: [pubkey], limit },
+      // #554: until 指定で過去へ遡る（もっと見る）。未指定時は付けず既存の挙動を保つ。
+      { kinds: [1], "#t": [TAG_HANOBA], authors: [pubkey], limit, ...(until !== undefined ? { until } : {}) },
       { maxWait: QUERY_MAXWAIT },
     );
     const posts = mergePostsById(events.map(parsePost));
