@@ -60,6 +60,8 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "feed.error.short": "无法加载。",
   "feed.filter.clear": "清除筛选",
   "feed.tag.empty": "「#{tag}」还没有帖子。",
+  "feed.loadMore": "查看更多",
+  "feed.loadingMore": "加载中…",
   "discover.loading": "正在搜索「{summary}」…",
   "discover.empty": "没有找到「{summary}」的帖子。换个品种试试吧。",
 
