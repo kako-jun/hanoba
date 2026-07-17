@@ -70,20 +70,43 @@ export default function PostGrid({ posts, onSelectHashtag }: Props) {
   const [reactionCounts, setReactionCounts] = useState<Map<string, number>>(new Map());
   const [commentCounts, setCommentCounts] = useState<Map<string, number>>(new Map());
   const [myReactionIds, setMyReactionIds] = useState<Map<string, string>>(new Map());
-  // id 列をキーにして、同じ投稿集合では取り直さない（タグ絞り込み等で集合が変わったら引き直す）。
-  // ids（配列）を持ち idsKey は join で派生する＝useEffect は idsKey（文字列）が変わった時だけ再実行する
-  // （id 集合が変わった時だけ＝挙動は従来と等価。string→split の往復をやめただけ）。
+  // id 列をキーにして、集合が変わった時だけ引く（#554）。「もっと見る」で ids が伸びるたびに全件を
+  // 引き直すと engagementBatchLimit（client.ts）が n 比例で天井に張り付き、下位投稿のカウントが希薄化する。
+  // そこで**ページ単位の増分（delta）取得**にする：既取得 id は再取得せず、新規 id だけ引いて Map に追記マージする。
   const ids = useMemo(() => posts.map((p) => p.id), [posts]);
   const idsKey = ids.join(",");
+  // 前回までに取得（fetch 発行）済みの id 集合。増分判定と Map マージの基準にする。
+  const processedIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (idsKey === "") return; // 投稿0件なら取得しない。
+    if (ids.length === 0) return; // 投稿0件なら取得しない（前回の Map は保持）。
     let alive = true;
-    fetchEngagementCountsBatch(ids)
+
+    // 現 ids が旧処理済み集合を包含する（＝追記のみ・loadMore）なら増分マージ。
+    // そうでなければ（discover の filter 変更等で総入れ替え／id 集合が縮む・入れ替わる）＝リセットして全件引き直す。
+    const prevProcessed = processedIdsRef.current;
+    const currentSet = new Set(ids);
+    const isAppendOnly = [...prevProcessed].every((id) => currentSet.has(id));
+    const toFetch = isAppendOnly ? ids.filter((id) => !prevProcessed.has(id)) : ids;
+
+    // 追記のみで新規 id が無い（既に全部取得済み）なら fetch しない。
+    if (isAppendOnly && toFetch.length === 0) return;
+
+    if (!isAppendOnly) {
+      // 総入れ替え：古いエントリが残らないよう、処理済みセットと3つの Map を空へ戻してから全件引き直す。
+      processedIdsRef.current = new Set();
+      setReactionCounts(new Map());
+      setCommentCounts(new Map());
+      setMyReactionIds(new Map());
+    }
+
+    fetchEngagementCountsBatch(toFetch)
       .then(({ reactions, comments, myReactionIds }) => {
         if (!alive) return;
-        setReactionCounts(reactions);
-        setCommentCounts(comments);
-        setMyReactionIds(myReactionIds ?? new Map());
+        // 既存 Map に**追記マージ**（置換でなく追記・新規分が既存を上書きし得るのは同一 id の更新時のみ）。
+        setReactionCounts((prev) => new Map([...prev, ...reactions]));
+        setCommentCounts((prev) => new Map([...prev, ...comments]));
+        setMyReactionIds((prev) => new Map([...prev, ...(myReactionIds ?? new Map())]));
+        for (const id of toFetch) processedIdsRef.current.add(id);
       })
       .catch(() => {
         /* 二重防御：fetchEngagementCountsBatch は失敗時も空ペアを返す契約なので通常ここは通らない。

@@ -12,10 +12,10 @@ import { deletePost, fetchMyPosts, fetchMyProfileResilient } from "../../lib/nos
 import { discoverTagHref } from "../../lib/feed/discoverFilter.ts";
 import { getDisplayName, getPublicKeyHex } from "../../lib/nostr/keys.ts";
 import { mergeAppendById, type FeedPost, type Profile } from "../../lib/feed/parse.ts";
-
-const MY_PAGE = 100;
 import { useT, LocaleProvider, resolveClientLocale, DEFAULT_LOCALE, type Locale } from "../../lib/i18n/index.ts";
 import { waitForSwCheck } from "../../lib/pwa/registerUpdate.ts";
+
+const MY_PAGE = 100;
 
 type Status = "loading" | "error" | "loaded";
 

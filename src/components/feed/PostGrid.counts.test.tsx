@@ -57,6 +57,45 @@ describe("PostGrid × カードの花/コメント数バッチ取得（#276）",
     expect(fetchEngagementCountsBatch).toHaveBeenCalledWith(["p1", "p2", "p3"]);
   });
 
+  it("「もっと見る」で ids が伸びた時は増分（新規 id だけ）を引く＝全件再取得しない（#554 delta）", async () => {
+    const initial = [makePost({ id: "p1" }), makePost({ id: "p2" })];
+    const { rerender } = render(<PostGrid posts={initial} onSelectHashtag={() => {}} />);
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(1));
+    expect(fetchEngagementCountsBatch).toHaveBeenLastCalledWith(["p1", "p2"]);
+
+    // loadMore で p3/p4 が末尾に追記された（既存 id は据え置き＝追記のみ＝superset）。
+    rerender(
+      <PostGrid posts={[...initial, makePost({ id: "p3" }), makePost({ id: "p4" })]} onSelectHashtag={() => {}} />,
+    );
+    // 2回目は**新規分だけ**（全4件でなく）を引く。
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(2));
+    expect(fetchEngagementCountsBatch).toHaveBeenLastCalledWith(["p3", "p4"]);
+  });
+
+  it("追記のみで新規 id が無い再レンダーでは fetch しない（同じ集合は取り直さない）", async () => {
+    const posts = [makePost({ id: "p1" }), makePost({ id: "p2" })];
+    const { rerender } = render(<PostGrid posts={posts} onSelectHashtag={() => {}} />);
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(1));
+
+    // 同一 id 集合（順序も同じ）＝ idsKey 不変で useEffect は再実行されない。
+    rerender(<PostGrid posts={[makePost({ id: "p1" }), makePost({ id: "p2" })]} onSelectHashtag={() => {}} />);
+    // 追加の呼び出しは起きない。
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(1));
+  });
+
+  it("id 集合が入れ替わる（filter 変更等・superset でない）時はリセットして全件引き直す（#554 reset）", async () => {
+    const initial = [makePost({ id: "p1" }), makePost({ id: "p2" }), makePost({ id: "p3" })];
+    const { rerender } = render(<PostGrid posts={initial} onSelectHashtag={() => {}} />);
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(1));
+    expect(fetchEngagementCountsBatch).toHaveBeenLastCalledWith(["p1", "p2", "p3"]);
+
+    // discover の filter 変更で総入れ替え（旧処理済みを包含しない＝superset でない）。
+    rerender(<PostGrid posts={[makePost({ id: "q1" }), makePost({ id: "q2" })]} onSelectHashtag={() => {}} />);
+    // 増分でなく新集合の全件を引き直す。
+    await waitFor(() => expect(fetchEngagementCountsBatch).toHaveBeenCalledTimes(2));
+    expect(fetchEngagementCountsBatch).toHaveBeenLastCalledWith(["q1", "q2"]);
+  });
+
   it("返った Map の花>0 のカードに数が出て、Map に無い（=0扱い）カードには出ない", async () => {
     // 統合バッチは { reactions, comments } を返す。flowers は p1 のみ・comments は p2 のみ（他は 0 扱い）。
     fetchEngagementCountsBatch.mockResolvedValue({
