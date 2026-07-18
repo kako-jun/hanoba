@@ -2,15 +2,11 @@
 //
 // 投稿で選んだタグを localStorage に貯め、次回 0〜1 タップで再投入できるようにする。
 // taxonomy（不変の Def）ではなく**実行時状態**なので、カタログとは別管理（DESIGN の Def/状態分離）。
-// SSR 安全: localStorage は必ず関数内で参照する（keys.ts と同じ getLS パターン）。
+// SSR 安全: 保存は集約 blob（appStorage）経由＝localStorage は appStorage 内でのみ参照する。
 
-const KEY = "hanoba:recent-tags";
+import { getAppStorage, updateAppStorage } from "../storage/appStorage.ts";
+
 const MAX = 12;
-
-/** SSR 安全に localStorage を取得する（サーバ評価時は null）。 */
-function getLS(): Storage | null {
-  return typeof localStorage === "undefined" ? null : localStorage;
-}
 
 /** タグの正規化（前後空白・先頭 # を除去）。空白内部はそのまま（表示・再挿入用の原文）。 */
 function normalizeTag(tag: string): string {
@@ -19,15 +15,9 @@ function normalizeTag(tag: string): string {
 
 /** 保存済みの最近タグ（新しい順・最大 MAX）。壊れた値は空配列に倒す。 */
 export function getRecentTags(): string[] {
-  const raw = getLS()?.getItem(KEY);
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is string => typeof x === "string").slice(0, MAX);
-  } catch {
-    return [];
-  }
+  const parsed: unknown = getAppStorage().recentTags;
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((x): x is string => typeof x === "string").slice(0, MAX);
 }
 
 /**
@@ -39,7 +29,7 @@ export function pushRecentTag(tag: string): string[] {
   if (norm === "") return getRecentTags();
   const rest = getRecentTags().filter((t) => t.toLowerCase() !== norm.toLowerCase());
   const next = [norm, ...rest].slice(0, MAX);
-  getLS()?.setItem(KEY, JSON.stringify(next));
+  updateAppStorage((s) => ({ ...s, recentTags: next }));
   return next;
 }
 

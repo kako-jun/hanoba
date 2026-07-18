@@ -1,3 +1,4 @@
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -137,7 +138,7 @@ describe("Composer", () => {
       },
     );
     // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
-    localStorage.setItem("hanoba:name", "テスト栽培家");
+    seedAppStorage({ name: "テスト栽培家" });
   });
 
   afterEach(() => {
@@ -640,7 +641,7 @@ describe("Composer 下書き配線（#228）", () => {
         }
       },
     );
-    localStorage.setItem("hanoba:name", "テスト栽培家");
+    seedAppStorage({ name: "テスト栽培家" });
   });
 
   afterEach(() => {

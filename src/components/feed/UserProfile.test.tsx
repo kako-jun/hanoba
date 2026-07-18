@@ -1,3 +1,4 @@
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nip19 } from "nostr-tools";
@@ -45,7 +46,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
     fetchMyPosts.mockReset();
     fetchMyProfileResilient.mockReset();
     window.localStorage.clear();
-    localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
+    seedAppStorage({ lang: "ja" }); // #147: clear 後も locale は ja 固定（テストは原典で検証）
     window.history.replaceState(null, "", "/u");
   });
 
@@ -137,7 +138,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
   });
 
   it("isLikelyMe はローカル名とプロフィール名を trim 後に比較する", async () => {
-    localStorage.setItem("hanoba:name", "  葉子 ");
+    seedAppStorage({ name: "  葉子 " });
     fetchMyPosts.mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " 葉子  " }));
     window.history.replaceState(null, "", "/u?npub=" + NPUB);
@@ -150,7 +151,7 @@ describe("UserProfile（他人の公開プロフィール・#272 段階3）", ()
   });
 
   it("未名乗りプロフィールと空白ローカル名は isLikelyMe にしない", async () => {
-    localStorage.setItem("hanoba:name", "   ");
+    seedAppStorage({ name: "   " });
     fetchMyPosts.mockResolvedValue({ posts: [], rawCount: 0 });
     fetchMyProfileResilient.mockResolvedValue(makeProfile({ name: " " }));
     window.history.replaceState(null, "", "/u?npub=" + NPUB);

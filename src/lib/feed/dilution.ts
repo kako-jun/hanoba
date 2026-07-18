@@ -8,9 +8,7 @@
 // SSR 安全: localStorage は必ず関数内で参照する（keys.ts / recent-tags.ts の getLS パターン）。
 
 import type { FeedPost } from "./parse.ts";
-
-/** 間引き設定を保存する localStorage キー（storage リスナの絞り込みにも使う）。 */
-export const KEY = "hanoba:dilution";
+import { getAppStorage, updateAppStorage } from "../storage/appStorage.ts";
 
 /**
  * 間引き度合い。`N` は「その人の投稿を N 分の 1 だけ残す」。
@@ -25,11 +23,6 @@ export const DILUTION_LEVELS: readonly DilutionLevel[] = [2, 5, 10];
 /** pubkey(hex) → 間引き度合い。 */
 export type DilutionMap = Record<string, DilutionLevel>;
 
-/** SSR 安全に localStorage を取得する（サーバ評価時は null）。 */
-function getLS(): Storage | null {
-  return typeof localStorage === "undefined" ? null : localStorage;
-}
-
 /** 任意の値が有効な DilutionLevel かを判定する（壊れ値の握り潰しに使う）。 */
 function isLevel(v: unknown): v is DilutionLevel {
   return v === 2 || v === 5 || v === 10;
@@ -40,19 +33,13 @@ function isLevel(v: unknown): v is DilutionLevel {
  * 壊れた値・未知の level は握り潰して除外する（空オブジェクトに倒す）。
  */
 export function getAllDilutions(): DilutionMap {
-  const raw = getLS()?.getItem(KEY);
-  if (raw === null || raw === undefined || raw === "") return {};
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    const out: DilutionMap = {};
-    for (const [pubkey, level] of Object.entries(parsed as Record<string, unknown>)) {
-      if (pubkey !== "" && isLevel(level)) out[pubkey] = level;
-    }
-    return out;
-  } catch {
-    return {};
+  const parsed: unknown = getAppStorage().dilution;
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  const out: DilutionMap = {};
+  for (const [pubkey, level] of Object.entries(parsed as Record<string, unknown>)) {
+    if (pubkey !== "" && isLevel(level)) out[pubkey] = level;
   }
+  return out;
 }
 
 /** 指定 pubkey の間引き度合いを返す。無設定/壊れは null（＝間引かない）。 */
@@ -74,7 +61,7 @@ export function setDilution(pubkey: string, level: DilutionLevel | null): Diluti
   } else {
     return map;
   }
-  getLS()?.setItem(KEY, JSON.stringify(map));
+  updateAppStorage((s) => ({ ...s, dilution: map }));
   return map;
 }
 

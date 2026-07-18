@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getDilution } from "../../lib/feed/dilution.ts";
 import DilutionControl from "./DilutionControl.tsx";
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 
 // happy-dom の localStorage を毎回クリアし、設定の持ち越しを防ぐ。
 describe("DilutionControl（人ごとに減らすスライダ・#138）", () => {
@@ -42,7 +43,7 @@ describe("DilutionControl（人ごとに減らすスライダ・#138）", () => 
 
   it("保存済みの level は入口の文言とスライダ位置に反映される", async () => {
     const user = userEvent.setup();
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 5 }));
+    seedAppStorage({ dilution: { alice: 5 } });
     render(<DilutionControl pubkey="alice" authorName="アリス" />);
 
     // 設定中は現在の減量を入口に出す（active な状態を見せる）。
@@ -68,7 +69,7 @@ describe("DilutionControl（人ごとに減らすスライダ・#138）", () => 
 
   it("スライダを左端（なし）へ戻すと設定が解除される（getDilution→null）", async () => {
     const user = userEvent.setup();
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 2 }));
+    seedAppStorage({ dilution: { alice: 2 } });
     render(<DilutionControl pubkey="alice" authorName="アリス" />);
     await user.click(screen.getByRole("button", { name: /アリスさんを 1\/2 に減らし中/ }));
 

@@ -1,10 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { HanobaWeather } from "./types.ts";
 import { WEATHER_TTL_MS, isFresh, readWeatherCache, writeWeatherCache } from "./cache.ts";
+import { seedAppStorageRaw } from "../storage/appStorage.testutil.ts";
 
-// 天気キャッシュの正本テスト（#231）。鮮度判定と localStorage 往復を固定する。
-
-const CACHE_KEY = "hanoba:weather";
+// 天気キャッシュの正本テスト（#231）。鮮度判定と集約 blob（appStorage・#558）往復を固定する。
 
 function sample(over: Partial<HanobaWeather> = {}): HanobaWeather {
   return {
@@ -47,17 +46,17 @@ describe("readWeatherCache / writeWeatherCache", () => {
   });
 
   it("壊れた JSON は null（次の取得で上書きされる）", () => {
-    localStorage.setItem(CACHE_KEY, "{not json");
+    seedAppStorageRaw("weather", "{not json");
     expect(readWeatherCache()).toBeNull();
   });
 
   it("形が欠けた JSON は null", () => {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ foo: 1 }));
+    seedAppStorageRaw("weather", { foo: 1 });
     expect(readWeatherCache()).toBeNull();
   });
 
   it("weatherCode を欠くエントリは null（素材選択が使う必須項目）", () => {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ condition: "rain", fetchedAt: 1000 }));
+    seedAppStorageRaw("weather", { condition: "rain", fetchedAt: 1000 });
     expect(readWeatherCache()).toBeNull();
   });
 });

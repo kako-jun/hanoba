@@ -1,13 +1,14 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import GazetteBook, { GAZETTE_PAGE_STORAGE_KEY } from "./GazetteBook.tsx";
-import CityHallBook, { BOOK_PAGE_STORAGE_KEY } from "./CityHallBook.tsx";
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
+import GazetteBook, { GAZETTE_PAGE_STORAGE_FIELD } from "./GazetteBook.tsx";
+import CityHallBook, { BOOK_PAGE_STORAGE_FIELD } from "./CityHallBook.tsx";
 
 describe("GazetteBook（#164）", () => {
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem("hanoba:lang", "ja");
+    seedAppStorage({ lang: "ja" });
     history.replaceState(null, "", "/gazette");
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -87,8 +88,8 @@ describe("GazetteBook（#164）", () => {
     expect(screen.getByRole("link", { name: /市勢調査へ/ })).toHaveAttribute("href", "/ranking");
   });
 
-  it("GAZETTE_PAGE_STORAGE_KEYはCityHallBookのBOOK_PAGE_STORAGE_KEYと異なる文字列（保存位置の相互汚染を防ぐ）", () => {
-    expect(GAZETTE_PAGE_STORAGE_KEY).not.toBe(BOOK_PAGE_STORAGE_KEY);
+  it("GAZETTE_PAGE_STORAGE_FIELDはCityHallBookのBOOK_PAGE_STORAGE_FIELDと異なる文字列（保存位置の相互汚染を防ぐ）", () => {
+    expect(GAZETTE_PAGE_STORAGE_FIELD).not.toBe(BOOK_PAGE_STORAGE_FIELD);
   });
 
   it("gazetteの?page=<id>を手帳側で開いても該当idが見つからず1ページ目にフォールバックする（逆方向も同様）", async () => {
@@ -105,13 +106,13 @@ describe("GazetteBook（#164）", () => {
   it("article.dateはlocaleを切り替えても書式が変化しない", async () => {
     // resolveClientLocale() は localStorage 保存値を最優先で読む（lang prop は初期値のみ）ので、
     // locale切替は localStorage 側で行う。
-    localStorage.setItem("hanoba:lang", "ja");
+    seedAppStorage({ lang: "ja" });
     const { unmount } = render(<GazetteBook />);
     expect(await screen.findByText("2026-07-10")).toBeInTheDocument();
     unmount();
     cleanup();
 
-    localStorage.setItem("hanoba:lang", "en");
+    seedAppStorage({ lang: "en" });
     render(<GazetteBook />);
     expect(await screen.findByText("2026-07-10")).toBeInTheDocument();
   });

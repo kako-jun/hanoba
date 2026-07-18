@@ -89,7 +89,7 @@
   - p10 市憲章（5条を1ページ）
   - 「市政の窓口」は全ページ下部に置く
 - **移動**: 既存の前後1ページ移動に、先頭・最終ページへの直接移動を加える。ページ切替時も読んでいる位置を尊重し、手帳上端への自動スクロールはしない。
-- **再開**: 安定IDを `hanoba:citizen-handbook-page` に保存する。番号変更でも前回位置を失わない。
+- **再開**: 安定IDを集約 localStorage（単一キー `hanoba`）の `handbookPage` フィールドに保存する（#558）。番号変更でも前回位置を失わない。
 
 ### 市政の窓口（全ページ下部に常設・実在ルートのみ機能・未開設は近日開庁）
 
@@ -159,15 +159,15 @@ osaka-kenpo 作法（条文＋市長解説）に倣う。各条は短い条文�
 - 本の共通 UI（枠/紙面の border-image・ページャー操作・キーボード矢印・スワイプ＋ぼかし遷移・
   URL同期(`?page=<安定ID>`)+localStorage永続化）は `src/components/lore/BookPager.tsx` に集約し
   （#164 で市民手帳から抽出）、市民手帳（`CityHallBook.tsx`）と市政だより（`GazetteBook.tsx`）が
-  共有する。永続化キーは本ごとに別（手帳=`hanoba:citizen-handbook-page`／
-  市政だより=`hanoba:gazette-page`）。語り手マーク（`MayorMark`）も共通部品
+  共有する。永続化先は集約 localStorage（単一キー `hanoba`）の本ごとに別フィールド（手帳=`handbookPage`／
+  市政だより=`gazettePage`・#558）。語り手マーク（`MayorMark`）も共通部品
   `src/components/lore/MayorMark.tsx` として両者が使う。
 - UI: `src/components/lore/CityHallBook.tsx`（`about.astro` に `client:only="react"` でマウント）、
   `src/components/lore/GazetteBook.tsx`（`gazette.astro` に同様にマウント）。
   `client:only` なのは en→ja 言語フラッシュを断つため（#479）。`client:load` だと殻が既定言語 en で
   SSR され、その英語 HTML が hydrate 前に先に描画される＝`useLayoutEffect` では消せない。島を
   サーバで焼かないことで最初のペイントが閲覧言語になり、マウント時に `.ha-rise` でじわーっと出る。
-- 初回の表示言語 auto-detect（#482）: `hanoba:lang` が**未保存 or 無効値**なら `navigator.languages` を走査し、
+- 初回の表示言語 auto-detect（#482）: 集約 localStorage（単一キー `hanoba`）の `lang` フィールド（#558）が**未保存 or 無効値**なら `navigator.languages` を走査し、
   対応言語（`LOCALES`＝ja/en/zh/es）に一致する最初のものを既定表示にする（日本語 OS/ブラウザなら初回から ja）。
   検出ロジックは島側 `src/lib/i18n/clientLocale.ts#resolveClientLocale/detectClientLocale` と殻側 `MainLayout.astro`
   の言語 swap（is:inline）の**2箇所で同一契約に保つ**（有効な保存値→使用／それ以外→検出。食い違うとフラッシュ／不一致）。

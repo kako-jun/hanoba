@@ -12,7 +12,8 @@ vi.mock("../../lib/nostr/keys.ts", () => ({
   getPublicKeyHex: (...args: unknown[]) => getPublicKeyHex(...args),
 }));
 
-import CityHallBook, { BOOK_PAGE_STORAGE_KEY } from "./CityHallBook.tsx";
+import CityHallBook from "./CityHallBook.tsx";
+import { seedAppStorage, readAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 
 describe("CityHallBook 10ページナビ（#137）", () => {
   beforeEach(() => {
@@ -20,7 +21,7 @@ describe("CityHallBook 10ページナビ（#137）", () => {
     getDisplayName.mockReset().mockReturnValue(null);
     getPublicKeyHex.mockReset().mockResolvedValue("a".repeat(64));
     localStorage.clear();
-    localStorage.setItem("hanoba:lang", "ja");
+    seedAppStorage({ lang: "ja" });
     history.replaceState(null, "", "/about");
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -41,14 +42,14 @@ describe("CityHallBook 10ページナビ（#137）", () => {
   });
 
   it("最後に開いた安定IDから再開する", async () => {
-    localStorage.setItem(BOOK_PAGE_STORAGE_KEY, "crest");
+    seedAppStorage({ handbookPage: "crest" });
     render(<CityHallBook />);
     expect(await screen.findByRole("heading", { level: 2, name: "市章" })).toBeInTheDocument();
     expect(screen.getByText("8 / 10")).toBeInTheDocument();
   });
 
   it("URL指定を保存位置より優先する", async () => {
-    localStorage.setItem(BOOK_PAGE_STORAGE_KEY, "crest");
+    seedAppStorage({ handbookPage: "crest" });
     history.replaceState(null, "", "/about?page=ordinances");
     render(<CityHallBook />);
     expect(await screen.findByRole("heading", { level: 2, name: "市の条文" })).toBeInTheDocument();
@@ -107,6 +108,6 @@ describe("CityHallBook 10ページナビ（#137）", () => {
     fireEvent.touchStart(panel, { touches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80, clientY: 100 }] });
     expect(screen.getByText("3 / 10")).toBeInTheDocument();
-    expect(localStorage.getItem(BOOK_PAGE_STORAGE_KEY)).toBe("district-1");
+    expect(readAppStorage().handbookPage).toBe("district-1");
   });
 });

@@ -4,8 +4,7 @@
 // （Open-Meteo への負荷も下げる）。SSR 安全: localStorage は関数内でのみ参照する。
 
 import type { HanobaWeather } from "./types.ts";
-
-const CACHE_KEY = "hanoba:weather";
+import { getAppStorage, updateAppStorage } from "../storage/appStorage.ts";
 
 /** 再取得間隔。20 分以内のキャッシュは鮮度内とみなす。 */
 export const WEATHER_TTL_MS = 20 * 60 * 1000;
@@ -15,32 +14,22 @@ export function isFresh(weather: HanobaWeather, nowMs: number, ttlMs = WEATHER_T
   return nowMs - weather.fetchedAt < ttlMs;
 }
 
-function getLS(): Storage | null {
-  return typeof localStorage === "undefined" ? null : localStorage;
-}
-
-/** localStorage の天気キャッシュを読む（無い・壊れていれば null）。 */
+/** 集約 localStorage（appStorage）の天気キャッシュを読む（無い・壊れていれば null）。 */
 export function readWeatherCache(): HanobaWeather | null {
-  const raw = getLS()?.getItem(CACHE_KEY);
-  if (!raw) return null;
-  try {
-    const w = JSON.parse(raw) as HanobaWeather;
-    // weatherCode は素材選択（rainLevel）が使う必須項目なので形に含めて検証する
-    // （旧スキーマ・改竄で欠けたエントリは捨てて次の取得で上書きさせる）。
-    if (
-      typeof w?.fetchedAt === "number" &&
-      typeof w?.condition === "string" &&
-      typeof w?.weatherCode === "number"
-    ) {
-      return w;
-    }
-  } catch {
-    /* 壊れた JSON は無視（次の取得で上書きされる） */
+  const w = getAppStorage().weather;
+  // weatherCode は素材選択（rainLevel）が使う必須項目なので形に含めて検証する
+  // （旧スキーマ・改竄で欠けたエントリは捨てて次の取得で上書きさせる）。
+  if (
+    typeof w?.fetchedAt === "number" &&
+    typeof w?.condition === "string" &&
+    typeof w?.weatherCode === "number"
+  ) {
+    return w;
   }
   return null;
 }
 
-/** localStorage に天気を書く。 */
+/** 集約 localStorage（appStorage）に天気を書く。 */
 export function writeWeatherCache(weather: HanobaWeather): void {
-  getLS()?.setItem(CACHE_KEY, JSON.stringify(weather));
+  updateAppStorage((s) => ({ ...s, weather }));
 }

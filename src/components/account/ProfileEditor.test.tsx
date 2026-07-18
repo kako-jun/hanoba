@@ -1,3 +1,4 @@
+import { seedAppStorage, seedAppStorageRaw, readAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -31,7 +32,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/x.jpg" });
     localStorage.clear();
     // ユーザー名・鍵を設定済みにする（名前ゲートを通す）。
-    localStorage.setItem("hanoba:name", "テスト栽培家");
+    seedAppStorage({ name: "テスト栽培家" });
     localStorage.setItem("hanoba:sk", "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa");
   });
 
@@ -87,7 +88,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
   });
 
   it("ユーザー名未設定なら「編集」トグル自体が無効化され、パネルを開けない（#525）", async () => {
-    localStorage.removeItem("hanoba:name");
+    seedAppStorageRaw("name", undefined);
     const user = userEvent.setup();
     render(<ProfileEditor />);
     const editButton = screen.getByRole("button", { name: /編集/ });
@@ -99,13 +100,13 @@ describe("ProfileEditor (#35 Piece3)", () => {
   });
 
   it("名前未設定ならヘッダに「ハンドルネーム 未設定」が出る（#92）", () => {
-    localStorage.removeItem("hanoba:name");
+    seedAppStorageRaw("name", undefined);
     render(<ProfileEditor />);
     expect(screen.getByText("ハンドルネーム 未設定")).toBeInTheDocument();
   });
 
   it("名前が空文字なら getDisplayName の明示的な null 化と一致して disabled になる（#525）", () => {
-    localStorage.setItem("hanoba:name", "");
+    seedAppStorage({ name: "" });
     // ProfileEditor の nameMissing 判定が経由する getDisplayName() 自体も null を返すことを固定する。
     expect(getDisplayName()).toBeNull();
     render(<ProfileEditor />);
@@ -117,7 +118,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
   it.each(["   ", "　　"])(
     "名前が空白のみ（%j）なら .trim() 判定で disabled になる（#525）",
     (whitespaceOnly) => {
-      localStorage.setItem("hanoba:name", whitespaceOnly);
+      seedAppStorage({ name: whitespaceOnly });
       render(<ProfileEditor />);
       const editButton = screen.getByRole("button", { name: /編集/ });
       expect(editButton).toBeDisabled();
@@ -126,7 +127,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
   );
 
   it("nameHint が null→非null に変わると編集トグルが再読み込みなしで自動有効化される（#525 追補・状態遷移の核心）", async () => {
-    localStorage.removeItem("hanoba:name");
+    seedAppStorageRaw("name", undefined);
     const { rerender } = render(<ProfileEditor nameHint={null} />);
     expect(screen.getByRole("button", { name: /編集/ })).toBeDisabled();
     expect(screen.getByText("先にハンドルネームを登録してください。")).toBeInTheDocument();
@@ -162,7 +163,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
     ["es", "Primero define un nombre de usuario."],
     ["zh", "请先设置用户名。"],
   ] as const)("%s ロケールでも editHint（名前未登録の案内）が表示される（#525）", (locale, expected) => {
-    localStorage.removeItem("hanoba:name");
+    seedAppStorageRaw("name", undefined);
     render(
       <LocaleProvider value={locale}>
         <ProfileEditor />
@@ -175,10 +176,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
   // 表示に回復するだけでなく、ローカル控えにも書き戻して clobber 経路を塞ぐ。
   it("控えが空でも relay の websites を表示に出し、控えにも書き戻す（#93）", async () => {
     // import 直後を模す: 控えは空、relay には websites がある。
-    localStorage.setItem(
-      "hanoba:profileExtra",
-      JSON.stringify({ picture: null, about: null, websites: [] }),
-    );
+    seedAppStorageRaw("profileExtra", { picture: null, about: null, websites: [] });
     fetchMyProfileResilient.mockResolvedValue({
       name: "テスト栽培家",
       picture: null,
@@ -195,8 +193,8 @@ describe("ProfileEditor (#35 Piece3)", () => {
     expect(screen.getByLabelText("サイト 2 の URL")).toHaveValue("https://x.com/midori_test");
     // 書き戻し: 控えにも websites が入る（名前変更時の saveDisplayName が空で潰さない）。
     await waitFor(() => {
-      const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
-      expect(extra.websites).toEqual([
+      const extra = readAppStorage().profileExtra;
+      expect(extra?.websites).toEqual([
         "https://midori-en.example.com",
         "https://x.com/midori_test",
       ]);
@@ -204,10 +202,7 @@ describe("ProfileEditor (#35 Piece3)", () => {
   });
 
   it("控えに websites があれば relay 値で上書きしない（local 優先・#93）", async () => {
-    localStorage.setItem(
-      "hanoba:profileExtra",
-      JSON.stringify({ picture: null, about: null, websites: ["https://local-only.example.com"] }),
-    );
+    seedAppStorageRaw("profileExtra", { picture: null, about: null, websites: ["https://local-only.example.com"] });
     fetchMyProfileResilient.mockResolvedValue({
       name: "テスト栽培家",
       picture: null,
@@ -222,15 +217,12 @@ describe("ProfileEditor (#35 Piece3)", () => {
     );
     // relay は別 URL を返すが local を保持。控えも local のまま（上書きしない）。
     expect(screen.queryByDisplayValue("https://relay-different.example.com")).not.toBeInTheDocument();
-    const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
-    expect(extra.websites).toEqual(["https://local-only.example.com"]);
+    const extra = readAppStorage().profileExtra;
+    expect(extra?.websites).toEqual(["https://local-only.example.com"]);
   });
 
   it("relay が null（取得失敗）なら控えを書き換えない（空で潰さない・#93）", async () => {
-    localStorage.setItem(
-      "hanoba:profileExtra",
-      JSON.stringify({ picture: null, about: null, websites: ["https://keep.example.com"] }),
-    );
+    seedAppStorageRaw("profileExtra", { picture: null, about: null, websites: ["https://keep.example.com"] });
     fetchMyProfileResilient.mockResolvedValue(null);
     const user = userEvent.setup();
     render(<ProfileEditor />);
@@ -238,8 +230,8 @@ describe("ProfileEditor (#35 Piece3)", () => {
     await waitFor(() =>
       expect(screen.getByLabelText("サイト 1 の URL")).toHaveValue("https://keep.example.com"),
     );
-    const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
-    expect(extra.websites).toEqual(["https://keep.example.com"]);
+    const extra = readAppStorage().profileExtra;
+    expect(extra?.websites).toEqual(["https://keep.example.com"]);
   });
 });
 
@@ -254,7 +246,7 @@ describe("ProfileEditor 秘密鍵バックアップ欄（#213）", () => {
     saveProfile.mockReset().mockResolvedValue({ id: "evt1" });
     uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/x.jpg" });
     localStorage.clear();
-    localStorage.setItem("hanoba:name", "テスト栽培家");
+    seedAppStorage({ name: "テスト栽培家" });
     localStorage.setItem("hanoba:sk", "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa");
   });
 

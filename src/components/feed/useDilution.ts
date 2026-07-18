@@ -2,21 +2,23 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getAllDilutions,
   getDilution,
-  KEY as DILUTION_KEY,
   setDilution as persistDilution,
   type DilutionLevel,
   type DilutionMap,
 } from "../../lib/feed/dilution.ts";
+import { APP_STORAGE_KEY } from "../../lib/storage/appStorage.ts";
 
-// 間引き設定が変わったことを島の間で伝えるカスタムイベント名（#138）。
+// 間引き設定が変わったことを島の間で伝えるカスタムイベント名（#138）。localStorage キーではなく
+// 同タブ内の島間通知用の DOM イベント名（集約 blob には載らない）。
 // 拡大モーダル（PostDetail）で設定すると、同ページのグリッド（PostGrid）が即座に再間引きできる。
 // storage イベントは「別タブ」でしか発火しないので、同タブ内の即時反映には自前イベントを使う。
 const DILUTION_EVENT = "hanoba:dilution-changed";
 
-// 別タブの storage イベントは「あらゆる」localStorage 変更で飛んでくる。間引きキー
-// （または clear() を表す key===null）だけに反応し、無関係な書き込みでは再同期しない。
+// 別タブの storage イベントは「あらゆる」localStorage 変更で飛んでくる。間引き設定は集約 blob
+// （APP_STORAGE_KEY）配下に移ったので、そのキー（または clear() を表す key===null）だけに反応し、
+// 無関係な書き込みでは再同期しない。
 function isDilutionStorageEvent(e: StorageEvent): boolean {
-  return e.key === null || e.key === DILUTION_KEY;
+  return e.key === null || e.key === APP_STORAGE_KEY;
 }
 
 /**

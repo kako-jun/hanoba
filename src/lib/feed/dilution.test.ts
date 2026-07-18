@@ -7,6 +7,7 @@ import {
   type DilutionMap,
 } from "./dilution.ts";
 import type { FeedPost } from "./parse.ts";
+import { seedAppStorageRaw } from "../storage/appStorage.testutil.ts";
 
 // テスト用の最小 FeedPost を作る（間引きは id / pubkey しか見ない）。
 function post(id: string, pubkey: string): FeedPost {
@@ -48,15 +49,15 @@ describe("dilution の状態（get/set/getAll）", () => {
   });
 
   it("壊れた保存値は空に倒す", () => {
-    window.localStorage.setItem("hanoba:dilution", "{not json");
+    seedAppStorageRaw("dilution", "{not json");
     expect(getAllDilutions()).toEqual({});
   });
 
   it("未知の level・配列・非オブジェクトは握り潰す", () => {
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 3, bob: 5, carol: "x" }));
+    seedAppStorageRaw("dilution", { alice: 3, bob: 5, carol: "x" });
     // 3 と "x" は捨て、有効な 5 だけ残す。
     expect(getAllDilutions()).toEqual({ bob: 5 });
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify([1, 2, 3]));
+    seedAppStorageRaw("dilution", [1, 2, 3]);
     expect(getAllDilutions()).toEqual({});
   });
 });

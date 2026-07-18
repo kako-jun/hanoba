@@ -1,3 +1,4 @@
+import { seedAppStorage, readAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,14 +31,14 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
   });
 
   it("設定済みでマウントすると display で名前と「ハンドルネームを変更」が出る", () => {
-    localStorage.setItem("hanoba:name", "アガベ太郎");
+    seedAppStorage({ name: "アガベ太郎" });
     render(<AccountName />);
     expect(screen.getByText("アガベ太郎")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ハンドルネームを変更" })).toBeInTheDocument();
   });
 
   it("bare では glass カードを描かず、操作ボタンは名前の下段に並ぶ（#104）", () => {
-    localStorage.setItem("hanoba:name", "アガベ太郎");
+    seedAppStorage({ name: "アガベ太郎" });
     const { container } = render(<AccountName bare />);
     // 外側のガラスカードは親（統合カード）に委ねる。
     expect(container.querySelector(".glass")).toBeNull();
@@ -49,7 +50,7 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
   });
 
   it("「ハンドルネームを変更」押下で既存名を初期値に edit へ遷移する", async () => {
-    localStorage.setItem("hanoba:name", "アガベ太郎");
+    seedAppStorage({ name: "アガベ太郎" });
     const user = userEvent.setup();
     render(<AccountName />);
     await user.click(screen.getByRole("button", { name: "ハンドルネームを変更" }));
@@ -96,7 +97,7 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
   });
 
   it("display モードでは「入力をクリア」ボタンが存在しない", () => {
-    localStorage.setItem("hanoba:name", "アガベ太郎");
+    seedAppStorage({ name: "アガベ太郎" });
     render(<AccountName />);
     expect(screen.queryByRole("button", { name: "入力をクリア" })).toBeNull();
   });
@@ -130,7 +131,7 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
 
   it("マウント時に onChange が現在名で呼ばれる（設定済み→値／未設定→null）", () => {
     const onChangeSet = vi.fn();
-    localStorage.setItem("hanoba:name", "アガベ太郎");
+    seedAppStorage({ name: "アガベ太郎" });
     render(<AccountName onChange={onChangeSet} />);
     expect(onChangeSet).toHaveBeenCalledWith("アガベ太郎");
 
@@ -170,8 +171,8 @@ describe("AccountName（#92 ハンドルネーム表記＋クリアボタン）"
     );
     await user.click(screen.getByRole("button", { name: "続ける" }));
     await waitFor(() => {
-      const extra = JSON.parse(localStorage.getItem("hanoba:profileExtra") ?? "{}");
-      expect(extra.websites).toEqual([
+      const extra = readAppStorage().profileExtra;
+      expect(extra?.websites).toEqual([
         "https://midori-en.example.com",
         "https://x.com/midori_test",
       ]);

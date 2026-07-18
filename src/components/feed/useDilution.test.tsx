@@ -2,6 +2,8 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDilution } from "../../lib/feed/dilution.ts";
 import { useDilution, useDilutionFor } from "./useDilution.ts";
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
+import { APP_STORAGE_KEY } from "../../lib/storage/appStorage.ts";
 
 // 同タブ即時同期に使う自前イベント名（useDilution.ts と一致させる）。
 const DILUTION_EVENT = "hanoba:dilution-changed";
@@ -39,9 +41,9 @@ describe("useDilution / useDilutionFor（間引き設定の購読フック・#13
     expect(result.current.map).toEqual({});
 
     // 別タブが localStorage を直接書き換えた状況を再現する（同タブの set 経路は通らない）。
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ bob: 10 }));
+    seedAppStorage({ dilution: { bob: 10 } });
     act(() => {
-      window.dispatchEvent(new StorageEvent("storage", { key: "hanoba:dilution" }));
+      window.dispatchEvent(new StorageEvent("storage", { key: APP_STORAGE_KEY }));
     });
 
     expect(result.current.map).toEqual({ bob: 10 });
@@ -71,9 +73,9 @@ describe("useDilution / useDilutionFor（間引き設定の購読フック・#13
 
     // cleanup でリスナが外れていれば、これらのイベントは何の作用も起こさない。
     act(() => {
-      window.localStorage.setItem("hanoba:dilution", JSON.stringify({ alice: 5 }));
+      seedAppStorage({ dilution: { alice: 5 } });
       window.dispatchEvent(new Event(DILUTION_EVENT));
-      window.dispatchEvent(new StorageEvent("storage", { key: "hanoba:dilution" }));
+      window.dispatchEvent(new StorageEvent("storage", { key: APP_STORAGE_KEY }));
     });
 
     expect(errorSpy).not.toHaveBeenCalled();

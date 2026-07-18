@@ -21,8 +21,9 @@ import {
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-// 手帳（hanoba:citizen-handbook-page）とは別キー＝机上のページ位置保存が互いに干渉しない。
-export const GAZETTE_PAGE_STORAGE_KEY = "hanoba:gazette-page";
+// 手帳（handbookPage）とは別フィールド＝机上のページ位置保存が互いに干渉しない。
+// 集約 blob（appStorage）内の永続化フィールド名。
+export const GAZETTE_PAGE_STORAGE_FIELD = "gazettePage" as const;
 
 // lang は gazette.astro がページの locale を流す（#147 と同じ種）。client:only（言語フラッシュ回避）
 // のルート島なので、この島が自分で <LocaleProvider value={loc}> を張る（CityHallBook と同じ作法）。
@@ -46,7 +47,7 @@ export default function GazetteBook({
       <BookPager
         title={titleText}
         pages={articles}
-        storageKey={GAZETTE_PAGE_STORAGE_KEY}
+        storageField={GAZETTE_PAGE_STORAGE_FIELD}
         defaultPage="last"
         renderPage={(article) => <ArticleContent article={article} />}
       />

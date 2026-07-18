@@ -15,6 +15,7 @@ vi.mock("../../lib/nostr/client.ts", () => ({
   fetchEngagementCountsBatch: () => Promise.resolve({ reactions: new Map(), comments: new Map() }),
 }));
 
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import PostGrid from "./PostGrid.tsx";
 import PostDetail from "./PostDetail.tsx";
 
@@ -48,7 +49,7 @@ describe("PostGrid × 薄める設定（取得後・表示前の間引き段・#
 
   it("ある著者を 1/2 設定すると その著者の投稿が部分的に消え、未設定の著者は全件残る", async () => {
     // alice を 1/2 に設定（取得前に localStorage へ入れておく＝マウント時に反映される）。
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ [ALICE]: 2 }));
+    seedAppStorage({ dilution: { [ALICE]: 2 } });
     const posts = [
       makePost({ id: "a1", caption: "a1", pubkey: ALICE }),
       makePost({ id: "a2", caption: "a2", pubkey: ALICE }),
@@ -77,7 +78,7 @@ describe("PostGrid × 薄める設定（取得後・表示前の間引き段・#
 
   it("薄めた著者の残った投稿はモーダルを開け、コントロールに現在 level が反映される（selected/profile は間引き前 posts 由来）", async () => {
     const user = userEvent.setup();
-    window.localStorage.setItem("hanoba:dilution", JSON.stringify({ [ALICE]: 2 }));
+    seedAppStorage({ dilution: { [ALICE]: 2 } });
     const posts = [
       makePost({ id: "a2", caption: "残ったアリスの投稿", pubkey: ALICE }),
     ];
