@@ -38,6 +38,7 @@ export const ja = {
   "install.ios":
     "共有メニュー {arrow} から「ホーム画面に追加」を選ぶと、アプリのように開けます。",
   "install.tagline": "アプリのように開けます。",
+  "install.keySafety": "ホーム画面に追加すると、アカウントの鍵が消えにくくなります。",
   "install.add": "追加",
   "install.later": "あとで",
 

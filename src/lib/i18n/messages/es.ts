@@ -30,6 +30,7 @@ export const es: Partial<Record<MessageKey, string>> = {
   "install.ios":
     "Toca {arrow} en el menú de compartir y elige «Añadir a pantalla de inicio» para abrirla como una app.",
   "install.tagline": "Se abre como una app.",
+  "install.keySafety": "Añadirla a la pantalla de inicio ayuda a evitar que se borre la clave de tu cuenta.",
   "install.add": "Añadir",
   "install.later": "Más tarde",
 

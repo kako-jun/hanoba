@@ -29,6 +29,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "install.ios":
     "点击分享菜单里的 {arrow}，选择「添加到主屏幕」，就能像应用一样打开。",
   "install.tagline": "像应用一样打开。",
+  "install.keySafety": "添加到主屏幕后，账户密钥更不容易被清除。",
   "install.add": "添加",
   "install.later": "以后再说",
 

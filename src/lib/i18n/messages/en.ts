@@ -31,6 +31,7 @@ export const en: Partial<Record<MessageKey, string>> = {
   "install.ios":
     "Tap {arrow} in the share menu and choose “Add to Home Screen” to open it like an app.",
   "install.tagline": "Opens like an app.",
+  "install.keySafety": "Adding it to your home screen helps keep your account key from being cleared.",
   "install.add": "Add",
   "install.later": "Later",
 
