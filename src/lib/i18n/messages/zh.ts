@@ -29,6 +29,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "install.ios":
     "点击分享菜单里的 {arrow}，选择「添加到主屏幕」，就能像应用一样打开。",
   "install.tagline": "像应用一样打开。",
+  "install.keySafety": "添加到主屏幕后，账户密钥更不容易被清除。",
   "install.add": "添加",
   "install.later": "以后再说",
 
@@ -206,6 +207,13 @@ export const zh: Partial<Record<MessageKey, string>> = {
   "compose.submit.publishing": "发布中…",
   "compose.submit": "发布",
   "compose.done": "已发布。正前往你的植物…",
+  // 首次发布后的 nsec 备份提醒（#558 Layer2）。警告文案复用 account.profile.nsec.*。
+  "compose.nsecPrompt.title": "请备份你的密钥",
+  "compose.nsecPrompt.body":
+    "发布成功。这个账户仅凭保存在本设备上的密钥而存在。如果不备份，一旦更换设备或清除浏览器数据，就再也无法找回。",
+  "compose.nsecPrompt.restoreHint": "要在其他设备上使用或恢复账户时，需要粘贴这个密钥（nsec）。",
+  "compose.nsecPrompt.saved": "已备份",
+  "compose.nsecPrompt.later": "以后再说",
   "compose.error.notConfirmed":
     "无法确认帖子是否发布。请在网络更好时再试（你的草稿已保留）。",
   "compose.error.generic": "发布失败。",

@@ -1,3 +1,4 @@
+import { seedAppStorage, readAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -357,13 +358,13 @@ describe("TagPicker", () => {
 
   it("「最近使った」は localStorage（過去の投稿）から読み、タップでは増やさない", async () => {
     const user = userEvent.setup();
-    window.localStorage.setItem("hanoba:recent-tags", JSON.stringify(["チタノタ"]));
+    seedAppStorage({ recentTags: ["チタノタ"] });
     renderPicker();
 
     const recent = screen.getByText("最近使った").parentElement!;
     expect(within(recent).getByRole("button", { name: "#チタノタ" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "#肥料" }));
-    expect(JSON.parse(window.localStorage.getItem("hanoba:recent-tags")!)).toEqual(["チタノタ"]);
+    expect(readAppStorage().recentTags).toEqual(["チタノタ"]);
   });
 });

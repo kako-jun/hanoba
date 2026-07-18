@@ -5,8 +5,7 @@ import {
   isDismissActive,
   setInstallDismissedAt,
 } from "./install.ts";
-
-const KEY = "hanoba:pwa-install-dismissed-at";
+import { seedAppStorageRaw } from "../storage/appStorage.testutil.ts";
 
 describe("pwa install dismiss state", () => {
   beforeEach(() => {
@@ -23,7 +22,7 @@ describe("pwa install dismiss state", () => {
   });
 
   it("壊れた保存値は null に倒す", () => {
-    window.localStorage.setItem(KEY, "not-a-number");
+    seedAppStorageRaw("pwaInstallDismissedAt", "not-a-number");
     expect(getInstallDismissedAt()).toBeNull();
   });
 

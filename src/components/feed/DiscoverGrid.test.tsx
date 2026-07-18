@@ -1,3 +1,4 @@
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -64,7 +65,7 @@ describe("DiscoverGrid（品種で絞るだけ・#239）", () => {
     fetchReactionState.mockResolvedValue({ count: 0, myReactionId: undefined });
     window.history.replaceState(null, "", "/discover");
     window.localStorage.clear();
-    localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
+    seedAppStorage({ lang: "ja" }); // #147: clear 後も locale は ja 固定（テストは原典で検証）
   });
 
   afterEach(() => {

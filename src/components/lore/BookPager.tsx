@@ -15,6 +15,7 @@ import {
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { useLocale, useT } from "../../lib/i18n/index.ts";
 import { BOOK_FRAME_SRC, BOOK_PAGE_SRC } from "../../lib/lore/cityHallAssets.ts";
+import { getBookPage, setBookPage, type BookPageField } from "../../lib/storage/appStorage.ts";
 
 // 本ページャー（#164）。ハノーバ市民手帳（CityHallBook・#163/#137）から抽出した「本」の共通 UI。
 // 枠/紙面の border-image + 背景画像・ページャーUI（先頭/前/次/末尾＋ページ表示）・キーボード矢印・
@@ -43,8 +44,8 @@ export interface BookPagerProps<T extends BookPagerPage> {
   title: string;
   /** 全ページ（呼び出し元が locale で組み立て済み・順序固定）。 */
   pages: T[];
-  /** localStorage の永続化キー（本ごとに別キーにする＝手帳と市政だよりを混同しない）。 */
-  storageKey: string;
+  /** 集約 localStorage（appStorage）内の永続化フィールド（本ごとに別フィールド＝手帳と市政だよりを混同しない）。 */
+  storageField: BookPageField;
   /** URL・保存位置に有効な ID が無いときに開く端。既定 first は市民手帳の挙動を維持する。 */
   defaultPage?: "first" | "last";
   /** 現在ページの中身を描画する（ページ種別ごとの描画は呼び出し元の責務）。 */
@@ -56,7 +57,7 @@ export interface BookPagerProps<T extends BookPagerPage> {
 export default function BookPager<T extends BookPagerPage>({
   title,
   pages,
-  storageKey,
+  storageField,
   defaultPage = "first",
   renderPage,
   footer,
@@ -78,7 +79,7 @@ export default function BookPager<T extends BookPagerPage>({
     // 不正・削除済み ID は次の候補へ安全にフォールバックする。
     // id は locale 非依存なので、呼び出し元がどの locale で pages を組んでいても解決できる。
     const requestedId = new URLSearchParams(window.location.search).get("page");
-    const savedId = window.localStorage.getItem(storageKey);
+    const savedId = getBookPage(storageField);
     const fallback = defaultPage === "last" ? pages.at(-1) : pages[0];
     const initial =
       pages.find((item) => item.id === requestedId) ??
@@ -117,8 +118,8 @@ export default function BookPager<T extends BookPagerPage>({
   useEffect(() => {
     if (!initialized) return;
     const id = pages.find((item) => item.page === page)?.id;
-    if (id !== undefined) window.localStorage.setItem(storageKey, id);
-  }, [initialized, page, pages, storageKey]);
+    if (id !== undefined) setBookPage(storageField, id);
+  }, [initialized, page, pages, storageField]);
 
   // 本のスワイプでページめくり＋スワイプ量で中身をぼかす（#275・PostDetail と同じ作法）。
   // 写真カルーセルと純関数（swipeProgress/swipeToBlur/swipeDirection）を共有する。

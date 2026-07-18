@@ -1,3 +1,4 @@
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -39,7 +40,7 @@ describe("MyGrid × AccountName/ProfileEditor 実結合（#525 S1 nameHint 初�
     localStorage.clear();
     // MyGrid は resolveClientLocale() 経由で hanoba:lang を読み、既定コンテキスト（"ja"）を上書きする
     // （test-setup.ts のグローバル beforeEach と同じ理由）。上の clear() が消すので明示的に戻す。
-    localStorage.setItem("hanoba:lang", "ja");
+    seedAppStorage({ lang: "ja" });
   });
 
   afterEach(() => cleanup());
@@ -47,7 +48,7 @@ describe("MyGrid × AccountName/ProfileEditor 実結合（#525 S1 nameHint 初�
   it("既存の名前でマウントすると、ProfileEditor の編集トグルが即座に有効化され、無駄な再コミットが起きない（#525 S1）", async () => {
     // 既存の名乗り（種撒き）。AccountName/ProfileEditor は両方ともこの localStorage を
     // getDisplayName() 経由で読む（#525 S1 の再現条件）。
-    localStorage.setItem("hanoba:name", "アガベ太郎");
+    seedAppStorage({ name: "アガベ太郎" });
     localStorage.setItem("hanoba:sk", "67dea2ed018072d675f5415ecfaed7d2597555e202d85b3d65ea4e58d2d92ffa");
 
     // load()（投稿取得）は本テストの関心外だが実行はされる。その非同期継続がこの後の

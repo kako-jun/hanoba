@@ -3,8 +3,22 @@ import {
   resolveClientLocale,
   detectClientLocale,
   setClientLocale,
-  LOCALE_STORAGE_KEY,
 } from "./clientLocale.ts";
+import { APP_STORAGE_KEY } from "../storage/appStorage.ts";
+
+/** 集約 blob（appStorage）に lang を種撒きする（#558）。 */
+function seedLang(lang: string): void {
+  localStorage.setItem(APP_STORAGE_KEY, JSON.stringify({ lang }));
+}
+
+/** 集約 blob から保存済み lang を読む（未設定は null）。 */
+function readLang(): string | null {
+  try {
+    return JSON.parse(localStorage.getItem(APP_STORAGE_KEY) ?? "{}").lang ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /** navigator.languages / navigator.language を差し替える（auto-detect #482 の検証用）。 */
 function stubLanguages(langs: string[]): void {
@@ -37,35 +51,35 @@ describe("clientLocale", () => {
 
     it("保存値は navigator 検出より優先される（保存 en・navigator ja でも en）", () => {
       stubLanguages(["ja-JP"]);
-      localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+      seedLang("en");
       expect(resolveClientLocale()).toBe("en");
     });
 
     it("localStorage に保存した言語を読む（en）", () => {
-      localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+      seedLang("en");
       expect(resolveClientLocale()).toBe("en");
     });
 
     it("localStorage に保存した言語を読む（ja）", () => {
-      localStorage.setItem(LOCALE_STORAGE_KEY, "ja");
+      seedLang("ja");
       expect(resolveClientLocale()).toBe("ja");
     });
 
     it("無効な保存値(fr)は navigator 検出にフォールバック（navigator en → en）", () => {
       stubLanguages(["en-US"]);
-      localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
+      seedLang("fr");
       expect(resolveClientLocale()).toBe("en");
     });
 
     it("無効な保存値(fr)でも navigator が ja なら ja に検出フォールバックする（#482・殻と島の一致）", () => {
       stubLanguages(["ja-JP"]);
-      localStorage.setItem(LOCALE_STORAGE_KEY, "fr");
+      seedLang("fr");
       expect(resolveClientLocale()).toBe("ja");
     });
 
     it("空文字も無効として検出にフォールバック（navigator zh → zh）", () => {
       stubLanguages(["zh-CN"]);
-      localStorage.setItem(LOCALE_STORAGE_KEY, "");
+      seedLang("");
       expect(resolveClientLocale()).toBe("zh");
     });
   });
@@ -99,14 +113,14 @@ describe("clientLocale", () => {
       // location.reload を spy（実リロードは happy-dom 上で副作用になるため差し替える）。
       const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
       setClientLocale("en");
-      expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("en");
+      expect(readLang()).toBe("en");
       expect(reload).toHaveBeenCalledTimes(1);
     });
 
     it("ja を保存しても同様にリロードする", () => {
       const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
       setClientLocale("ja");
-      expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("ja");
+      expect(readLang()).toBe("ja");
       expect(reload).toHaveBeenCalledTimes(1);
     });
 

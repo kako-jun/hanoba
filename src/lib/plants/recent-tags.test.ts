@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { getRecentTags, pushRecentTag, recordRecentTags } from "./recent-tags.ts";
+import { seedAppStorageRaw } from "../storage/appStorage.testutil.ts";
 
 describe("recent-tags", () => {
   beforeEach(() => {
@@ -42,12 +43,12 @@ describe("recent-tags", () => {
   });
 
   it("壊れた保存値は空配列に倒す", () => {
-    window.localStorage.setItem("hanoba:recent-tags", "{not json");
+    seedAppStorageRaw("recentTags", "{not json");
     expect(getRecentTags()).toEqual([]);
   });
 
   it("配列でない保存値も空配列に倒す", () => {
-    window.localStorage.setItem("hanoba:recent-tags", JSON.stringify({ a: 1 }));
+    seedAppStorageRaw("recentTags", { a: 1 });
     expect(getRecentTags()).toEqual([]);
   });
 

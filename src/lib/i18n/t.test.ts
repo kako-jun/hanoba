@@ -113,6 +113,13 @@ describe("新規キーの多言語完備（#525・#164）", () => {
     "gazette.articles.2.heading",
     "gazette.articles.3.heading",
     "update.restarting",
+    "install.keySafety",
+    // 初投稿直後の nsec バックアップ念押し（#558 Layer2）。英語圏に日本語が漏れないよう全 locale 実訳を固定。
+    "compose.nsecPrompt.title",
+    "compose.nsecPrompt.body",
+    "compose.nsecPrompt.restoreHint",
+    "compose.nsecPrompt.saved",
+    "compose.nsecPrompt.later",
   ])(
     "%s は ja/en/es/zh 全てに空でない値を持つ",
     (key) => {

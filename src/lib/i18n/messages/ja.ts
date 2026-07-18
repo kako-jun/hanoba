@@ -38,6 +38,7 @@ export const ja = {
   "install.ios":
     "共有メニュー {arrow} から「ホーム画面に追加」を選ぶと、アプリのように開けます。",
   "install.tagline": "アプリのように開けます。",
+  "install.keySafety": "ホーム画面に追加すると、アカウントの鍵が消えにくくなります。",
   "install.add": "追加",
   "install.later": "あとで",
 
@@ -248,6 +249,13 @@ export const ja = {
   "compose.submit": "投稿する",
   // 投稿の結果メッセージ（done / error）。
   "compose.done": "投稿しました。あなたの植物へ移動します…",
+  // 初投稿直後の nsec バックアップ念押し（#558 Layer2）。警告文は account.profile.nsec.* を再利用する。
+  "compose.nsecPrompt.title": "鍵を控えておきましょう",
+  "compose.nsecPrompt.body":
+    "投稿できました。このアカウントは、この端末に保存された鍵だけで成り立っています。鍵を控えておかないと、端末を変えたりブラウザのデータが消えたとき、二度と戻せません。",
+  "compose.nsecPrompt.restoreHint": "別の端末で使うときや復元するときは、この鍵（nsec）を貼り付けます。",
+  "compose.nsecPrompt.saved": "控えました",
+  "compose.nsecPrompt.later": "あとで",
   "compose.error.notConfirmed":
     "投稿を確認できませんでした。電波の良いところでもう一度お試しください（下書きは残っています）。",
   "compose.error.generic": "投稿に失敗しました。",

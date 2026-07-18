@@ -18,7 +18,10 @@ import { recordRecentTags } from "../../lib/plants/recent-tags.ts";
 import { clearDraft, loadDraft, saveMeta, syncBlobs } from "../../lib/composer/draft.ts";
 import { moveById } from "../../lib/composer/reorder.ts";
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
+import { isNip07Enabled } from "../../lib/nostr/keys.ts";
+import { isNsecBackupPrompted, markNsecBackupPrompted } from "../../lib/storage/appStorage.ts";
 import AccountName from "../account/AccountName.tsx";
+import NsecBackupPrompt from "./NsecBackupPrompt.tsx";
 import CaptionInput from "./CaptionInput.tsx";
 import DandelionBurst from "./DandelionBurst.tsx";
 import CropFrame from "./CropFrame.tsx";
@@ -113,6 +116,9 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
   // undo は同じ画像の crop を戻すだけで id 不変＝CropFrame は再マウントされないので、このトークンを increment して
   // CropFrame 側の effect に「外部復元値で矩形を引き直せ」と伝える。0 は初期値（発火しない）。
   const [cropSyncToken, setCropSyncToken] = useState(0);
+  // 初投稿直後の nsec バックアップ念押し（#558 Layer2）。ローカル鍵の人が初めて投稿に成功した
+  // ときだけ一度モーダルを出し、閉じてから /me へ遷移する（NIP-07 は鍵がローカルに無いので対象外）。
+  const [showNsecPrompt, setShowNsecPrompt] = useState(false);
 
   const imgRef = useRef<HTMLImageElement>(null);
   const imagesRef = useRef<DraftImage[]>([]);
@@ -461,6 +467,14 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       // 投稿成功＝下書きの役目は終わり。永続化も消す（/me 遷移の前・#228）。
       void clearDraft();
       setStatus({ kind: "done" });
+      // 初投稿直後の nsec バックアップ念押し（#558 Layer2）: ローカル鍵の人が初めて投稿に成功した
+      // ときだけ一度だけモーダルを出す。NIP-07 は鍵がローカルに無い＝念押し不要。フラグ一回きりなので
+      // 実質「初投稿」で出る。モーダルを出す場合は /me 遷移をモーダルを閉じるまで遅らせる（下の
+      // closeNsecPrompt が担う）。出さない場合は従来どおり即遷移する。
+      if (!isNip07Enabled() && !isNsecBackupPrompted()) {
+        setShowNsecPrompt(true);
+        return;
+      }
       // 投稿直後は「自分の植物」へ遷移し、増えた1枚を一番上に見せる（時系列降順）。
       if (typeof window !== "undefined") window.location.href = "/me";
     } catch (err) {
@@ -469,6 +483,14 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
       const message = err instanceof Error ? err.message : t("compose.error.generic");
       setStatus({ kind: "error", message });
     }
+  }
+
+  // 念押しモーダルを閉じる（#558 Layer2）: 保存した／あとで／Esc／背景クリックのいずれでも、
+  // 一度きりフラグを立てて二度と出さないようにし、遅らせていた /me 遷移を実行する。
+  function closeNsecPrompt() {
+    markNsecBackupPrompted();
+    setShowNsecPrompt(false);
+    if (typeof window !== "undefined") window.location.href = "/me";
   }
 
   return (
@@ -719,6 +741,9 @@ export default function Composer({ lang = DEFAULT_LOCALE }: { lang?: Locale }) {
           {status.message}
         </p>
       )}
+
+      {/* 初投稿直後の nsec バックアップ念押し（#558 Layer2）。閉じると一度きりフラグを立てて /me へ遷移する。 */}
+      {showNsecPrompt && <NsecBackupPrompt onClose={closeNsecPrompt} />}
     </div>
     </LocaleProvider>
   );

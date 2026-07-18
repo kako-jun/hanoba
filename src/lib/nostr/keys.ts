@@ -7,6 +7,7 @@ import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure
 import { nip19 } from "nostr-tools";
 import { bytesToHex, hexToBytes } from "nostr-tools/utils";
 import type { EventTemplate, NostrEvent } from "./types.ts";
+import { getAppStorage, updateAppStorage } from "../storage/appStorage.ts";
 
 // NIP-07 拡張が注入する window.nostr の薄い型宣言。
 // nostr-tools は WindowNostr 型を export するが global 宣言はしないため、ここで宣言する。
@@ -19,10 +20,18 @@ declare global {
   }
 }
 
+// 秘密鍵は集約 blob（appStorage）に載せず、専用キー `hanoba:sk` で別管理し続ける（#558 Layer3）。
+// 書き込み頻度の高い UI 状態と同じ JSON に同居させると、UI 更新のたびに鍵の再直列化・破損リスクに
+// 晒すため。SK_KEY 関連（generate/getStored/import/export）は集約対象外・据え置き。
 const SK_KEY = "hanoba:sk";
+
+// NIP-07 有効フラグも sk と同じく identity-critical なので集約せず専用キーで隔離する（#558 レビュー should①）。
+// 集約 blob に載せると、後方互換を持たないデプロイ時の一括リセット（や eviction）でフラグが消え、
+// isNip07Enabled() が false に落ちて compose 経路が新規ローカル鍵をサイレント生成し、別 pubkey で
+// 投稿してしまう（アカウント分岐事故）。専用キーなら blob のリセットに巻き込まれず保たれる。
 const USE_NIP07_KEY = "hanoba:useNip07";
 
-/** SSR 安全に localStorage を取得する（サーバ評価時は null）。鍵関連の読み書きは全てこれ経由にする。 */
+/** SSR 安全に localStorage を取得する（サーバ評価時は null）。秘密鍵の読み書きは全てこれ経由にする。 */
 function getLS(): Storage | null {
   return typeof localStorage === "undefined" ? null : localStorage;
 }
@@ -66,12 +75,12 @@ export function hasNip07(): boolean {
   return typeof window !== "undefined" && !!window.nostr;
 }
 
-/** NIP-07 を使う設定が有効か（拡張があり、かつユーザーが選択済み）。 */
+/** NIP-07 を使う設定が有効か（拡張があり、かつユーザーが選択済み）。専用キーから直読み（集約 blob 非依存）。 */
 export function isNip07Enabled(): boolean {
   return hasNip07() && getLS()?.getItem(USE_NIP07_KEY) === "1";
 }
 
-/** NIP-07 を使うかどうかを設定する。 */
+/** NIP-07 を使うかどうかを設定する。sk と同じく identity-critical なので専用キーで隔離する（#558 レビュー should①）。 */
 export function setUseNip07(use: boolean): void {
   const ls = getLS();
   if (ls === null) return;
@@ -131,7 +140,7 @@ export function importNsec(nsec: string): void {
   // 鍵＝アカウントが変わったので、旧鍵のプロフィール控え（picture/about/websites）を捨てる。
   // 残すと別人のアバター/サイトが新アカウントの kind:0 に混入・上書きされる（#78 レビュー M1）。
   // 新アカウントの値は呼び出し側が relay から再シードする（client.fetchMyProfileResilient・#93）。
-  getLS()?.removeItem(PROFILE_EXTRA_KEY);
+  updateAppStorage((s) => ({ ...s, profileExtra: undefined }));
 }
 
 // ---- 表示名（ユーザー名） ---------------------------------------------------
@@ -139,19 +148,17 @@ export function importNsec(nsec: string): void {
 // 「ユーザー名を入れたら投稿できる」（#28）。表示名はローカルにも控え、kind:0 でも publish する
 // （publish は client.publishProfile の責務）。ここは localStorage の読み書きだけ。
 
-const NAME_KEY = "hanoba:name";
-
 /** 保存済みの表示名を返す（未設定は null）。 */
 export function getDisplayName(): string | null {
-  const name = getLS()?.getItem(NAME_KEY);
-  return name === null || name === undefined || name === "" ? null : name;
+  const name = getAppStorage().name;
+  return typeof name === "string" && name !== "" ? name : null;
 }
 
 /** 表示名をローカルに保存する（空はエラー）。kind:0 publish は別途（client.saveDisplayName）。 */
 export function setDisplayName(name: string): void {
   const trimmed = name.trim();
   if (trimmed === "") throw new Error("ユーザー名を入力してください");
-  getLS()?.setItem(NAME_KEY, trimmed);
+  updateAppStorage((s) => ({ ...s, name: trimmed }));
 }
 
 // ---- プロフィールの付加項目（picture / about / websites・#35 Piece3） ----------
@@ -159,8 +166,6 @@ export function setDisplayName(name: string): void {
 // kind:0 は replaceable なので publish のたびに全項目を載せ直す必要がある。name 以外の
 // 項目をローカルにも控え、name だけ変えたときも全体を publish できるようにする（clobber 防止）。
 // 取得は client.fetchMyProfileResilient（relay）が一次ソースだが、編集中の控えとしてここに保存する。
-
-const PROFILE_EXTRA_KEY = "hanoba:profileExtra";
 
 /** プロフィールの name 以外の編集項目。 */
 export interface ProfileExtra {
@@ -174,26 +179,21 @@ export interface ProfileExtra {
 /** 保存済みのプロフィール付加項目を返す（未設定/壊れは空）。 */
 export function getProfileExtra(): ProfileExtra {
   const empty: ProfileExtra = { picture: null, about: null, websites: [], favoriteVarieties: [] };
-  const raw = getLS()?.getItem(PROFILE_EXTRA_KEY);
-  if (raw === null || raw === undefined || raw === "") return empty;
-  try {
-    const d = JSON.parse(raw) as Partial<ProfileExtra>;
-    return {
-      picture: typeof d.picture === "string" && d.picture !== "" ? d.picture : null,
-      about: typeof d.about === "string" && d.about !== "" ? d.about : null,
-      websites: Array.isArray(d.websites) ? d.websites.filter((w): w is string => typeof w === "string") : [],
-      favoriteVarieties: Array.isArray(d.favoriteVarieties)
-        ? d.favoriteVarieties.filter((v): v is string => typeof v === "string")
-        : [],
-    };
-  } catch {
-    return empty;
-  }
+  const d = getAppStorage().profileExtra;
+  if (d === null || d === undefined || typeof d !== "object") return empty;
+  return {
+    picture: typeof d.picture === "string" && d.picture !== "" ? d.picture : null,
+    about: typeof d.about === "string" && d.about !== "" ? d.about : null,
+    websites: Array.isArray(d.websites) ? d.websites.filter((w): w is string => typeof w === "string") : [],
+    favoriteVarieties: Array.isArray(d.favoriteVarieties)
+      ? d.favoriteVarieties.filter((v): v is string => typeof v === "string")
+      : [],
+  };
 }
 
 /** プロフィール付加項目をローカルに保存する。本文 favoriteVarieties は #141。 */
 export function setProfileExtra(extra: ProfileExtra): void {
-  getLS()?.setItem(PROFILE_EXTRA_KEY, JSON.stringify(extra));
+  updateAppStorage((s) => ({ ...s, profileExtra: extra }));
 }
 
 /**

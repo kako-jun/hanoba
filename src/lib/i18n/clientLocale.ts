@@ -9,9 +9,7 @@
 // 選んだ」状態と「自動検出で当たっただけ」を混同しない・Twitter モデル維持。保存は setClientLocale だけ）。
 
 import { DEFAULT_LOCALE, isLocale, type Locale } from "./locale.ts";
-
-/** 表示言語の保存キー（is:inline 殻入替スクリプトとも一致させる＝文字列を二重持ちしない）。 */
-export const LOCALE_STORAGE_KEY = "hanoba:lang";
+import { getAppStorage, updateAppStorage } from "../storage/appStorage.ts";
 
 /**
  * navigator の優先言語（`navigator.languages` を優先、無ければ `navigator.language`）を走査し、
@@ -43,21 +41,13 @@ export function detectClientLocale(): Locale {
  */
 export function resolveClientLocale(): Locale {
   if (typeof localStorage === "undefined") return detectClientLocale();
-  try {
-    const v = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (isLocale(v)) return v;
-    return detectClientLocale();
-  } catch {
-    return detectClientLocale();
-  }
+  const v = getAppStorage().lang;
+  if (isLocale(v)) return v;
+  return detectClientLocale();
 }
 
 /** 言語を保存して反映（静的 .astro 殻のため確実なフルリロードで切り替える）。 */
 export function setClientLocale(locale: Locale): void {
-  try {
-    localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-  } catch {
-    /* private mode */
-  }
+  updateAppStorage((s) => ({ ...s, lang: locale }));
   if (typeof location !== "undefined") location.reload();
 }

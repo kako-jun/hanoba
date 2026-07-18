@@ -152,6 +152,9 @@ export default function InstallPrompt({ lang = DEFAULT_LOCALE }: { lang?: Locale
           ) : (
             <p className="mt-1 text-sm text-ha-ink/80">{t("install.tagline")}</p>
           )}
+          {/* 追加＝鍵（アカウント）が消えにくくなる理由を一言添える（#558 Layer4）。
+              設置済み PWA は storage.persist() が granted されやすく eviction=nsec 喪失を防ぐ。 */}
+          <p className="mt-1 text-sm text-ha-ink/80">{t("install.keySafety")}</p>
           <div className="mt-3 flex items-center gap-3">
             {variant === "prompt" && (
               <button

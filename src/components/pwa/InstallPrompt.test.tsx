@@ -1,3 +1,4 @@
+import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 // PWA「ホーム画面に追加」促し（#230）バナーの単体テスト。
 // 純粋ロジック（却下記憶・抑制判定）は lib/pwa/install.test.ts で固定済み。ここでは
 // コンポーネントの「いつ・どの種類のバナーを出すか／出さないか」の分岐と、却下時の
@@ -63,7 +64,7 @@ const BANNER = { name: "ホーム画面に追加" } as const;
 describe("InstallPrompt（#230 A2HS 促しバナー）", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    localStorage.setItem("hanoba:lang", "ja"); // #147: clear 後も locale は ja 固定（テストは原典で検証）
+    seedAppStorage({ lang: "ja" }); // #147: clear 後も locale は ja 固定（テストは原典で検証）
     stubStandaloneMedia(false); // 既定は未設置
     stubUserAgent(DESKTOP_CHROME); // 既定は iOS でない
     stubNavigatorStandalone(undefined);

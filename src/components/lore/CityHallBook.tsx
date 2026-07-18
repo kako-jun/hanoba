@@ -32,7 +32,8 @@ import Icon from "../ui/Icon.tsx";
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-export const BOOK_PAGE_STORAGE_KEY = "hanoba:citizen-handbook-page";
+// 集約 blob（appStorage）内の永続化フィールド名（市政だより gazettePage とは別フィールド）。
+export const BOOK_PAGE_STORAGE_FIELD = "handbookPage" as const;
 
 // lang は about.astro がページの locale を流す（#147）＝SSR/初期描画の種（ja）。
 // この島は LocaleProvider のルート（about.astro 直下・他の Provider に包まれない）なので、
@@ -64,7 +65,7 @@ export default function CityHallBook({
       <BookPager
         title={bookTitleText}
         pages={bookPages}
-        storageKey={BOOK_PAGE_STORAGE_KEY}
+        storageField={BOOK_PAGE_STORAGE_FIELD}
         renderPage={(page) => <PageContent page={page} />}
         footer={<CivicWindows />}
       />

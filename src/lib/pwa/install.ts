@@ -5,29 +5,22 @@
 // 表示の判定（beforeinstallprompt 捕捉・既設置・iOS 分岐）はコンポーネント側の責務で、
 // このモジュールは却下時刻の保存/読み出しと「今は抑制中か」の純粋判定だけを持つ（単一責務）。
 // 却下記憶のしくみは mypace 由来（installDismissedAt 相当）。
-// SSR 安全: localStorage は必ず関数内で参照する（keys.ts / recent-tags.ts と同じ getLS パターン）。
+// SSR 安全: 保存は集約 blob（appStorage）経由＝localStorage は appStorage 内でのみ参照する。
 
-const KEY = "hanoba:pwa-install-dismissed-at";
+import { getAppStorage, updateAppStorage } from "../storage/appStorage.ts";
 
 /** 却下後に再表示を抑制する期間（ミリ秒）。mypace に合わせて 7 日。 */
 export const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** SSR 安全に localStorage を取得する（サーバ評価時は null）。 */
-function getLS(): Storage | null {
-  return typeof localStorage === "undefined" ? null : localStorage;
-}
-
 /** 却下時刻（epoch ミリ秒）を返す。未却下・壊れた値は null。 */
 export function getInstallDismissedAt(): number | null {
-  const raw = getLS()?.getItem(KEY);
-  if (!raw) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
+  const n = getAppStorage().pwaInstallDismissedAt;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
 
 /** 却下時刻を記録する（[あとで]/× を押した時に呼ぶ）。 */
 export function setInstallDismissedAt(timestamp: number): void {
-  getLS()?.setItem(KEY, String(timestamp));
+  updateAppStorage((s) => ({ ...s, pwaInstallDismissedAt: timestamp }));
 }
 
 /**
