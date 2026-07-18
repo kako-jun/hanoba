@@ -44,8 +44,8 @@ describe("appStorage", () => {
 
   describe("setAppStorage", () => {
     it("書いて読むと同じ状態に戻る", () => {
-      setAppStorage({ lang: "en", useNip07: true });
-      expect(getAppStorage()).toEqual({ lang: "en", useNip07: true });
+      setAppStorage({ lang: "en", nsecBackupPrompted: true });
+      expect(getAppStorage()).toEqual({ lang: "en", nsecBackupPrompted: true });
     });
 
     it("undefined フィールドは直列化で落ちる（キーが消える）", () => {

@@ -14,7 +14,7 @@ hanoba のアーキテクチャ（非ビジュアル）。見た目は `DESIGN.m
 - **フロントエンドのみ**: Astro（静的生成）＋ React islands ＋ **PWA**（`@vite-pwa/astro`）。**Cloudflare Pages** にデプロイ（Workers も D1 も不要）。
 - クライアントが自分で行う:
   - **鍵** — ブラウザ生成・localStorage 保存・署名（NIP-07 拡張も可）。
-  - **軽い UI 状態の集約（#558 Layer3）** — 表示言語・表示名・プロフィール控え・天気キャッシュ・間引き設定・最近タグ・本のページ位置・PWA 却下時刻・NIP-07 フラグ・nsec バックアップ念押し済みフラグ（`nsecBackupPrompted`・#558 Layer2）は、単一 localStorage キー `hanoba` の JSON に集約する（正本 `src/lib/storage/appStorage.ts`・`getAppStorage`/`setAppStorage`/`updateAppStorage`・後方互換なし）。**秘密鍵（`hanoba:sk`）だけは別キーで据え置き**（書き込み頻度の高い UI 状態と同居させて再直列化・破損リスクに晒さないため）。SW 更新クールダウン（`hanoba:sw-update-time`）はセッション単位で消えるべき値なので sessionStorage のまま集約対象外。
+  - **軽い UI 状態の集約（#558 Layer3）** — 表示言語・表示名・プロフィール控え・天気キャッシュ・間引き設定・最近タグ・本のページ位置・PWA 却下時刻・nsec バックアップ念押し済みフラグ（`nsecBackupPrompted`・#558 Layer2）は、単一 localStorage キー `hanoba` の JSON に集約する（正本 `src/lib/storage/appStorage.ts`・`getAppStorage`/`setAppStorage`/`updateAppStorage`・後方互換なし）。**秘密鍵（`hanoba:sk`）と NIP-07 有効フラグ（`hanoba:useNip07`）は別キーで据え置き＝集約しない**（前者は書き込み頻度の高い UI 状態と同居させて再直列化・破損リスクに晒さないため。後者は identity-critical で、後方互換なしデプロイの一括リセットで消えると compose 経路が新規ローカル鍵をサイレント生成して別 pubkey で投稿する事故になるため・#558 レビュー should①）。SW 更新クールダウン（`hanoba:sw-update-time`）はセッション単位で消えるべき値なので sessionStorage のまま集約対象外。**単一 blob のため複数タブ並行更新は last-write-wins・単一タブ運用前提**（cross-tab の dilution 再同期が全 blob 書き込みに反応するのも集約の構造的代償だが、再読込は冪等で無害）。
   - **画像アップロード** — nostr.build へ直接（NIP-98 認証）。**EXIF はサーバ側で自動削除**（身バレ＝自宅 GPS 漏れ対策が無料で効く）。維持費ほぼゼロ。
   - **投稿・購読** — Nostr リレーへ直接 publish / subscribe。
 - **mypace から見える鍵＝タグ**: 投稿に `['t','mypace']` を必ず付ける（mypace タイムライン出現の条件）。詳細は §6。

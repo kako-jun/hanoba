@@ -5,15 +5,19 @@ import { buildNoteTemplate } from "./events.ts";
 import {
   exportNsec,
   getProfileExtra,
+  getPublicKeyHex,
   getStoredSecretKey,
   importNsec,
+  isNip07Enabled,
   mergeProfileExtra,
   setProfileExtra,
+  setUseNip07,
 } from "./keys.ts";
 
 // 固定 sk = 0x01,0x02,...,0x20（32 bytes）。決定性の検証に使う。
 const FIXED_SK = new Uint8Array(Array.from({ length: 32 }, (_, i) => i + 1));
 const SK_KEY = "hanoba:sk";
+const USE_NIP07_KEY = "hanoba:useNip07";
 
 describe("keys: 決定性（nostr-tools 配線の実証）", () => {
   beforeEach(() => {
@@ -75,6 +79,45 @@ describe("keys: nsec ラウンドトリップ", () => {
     const nsec = exportNsec();
     importNsec(nsec);
     expect(getProfileExtra()).toEqual({ picture: null, about: null, websites: [], favoriteVarieties: [] });
+  });
+});
+
+// NIP-07 有効フラグは identity-critical なので集約 blob（hanoba）でなく専用キー hanoba:useNip07 で
+// 隔離する（#558 レビュー should①）。集約 blob のリセットに巻き込まれてフラグが消えると、compose 経路が
+// 新規ローカル鍵をサイレント生成して別 pubkey で投稿してしまうため。
+describe("NIP-07 フラグの専用キー隔離（#558 should①）", () => {
+  const REAL_NOSTR_PUBKEY = "npubfromextension0000000000000000000000000000000000000000000000000";
+
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+  afterEach(() => {
+    window.localStorage.clear();
+    delete (window as { nostr?: unknown }).nostr;
+  });
+
+  it("setUseNip07(true) は集約 blob（hanoba）でなく専用キー hanoba:useNip07 に書く", () => {
+    setUseNip07(true);
+    expect(window.localStorage.getItem(USE_NIP07_KEY)).toBe("1");
+    // 集約 blob には一切載らない（後方互換なしデプロイの一括リセットで消えない）。
+    expect(window.localStorage.getItem("hanoba")).toBeNull();
+    setUseNip07(false);
+    expect(window.localStorage.getItem(USE_NIP07_KEY)).toBeNull();
+  });
+
+  it("集約 blob を丸ごと消しても NIP-07 有効フラグは残り、投稿の pubkey は拡張由来で不変", async () => {
+    (window as { nostr?: unknown }).nostr = {
+      getPublicKey: () => Promise.resolve(REAL_NOSTR_PUBKEY),
+      signEvent: () => Promise.resolve({}),
+    };
+    setUseNip07(true);
+    // デプロイ時の一括リセット相当＝集約 blob を丸ごと破棄（専用キーには触れない）。
+    window.localStorage.removeItem("hanoba");
+    // フラグは生き残り、compose 経路は新規ローカル鍵を生成せず拡張の pubkey を使う。
+    expect(isNip07Enabled()).toBe(true);
+    expect(await getPublicKeyHex()).toBe(REAL_NOSTR_PUBKEY);
+    // ローカル鍵はサイレント生成されていない（アカウント分岐が起きていない）。
+    expect(getStoredSecretKey()).toBeNull();
   });
 });
 

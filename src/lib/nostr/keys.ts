@@ -25,6 +25,12 @@ declare global {
 // 晒すため。SK_KEY 関連（generate/getStored/import/export）は集約対象外・据え置き。
 const SK_KEY = "hanoba:sk";
 
+// NIP-07 有効フラグも sk と同じく identity-critical なので集約せず専用キーで隔離する（#558 レビュー should①）。
+// 集約 blob に載せると、後方互換を持たないデプロイ時の一括リセット（や eviction）でフラグが消え、
+// isNip07Enabled() が false に落ちて compose 経路が新規ローカル鍵をサイレント生成し、別 pubkey で
+// 投稿してしまう（アカウント分岐事故）。専用キーなら blob のリセットに巻き込まれず保たれる。
+const USE_NIP07_KEY = "hanoba:useNip07";
+
 /** SSR 安全に localStorage を取得する（サーバ評価時は null）。秘密鍵の読み書きは全てこれ経由にする。 */
 function getLS(): Storage | null {
   return typeof localStorage === "undefined" ? null : localStorage;
@@ -69,14 +75,20 @@ export function hasNip07(): boolean {
   return typeof window !== "undefined" && !!window.nostr;
 }
 
-/** NIP-07 を使う設定が有効か（拡張があり、かつユーザーが選択済み）。 */
+/** NIP-07 を使う設定が有効か（拡張があり、かつユーザーが選択済み）。専用キーから直読み（集約 blob 非依存）。 */
 export function isNip07Enabled(): boolean {
-  return hasNip07() && getAppStorage().useNip07 === true;
+  return hasNip07() && getLS()?.getItem(USE_NIP07_KEY) === "1";
 }
 
-/** NIP-07 を使うかどうかを設定する（非秘密の設定フラグなので集約 blob に載せる）。 */
+/** NIP-07 を使うかどうかを設定する。sk と同じく identity-critical なので専用キーで隔離する（#558 レビュー should①）。 */
 export function setUseNip07(use: boolean): void {
-  updateAppStorage((s) => ({ ...s, useNip07: use }));
+  const ls = getLS();
+  if (ls === null) return;
+  if (use) {
+    ls.setItem(USE_NIP07_KEY, "1");
+  } else {
+    ls.removeItem(USE_NIP07_KEY);
+  }
 }
 
 // ---- 公開鍵・署名 -----------------------------------------------------------

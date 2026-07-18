@@ -1297,8 +1297,10 @@ describe("Composer nsec バックアップ念押し（#558 Layer2）", () => {
   it("NIP-07（鍵がローカルに無い）では念押しを出さず即 /me へ遷移する", async () => {
     const user = userEvent.setup();
     // window.nostr を注入し useNip07 を有効化＝isNip07Enabled()=true。
+    // useNip07 は集約 blob でなく専用キー hanoba:useNip07 で隔離されている（#558 should①）。
     vi.stubGlobal("nostr", { getPublicKey: vi.fn(), signEvent: vi.fn() });
-    seedAppStorage({ name: "テスト栽培家", useNip07: true });
+    seedAppStorage({ name: "テスト栽培家" });
+    localStorage.setItem("hanoba:useNip07", "1");
     const { stub, restore } = stubLocation();
     try {
       render(<Composer />);

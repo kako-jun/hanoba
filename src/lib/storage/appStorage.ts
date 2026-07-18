@@ -1,14 +1,16 @@
 // hanoba の軽いクライアント状態をまとめる単一 localStorage 境界（#558 Layer3）。
 //
 // これまで表示言語・表示名・プロフィール控え・天気キャッシュ・間引き設定・最近タグ・本の
-// ページ位置・PWA 却下時刻・NIP-07 フラグが `hanoba:*` の別キーに散らばっていた。責務が
+// ページ位置・PWA 却下時刻が `hanoba:*` の別キーに散らばっていた。責務が
 // ブラウザ保存領域上で散らばると棚卸し・移行が難しい。theo-hayami の appStorage と同じ作法で、
 // 正本をこの `hanoba` 1キーの JSON に集約する。**後方互換は持たない**（旧キーの migration は
 // しない＝既存ユーザーの表示言語・既読等は一度だけリセットされてよい）。
 //
-// **秘密鍵（`hanoba:sk`）は絶対にこの blob に載せない**。書き込み頻度の高い UI 状態と
-// アカウントの根幹を同じ JSON に同居させると、UI 更新のたびに鍵の再直列化・破損リスクに晒す。
-// 鍵は keys.ts が `hanoba:sk` の専用キーで別管理し続ける（本モジュールは一切触らない）。
+// **秘密鍵（`hanoba:sk`）と NIP-07 有効フラグ（`hanoba:useNip07`）は絶対にこの blob に載せない**。
+// 前者は書き込み頻度の高い UI 状態と同居させると鍵の再直列化・破損リスクに晒すため。後者は
+// identity-critical で、後方互換なしのデプロイ時一括リセットで消えると compose 経路が新規ローカル鍵を
+// サイレント生成し別 pubkey で投稿する事故になるため（#558 レビュー should①）。どちらも keys.ts が
+// 専用キーで別管理し続ける（本モジュールは一切触らない）。
 //
 // SSR 安全: localStorage はトップレベルで触らず、必ず関数内で参照する（Astro の静的ビルドで
 // このモジュールが評価されても落ちないように）。
@@ -22,7 +24,7 @@ export const APP_STORAGE_KEY = "hanoba";
 
 /**
  * hanoba の軽い実行時状態。各フィールドは無設定なら省略（undefined）。
- * 秘密鍵（sk）は**含めない**（keys.ts が専用キーで別管理）。
+ * 秘密鍵（sk）と NIP-07 有効フラグ（useNip07）は**含めない**（keys.ts が専用キーで別管理・#558 should①）。
  */
 export interface AppStorageState {
   /** 表示言語（ユーザーが明示的に選んだ言語・Twitter モデル）。 */
@@ -43,8 +45,6 @@ export interface AppStorageState {
   handbookPage?: string;
   /** PWA インストール促しを却下した時刻（epoch ミリ秒）。 */
   pwaInstallDismissedAt?: number;
-  /** NIP-07 拡張を使う設定フラグ（非秘密なので blob に入れてよい）。 */
-  useNip07?: boolean;
   /**
    * 初投稿直後の nsec バックアップ念押しを既に出したか（#558 Layer2）。一度きりのフラグ。
    * true になったら念押しモーダルは二度と出さない（非秘密なので blob に入れてよい）。
