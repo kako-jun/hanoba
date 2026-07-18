@@ -45,6 +45,11 @@ export interface AppStorageState {
   pwaInstallDismissedAt?: number;
   /** NIP-07 拡張を使う設定フラグ（非秘密なので blob に入れてよい）。 */
   useNip07?: boolean;
+  /**
+   * 初投稿直後の nsec バックアップ念押しを既に出したか（#558 Layer2）。一度きりのフラグ。
+   * true になったら念押しモーダルは二度と出さない（非秘密なので blob に入れてよい）。
+   */
+  nsecBackupPrompted?: boolean;
 }
 
 function hasStorage(): boolean {
@@ -100,4 +105,16 @@ export function getBookPage(field: BookPageField): string | null {
 /** 本のページ位置（安定 ID）を保存する。 */
 export function setBookPage(field: BookPageField, id: string): void {
   updateAppStorage((s) => ({ ...s, [field]: id }));
+}
+
+// ---- nsec バックアップ念押し（初投稿直後・#558 Layer2）------------------------
+
+/** 初投稿直後の nsec バックアップ念押しを既に出したか（一度きり）。 */
+export function isNsecBackupPrompted(): boolean {
+  return getAppStorage().nsecBackupPrompted === true;
+}
+
+/** nsec バックアップ念押しを「出した」と記録する（以後は二度と出さない）。 */
+export function markNsecBackupPrompted(): void {
+  updateAppStorage((s) => ({ ...s, nsecBackupPrompted: true }));
 }

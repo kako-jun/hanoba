@@ -6,6 +6,8 @@ import {
   updateAppStorage,
   getBookPage,
   setBookPage,
+  isNsecBackupPrompted,
+  markNsecBackupPrompted,
 } from "./appStorage.ts";
 
 // 集約 localStorage 境界（#558 Layer3）。get/set/update・壊れ値の握り潰し・部分更新の非破壊を固定する。
@@ -91,6 +93,24 @@ describe("appStorage", () => {
     it("空文字は null 扱い", () => {
       setBookPage("gazettePage", "");
       expect(getBookPage("gazettePage")).toBeNull();
+    });
+  });
+
+  // nsec バックアップ念押しフラグ（#558 Layer2）。一度きり・他フィールドを潰さない。
+  describe("nsec backup prompted flag", () => {
+    it("未設定は false", () => {
+      expect(isNsecBackupPrompted()).toBe(false);
+    });
+
+    it("mark すると true になる", () => {
+      markNsecBackupPrompted();
+      expect(isNsecBackupPrompted()).toBe(true);
+    });
+
+    it("mark は他フィールドを潰さない", () => {
+      setAppStorage({ lang: "ja", name: "太郎" });
+      markNsecBackupPrompted();
+      expect(getAppStorage()).toEqual({ lang: "ja", name: "太郎", nsecBackupPrompted: true });
     });
   });
 });

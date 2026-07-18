@@ -216,6 +216,13 @@ export const es: Partial<Record<MessageKey, string>> = {
   "compose.submit.publishing": "Publicando…",
   "compose.submit": "Publicar",
   "compose.done": "Publicado. Yendo a Tus plantas…",
+  // Aviso de copia de seguridad de nsec tras la primera publicación (#558 Layer2). La advertencia reutiliza account.profile.nsec.*.
+  "compose.nsecPrompt.title": "Guarda una copia de tu clave",
+  "compose.nsecPrompt.body":
+    "Ya has publicado. Esta cuenta existe solo gracias a una clave guardada en este dispositivo. Si no guardas una copia, la perderás para siempre al cambiar de dispositivo o si se borran los datos del navegador.",
+  "compose.nsecPrompt.restoreHint": "Para usar otro dispositivo o restaurar tu cuenta, pegas esta clave (nsec).",
+  "compose.nsecPrompt.saved": "La guardé",
+  "compose.nsecPrompt.later": "Más tarde",
   "compose.error.notConfirmed":
     "No se pudo confirmar la publicación. Inténtalo de nuevo con mejor conexión (tu borrador se conserva).",
   "compose.error.generic": "Falló la publicación.",

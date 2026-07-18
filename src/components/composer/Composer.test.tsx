@@ -1,4 +1,4 @@
-import { seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
+import { readAppStorage, seedAppStorage } from "../../lib/storage/appStorage.testutil.ts";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -138,7 +138,9 @@ describe("Composer", () => {
       },
     );
     // ユーザー名は設定済みにして名前ゲートを隠す（#28・各テストは投稿条件に集中）。
-    seedAppStorage({ name: "テスト栽培家" });
+    // nsecBackupPrompted=true で初投稿念押し（#558 Layer2）を無効化＝既存テストは従来どおり即 /me 遷移
+    // を観察できる（念押しの発火は専用の describe で検証する）。
+    seedAppStorage({ name: "テスト栽培家", nsecBackupPrompted: true });
   });
 
   afterEach(() => {
@@ -1217,5 +1219,124 @@ describe("Composer 下書き配線（#228）", () => {
     await user.click(undo);
     expect(img.style.transform).toBe("");
     expect(undo).toBeDisabled();
+  });
+});
+
+// 初投稿直後の nsec バックアップ念押し（#558 Layer2）。ローカル鍵の人が初めて投稿に成功したときだけ
+// 一度モーダルを出し、閉じてから /me へ遷移する。keys.ts はモックせず、window.nostr / useNip07 で
+// isNip07Enabled を実経路で切り替える。1テスト1観点。
+describe("Composer nsec バックアップ念押し（#558 Layer2）", () => {
+  const dialogName = "鍵を控えておきましょう";
+
+  /** window.location を差し替えて遷移先を捕まえる（テスト内のみ・呼び出し側が finally で復元）。 */
+  function stubLocation(): { stub: Location; restore: () => void } {
+    const orig = Object.getOwnPropertyDescriptor(window, "location");
+    const stub = { href: "" } as Location;
+    Object.defineProperty(window, "location", { configurable: true, value: stub });
+    return { stub, restore: () => { if (orig) Object.defineProperty(window, "location", orig); } };
+  }
+
+  /** 画像1枚＋一言を入れて投稿ボタンを押す（成功パスを走らせる）。 */
+  async function postOnce(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+    const input = screen.getByLabelText("カメラで撮影") as HTMLInputElement;
+    await user.upload(input, makeImageFile());
+    fireEvent.load(await screen.findByAltText("クロップ対象の写真"));
+    await user.type(screen.getByLabelText("ひとこと"), "開花した");
+    await user.click(await screen.findByRole("button", { name: /投稿する/ }));
+    await waitFor(() => expect(signAndPublishNote).toHaveBeenCalled());
+  }
+
+  beforeEach(() => {
+    uploadImage.mockReset().mockResolvedValue({ url: "https://image.nostr.build/abc.jpg" });
+    deleteImage.mockReset().mockResolvedValue(true);
+    signAndPublishNote.mockReset().mockResolvedValue({ id: "evt1" });
+    confirmEventStored.mockReset().mockResolvedValue(true);
+    fetchKnownHashtags.mockReset().mockResolvedValue([]);
+    fetchPopularHashtags.mockReset().mockResolvedValue([]);
+    renderSquareImageFromRect.mockReset().mockResolvedValue(new Blob([new Uint8Array([9])], { type: "image/jpeg" }));
+    computeSquareCropRect.mockReset().mockReturnValue({ sx: 0, sy: 0, size: 100 });
+    loadDraft.mockReset().mockResolvedValue(null);
+    syncBlobs.mockReset().mockResolvedValue(undefined);
+    saveMeta.mockReset().mockResolvedValue(undefined);
+    clearDraft.mockReset().mockResolvedValue(undefined);
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        naturalWidth = 100;
+        naturalHeight = 100;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+    // 既定はローカル鍵・名前あり・念押し未実施（初投稿で発火する条件）。
+    seedAppStorage({ name: "テスト栽培家" });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("ローカル鍵で初投稿に成功すると念押しモーダルが出て /me へは遷移しない", async () => {
+    const user = userEvent.setup();
+    const { stub, restore } = stubLocation();
+    try {
+      render(<Composer />);
+      await postOnce(user);
+      // モーダルが出る＝鍵の控えを促す。遷移はモーダルを閉じるまで遅らせる。
+      expect(await screen.findByRole("dialog", { name: dialogName })).toBeInTheDocument();
+      expect(stub.href).toBe("");
+    } finally {
+      restore();
+    }
+  });
+
+  it("NIP-07（鍵がローカルに無い）では念押しを出さず即 /me へ遷移する", async () => {
+    const user = userEvent.setup();
+    // window.nostr を注入し useNip07 を有効化＝isNip07Enabled()=true。
+    vi.stubGlobal("nostr", { getPublicKey: vi.fn(), signEvent: vi.fn() });
+    seedAppStorage({ name: "テスト栽培家", useNip07: true });
+    const { stub, restore } = stubLocation();
+    try {
+      render(<Composer />);
+      await postOnce(user);
+      await waitFor(() => expect(stub.href).toBe("/me"));
+      expect(screen.queryByRole("dialog", { name: dialogName })).not.toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("既に念押し済み（フラグ true）なら二度目の投稿では出さず即 /me へ遷移する", async () => {
+    const user = userEvent.setup();
+    seedAppStorage({ name: "テスト栽培家", nsecBackupPrompted: true });
+    const { stub, restore } = stubLocation();
+    try {
+      render(<Composer />);
+      await postOnce(user);
+      await waitFor(() => expect(stub.href).toBe("/me"));
+      expect(screen.queryByRole("dialog", { name: dialogName })).not.toBeInTheDocument();
+    } finally {
+      restore();
+    }
+  });
+
+  it("「控えました」で閉じるとフラグが立ち /me へ遷移する", async () => {
+    const user = userEvent.setup();
+    const { stub, restore } = stubLocation();
+    try {
+      render(<Composer />);
+      await postOnce(user);
+      await screen.findByRole("dialog", { name: dialogName });
+      await user.click(screen.getByRole("button", { name: "控えました" }));
+      // 一度きりフラグが立ち、遅らせていた遷移が実行される。
+      expect(readAppStorage().nsecBackupPrompted).toBe(true);
+      expect(stub.href).toBe("/me");
+    } finally {
+      restore();
+    }
   });
 });

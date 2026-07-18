@@ -213,6 +213,13 @@ export const en: Partial<Record<MessageKey, string>> = {
   "compose.submit.publishing": "Posting…",
   "compose.submit": "Post",
   "compose.done": "Posted. Heading to Your Plants…",
+  // First-post nsec backup nudge (#558 Layer2). The warning reuses account.profile.nsec.*.
+  "compose.nsecPrompt.title": "Keep a copy of your key",
+  "compose.nsecPrompt.body":
+    "You're posted. This account exists only through a key stored on this device. If you don't keep a copy, you'll lose it for good when you switch devices or your browser data is cleared.",
+  "compose.nsecPrompt.restoreHint": "To use another device or restore your account, you paste this key (nsec).",
+  "compose.nsecPrompt.saved": "I saved it",
+  "compose.nsecPrompt.later": "Later",
   "compose.error.notConfirmed":
     "Couldn't confirm the post. Please try again with a better connection (your draft is kept).",
   "compose.error.generic": "Posting failed.",
