@@ -34,6 +34,7 @@
 
 import { registerSW } from "virtual:pwa-register";
 import { resolveClientLocale, t } from "../i18n/index.ts";
+import { requestPersistentStorage } from "../storage/persist.ts";
 import { isComposeRoute, isUpdateCooldownActive, SW_UPDATE_STORAGE_KEY } from "./updateGuard.ts";
 
 // overlay を見せてから skipWaiting を送るまでの間（ユーザーに気づかせる猶予）。
@@ -77,6 +78,11 @@ function showUpdateOverlay(): void {
  * Promise（waitForSwCheck の実体・Agasteer 方式）。
  */
 function initUpdateRegistration(): Promise<void> {
+  // localStorage（nsec を含む状態）を eviction から守るため、オリジンの保存領域を persistent に
+  // 要求する（#558 Layer1）。fire-and-forget＝SW 登録や初回 fetch をブロックしない。冪等なので
+  // ここで1回だけで足りる（persist.ts が persisted() チェックで再要求を避ける）。
+  void requestPersistentStorage();
+
   return new Promise((resolve) => {
     // 初回更新チェックの完了は一度きり通知すればよい（重複 resolve は no-op）。
     let resolved = false;
