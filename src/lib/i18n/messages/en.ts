@@ -626,7 +626,7 @@ export const en: Partial<Record<MessageKey, string>> = {
     "Now a single glance at that card tells you just what kind of citizen you are.",
   "gazette.articles.3.closing": "Your card, too, shall surely be one to take pride in.",
   "gazette.articles.3.link.0.label": "View Your Plants",
-  // Article 4 (newest): reactions (flowers) and comments open (#529 · #530 · #142 · #537).
+  // Article 4: reactions (flowers) and comments open (#529 · #530 · #142 · #537).
   "gazette.articles.4.heading": "A Flower to Give, a Word to Share",
   "gazette.articles.4.body.0":
     "Ahem. I have made it so a post may be sent a yellow flower in token of your favor, with a few words of your own attached besides. And should you have a change of heart, touch that flower once more and the gift is undone — the Mayor holds no grudge.",
@@ -635,4 +635,14 @@ export const en: Partial<Record<MessageKey, string>> = {
   "gazette.articles.4.closing":
     "Not one of your flowers, nor a single word, shall go to waste — all become nourishment for this city's growth.",
   "gazette.articles.4.link.0.label": "View Everyone's Plants",
+  // Article 5 (newest): "Load more" opens the view past the 100-pot limit (#554).
+  "gazette.articles.5.heading": "Every Pot, Now Within Reach",
+  "gazette.articles.5.body.0":
+    "Ahem. Until now, one could survey no more than a hundred pots at a time. The plantings of yours that slept beyond the hundredth pot have long weighed on the Mayor's mind.",
+  "gazette.articles.5.body.1":
+    "So I have set a \"Load more\" at each of the three windows — the front gate, Everyone's Plants, and Your Plants. Press it, and you may walk on to the pots still further within.",
+  "gazette.articles.5.closing":
+    "Not one pot you have grown is forgotten. Go on, and see clear through to the very last.",
+  "gazette.articles.5.link.0.label": "View Everyone's Plants",
+  "gazette.articles.5.link.1.label": "View Your Plants",
 };

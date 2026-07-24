@@ -100,6 +100,19 @@ const ARTICLE_KEYS: readonly ArticleKeys[] = [
     closing: "gazette.articles.4.closing",
     links: [{ label: "gazette.articles.4.link.0.label", href: "/discover" }],
   },
+  {
+    // #554: 「もっと見る」で表口・みんなの植物・あなたの植物の100件上限の先まで見られるようになった（2026-07-18）。
+    id: "load-more-feed",
+    date: "2026-07-18",
+    heading: "gazette.articles.5.heading",
+    body: ["gazette.articles.5.body.0", "gazette.articles.5.body.1"],
+    closing: "gazette.articles.5.closing",
+    links: [
+      { label: "gazette.articles.5.link.0.label", href: "/discover" },
+      { label: "gazette.articles.5.link.1.label", href: "/me" },
+    ],
+    image: "/hanoba-gazette-more-view.webp",
+  },
 ];
 
 /** 市政だよりの在世タイトルを locale で引く。 */
