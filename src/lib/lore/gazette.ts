@@ -10,6 +10,7 @@
 
 import { t } from "../i18n/t.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
+import type { MessageKey } from "../i18n/messages/ja.ts";
 
 /** 記事内の関連ページへの導線 1 件。 */
 export interface GazetteLink {
@@ -32,59 +33,74 @@ export interface GazetteArticle {
   closing: string;
   /** 関連ページへの導線（任意・複数可）。 */
   links: GazetteLink[];
+  /** 記事の挿絵1枚（任意）。市民手帳の guide ページ種と同じ発想（#560）。 */
+  image?: string;
 }
 
+/** ARTICLE_KEYS 1件の骨格。image は挿絵を持つ記事だけが設定する任意項目
+ *（記事の型を明示することで、現時点でどの記事も image を持たなくても
+ * `keys.image` の型が壊れない＝#560 で発覚した「1件も持たないと unknown 化する」不備の是正）。 */
+type ArticleKeys = {
+  id: string;
+  date: string;
+  heading: MessageKey;
+  body: readonly MessageKey[];
+  closing: MessageKey;
+  links: readonly { label: MessageKey; href: string }[];
+  image?: string;
+};
+
 /** 記事の言語非依存な骨格（古い記事ほど先頭＝配列順がそのまま時間順のページになる）。 */
-const ARTICLE_KEYS = [
+const ARTICLE_KEYS: readonly ArticleKeys[] = [
   {
     // #104: 「あなたの植物」画面で名前とプロフィールを1枚のカードに統合（2026-06-16）。
     id: "me-card-unified",
     date: "2026-06-16",
     heading: "gazette.articles.3.heading",
-    body: ["gazette.articles.3.body.0", "gazette.articles.3.body.1"] as const,
+    body: ["gazette.articles.3.body.0", "gazette.articles.3.body.1"],
     closing: "gazette.articles.3.closing",
-    links: [{ label: "gazette.articles.3.link.0.label", href: "/me" }] as const,
+    links: [{ label: "gazette.articles.3.link.0.label", href: "/me" }],
   },
   {
     // #160・#162: 住民投票と市勢調査（品種の人気動向窓口）を開庁（2026-06-18）。
     id: "civic-windows-open",
     date: "2026-06-18",
     heading: "gazette.articles.2.heading",
-    body: ["gazette.articles.2.body.0", "gazette.articles.2.body.1"] as const,
+    body: ["gazette.articles.2.body.0", "gazette.articles.2.body.1"],
     closing: "gazette.articles.2.closing",
     links: [
       { label: "gazette.articles.2.link.0.label", href: "/vote" },
       { label: "gazette.articles.2.link.1.label", href: "/ranking" },
-    ] as const,
+    ],
   },
   {
     // #147: 表示言語を英語既定に切り替え、多言語対応を始動（2026-06-22）。
     id: "multilingual-launch",
     date: "2026-06-22",
     heading: "gazette.articles.1.heading",
-    body: ["gazette.articles.1.body.0", "gazette.articles.1.body.1"] as const,
+    body: ["gazette.articles.1.body.0", "gazette.articles.1.body.1"],
     closing: "gazette.articles.1.closing",
-    links: [] as const,
+    links: [],
   },
   {
     // #137: 市民手帳の全面改訂（2026-07-09・本日）。
     id: "handbook-revision",
     date: "2026-07-09",
     heading: "gazette.articles.0.heading",
-    body: ["gazette.articles.0.body.0", "gazette.articles.0.body.1"] as const,
+    body: ["gazette.articles.0.body.0", "gazette.articles.0.body.1"],
     closing: "gazette.articles.0.closing",
-    links: [{ label: "gazette.articles.0.link.0.label", href: "/about" }] as const,
+    links: [{ label: "gazette.articles.0.link.0.label", href: "/about" }],
   },
   {
     // #529/#530/#142/#537: いいね（花）とコメントを贈れるようになった（2026-07-10）。
     id: "reactions-and-comments",
     date: "2026-07-10",
     heading: "gazette.articles.4.heading",
-    body: ["gazette.articles.4.body.0", "gazette.articles.4.body.1"] as const,
+    body: ["gazette.articles.4.body.0", "gazette.articles.4.body.1"],
     closing: "gazette.articles.4.closing",
-    links: [{ label: "gazette.articles.4.link.0.label", href: "/discover" }] as const,
+    links: [{ label: "gazette.articles.4.link.0.label", href: "/discover" }],
   },
-] as const;
+];
 
 /** 市政だよりの在世タイトルを locale で引く。 */
 export function gazetteTitle(locale: Locale = DEFAULT_LOCALE): string {
@@ -101,5 +117,6 @@ export function buildGazette(locale: Locale = DEFAULT_LOCALE): GazetteArticle[] 
     body: keys.body.map((key) => t(locale, key)),
     closing: t(locale, keys.closing),
     links: keys.links.map((link) => ({ label: t(locale, link.label), href: link.href })),
+    ...(keys.image !== undefined ? { image: keys.image } : {}),
   }));
 }

@@ -67,6 +67,12 @@ function ArticleContent({ article }: { article: GazetteArticle }) {
         <p className="text-xs text-ha-ink/50 tabular-nums">{article.date}</p>
       </div>
       <MayorMark />
+      {/* 記事の挿絵1枚（任意）。市民手帳の guide ページ種と同じマークアップに寄せる（#560）。 */}
+      {article.image !== undefined && (
+        <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-xl">
+          <img src={article.image} alt={article.heading} className="w-full scale-[1.02] object-cover" />
+        </div>
+      )}
       {article.body.map((paragraph, i) => (
         <p
           key={i}
