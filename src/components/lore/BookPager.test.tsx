@@ -33,6 +33,22 @@ function readPage(field: BookPageField): string | null {
   return JSON.parse(localStorage.getItem(APP_STORAGE_KEY) ?? "{}")[field] ?? null;
 }
 
+/** field → 対応する「前回訪問時点の総ページ数」フィールド名（appStorage.ts の内部命名と同じ）。 */
+function seenCountField(field: BookPageField): string {
+  return field === "gazettePage" ? "gazettePageCount" : "handbookPageCount";
+}
+
+/** 集約 blob に本の前回訪問時点の総ページ数を種撒きする（新着検知用・#562・既存フィールドを保つマージ）。 */
+function seedSeenCount(field: BookPageField, count: number): void {
+  const cur = JSON.parse(localStorage.getItem(APP_STORAGE_KEY) ?? "{}");
+  localStorage.setItem(APP_STORAGE_KEY, JSON.stringify({ ...cur, [seenCountField(field)]: count }));
+}
+
+/** 集約 blob から本の前回訪問時点の総ページ数を読む。未設定は null。 */
+function readSeenCount(field: BookPageField): number | null {
+  return JSON.parse(localStorage.getItem(APP_STORAGE_KEY) ?? "{}")[seenCountField(field)] ?? null;
+}
+
 function renderPager(
   items: Fixture[],
   field: BookPageField = "gazettePage",
@@ -172,6 +188,118 @@ describe("BookPager（#164）", () => {
     history.replaceState(null, "", "/test?page=p3");
     renderPager(pages(3));
     expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+  });
+
+  // 新着検知（#562）。hasNewContent = seenCount !== null && totalPages > seenCount。
+  // 「前回訪問時より本のページ数が増えた」ときだけ保存位置を無視して defaultPage へ飛ばす。
+  describe("新着検知（seenCount・#562）", () => {
+    it("seenCount未設定（#562導入前の既存ユーザー）で保存位置があれば、新着扱いされず保存位置を尊重する（移行安全性）", async () => {
+      // seenCountを種撒きしない＝#562導入前からの既存ユーザーを模す。
+      seedPage("gazettePage", "p2");
+      renderPager(pages(3), "gazettePage", "last");
+      expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+    });
+
+    it("seenCount・保存位置とも無い純粋初回訪問はdefaultPageへ（従来挙動の維持）", () => {
+      renderPager(pages(3));
+      expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    });
+
+    it("seenCount===totalPages（同値）のときは新着扱いされず保存位置を尊重する（`>`の境界）", async () => {
+      seedSeenCount("gazettePage", 3);
+      seedPage("gazettePage", "p2");
+      renderPager(pages(3), "gazettePage", "last");
+      expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+    });
+
+    it("seenCount===totalPages-1のときは新着扱いとなり保存位置を無視してdefaultPageへ飛ぶ（境界のすぐ内側）", async () => {
+      seedSeenCount("gazettePage", 2);
+      seedPage("gazettePage", "p2");
+      renderPager(pages(3), "gazettePage", "last");
+      // 保存位置(p2=2/3)ではなくdefaultPage="last"（3/3）へ。
+      expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+    });
+
+    it("seenCount===totalPages+1（記事が減った）でもクラッシュせず保存位置を尊重する", async () => {
+      seedSeenCount("gazettePage", 4);
+      seedPage("gazettePage", "p2");
+      expect(() => renderPager(pages(3), "gazettePage", "last")).not.toThrow();
+      expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+    });
+
+    it("新着ありでも保存位置が既に無効(削除済みID)ならdefaultPageへ安全にフォールバックする", async () => {
+      seedSeenCount("gazettePage", 1);
+      seedPage("gazettePage", "deleted-page");
+      renderPager(pages(3), "gazettePage", "last");
+      expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+    });
+
+    it("URL指定が有効なときは、新着ありでもURL指定が最優先される", async () => {
+      seedSeenCount("gazettePage", 1);
+      history.replaceState(null, "", "/test?page=p2");
+      renderPager(pages(3), "gazettePage", "last");
+      // 新着ジャンプ先(defaultPage="last"=3/3)ではなくURL指定(2/3)になる。
+      expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+    });
+
+    it("初期解決後、必ず現在の総ページ数がseenCountとして保存される（次回訪問の新着判定の副作用）", async () => {
+      renderPager(pages(3));
+      expect(await screen.findByText("1 / 3")).toBeInTheDocument();
+      expect(readSeenCount("gazettePage")).toBe(3);
+    });
+
+    it("市民手帳（handbookPage・固定10ページ）は本変更で挙動が変わらない（過去に壊れやすい事故パターンの回帰）", async () => {
+      // 手帳はページ数が変わらないので、一度訪問済み（seenCount===totalPages）なら
+      // 常に「新着なし」＝保存位置がそのまま尊重され続ける（defaultPage既定=first の従来挙動）。
+      seedSeenCount("handbookPage", 10);
+      seedPage("handbookPage", "p5");
+      renderPager(pages(10), "handbookPage");
+      expect(await screen.findByText("5 / 10")).toBeInTheDocument();
+    });
+
+    it("壊れたgazettePageCount（文字列・配列等）が保存されていても新着判定は「未設定」扱いとなり例外を投げない", async () => {
+      localStorage.setItem(
+        APP_STORAGE_KEY,
+        JSON.stringify({ gazettePage: "p2", gazettePageCount: "not-a-number" }),
+      );
+      expect(() => renderPager(pages(3), "gazettePage", "last")).not.toThrow();
+      // seenCount=null扱い→hasNewContent=false→保存位置(p2=2/3)を尊重。
+      expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+    });
+
+    it("状態遷移: 初回訪問(保存)→記事が増える→新着ジャンプ(seenCount更新)→件数据え置きの再訪では保存位置に復帰する", async () => {
+      const user = userEvent.setup();
+
+      // 1回目訪問（記事3件・seenCount未設定の純粋初回）。defaultPage="last"でp3へ。
+      const visit1 = renderPager(pages(3), "gazettePage", "last");
+      expect(await screen.findByText("3 / 3")).toBeInTheDocument();
+      expect(readSeenCount("gazettePage")).toBe(3);
+      // p3から1つ戻ってp2で読むのをやめた、という状況を作る。
+      await user.click(within(visit1.container).getByRole("button", { name: "前のページ" }));
+      expect(readPage("gazettePage")).toBe("p2");
+      visit1.unmount();
+
+      // 記事が1件増えて4件になった状態で2回目訪問。トップ導線からの再訪を模して?page=は
+      // 付かない状態に戻す（goToがURLへ?page=を書き込む＝前回操作の?page=p2が残ったままだと
+      // URL指定が優先されてしまい新着ジャンプを検証できないため）。
+      // seenCount(3) < totalPages(4)＝新着あり。保存位置(p2)は無視され、defaultPage="last"の
+      // 最新記事(p4)へジャンプする。
+      history.replaceState(null, "", "/test");
+      const visit2 = renderPager(pages(4), "gazettePage", "last");
+      expect(await screen.findByText("4 / 4")).toBeInTheDocument();
+      expect(readSeenCount("gazettePage")).toBe(4);
+      // 読んだ後p3まで戻った、という状況を作る。
+      await user.click(within(visit2.container).getByRole("button", { name: "前のページ" }));
+      expect(readPage("gazettePage")).toBe("p3");
+      visit2.unmount();
+
+      // 記事数据え置き（4件のまま）で3回目訪問。ここも?page=を持たない再訪を模す。
+      // seenCount(4) === totalPages(4)＝新着なし。defaultPage="last"（p4）ではなく、
+      // 保存位置(p3)に復帰する。
+      history.replaceState(null, "", "/test");
+      renderPager(pages(4), "gazettePage", "last");
+      expect(await screen.findByText("3 / 4")).toBeInTheDocument();
+    });
   });
 
   it("ページ送り後storageFieldに現在ページのidが保存される。異なるstorageField同士は互いに書き込みを汚染しない（2インスタンス同時マウント）", async () => {
