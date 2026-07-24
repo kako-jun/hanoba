@@ -597,7 +597,7 @@ export const zh: Partial<Record<MessageKey, string>> = {
     "如今只需看这一张卡片，便知诸位是怎样一位市民。",
   "gazette.articles.3.closing": "诸位的这张卡片，想必也会成为值得骄傲的一张。",
   "gazette.articles.3.link.0.label": "查看你的植物",
-  // 第4条（最新）：开放送花与评论（#529 · #530 · #142 · #537）。
+  // 第4条：开放送花与评论（#529 · #530 · #142 · #537）。
   "gazette.articles.4.heading": "赠一朵花，说一句话",
   "gazette.articles.4.body.0":
     "咳咳。本市长已允许诸位为帖子送上一朵黄花以表心意，还能附上一句话。若改变心意，再次触碰那朵花，便可收回——即便反悔，本市长也绝不见怪。",
@@ -605,4 +605,13 @@ export const zh: Partial<Record<MessageKey, string>> = {
     "将心意寄予他人的花盆，彼此交换言语——这也是本市养护之道的一部分。",
   "gazette.articles.4.closing": "诸位的花与言语，皆将化作养护的养分，一分不落。",
   "gazette.articles.4.link.0.label": "查看大家的植物",
+  // 第5条（最新）：「查看更多」打破百盆上限，开放浏览更深处（#554）。
+  "gazette.articles.5.heading": "每一盆，尽收眼底",
+  "gazette.articles.5.body.0":
+    "咳咳。此前，一次最多只能望见百盆。百盆之外沉睡着诸位的养育心血，本市长一直挂念在心。",
+  "gazette.articles.5.body.1":
+    "于是，本市长在三处窗口——门口、大家的植物、你的植物——都设置了「查看更多」。按下它，便可继续走向更深处的花盆。",
+  "gazette.articles.5.closing": "诸位养育的每一盆，本市长从未忘记。尽管走到最深处，细细看个明白。",
+  "gazette.articles.5.link.0.label": "查看大家的植物",
+  "gazette.articles.5.link.1.label": "查看你的植物",
 };

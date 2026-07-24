@@ -4,13 +4,13 @@ import { DEFAULT_LOCALE } from "../i18n/locale.ts";
 
 // 市政だより（#164/#533）のデータモデル。最古→最新の時間順で採番することを固定する。
 describe("buildGazette（#164）", () => {
-  it("5件を1〜5の連番ページで返す", () => {
+  it("6件を1〜6の連番ページで返す", () => {
     const articles = buildGazette("ja");
-    expect(articles).toHaveLength(5);
-    expect(articles.map((a) => a.page)).toEqual([1, 2, 3, 4, 5]);
+    expect(articles).toHaveLength(6);
+    expect(articles.map((a) => a.page)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it("公開日は昇順＝1ページ目が最古(2026-06-16)、5ページ目が最新(2026-07-10)", () => {
+  it("公開日は昇順＝1ページ目が最古(2026-06-16)、6ページ目が最新(2026-07-18)", () => {
     const articles = buildGazette("ja");
     expect(articles.map((a) => a.date)).toEqual([
       "2026-06-16",
@@ -18,6 +18,7 @@ describe("buildGazette（#164）", () => {
       "2026-06-22",
       "2026-07-09",
       "2026-07-10",
+      "2026-07-18",
     ]);
   });
 
@@ -29,7 +30,29 @@ describe("buildGazette（#164）", () => {
 
   it("linksの件数は記事ごとに異なる（0/1/複数件を固定）", () => {
     const articles = buildGazette("ja");
-    expect(articles.map((a) => a.links.length)).toEqual([1, 2, 0, 1, 1]);
+    expect(articles.map((a) => a.links.length)).toEqual([1, 2, 0, 1, 1, 2]);
+  });
+
+  it("最新記事（id: load-more-feed・#554発表）のlinksは/discoverと/meを指し、ラベルも正しい", () => {
+    const articles = buildGazette("ja");
+    const latest = articles[5]!;
+    expect(latest.id).toBe("load-more-feed");
+    expect(latest.links).toEqual([
+      { label: "みんなの植物を見る", href: "/discover" },
+      { label: "あなたの植物を見る", href: "/me" },
+    ]);
+  });
+
+  it("最新記事（6件目）はimageを持ち、それ以外は持たない", () => {
+    const articles = buildGazette("ja");
+    expect(articles.map((a) => a.image)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      "/hanoba-gazette-more-view.webp",
+    ]);
   });
 
   it("bodyは各記事2段落、closingは非空文字列", () => {

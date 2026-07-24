@@ -637,7 +637,7 @@ export const es: Partial<Record<MessageKey, string>> = {
     "Ahora, con solo mirar esa tarjeta, se sabe qué clase de ciudadano eres.",
   "gazette.articles.3.closing": "Tu tarjeta también será, sin duda, motivo de orgullo.",
   "gazette.articles.3.link.0.label": "Ver tus plantas",
-  // Artículo 4 (el más reciente): apertura de las reacciones (flores) y los comentarios (#529 · #530 · #142 · #537).
+  // Artículo 4: apertura de las reacciones (flores) y los comentarios (#529 · #530 · #142 · #537).
   "gazette.articles.4.heading": "Una flor para regalar, una palabra para compartir",
   "gazette.articles.4.body.0":
     "Ejem. He hecho posible enviar una flor amarilla en señal de aprecio a una publicación, y añadir además unas palabras propias. Y si cambias de parecer, toca de nuevo esa flor y el obsequio queda retirado: el alcalde no guarda rencor.",
@@ -646,4 +646,14 @@ export const es: Partial<Record<MessageKey, string>> = {
   "gazette.articles.4.closing":
     "Ni una sola de tus flores, ni una sola palabra, se perderán: todas se convierten en sustento para el cultivo.",
   "gazette.articles.4.link.0.label": "Ver las plantas de todos",
+  // Artículo 5 (el más reciente): «Ver más» abre la vista más allá del límite de 100 macetas (#554).
+  "gazette.articles.5.heading": "Cada maceta, ahora a tu alcance",
+  "gazette.articles.5.body.0":
+    "Ejem. Hasta ahora, solo podía contemplarse un centenar de macetas a la vez. Lo que cultivabais más allá de la centésima maceta ha preocupado al alcalde todo este tiempo.",
+  "gazette.articles.5.body.1":
+    "Así que he colocado un «Ver más» en cada una de las tres ventanillas: la entrada, las plantas de todos y tus plantas. Pulsa, y podrás caminar hasta las macetas que aguardan más adentro.",
+  "gazette.articles.5.closing":
+    "Ninguna maceta que hayáis cultivado se olvida. Id hasta el fondo y contempladlas todas.",
+  "gazette.articles.5.link.0.label": "Ver las plantas de todos",
+  "gazette.articles.5.link.1.label": "Ver tus plantas",
 };
