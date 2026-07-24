@@ -15,7 +15,13 @@ import {
 import { prefersReducedMotion } from "../../lib/a11y/reduced-motion.ts";
 import { useLocale, useT } from "../../lib/i18n/index.ts";
 import { BOOK_FRAME_SRC, BOOK_PAGE_SRC } from "../../lib/lore/cityHallAssets.ts";
-import { getBookPage, setBookPage, type BookPageField } from "../../lib/storage/appStorage.ts";
+import {
+  getBookPage,
+  setBookPage,
+  getBookSeenCount,
+  setBookSeenCount,
+  type BookPageField,
+} from "../../lib/storage/appStorage.ts";
 
 // 本ページャー（#164）。ハノーバ市民手帳（CityHallBook・#163/#137）から抽出した「本」の共通 UI。
 // 枠/紙面の border-image + 背景画像・ページャーUI（先頭/前/次/末尾＋ページ表示）・キーボード矢印・
@@ -75,18 +81,28 @@ export default function BookPager<T extends BookPagerPage>({
   const [swipeBlur, setSwipeBlur] = useState(0);
 
   useIsoLayoutEffect(() => {
-    // 初期ページは「有効なURL → 有効な保存位置 → defaultPage」の順。
+    // 初期ページは「有効なURL → (新着が無ければ)有効な保存位置 → defaultPage」の順。
     // 不正・削除済み ID は次の候補へ安全にフォールバックする。
     // id は locale 非依存なので、呼び出し元がどの locale で pages を組んでいても解決できる。
     const requestedId = new URLSearchParams(window.location.search).get("page");
-    const savedId = getBookPage(storageField);
+    const requested = pages.find((item) => item.id === requestedId);
     const fallback = defaultPage === "last" ? pages.at(-1) : pages[0];
-    const initial =
-      pages.find((item) => item.id === requestedId) ??
-      pages.find((item) => item.id === savedId) ??
-      fallback;
+
+    // 前回訪問時より本のページ数が増えていたら「新着あり」＝保存位置を無視して defaultPage
+    // （市政だよりなら "last"＝最新）へ飛ばす（#562）。URL明示指定（requested）はこの対象外＝
+    // 従来通り最優先。seenCount 未設定（初回訪問・移行直後）は新着判定しない＝保存位置を尊重する。
+    const seenCount = getBookSeenCount(storageField);
+    const hasNewContent = seenCount !== null && totalPages > seenCount;
+    const saved = hasNewContent
+      ? undefined
+      : pages.find((item) => item.id === getBookPage(storageField));
+
+    const initial = requested ?? saved ?? fallback;
     if (initial !== undefined) setPage(initial.page);
     setInitialized(true);
+    // 今回訪問時点の総ページ数を「見た」として記録する＝次回訪問時は「追いついた」状態になり、
+    // 通常の保存位置復帰に戻る。
+    setBookSeenCount(storageField, totalPages);
     // マウント時の初期解決のみ行う（pages 差し替えでの再解決はしない＝ページ送り中に locale が
     // 変わっても現在ページを保つ既存挙動を維持）。
     // eslint-disable-next-line react-hooks/exhaustive-deps

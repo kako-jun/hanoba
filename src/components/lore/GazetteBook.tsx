@@ -14,8 +14,8 @@ import {
 // 市政だより（#164）。市長ボタニクス・フォン・ハノーバが執筆した体裁の静的リリースノート
 // （Nostr投稿・専用鍵・バックエンド・自動投稿は無し）。市民手帳（CityHallBook）と同じ
 // 本ページャー（BookPager）を共有する。1記事=1ページ、最古→最新の時間順で採番し、
-// 保存位置の無い初回だけ defaultPage="last" で最新記事を開く（前＝過去／次＝未来）。
-// docs/lore.md に役割・文体の doctrine を持つ。
+// 保存位置の無い初回、または前回訪問時より記事が増えた（新着がある）ときは defaultPage="last"
+// で最新記事を開く（前＝過去／次＝未来・#562）。docs/lore.md に役割・文体の doctrine を持つ。
 
 // SSR では useLayoutEffect が警告を出す。クライアントでのみ layout（ペイント前）に走らせる。
 const useIsoLayoutEffect =

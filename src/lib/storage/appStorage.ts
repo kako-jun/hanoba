@@ -43,6 +43,10 @@ export interface AppStorageState {
   gazettePage?: string;
   /** 市民手帳（CityHall）のページ位置（安定 ID）。 */
   handbookPage?: string;
+  /** 市政だより（Gazette）の前回訪問時点の総ページ数（新着検知用・#562）。 */
+  gazettePageCount?: number;
+  /** 市民手帳（CityHall）の前回訪問時点の総ページ数（新着検知用・#562。手帳は固定10ページなので実質増減しない）。 */
+  handbookPageCount?: number;
   /** PWA インストール促しを却下した時刻（epoch ミリ秒）。 */
   pwaInstallDismissedAt?: number;
   /**
@@ -105,6 +109,26 @@ export function getBookPage(field: BookPageField): string | null {
 /** 本のページ位置（安定 ID）を保存する。 */
 export function setBookPage(field: BookPageField, id: string): void {
   updateAppStorage((s) => ({ ...s, [field]: id }));
+}
+
+/** BookPageField → 対応する「前回訪問時点の総ページ数」フィールド名。 */
+function seenCountField(field: BookPageField): "gazettePageCount" | "handbookPageCount" {
+  return field === "gazettePage" ? "gazettePageCount" : "handbookPageCount";
+}
+
+/**
+ * 前回訪問時点の総ページ数を返す（新着検知用・#562）。未設定は null。
+ * BookPager が「前回訪問時より本が増えた（新着記事がある）」かを判定するために使う。
+ */
+export function getBookSeenCount(field: BookPageField): number | null {
+  const v = getAppStorage()[seenCountField(field)];
+  return typeof v === "number" ? v : null;
+}
+
+/** 前回訪問時点の総ページ数を記録する（次回訪問時の新着判定の基準になる）。 */
+export function setBookSeenCount(field: BookPageField, count: number): void {
+  const key = seenCountField(field);
+  updateAppStorage((s) => ({ ...s, [key]: count }));
 }
 
 // ---- nsec バックアップ念押し（初投稿直後・#558 Layer2）------------------------
