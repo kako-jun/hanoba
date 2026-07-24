@@ -6,6 +6,8 @@ import {
   updateAppStorage,
   getBookPage,
   setBookPage,
+  getBookSeenCount,
+  setBookSeenCount,
   isNsecBackupPrompted,
   markNsecBackupPrompted,
 } from "./appStorage.ts";
@@ -93,6 +95,44 @@ describe("appStorage", () => {
     it("空文字は null 扱い", () => {
       setBookPage("gazettePage", "");
       expect(getBookPage("gazettePage")).toBeNull();
+    });
+  });
+
+  // 本の前回訪問時点の総ページ数（新着検知用・#562）。BookPager がこの値と現在の
+  // pages.length を比べて「新着があるか」を判定する。
+  describe("book seen count helpers", () => {
+    it("未設定は null", () => {
+      expect(getBookSeenCount("gazettePage")).toBeNull();
+      expect(getBookSeenCount("handbookPage")).toBeNull();
+    });
+
+    it("set した件数を読み戻せる。2 フィールドは互いに独立", () => {
+      setBookSeenCount("gazettePage", 5);
+      setBookSeenCount("handbookPage", 10);
+      expect(getBookSeenCount("gazettePage")).toBe(5);
+      expect(getBookSeenCount("handbookPage")).toBe(10);
+    });
+
+    it("set は他フィールドを潰さない（部分更新の非破壊）", () => {
+      setAppStorage({ lang: "ja", gazettePage: "welcome" });
+      setBookSeenCount("gazettePage", 5);
+      expect(getAppStorage()).toEqual({ lang: "ja", gazettePage: "welcome", gazettePageCount: 5 });
+    });
+
+    it("0 は有効な数値として扱う（null 判定との取り違え防止）", () => {
+      setBookSeenCount("gazettePage", 0);
+      expect(getBookSeenCount("gazettePage")).toBe(0);
+      expect(getBookSeenCount("gazettePage")).not.toBeNull();
+    });
+
+    it("壊れた値（文字列・配列等）は null に倒す。例外は投げない", () => {
+      localStorage.setItem(
+        APP_STORAGE_KEY,
+        JSON.stringify({ gazettePageCount: "not-a-number", handbookPageCount: [1, 2, 3] }),
+      );
+      expect(() => getBookSeenCount("gazettePage")).not.toThrow();
+      expect(getBookSeenCount("gazettePage")).toBeNull();
+      expect(getBookSeenCount("handbookPage")).toBeNull();
     });
   });
 
